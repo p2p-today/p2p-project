@@ -1,5 +1,11 @@
-import rsa
+try:
+    import rsa
+except:
+    print("You cannot use this without the rsa module.")
+    print("To install this, run 'pip install rsa'.")
+
 import socket
+
 key_request = "Requesting key".encode('utf-8')
 end_of_message = "End of message".encode('utf-8')
 
