@@ -40,7 +40,7 @@ class secureSocket(socket.socket):
             print("Key not found. Requesting key")
             self.conn.send(key_request)
             try:
-                key = self.conn.recv(1024).split(",")
+                key = self.conn.recv(keysize).split(",")
                 self.key = rsa.PublicKey(int(key[0]), int(key[1]))
                 print("Key received")
             except EOFError:
