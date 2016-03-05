@@ -3,6 +3,7 @@ try:
 except:
     print("You cannot use this without the rsa module.")
     print("To install this, run 'pip install rsa'.")
+    exit(-1)
 
 import socket
 
