@@ -11,7 +11,7 @@ key_request = "Requesting key".encode('utf-8')
 end_of_message = "End of message".encode('utf-8')
 
 
-class secureSocket(socket.socket):
+class secureSocket(object):
     def __init__(self, keysize=1024, *args, **kargs):
         if kargs.get('keysize'):
             keysize = kargs.pop('keysize')
