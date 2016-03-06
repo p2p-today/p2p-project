@@ -46,15 +46,8 @@ class secureSocket(socket.socket):
         self.conn.settimeout(i)
 
     def send(self, msg):
-        while self.key is None:
-            print("Key not found. Requesting key")
-            self.conn.send(key_request)
-            try:
-                key = self.conn.recv(self.keysize).split(",")
-                self.key = rsa.PublicKey(int(key[0]), int(key[1]))
-                print("Key received")
-            except EOFError:
-                continue
+        if self.key is None:
+            self.requestKey()
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = msg.encode('utf-8')
         x = 0
@@ -71,8 +64,7 @@ class secureSocket(socket.socket):
             while True:
                 a = self.conn.recv(self.msgsize + 11)
                 if a == key_request:
-                    print("Key requested. Sending key")
-                    self.conn.sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
+                    self.handShake()
                     continue
                 a = rsa.decrypt(a, self.priv)
                 if a == end_of_message:
@@ -81,3 +73,18 @@ class secureSocket(socket.socket):
         except rsa.pkcs1.DecryptionError as error:
             print("Decryption error---Content: " + str(a))
             return "".encode('utf-8')
+
+    def requestKey(self):
+        while self.key is None:
+            print("Key not found. Requesting key")
+            self.conn.send(key_request)
+            try:
+                key = self.conn.recv(self.keysize).split(",")
+                self.key = rsa.PublicKey(int(key[0]), int(key[1]))
+                print("Key received")
+            except EOFError:
+                continue
+    
+    def handShake(self):
+        print("Key requested. Sending key")
+        self.conn.sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
