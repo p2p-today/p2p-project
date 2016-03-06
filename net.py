@@ -15,10 +15,13 @@ class secureSocket(socket.socket):
     def __init__(self, keysize=1024, *args, **kargs):
         if kargs.get('keysize'):
             keysize = kargs.pop('keysize')
+        if keysize < 256:
+            raise ValueError('This key is too small to be useful')
         self.sock = socket.socket(*args, **kargs)
         self.conn = None
         self.pub, self.priv = rsa.newkeys(keysize)
         self.keysize = keysize
+        self.msgsize = (keysize / 8) - 11
         self.key = None
 
     def connect(self, ip):
@@ -47,7 +50,7 @@ class secureSocket(socket.socket):
             print("Key not found. Requesting key")
             self.conn.send(key_request)
             try:
-                key = self.conn.recv(keysize).split(",")
+                key = self.conn.recv(self.keysize).split(",")
                 self.key = rsa.PublicKey(int(key[0]), int(key[1]))
                 print("Key received")
             except EOFError:
@@ -55,9 +58,9 @@ class secureSocket(socket.socket):
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = msg.encode('utf-8')
         x = 0
-        while x < len(msg) - 117:
-            self.conn.sendall(rsa.encrypt(msg[x:x+117], self.key))
-            x += 117
+        while x < len(msg) - self.msgsize:
+            self.conn.sendall(rsa.encrypt(msg[x:x+self.msgsize], self.key))
+            x += self.msgsize
         self.conn.sendall(rsa.encrypt(msg[x:], self.key))
         self.conn.sendall(rsa.encrypt(end_of_message, self.key))
 
@@ -66,7 +69,7 @@ class secureSocket(socket.socket):
         a = ""
         try:
             while True:
-                a = self.conn.recv(128)
+                a = self.conn.recv(self.msgsize + 11)
                 if a == key_request:
                     print("Key requested. Sending key")
                     self.conn.sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
