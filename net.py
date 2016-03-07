@@ -13,13 +13,16 @@ size_request = "Requesting key size".encode('utf-8')
 
 
 class secureSocket(object):
-    def __init__(self, keysize=1024, *args, **kargs):
+    def __init__(self, keysize=1024, suppress_warnings=False, *args, **kargs):
         if kargs.get('keysize'):
             keysize = kargs.pop('keysize')
-        if keysize < 256:
-            raise ValueError('This key is too small to be useful')
-        elif len(str(keysize)) > 16:
-            raise ValueError('This key is too large to be practical')
+        if kargs.get('suppress_warnings'):
+            suppress_warnings = kargs.pop('suppress_warnings')
+        if not suppress_warnings:
+            if keysize < 256:
+                raise ValueError('This key is too small to be useful')
+            elif keysize > 8192:
+                raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
         self.sock = socket.socket(*args, **kargs)
         self.pub, self.priv = rsa.newkeys(keysize)
         self.keysize = keysize
