@@ -42,8 +42,8 @@ class secureSocket(object):
         self.sendKey()
         self.requestKey()
 
-    def bind(self, *args):
-        self.sock.bind(*args)
+    def bind(self, ip):
+        self.sock.bind(ip)
 
     def listen(self, i):
         self.sock.listen(i)
