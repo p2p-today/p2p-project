@@ -95,7 +95,7 @@ class secureSocket(object):
                 self.peer_msgsize = (self.peer_keysize / 8) - 11
                 print("Requesting key")
                 self.conn.send(key_request)
-                key = self.conn.recv(self.keysize).split(",")
+                key = self.conn.recv(self.peer_keysize).split(",")
                 self.key = rsa.PublicKey(int(key[0]), int(key[1]))
                 print("Key received")
                 break
