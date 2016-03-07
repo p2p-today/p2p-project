@@ -9,6 +9,7 @@ import socket
 
 key_request = "Requesting key".encode('utf-8')
 end_of_message = "End of message".encode('utf-8')
+size_request = "Requesting key size".encode('utf-8')
 
 
 class secureSocket(object):
@@ -22,11 +23,17 @@ class secureSocket(object):
         self.pub, self.priv = rsa.newkeys(keysize)
         self.keysize = keysize
         self.msgsize = (keysize / 8) - 11
+        self.peer_keysize = None
+        self.peer_msgsize = None
         self.key = None
 
     def connect(self, ip):
         self.sock.connect(ip)
         self.conn = self.sock
+        self.requestKey()
+        if self.conn.recv(len(key_request)) != key_request:
+            raise ValueError("Handshake has failed due to invalid request from peer")
+        self.handShake()
 
     def close(self):
         self.conn.close()
@@ -34,6 +41,10 @@ class secureSocket(object):
 
     def accept(self):
         self.conn, self.addr = self.sock.accept()
+        if self.conn.recv(len(key_request)) != key_request:
+            raise ValueError("Handshake has failed due to invalid request from peer")
+        self.handShake()
+        self.requestKey()
 
     def bind(self, *args):
         self.sock.bind(*args)
@@ -46,8 +57,6 @@ class secureSocket(object):
         self.conn.settimeout(i)
 
     def send(self, msg):
-        if self.key is None:
-            self.requestKey()
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = msg.encode('utf-8')
         x = 0
@@ -63,9 +72,6 @@ class secureSocket(object):
         try:
             while True:
                 a = self.conn.recv(self.msgsize + 11)
-                if a == key_request:
-                    self.handShake()
-                    continue
                 a = rsa.decrypt(a, self.priv)
                 if a == end_of_message:
                     return received
