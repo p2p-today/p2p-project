@@ -18,6 +18,8 @@ class secureSocket(object):
             keysize = kargs.pop('keysize')
         if keysize < 256:
             raise ValueError('This key is too small to be useful')
+        elif len(str(keysize)) > 16:
+            raise ValueError('This key is too large to be practical')
         self.sock = socket.socket(*args, **kargs)
         self.pub, self.priv = rsa.newkeys(keysize)
         self.keysize = keysize
