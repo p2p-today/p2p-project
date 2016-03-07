@@ -91,12 +91,12 @@ class secureSocket(object):
             print("Requesting key size")
             self.conn.send(size_request)
             try:
-                self.peer_keysize = int(self.conn.recv(1024))
+                self.peer_keysize = int(self.conn.recv(16))
                 self.peer_msgsize = (self.peer_keysize / 8) - 11
                 print("Requesting key")
                 self.conn.send(key_request)
                 key = self.conn.recv(self.peer_keysize).split(",")
-                self.key = rsa.PublicKey(int(key[0]), int(key[1]))
+                self.key = rsa.PublicKey(int(key[0], base=16), int(key[1]), base=16)
                 print("Key received")
                 break
             except EOFError:
@@ -105,7 +105,7 @@ class secureSocket(object):
     def handShake(self, flag):
         if flag == key_request:
             print("Sending key")
-            self.conn.sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
+            self.conn.sendall((hex(self.pub.n) + "," + hex(self.pub.e)).encode('utf-8'))
         else:
             print("Sending key size")
             self.conn.sendall(str(self.keysize).encode("utf-8"))
