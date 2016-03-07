@@ -31,9 +31,12 @@ class secureSocket(object):
         self.sock.connect(ip)
         self.conn = self.sock
         self.requestKey()
+        if self.conn.recv(len(size_request)) != size_request:
+            raise ValueError("Handshake has failed due to invalid request from peer")
+        self.handShake(size_request)
         if self.conn.recv(len(key_request)) != key_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
-        self.handShake()
+        self.handShake(key_request)
 
     def close(self):
         self.conn.close()
@@ -41,9 +44,12 @@ class secureSocket(object):
 
     def accept(self):
         self.conn, self.addr = self.sock.accept()
+        if self.conn.recv(len(size_request)) != size_request:
+            raise ValueError("Handshake has failed due to invalid request from peer")
+        self.handShake(size_request)
         if self.conn.recv(len(key_request)) != key_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
-        self.handShake()
+        self.handShake(key_request)
         self.requestKey()
 
     def bind(self, *args):
@@ -60,9 +66,9 @@ class secureSocket(object):
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = msg.encode('utf-8')
         x = 0
-        while x < len(msg) - self.msgsize:
-            self.conn.sendall(rsa.encrypt(msg[x:x+self.msgsize], self.key))
-            x += self.msgsize
+        while x < len(msg) - self.peer_msgsize:
+            self.conn.sendall(rsa.encrypt(msg[x:x+self.peer_msgsize], self.key))
+            x += self.peer_msgsize
         self.conn.sendall(rsa.encrypt(msg[x:], self.key))
         self.conn.sendall(rsa.encrypt(end_of_message, self.key))
 
@@ -81,16 +87,25 @@ class secureSocket(object):
             return "".encode('utf-8')
 
     def requestKey(self):
-        while self.key is None:
-            print("Key not found. Requesting key")
-            self.conn.send(key_request)
+        while True:
+            print("Requesting key size")
+            self.conn.send(size_request)
             try:
+                self.peer_keysize = int(self.conn.recv(1024))
+                self.peer_msgsize = (self.peer_keysize / 8) - 11
+                print("Requesting key")
+                self.conn.send(key_request)
                 key = self.conn.recv(self.keysize).split(",")
                 self.key = rsa.PublicKey(int(key[0]), int(key[1]))
                 print("Key received")
+                break
             except EOFError:
                 continue
     
-    def handShake(self):
-        print("Key requested. Sending key")
-        self.conn.sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
+    def handShake(self, flag):
+        if flag == key_request:
+            print("Sending key")
+            self.conn.sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
+        else:
+            print("Sending key size")
+            self.conn.sendall(str(self.keysize).encode("utf-8"))
