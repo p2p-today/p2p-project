@@ -19,13 +19,13 @@ class secureSocket(object):
         if keysize < 256:
             raise ValueError('This key is too small to be useful')
         self.sock = socket.socket(*args, **kargs)
-        self.conn = None
         self.pub, self.priv = rsa.newkeys(keysize)
         self.keysize = keysize
         self.msgsize = (keysize / 8) - 11
+        self.key = None
+        self.conn = None
         self.peer_keysize = None
         self.peer_msgsize = None
-        self.key = None
 
     def connect(self, ip):
         self.sock.connect(ip)
@@ -75,6 +75,14 @@ class secureSocket(object):
         except rsa.pkcs1.DecryptionError as error:
             print("Decryption error---Content: " + str(packet))
             return received
+
+    def sign(self, msg, hashop='SHA-256'):
+        return rsa.sign(msg, self.priv, hashop)
+
+    def verify(self, msg, sig, key=None):
+        if key is None:
+            key = self.key
+        return rsa.verify(msg, sig, key)
 
     def requestKey(self):
         while True:
