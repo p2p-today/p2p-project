@@ -1,9 +1,7 @@
 try:
     import rsa
 except:
-    print("You cannot use this without the rsa module.")
-    print("To install this, run 'pip install rsa'.")
-    exit(-1)
+    raise Exception("You cannot use this without the rsa module. To install this, run 'pip install rsa'.")
 
 import socket
 
