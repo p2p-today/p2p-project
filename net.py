@@ -32,6 +32,17 @@ class secureSocket(object):
         self.peer_keysize = None
         self.peer_msgsize = None
 
+    def bind(self, ip):
+        self.sock.bind(ip)
+
+    def listen(self, i):
+        self.sock.listen(i)
+
+    def accept(self):
+        self.conn, self.addr = self.sock.accept()
+        self.sendKey()
+        self.requestKey()
+
     def connect(self, ip):
         self.sock.connect(ip)
         self.conn = self.sock
@@ -42,22 +53,31 @@ class secureSocket(object):
         self.conn.close()
         self.conn = None
 
-    def accept(self):
-        self.conn, self.addr = self.sock.accept()
-        self.sendKey()
-        self.requestKey()
-
-    def bind(self, ip):
-        self.sock.bind(ip)
-
-    def listen(self, i):
-        self.sock.listen(i)
-
     def settimeout(self, i):
         self.sock.settimeout(i)
         self.conn.settimeout(i)
 
     def send(self, msg):
+        self.__send__(msg)
+        self.__send__(self.sign(msg))
+
+    def recv(self):
+        msg = self.__recv__()
+        try:
+            self.verify(msg, self.__recv__())
+        except rsa.pkcs1.VerificationError:
+            raise rsa.pkcs1.VerificationError("This message could not be verified. It's possible you are experiencing a man in the middle attack")
+        return msg
+
+    def sign(self, msg, hashop='SHA-256'):
+        return rsa.sign(msg, self.priv, hashop)
+
+    def verify(self, msg, sig, key=None):
+        if key is None:
+            key = self.key
+        return rsa.verify(msg, sig, key)
+
+    def __send__(self, msg):
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = msg.encode('utf-8')
         x = 0
@@ -67,7 +87,7 @@ class secureSocket(object):
         self.conn.sendall(rsa.encrypt(msg[x:], self.key))
         self.conn.sendall(rsa.encrypt(end_of_message, self.key))
 
-    def recv(self):
+    def __recv__(self):
         received = "".encode('utf-8')
         packet = ""
         try:
@@ -80,14 +100,6 @@ class secureSocket(object):
         except rsa.pkcs1.DecryptionError as error:
             print("Decryption error---Content: " + str(packet))
             return received
-
-    def sign(self, msg, hashop='SHA-256'):
-        return rsa.sign(msg, self.priv, hashop)
-
-    def verify(self, msg, sig, key=None):
-        if key is None:
-            key = self.key
-        return rsa.verify(msg, sig, key)
 
     def requestKey(self):
         while True:
