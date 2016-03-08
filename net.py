@@ -17,7 +17,7 @@ class secureSocket(object):
         if kargs.get('suppress_warnings'):
             suppress_warnings = kargs.pop('suppress_warnings')
         if not suppress_warnings:
-            if keysize < 256:
+            if (keysize / 8) - 11 < len(end_of_message):
                 raise ValueError('This key is too small to be useful')
             elif keysize > 8192:
                 raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
