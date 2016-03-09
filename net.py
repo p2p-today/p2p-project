@@ -1,5 +1,5 @@
 try:
-    import rs
+    import rsa
     uses_RSA = True
 except:
     try:
