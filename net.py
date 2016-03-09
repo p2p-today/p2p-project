@@ -3,6 +3,7 @@ try:
 except:
     raise Exception("You cannot use this without the rsa module. To install this, run 'pip install rsa'.")
 
+from multiprocessing.pool import ThreadPool as Pool
 import socket
 
 key_request = "Requesting key".encode('utf-8')
@@ -22,34 +23,53 @@ class secureSocket(object):
             elif keysize > 8192:
                 raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
         self.sock = socket.socket(*args, **kargs)
-        self.pub, self.priv = rsa.newkeys(keysize)
+        self.key_async = Pool().map_async(rsa.newkeys, [keysize])  # Gen in background to reduce block
+        self.pub, self.priv = None, None    # Temporarily set to None so they can generate in background
         self.keysize = keysize
         self.msgsize = (keysize / 8) - 11
         self.key = None
         self.conn = None
+        self.bound = False
         self.peer_keysize = None
         self.peer_msgsize = None
 
+    def mapKey(self):
+        if self.pub is None:
+            self.pub, self.priv = self.key_async.get()[0]
+            del self.key_async
+
     def bind(self, ip):
         self.sock.bind(ip)
+        self.bound = ip
 
     def listen(self, i):
         self.sock.listen(i)
 
     def accept(self):
+        if self.conn:
+            self.conn.close()
         self.conn, self.addr = self.sock.accept()
+        self.mapKey()
         self.sendKey()
         self.requestKey()
 
     def connect(self, ip):
+        if self.conn:
+            self.conn.close()
         self.sock.connect(ip)
         self.conn = self.sock
         self.requestKey()
+        self.mapKey()
         self.sendKey()
 
     def close(self):
         self.conn.close()
         self.conn = None
+        self.key = None
+        self.peer_keysize = None
+        self.peer_msgsize = None
+        if not self.bound:
+            self.sock = socket.socket()
 
     def settimeout(self, i):
         self.sock.settimeout(i)
