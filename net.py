@@ -26,11 +26,12 @@ if uses_RSA:
     PublicKey = rsa.PublicKey
 else:
 
-    hashtable = {'MD5': 'MD5',
-                 'SHA-1': 'SHA',
-                 'SHA-256': 'SHA256',
-                 'SHA-384': 'SHA384',
-                 'SHA-512': 'SHA512'}
+    from Crypto.Hash import MD5, SHA, SHA256, SHA384, SHA512
+    hashtable = {'MD5': MD5,
+                 'SHA-1': SHA,
+                 'SHA-256': SHA256,
+                 'SHA-384': SHA384,
+                 'SHA-512': SHA512}
              
 
     def newkeys(size):
@@ -49,8 +50,7 @@ else:
 
     def sign(msg, key, hashop):
         from Crypto.Signature import PKCS1_v1_5
-        import Crypto
-        hsh = getattr(Crypto.Hash, hashtable.get(hashop)).new()
+        hsh = hashtable.get(hashop).new()
         hsh.update(msg)
         signer = PKCS1_v1_5.PKCS115_SigScheme(key)
         return signer.sign(hsh)
@@ -58,11 +58,14 @@ else:
 
     def verify(msg, sig, key):
         from Crypto.Signature import PKCS1_v1_5
-        from Crypto.Hash import SHA256
-        hsh = SHA256.new()
-        hsh.update(msg)
-        check = PKCS1_v1_5.PKCS115_SigScheme(key)
-        return check.verify(hsh, sig)
+        for hashop in ['SHA-256', 'MD5', 'SHA-1', 'SHA-384', 'SHA-512']:
+            hsh = hashtable.get(hashop).new()
+            hsh.update(msg)
+            check = PKCS1_v1_5.PKCS115_SigScheme(key)
+            res = check.verify(hsh, sig)
+            if res:
+                break
+        return res
         
 
     def PublicKey(n, e):
