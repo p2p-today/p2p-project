@@ -6,7 +6,7 @@ except:
 import socket
 
 key_request = "Requesting key".encode('utf-8')
-end_of_message = "End of message".encode('utf-8')
+end_of_message = '\x03\x04\x17\x04\x03'.encode('utf-8')
 size_request = "Requesting key size".encode('utf-8')
 
 
