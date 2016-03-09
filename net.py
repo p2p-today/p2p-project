@@ -26,6 +26,13 @@ if uses_RSA:
     PublicKey = rsa.PublicKey
 else:
 
+    hashtable = {'MD5': 'MD5',
+                 'SHA-1': 'SHA',
+                 'SHA-256': 'SHA256',
+                 'SHA-384': 'SHA384',
+                 'SHA-512': 'SHA512'}
+             
+
     def newkeys(size):
         random_generator = Random.new().read
         key = RSA.generate(size, random_generator)
@@ -41,12 +48,22 @@ else:
 
 
     def sign(msg, key, hashop):
-        return "Currently unsupported"
+        from Crypto.Signature import PKCS1_v1_5
+        import Crypto
+        hsh = getattr(Crypto.Hash, hashtable.get(hashop)).new()
+        hsh.update(msg)
+        signer = PKCS1_v1_5.PKCS115_SigScheme(key)
+        return signer.sign(hsh)
 
 
     def verify(msg, sig, key):
-        return "Currently unsupported"
-
+        from Crypto.Signature import PKCS1_v1_5
+        from Crypto.Hash import SHA256
+        hsh = SHA256.new()
+        hsh.update(msg)
+        check = PKCS1_v1_5.PKCS115_SigScheme(key)
+        return check.verify(hsh, sig)
+        
 
     def PublicKey(n, e):
         return RSA.construct((long(n), long(e)))
