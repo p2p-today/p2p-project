@@ -12,6 +12,7 @@ size_request = "Requesting key size".encode('utf-8')
 
 
 class secureSocket(object):
+    """An RSA encrypted and secured socket. Requires the rsa module"""
     def __init__(self, keysize=1024, suppress_warnings=False, *args, **kargs):
         if kargs.get('keysize'):
             keysize = kargs.pop('keysize')
@@ -34,18 +35,23 @@ class secureSocket(object):
         self.peer_msgsize = None
 
     def mapKey(self):
+    """Deals with the asyncronous generation of keys"""
         if self.pub is None:
             self.pub, self.priv = self.key_async.get()[0]
             del self.key_async
 
     def bind(self, ip):
+    """Wrapper for the socket's native bind method"""
         self.sock.bind(ip)
         self.bound = ip
 
     def listen(self, i):
+    """Wrapper for the socket's native listen method"""
         self.sock.listen(i)
 
     def accept(self):
+    """Accepts an incoming connection.
+    Unlike a native socket, it doesn't return anything, it's handled intra-object."""
         if self.conn:
             self.conn.close()
         self.conn, self.addr = self.sock.accept()
@@ -54,6 +60,7 @@ class secureSocket(object):
         self.requestKey()
 
     def connect(self, ip):
+    """Connects to another secureSocket"""
         if self.conn:
             self.conn.close()
         self.sock.connect(ip)
@@ -63,6 +70,7 @@ class secureSocket(object):
         self.sendKey()
 
     def close(self):
+    """Closes your connection to another socket, then cleans up metadata"""
         self.conn.close()
         self.conn = None
         self.key = None
@@ -72,14 +80,18 @@ class secureSocket(object):
             self.sock = socket.socket()
 
     def settimeout(self, i):
+    """Wrapper for the socket's native settimeout method"""
         self.sock.settimeout(i)
-        self.conn.settimeout(i)
+        if self.conn:
+            self.conn.settimeout(i)
 
     def send(self, msg):
+    """Sends an encrypted copy of your message, and a signed+encrypted copy"""
         self.__send__(msg)
         self.__send__(self.sign(msg))
 
     def recv(self):
+    """Receives and decrypts a message, then verifies it against the attached signature"""
         msg = self.__recv__()
         try:
             self.verify(msg, self.__recv__())
@@ -88,14 +100,17 @@ class secureSocket(object):
         return msg
 
     def sign(self, msg, hashop='SHA-256'):
+    """Signs a message with a given hash (Default: SHA-256)"""
         return rsa.sign(msg, self.priv, hashop)
 
     def verify(self, msg, sig, key=None):
+    """Verifies a message with a given key (Default: your peer's)"""
         if key is None:
             key = self.key
         return rsa.verify(msg, sig, key)
 
     def __send__(self, msg):
+    """Base method for sending a message. Encrypts and sends"""
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = msg.encode('utf-8')
         x = 0
@@ -106,6 +121,7 @@ class secureSocket(object):
         self.conn.sendall(rsa.encrypt(end_of_message, self.key))
 
     def __recv__(self):
+    """Base method for receiving a message. Receives and decrypts."""
         received = "".encode('utf-8')
         packet = ""
         try:
@@ -120,6 +136,7 @@ class secureSocket(object):
             return received
 
     def requestKey(self):
+    """Requests your peer's key over plaintext"""
         while True:
             print("Requesting key size")
             self.conn.send(size_request)
@@ -136,6 +153,7 @@ class secureSocket(object):
                 continue
     
     def sendKey(self):
+    """Sends your key over plaintext"""
         if self.conn.recv(len(size_request)) != size_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
         print("Sending key size")
