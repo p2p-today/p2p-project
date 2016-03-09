@@ -3,9 +3,7 @@ try:
     uses_RSA = True
 except:
     try:
-        from Crypto.Cipher.PKCS1_v1_5 import PKCS115_Cipher
         from Crypto.PublicKey import RSA
-        from Crypto import Random
         uses_RSA = False
     except:
         raise ImportError("You cannot use this without the rsa or PyCrypto module. To install this, run 'pip install rsa'.")
@@ -14,8 +12,9 @@ from multiprocessing.pool import ThreadPool as Pool
 import socket
 
 key_request = "Requesting key".encode('utf-8')
-end_of_message = '\x03\x04\x17\x04\x03'.encode('utf-8')
 size_request = "Requesting key size".encode('utf-8')
+end_of_message = '\x03\x04\x17\x04\x03'.encode('utf-8')  # For the ASCII nerds, that's:
+                                                         # End of text, End of tx, End of tx block, End of tx, End of text
 
 if uses_RSA:
     """If we're using the rsa module, just map these methods from rsa"""
@@ -34,10 +33,12 @@ else:
                  'SHA-256': SHA256,
                  'SHA-384': SHA384,
                  'SHA-512': SHA512}
-             
+
 
     def newkeys(size):
     """Wrapper for PyCrypto RSA key generation, to better match rsa's method"""
+        from Crypto import Random
+        from Crypto.PublicKey import RSA
         random_generator = Random.new().read
         key = RSA.generate(size, random_generator)
         return key.publickey(), key
@@ -45,11 +46,13 @@ else:
     
     def encrypt(msg, key):
     """Wrapper for PyCrypto RSA encryption method, to better match rsa's method"""
+        from Crypto.Cipher.PKCS1_v1_5 import PKCS115_Cipher
         return PKCS115_Cipher(key).encrypt(msg)
 
 
     def decrypt(msg, key):
     """Wrapper for PyCrypto RSA decryption method, to better match rsa's method"""
+        from Crypto.Cipher.PKCS1_v1_5 import PKCS115_Cipher
         return PKCS115_Cipher(key).decrypt(msg, Exception("Decryption failed"))
 
 
