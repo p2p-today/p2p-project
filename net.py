@@ -19,9 +19,9 @@ class secureSocket(object):
             suppress_warnings = kargs.pop('suppress_warnings')
         if not suppress_warnings:
             if (keysize / 8) - 11 < len(end_of_message):
-                raise ValueError('This key is too small to be useful')
-            elif keysize > 8192:
-                raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
+                raise ValueError("This is too small to be useful. You can't even send the end of message packet.")
+            elif keysize > 4096:
+                raise ValueError("This is too large to be practical. Receiving will be slow. Generating will be very slow.")
         self.sock = socket.socket(*args, **kargs)
         self.key_async = Pool().map_async(rsa.newkeys, [keysize])  # Gen in background to reduce block
         self.pub, self.priv = None, None    # Temporarily set to None so they can generate in background
