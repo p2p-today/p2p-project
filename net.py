@@ -8,7 +8,6 @@ except:
     except:
         raise ImportError("You cannot use this without the rsa or PyCrypto module. To install this, run 'pip install rsa'.")
 
-from multiprocessing.pool import ThreadPool as Pool
 import socket
 
 key_request = "Requesting key".encode('utf-8')
@@ -95,9 +94,10 @@ class secureSocket(object):
                 raise ValueError('This key is too small to be useful')
             elif keysize > 8192:
                 raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
-        self.sock = socket.socket(*args, **kargs)
+        from multiprocessing.pool import ThreadPool as Pool
         self.key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
         self.pub, self.priv = None, None    # Temporarily set to None so they can generate in background
+        self.sock = socket.socket(*args, **kargs)
         self.keysize = keysize
         self.msgsize = (keysize / 8) - 11
         self.key = None
