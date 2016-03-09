@@ -166,6 +166,8 @@ class secureSocket(object):
         msg = self.__recv__()
         try:
             self.verify(msg, self.__recv__())
+        except IOError, socket.error, socket.herror, socket.gaierror, socket.timeout as e:
+            raise e
         except:
             raise Exception("This message could not be verified. It's possible you are experiencing a man in the middle attack")
         return msg
