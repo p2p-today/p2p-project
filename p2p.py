@@ -2,6 +2,7 @@
 # TODO: Make sure it rejects different protocols
 # TODO: Investigate requester-side handshake delay
 # TODO: Investigate waterfall overflow
+# TODO: Investigate peer shortage on 4-way connection
 
 import asyncore, asynchat, hashlib, json, multiprocessing.pool, socket, threading, time, uuid
 from collections import namedtuple, deque
