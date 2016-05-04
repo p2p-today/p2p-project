@@ -35,7 +35,7 @@ else:
 
 
     def newkeys(size):
-    """Wrapper for PyCrypto RSA key generation, to better match rsa's method"""
+        """Wrapper for PyCrypto RSA key generation, to better match rsa's method"""
         from Crypto import Random
         from Crypto.PublicKey import RSA
         random_generator = Random.new().read
@@ -44,19 +44,19 @@ else:
 
     
     def encrypt(msg, key):
-    """Wrapper for PyCrypto RSA encryption method, to better match rsa's method"""
+        """Wrapper for PyCrypto RSA encryption method, to better match rsa's method"""
         from Crypto.Cipher.PKCS1_v1_5 import PKCS115_Cipher
         return PKCS115_Cipher(key).encrypt(msg)
 
 
     def decrypt(msg, key):
-    """Wrapper for PyCrypto RSA decryption method, to better match rsa's method"""
+        """Wrapper for PyCrypto RSA decryption method, to better match rsa's method"""
         from Crypto.Cipher.PKCS1_v1_5 import PKCS115_Cipher
         return PKCS115_Cipher(key).decrypt(msg, Exception("Decryption failed"))
 
 
     def sign(msg, key, hashop):
-    """Wrapper for PyCrypto RSA signing method, to better match rsa's method"""
+        """Wrapper for PyCrypto RSA signing method, to better match rsa's method"""
         from Crypto.Signature import PKCS1_v1_5
         hsh = hashtable.get(hashop).new()
         hsh.update(msg)
@@ -65,7 +65,7 @@ else:
 
 
     def verify(msg, sig, key):
-    """Wrapper for PyCrypto RSA signature verification, to better match rsa's method"""
+        """Wrapper for PyCrypto RSA signature verification, to better match rsa's method"""
         from Crypto.Signature import PKCS1_v1_5
         for hashop in ['SHA-256', 'MD5', 'SHA-1', 'SHA-384', 'SHA-512']:
             hsh = hashtable.get(hashop).new()
@@ -78,17 +78,14 @@ else:
         
 
     def PublicKey(n, e):
-    """Wrapper for PyCrypto RSA key constructor, to better match rsa's method"""
+        """Wrapper for PyCrypto RSA key constructor, to better match rsa's method"""
         return RSA.construct((long(n), long(e)))
 
 
-class secureSocket(object):
+class secure_socket(socket.socket):
     """An RSA encrypted and secured socket. Requires either the rsa or PyCrypto module"""
-    def __init__(self, keysize=1024, suppress_warnings=False, *args, **kargs):
-        if kargs.get('keysize'):
-            keysize = kargs.pop('keysize')
-        if kargs.get('suppress_warnings'):
-            suppress_warnings = kargs.pop('suppress_warnings')
+    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, keysize=1024, suppress_warnings=False):
+        socket.socket.__init__(self, sock_family, sock_type)
         if not suppress_warnings:
             if (keysize / 8) - 11 < len(end_of_message):
                 raise ValueError('This key is too small to be useful')
@@ -97,7 +94,6 @@ class secureSocket(object):
         from multiprocessing.pool import ThreadPool as Pool
         self.key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
         self.pub, self.priv = None, None    # Temporarily set to None so they can generate in background
-        self.sock = socket.socket(*args, **kargs)
         self.keysize = keysize
         self.msgsize = (keysize / 8) - 11
         self.key = None
@@ -105,85 +101,88 @@ class secureSocket(object):
         self.bound = False
         self.peer_keysize = None
         self.peer_msgsize = None
+        self.sock_type = sock_type
+        self.sock_family = sock_family
+        from functools import partial
+        self.send = partial(secureSocket.send, self)
+        self.recv = partial(secureSocket.recv, self)
 
     def mapKey(self):
-    """Deals with the asyncronous generation of keys"""
+        """Deals with the asyncronous generation of keys"""
         if self.pub is None:
             self.pub, self.priv = self.key_async.get()[0]
             del self.key_async
 
-    def bind(self, ip):
-    """Wrapper for the socket's native bind method"""
-        self.sock.bind(ip)
-        self.bound = ip
-
-    def listen(self, i):
-    """Wrapper for the socket's native listen method"""
-        self.sock.listen(i)
-
     def accept(self):
-    """Accepts an incoming connection.
-    Unlike a native socket, it doesn't return anything, it's handled intra-object."""
+        """Accepts an incoming connection.
+        Unlike a native socket, it doesn't return anything, it's handled intra-object."""
         if self.conn:
             self.conn.close()
-        self.conn, self.addr = self.sock.accept()
+        self.conn, self.addr = socket.socket.accept(self)
         self.mapKey()
         self.sendKey()
         self.requestKey()
 
     def connect(self, ip):
-    """Connects to another secureSocket"""
+        """Connects to another secureSocket"""
         if self.conn:
             self.conn.close()
-        self.sock.connect(ip)
-        self.conn = self.sock
+        socket.socket.connect(self, ip)
+        self.conn = self._sock
         self.requestKey()
         self.mapKey()
         self.sendKey()
 
     def close(self):
-    """Closes your connection to another socket, then cleans up metadata"""
+        """Closes your connection to another socket, then cleans up metadata"""
         self.conn.close()
         self.conn = None
         self.key = None
         self.peer_keysize = None
         self.peer_msgsize = None
         if not self.bound:
-            self.sock = socket.socket()
-
-    def settimeout(self, i):
-    """Wrapper for the socket's native settimeout method"""
-        self.sock.settimeout(i)
-        self.conn.settimeout(i)
+            socket.socket.__init__(self, self.sock_family, self.sock_type)
 
     def send(self, msg):
-    """Sends an encrypted copy of your message, and a signed+encrypted copy"""
+        """Sends an encrypted copy of your message, and a signed+encrypted copy"""
         self.__send__(msg)
         self.__send__(self.sign(msg))
 
     def recv(self):
-    """Receives and decrypts a message, then verifies it against the attached signature"""
+        """Receives and decrypts a message, then verifies it against the attached signature"""
         msg = self.__recv__()
         try:
             self.verify(msg, self.__recv__())
-        except IOError, socket.error, socket.herror, socket.gaierror, socket.timeout as e:
+        except (IOError, socket.error, socket.herror, socket.gaierror, socket.timeout) as e:
             raise e
         except:
             raise Exception("This message could not be verified. It's possible you are experiencing a man in the middle attack")
         return msg
 
-    def sign(self, msg, hashop='SHA-256'):
-    """Signs a message with a given hash (Default: SHA-256)"""
-        return sign(msg, self.priv, hashop)
+    def sign(self, msg, hashop='best'):
+        """Signs a message with a given hash, or self-determined one"""
+        if hashop != 'best':
+            return sign(msg, self.priv, hashop)
+        elif self.keysize >= 752:
+            return sign(msg, self.priv, 'SHA-512')
+        elif self.keysize >= 624:
+            return sign(msg, self.priv, 'SHA-384')
+        elif self.keysize >= 496:
+            return sign(msg, self.priv, 'SHA-256')
+        elif self.keysize >= 368:
+            return sign(msg, self.priv, 'SHA-1')
+        else:   # if self.keysize < 360: raises OverflowError
+            return sign(msg, self.priv, 'MD5')
+
 
     def verify(self, msg, sig, key=None):
-    """Verifies a message with a given key (Default: your peer's)"""
+        """Verifies a message with a given key (Default: your peer's)"""
         if key is None:
             key = self.key
         return verify(msg, sig, key)
 
     def __send__(self, msg):
-    """Base method for sending a message. Encrypts and sends"""
+        """Base method for sending a message. Encrypts and sends"""
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = msg.encode('utf-8')
         x = 0
@@ -194,7 +193,7 @@ class secureSocket(object):
         self.conn.sendall(encrypt(end_of_message, self.key))
 
     def __recv__(self):
-    """Base method for receiving a message. Receives and decrypts."""
+        """Base method for receiving a message. Receives and decrypts."""
         received = "".encode('utf-8')
         packet = ""
         try:
@@ -209,7 +208,7 @@ class secureSocket(object):
             return received
 
     def requestKey(self):
-    """Requests your peer's key over plaintext"""
+        """Requests your peer's key over plaintext"""
         while True:
             print("Requesting key size")
             self.conn.send(size_request)
@@ -226,7 +225,7 @@ class secureSocket(object):
                 continue
     
     def sendKey(self):
-    """Sends your key over plaintext"""
+        """Sends your key over plaintext"""
         if self.conn.recv(len(size_request)) != size_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
         print("Sending key size")
