@@ -1,8 +1,8 @@
+# TODO: Rearchitect to match attached proposal
 # TODO: Write portions to also work with asyncio
 # TODO: Make sure it rejects different protocols
 # TODO: Investigate requester-side handshake delay
 # TODO: Investigate waterfall overflow
-# TODO: Investigate peer shortage on 4-way connection
 
 import asyncore, asynchat, hashlib, json, multiprocessing.pool, socket, threading, time, uuid
 from collections import namedtuple, deque
@@ -15,7 +15,7 @@ sep_sequence = "\x1c\x1d\x1e\x1f"
 end_sequence = sep_sequence[::-1]
 
 
-base_protocol = namedtuple("protocol", ['end', 'sep', 'flag'])
+base_protocol = namedtuple("protocol", ['end', 'sep', 'subnet', 'encryption'])
 base_message = namedtuple("message", ['msg', 'sender'])
 headers = ["handshake", "new peers", "waterfall", "private"]
 
@@ -23,8 +23,10 @@ headers = ["handshake", "new peers", "waterfall", "private"]
 class protocol(base_protocol):
     def id(self):
         h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
-        return h.hexdigest()
+        return to_base_58(int(h.hexdigest(), 16))
 
+
+default_protocol = protocol(end_sequence, sep_sequence, None, "PKCS1_v1.5")
 
 class message(base_message):
     def reply(self, *args):
@@ -38,7 +40,7 @@ class message(base_message):
 
 
 class p2p_connection(object):
-    def __init__(self, addr, port, prot=protocol(end_sequence, sep_sequence, None), out_addr=None):
+    def __init__(self, addr, port, prot=default_protocol, out_addr=None):
         self.protocol = prot
         self.incoming = ChatServer(addr, port, self, self.protocol)
         self.handlers = []
@@ -46,6 +48,8 @@ class p2p_connection(object):
         self.daemon.daemon = True
         self.daemon.start()
         self.queue = deque()
+        self.waterfalls = deque()
+        self.routes = dict()
         if not out_addr:
             self.out_addr = (addr, port)
 
@@ -152,7 +156,7 @@ class p2p_connection(object):
 
 
 class ChatHandler(asynchat.async_chat):
-    def __init__(self, sock, server, prot=protocol(end_sequence, sep_sequence, None)):
+    def __init__(self, sock, server, prot=default_protocol):
         asynchat.async_chat.__init__(self, sock=sock)
         self.protocol = prot
         self.set_terminator(self.protocol.end)
@@ -179,9 +183,14 @@ class ChatHandler(asynchat.async_chat):
 
 
 class ChatServer(asyncore.dispatcher):
-    def __init__(self, host, port, server, prot=protocol(end_sequence, sep_sequence, None)):
+    def __init__(self, host, port, server, prot=default_protocol):
         asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        if prot.encryption == "Plaintext":
+            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        elif prot.encryption == "PKCS1_v1.5":
+            self.create_rsa_socket(socket.AF_INET, socket.SOCK_STREAM)
+        else:
+            raise Exception("Unknown encryption type in protocol")
         self.bind((host, port))
         self.listen(5)
         self.server = server
@@ -200,6 +209,27 @@ class ChatServer(asyncore.dispatcher):
             # print("Appended ", handler.addr, " to handler list: ", handler)
 
     def get_id(self):
-        info = [str(self.addr), self.__repr__(), self.protocol.id(), user_salt]
+        info = [str(self.addr), self.protocol.id(), user_salt]
         h = hashlib.sha384(''.join(info).encode())
-        return h.hexdigest()
+        return to_base_58(int(h.hexdigest(), 16))
+
+    def create_rsa_socket(self, family=socket.AF_INET, type=socket.SOCK_STREAM):
+        import net
+        self.family_and_type = family, type
+        sock = net.secureSocket(family, type)
+        sock.setblocking(0)
+        self.set_socket(sock)
+
+
+def to_base_58(i):
+    string = ""
+    while i:
+        string = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[i % 58] + string
+        i = i / 58
+    return string
+
+def from_base_58(string):
+    decimal = 0
+    for char in string:
+        decimal = decimal * 58 + '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'.index(char)
+    return decimal
