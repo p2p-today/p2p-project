@@ -146,6 +146,7 @@ class secureSocket(socket.socket):
     def mapKey(self):
         """Deals with the asyncronous generation of keys"""
         if self.pub is None:
+            print("Waiting to grab key")
             self.pub, self.priv = self.key_async.get()[0]
             del self.key_async
 
@@ -173,6 +174,8 @@ class secureSocket(socket.socket):
 
     def send(self, msg):
         """Sends an encrypted copy of your message, and a signed+encrypted copy"""
+        if self.peer_msgsize == None:
+            raise socket.error("You aren't connected to anyone")
         self.__send__(msg)
         self.__send__(self.sign(msg))
 
@@ -238,8 +241,8 @@ class secureSocket(socket.socket):
 
     def __recv__(self):
         """Base method for receiving a message. Receives and decrypts."""
-        received = "".encode('utf-8')
-        packet = ""
+        received = b''
+        packet = b''
         try:
             while True:
                 packet = self.__recv(self.msgsize + 11)
@@ -278,7 +281,6 @@ class secureSocket(socket.socket):
     
     def sendKey(self):
         """Sends your key over plaintext"""
-        self.mapKey()
         req = self.__recv(len(size_request))
         if req != size_request:
             raise ValueError("Handshake has failed due to invalid request from peer: %s" % req)
@@ -287,5 +289,6 @@ class secureSocket(socket.socket):
         req = self.__recv(len(key_request))
         if req != key_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
+        self.mapKey()
         print("Sending key")
         super(secureSocket, self).sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
