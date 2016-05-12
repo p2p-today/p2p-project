@@ -6,13 +6,15 @@ except:
     try:
         from Crypto.PublicKey import RSA
         uses_RSA = False
+        import warnings
+        warnings.warn('Using the PyCrypto module is not recommended. It makes communication with non-standard keylengths inconsistent. Please run \'pip install rsa\' to use this more effectively.', ImportWarning, stacklevel=2)
 
         class DecryptionError(Exception): pass
 
         decryption_error = DecryptionError("Decryption failed")
 
     except:
-        raise ImportError("You cannot use this without the rsa or PyCrypto module. To install this, run 'pip install rsa'.")
+        raise ImportError("You cannot use this without the rsa or PyCrypto module. To install this, run 'pip install rsa'. The rsa module is recommended because, while it's slower, it's much more flexible, and ensures communication with other secureSockets.")
 
 import socket
 
@@ -93,11 +95,17 @@ class secureSocket(socket.socket):
     def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, keysize=1024, suppress_warnings=False):
         super(secureSocket, self).__init__(sock_family, sock_type)
         if not suppress_warnings:
-            if (keysize / 8) - 11 < len(end_of_message):
+            if uses_RSA and keysize != 1024:
+                import warnings
+                warnings.warn('Using the rsa module with a non-standard key length will make communication with PyCrypto implementations inconsistent', RuntimeWarning, stacklevel=2)
+            if keysize < 354 or (keysize / 8) - 11 < len(end_of_message):
                 raise ValueError('This key is too small to be useful')
             elif keysize > 8192:
                 raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
-        from multiprocessing.pool import ThreadPool as Pool
+        if uses_RSA:
+            from multiprocessing import Pool
+        else:
+            from multiprocessing.pool import ThreadPool as Pool
         self.key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
         self.pub, self.priv = None, None    # Temporarily set to None so they can generate in background
         self.keysize = keysize
@@ -155,8 +163,12 @@ class secureSocket(socket.socket):
         Like a native socket, it returns a copy of the socket and the connected address"""
         conn, self.addr = super(secureSocket, self).accept()
         sock = self.dup(conn=conn)
+        t = conn.gettimeout()
+        conn.setblocking(True)
         sock.sendKey()
         sock.requestKey()
+        if t is not None:
+            conn.settimeout(t)
         return sock, self.addr
 
     def connect(self, ip):
@@ -206,20 +218,20 @@ class secureSocket(socket.socket):
             return ret
 
     def sign(self, msg, hashop='best'):
-        """Signs a message with a given hash, or self-determined one"""
+        """Signs a message with a given hash, or self-determined one. If using PyCrypto, always defaults to SHA-512"""
         msg = msg.encode()
         self.mapKey()
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
-        elif self.keysize >= 752:
+        elif self.keysize >= 745:
             return sign(msg, self.priv, 'SHA-512')
-        elif self.keysize >= 624:
+        elif self.keysize >= 618:
             return sign(msg, self.priv, 'SHA-384')
-        elif self.keysize >= 496:
+        elif self.keysize >= 490:
             return sign(msg, self.priv, 'SHA-256')
-        elif self.keysize >= 368:
+        elif self.keysize >= 362:
             return sign(msg, self.priv, 'SHA-1')
-        else:   # if self.keysize < 360: raises OverflowError
+        else:   # if self.keysize < 354: raises OverflowError
             return sign(msg, self.priv, 'MD5')
 
     def verify(self, msg, sig, key=None):
@@ -266,6 +278,9 @@ class secureSocket(socket.socket):
             super(secureSocket, self).sendall(size_request)
             try:
                 self.peer_keysize = int(self.__recv(16))
+                if not uses_RSA and self.peer_keysize < 1024:
+                    import warnings
+                    warnings.warn('Your peer is using a small key length. Because you\'re using PyCrypto, sending may silently fail, as on some keys PyCrypto will not construct it correctly. To fix this, please run \'pip install rsa\'.', RuntimeWarning, stacklevel=2)
                 self.peer_msgsize = (self.peer_keysize // 8) - 11
                 print("Requesting key")
                 super(secureSocket, self).sendall(key_request)
