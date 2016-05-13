@@ -92,8 +92,8 @@ else:
 
 class secureSocket(socket.socket):
     """An RSA encrypted and secured socket. Requires either the rsa or PyCrypto module"""
-    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, keysize=1024, suppress_warnings=False):
-        super(secureSocket, self).__init__(sock_family, sock_type)
+    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False):
+        super(secureSocket, self).__init__(sock_family, sock_type, proto, fileno)
         if not suppress_warnings:
             if uses_RSA and keysize != 1024:
                 import warnings
@@ -102,10 +102,7 @@ class secureSocket(socket.socket):
                 raise ValueError('This key is too small to be useful')
             elif keysize > 8192:
                 raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
-        if uses_RSA:
-            from multiprocessing import Pool
-        else:
-            from multiprocessing.pool import ThreadPool as Pool
+        from multiprocessing.pool import ThreadPool as Pool
         self.key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
         self.pub, self.priv = None, None    # Temporarily set to None so they can generate in background
         self.keysize = keysize
@@ -113,7 +110,7 @@ class secureSocket(socket.socket):
         self.key = None
         self.peer_keysize = None
         self.peer_msgsize = None
-        self.buffer = ""
+        self.buffer = "".encode()
         from functools import partial
         import sys
         if sys.version_info[0] < 3:
@@ -127,11 +124,21 @@ class secureSocket(socket.socket):
 
     def dup(self, conn=None):
         """Duplicates this secureSocket, with all key information, connected to the same peer"""
-        sock = secureSocket(self.family, self.type)
-        if not conn:
-            sock._sock = socket.socket.dup(self)
+        import sys
+        if sys.version_info[0] < 3:
+            sock = secureSocket(self.family, self.type)
+            if not conn:
+                sock._sock = socket.socket.dup(self)
+            else:
+                sock._sock = conn
         else:
-            sock._sock = conn
+            if not conn:
+                sock = super(secureSocket, self).dup()
+            else:
+                import _socket
+                sock = secureSocket()
+                fd = _socket.dup(conn.fileno())
+                super(secureSocket, sock).__init__(conn.family, conn.type, conn.proto, fd)
         sock.pub, sock.priv = self.pub, self.priv
         sock.keysize = self.keysize
         sock.msgsize = self.msgsize
@@ -161,7 +168,7 @@ class secureSocket(socket.socket):
     def accept(self):
         """Accepts an incoming connection.
         Like a native socket, it returns a copy of the socket and the connected address"""
-        conn, self.addr = super(secureSocket, self).accept()
+        conn, addr = super(secureSocket, self).accept()
         sock = self.dup(conn=conn)
         t = conn.gettimeout()
         conn.setblocking(True)
@@ -169,7 +176,7 @@ class secureSocket(socket.socket):
         sock.requestKey()
         if t is not None:
             conn.settimeout(t)
-        return sock, self.addr
+        return sock, addr
 
     def connect(self, ip):
         """Connects to another secureSocket"""
@@ -202,13 +209,16 @@ class secureSocket(socket.socket):
                 self.buffer = ""
             return msg
         msg = self.__recv__()
-        try:
-            self.verify(msg, self.__recv__())
-        except Exception as error:
-            if uses_RSA and type(error) == rsa.pkcs1.VerificationError:
+        sig = self.__recv__()
+        if msg == 0 or sig == 0:
+            return 0
+        if uses_RSA:
+            try:
+                self.verify(msg, sig)
+            except rsa.pkcs1.VerificationError as error:
                 print(msg)
-            else:
-                raise error
+        else:
+            self.verify(msg, sig)
         if not size:
             return msg
         else:
@@ -219,7 +229,10 @@ class secureSocket(socket.socket):
 
     def sign(self, msg, hashop='best'):
         """Signs a message with a given hash, or self-determined one. If using PyCrypto, always defaults to SHA-512"""
-        msg = msg.encode()
+        try:
+            msg = msg.encode()
+        except:
+            pass
         self.mapKey()
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
