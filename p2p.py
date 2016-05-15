@@ -181,7 +181,7 @@ class p2p_daemon(object):
                 except socket.timeout:
                     continue #socket.timeout
                 except socket.error as e:
-                    if e.args[0] in [9]:
+                    if e.args[0] in [9, 104]:
                         pass
                     else:
                         print("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your p2p_socket.daemon.debug list to github.com/gappleto97/python-utils." % handler.id)
