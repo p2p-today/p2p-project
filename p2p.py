@@ -1,13 +1,12 @@
-# TODO: Improve error handling in mainloop()
 # TODO: Allow for peer cleanup
 # TODO: Fix incorrect sender on message construction, when routed around obstruction
 # TODO: Fix python3 incompatabilities (mostly bytes/string issues)
 
-import hashlib, json, multiprocessing.pool, socket, threading, uuid
+import hashlib, json, multiprocessing.pool, socket, threading, traceback, uuid
 from collections import namedtuple, deque
 from operator import methodcaller
 
-version = "0.1.0"
+version = "0.1.1"
 
 user_salt    = str(uuid.uuid4())
 sep_sequence = "\x1c\x1d\x1e\x1f"
@@ -78,9 +77,9 @@ class p2p_connection(object):
         self.compression = []
 
     def collect_incoming_data(self, data):
-        if data == 0:
+        if data == '':
             self.sock.close()
-            return 0
+            return ''
         self.buffer.append(data)
         self.time = getUTC()
 
@@ -148,6 +147,7 @@ class p2p_daemon(object):
         self.sock.bind((addr, port))
         self.sock.listen(5)
         self.sock.settimeout(0.1)
+        self.debug = []
         self.daemon = threading.Thread(target=self.mainloop)
         self.daemon.daemon = True
         self.daemon.start()
@@ -172,14 +172,25 @@ class p2p_daemon(object):
                 # print("Collecting data from %s" % repr(handler))
                 try:
                     while not handler.find_terminator():
-                        if handler.collect_incoming_data(handler.sock.recv(1)) == 0:
+                        if handler.collect_incoming_data(handler.sock.recv(1)) == '':
                             if handler in self.server.awaiting_ids:
                                 self.server.awaiting_ids.remove(handler)
                             else:
-                                self.server.routing_table.remove(handler.id)
+                                self.server.routing_table.pop(handler.id)
                     handler.found_terminator()
                 except socket.timeout:
                     continue #socket.timeout
+                except socket.error as e:
+                    if e.args[0] in [9]:
+                        pass
+                    else:
+                        print("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your p2p_socket.daemon.debug list to github.com/gappleto97/python-utils." % handler.id)
+                        self.debug.append((e, traceback.format_exc()))
+                        handler.sock.close()
+                    if handler in self.server.awaiting_ids:
+                        self.server.awaiting_ids.remove(handler)
+                    elif self.server.routing_table.get(handler.id):
+                        self.server.routing_table.pop(handler.id)
             self.handle_accept()
 
 
