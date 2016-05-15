@@ -1,17 +1,20 @@
 # TODO: Allow for peer cleanup
 # TODO: Fix incorrect sender on message construction, when routed around obstruction
-# TODO: Fix python3 incompatabilities (mostly bytes/string issues)
+# TODO: Fix gzip support in python3
 
-import hashlib, json, multiprocessing.pool, socket, threading, traceback, uuid
+import hashlib, json, multiprocessing.pool, socket, threading, traceback, uuid, sys
 from collections import namedtuple, deque
 from operator import methodcaller
 
-version = "0.1.1"
+version = "0.1.2"
 
 user_salt    = str(uuid.uuid4())
 sep_sequence = "\x1c\x1d\x1e\x1f"
 end_sequence = sep_sequence[::-1]
-compression  = ['gzip']  # This should be in order of preference. IE: gzip is best, then none
+if sys.version_info[0] < 3:
+    compression  = ['gzip']  # This should be in order of preference. IE: gzip is best, then none
+else:
+    compression = []
 
 
 base_protocol = namedtuple("protocol", ['end', 'sep', 'subnet', 'encryption'])
@@ -24,7 +27,7 @@ class protocol(base_protocol):
         h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
         return to_base_58(int(h.hexdigest(), 16))
 
-default_protocol = protocol(end_sequence, sep_sequence, None, "PKCS1_v1.5")
+default_protocol = protocol(end_sequence, sep_sequence, None, "Plaintext")#"PKCS1_v1.5")
 
 
 class message(base_message):
@@ -41,7 +44,8 @@ class message(base_message):
         return "message(type=" + repr(self.parse()[0]) + ", packets=" + repr(self.parse()[1:]) + ", sender=" + repr(self.sender.addr) + ")"
 
     def id(self):
-        return to_base_58(int(hashlib.sha384(self.msg + str(self.time)).hexdigest(), 16))
+        msg_hash = hashlib.sha384((self.msg + to_base_58(self.time)).encode())
+        return to_base_58(int(msg_hash.hexdigest(), 16))
 
 
 def to_base_58(i):
@@ -80,7 +84,7 @@ class p2p_connection(object):
         if data == '':
             self.sock.close()
             return ''
-        self.buffer.append(data)
+        self.buffer.append(data.decode())
         self.time = getUTC()
 
     def find_terminator(self):
@@ -106,7 +110,8 @@ class p2p_connection(object):
 
     def send(self, msg_type, *args):
         time = to_base_58(getUTC())
-        msg_id = to_base_58(int(hashlib.sha384(self.protocol.sep.join(list(args)) + time).hexdigest(), 16))
+        msg_hash = hashlib.sha384((self.protocol.sep.join(list(args)) + time).encode()).hexdigest()
+        msg_id = to_base_58(int(msg_hash, 16))
         if (msg_id, time) not in self.server.waterfalls:
             self.server.waterfalls.appendleft((msg_id, from_base_58(time)))
         packets = [msg_type, self.server.id, msg_id, time] + list(args)
@@ -116,19 +121,21 @@ class p2p_connection(object):
             if method in self.compression:
                 msg = self.compress(msg, method)
                 break
-        self.sock.send(msg + self.protocol.end)
+        self.sock.send((msg + self.protocol.end).encode())
 
     def compress(self, msg, method):
         if method == 'gzip':
             import zlib
-            return str(zlib.compress(msg))
+            utf8 = msg.encode()
+            comp = zlib.compress(utf8)
+            return comp.decode()
         else:
             raise Exception('Unknown compression method')
 
     def decompress(self, msg, method):
         if method == 'gzip':
             import zlib
-            return str(zlib.decompress(msg))
+            return zlib.decompress(msg.encode()).decode()
         else:
             raise Exception('Unknown decompression method')
 
