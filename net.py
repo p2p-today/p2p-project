@@ -211,7 +211,7 @@ class secureSocket(socket.socket):
         msg = self.__recv__()
         sig = self.__recv__()
         if msg == 0 or sig == 0:
-            return 0
+            return ''
         if uses_RSA:
             try:
                 self.verify(msg, sig)
