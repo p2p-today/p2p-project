@@ -1,21 +1,16 @@
 # TODO: Allow for peer cleanup
 # TODO: Fix incorrect sender on message construction, when routed around obstruction
-# TODO: Fix gzip support in python3
 
-import hashlib, json, multiprocessing.pool, socket, threading, traceback, uuid, sys
+import hashlib, json, multiprocessing.pool, socket, threading, traceback, uuid
 from collections import namedtuple, deque
 from operator import methodcaller
 
-version = "0.1.2"
+version = "0.1.3"
 
 user_salt    = str(uuid.uuid4())
 sep_sequence = "\x1c\x1d\x1e\x1f"
 end_sequence = sep_sequence[::-1]
-if sys.version_info[0] < 3:
-    compression  = ['gzip']  # This should be in order of preference. IE: gzip is best, then none
-else:
-    compression = []
-
+compression = ['gzip']  # This should be in order of preference. IE: gzip is best, then none
 
 base_protocol = namedtuple("protocol", ['end', 'sep', 'subnet', 'encryption'])
 base_message = namedtuple("message", ['msg', 'sender', 'protocol', 'time'])
@@ -58,6 +53,8 @@ def to_base_58(i):
 
 def from_base_58(string):
     decimal = 0
+    if isinstance(string, bytes):
+        string = string.decode()
     for char in string:
         decimal = decimal * 58 + '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'.index(char)
     return decimal
@@ -84,19 +81,23 @@ class p2p_connection(object):
         if data == '':
             self.sock.close()
             return ''
-        self.buffer.append(data.decode())
+        self.buffer.append(data)
         self.time = getUTC()
 
     def find_terminator(self):
-        return self.protocol.end in ''.join(self.buffer)
+        return self.protocol.end.encode() in ''.encode().join(self.buffer)
 
     def found_terminator(self):
-        raw_msg = ''.join(self.buffer).replace(self.protocol.end, '')
+        raw_msg = ''.encode().join(self.buffer)
+        raw_msg = raw_msg.replace(self.protocol.end.encode(), ''.encode())
         self.buffer = []
         for method in self.compression:
+            print(method, method in compression)
             if method in compression:
                 raw_msg = self.decompress(raw_msg, method)
                 break
+        if isinstance(raw_msg, bytes):
+            raw_msg = raw_msg.decode()
         packets = raw_msg.split(self.protocol.sep)
         print("Message received: %s" % packets)
         if packets[0] == 'waterfall':
@@ -106,6 +107,7 @@ class p2p_connection(object):
             else:
                 pass  # print("New waterfall received. Proceeding as normal")
         msg = self.protocol.sep.join(packets[4:])  # Handle request without routing headers
+        print(packets[3])
         self.server.handle_request(message(msg, self, self.protocol, from_base_58(packets[3])))
 
     def send(self, msg_type, *args):
@@ -116,26 +118,24 @@ class p2p_connection(object):
             self.server.waterfalls.appendleft((msg_id, from_base_58(time)))
         packets = [msg_type, self.server.id, msg_id, time] + list(args)
         # print("Sending %s to %s" % (args, self))
-        msg = self.protocol.sep.join(packets)
+        msg = self.protocol.sep.join(packets).encode()
         for method in compression:
             if method in self.compression:
                 msg = self.compress(msg, method)
                 break
-        self.sock.send((msg + self.protocol.end).encode())
+        self.sock.send(msg + self.protocol.end.encode())
 
     def compress(self, msg, method):
         if method == 'gzip':
             import zlib
-            utf8 = msg.encode()
-            comp = zlib.compress(utf8)
-            return comp.decode()
+            return zlib.compress(msg)
         else:
             raise Exception('Unknown compression method')
 
     def decompress(self, msg, method):
         if method == 'gzip':
             import zlib
-            return zlib.decompress(msg.encode()).decode()
+            return zlib.decompress(msg)
         else:
             raise Exception('Unknown decompression method')
 
