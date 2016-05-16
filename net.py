@@ -200,13 +200,13 @@ class secureSocket(socket.socket):
 
     def recv(self, size=None):
         """Receives and decrypts a message, then verifies it against the attached signature"""
-        if self.buffer != "":
+        if self.buffer != "".encode():
             if size:
                 msg = self.buffer[:size]
                 self.buffer = self.buffer[size:]
             else:
                 msg = self.buffer
-                self.buffer = ""
+                self.buffer = "".encode()
             return msg
         msg = self.__recv__()
         sig = self.__recv__()
