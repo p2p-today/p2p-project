@@ -5,16 +5,16 @@ import hashlib, json, multiprocessing.pool, socket, threading, traceback, uuid
 from collections import namedtuple, deque
 from operator import methodcaller
 
-version = "0.1.3"
+version = "0.1.4"
 
 user_salt    = str(uuid.uuid4())
 sep_sequence = "\x1c\x1d\x1e\x1f"
 end_sequence = sep_sequence[::-1]
 compression = ['gzip']  # This should be in order of preference. IE: gzip is best, then none
+max_outgoing = 8
 
 base_protocol = namedtuple("protocol", ['end', 'sep', 'subnet', 'encryption'])
 base_message = namedtuple("message", ['msg', 'sender', 'protocol', 'time'])
-headers = ["handshake", "new peers", "waterfall", "private"]
 
 
 class protocol(base_protocol):
@@ -22,7 +22,7 @@ class protocol(base_protocol):
         h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
         return to_base_58(int(h.hexdigest(), 16))
 
-default_protocol = protocol(end_sequence, sep_sequence, None, "Plaintext")#"PKCS1_v1.5")
+default_protocol = protocol(end_sequence, sep_sequence, None, "PKCS1_v1.5")
 
 
 class message(base_message):
@@ -67,10 +67,11 @@ def getUTC():
 
 
 class p2p_connection(object):
-    def __init__(self, sock, server, prot=default_protocol):
+    def __init__(self, sock, server, prot=default_protocol, outgoing=False):
         self.sock = sock
         self.server = server
         self.protocol = prot
+        self.outgoing = outgoing
         self.buffer = []
         self.id = None
         self.time = getUTC()
@@ -92,14 +93,13 @@ class p2p_connection(object):
         raw_msg = raw_msg.replace(self.protocol.end.encode(), ''.encode())
         self.buffer = []
         for method in self.compression:
-            print(method, method in compression)
             if method in compression:
                 raw_msg = self.decompress(raw_msg, method)
                 break
         if isinstance(raw_msg, bytes):
             raw_msg = raw_msg.decode()
         packets = raw_msg.split(self.protocol.sep)
-        print("Message received: %s" % packets)
+        # print("Message received: %s" % packets)
         if packets[0] == 'waterfall':
             if (packets[2] in (i for i, t in self.server.waterfalls)):
                 # print("Waterfall already captured")
@@ -107,7 +107,6 @@ class p2p_connection(object):
             else:
                 pass  # print("New waterfall received. Proceeding as normal")
         msg = self.protocol.sep.join(packets[4:])  # Handle request without routing headers
-        print(packets[3])
         self.server.handle_request(message(msg, self, self.protocol, from_base_58(packets[3])))
 
     def send(self, msg_type, *args):
@@ -123,7 +122,11 @@ class p2p_connection(object):
             if method in self.compression:
                 msg = self.compress(msg, method)
                 break
-        self.sock.send(msg + self.protocol.end.encode())
+        try:
+            self.sock.send(msg + self.protocol.end.encode())
+        except IOError as e:
+            self.server.daemon.debug.append((e, traceback.format_exc()))
+            self.server.daemon.disconnect(self)
 
     def compress(self, msg, method):
         if method == 'gzip':
@@ -180,25 +183,36 @@ class p2p_daemon(object):
                 try:
                     while not handler.find_terminator():
                         if handler.collect_incoming_data(handler.sock.recv(1)) == '':
-                            if handler in self.server.awaiting_ids:
-                                self.server.awaiting_ids.remove(handler)
-                            else:
-                                self.server.routing_table.pop(handler.id)
+                            self.disconnect(handler)
                     handler.found_terminator()
                 except socket.timeout:
                     continue #socket.timeout
                 except socket.error as e:
                     if e.args[0] in [9, 104]:
-                        pass
+                        node_id = handler.id
+                        if not node_id:
+                            node_id = repr(handler)
+                        print("Node %s has disconnected from the network" % node_id)
                     else:
                         print("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your p2p_socket.daemon.debug list to github.com/gappleto97/python-utils." % handler.id)
                         self.debug.append((e, traceback.format_exc()))
                         handler.sock.close()
-                    if handler in self.server.awaiting_ids:
-                        self.server.awaiting_ids.remove(handler)
-                    elif self.server.routing_table.get(handler.id):
-                        self.server.routing_table.pop(handler.id)
+                        self.disconnect(handler)
             self.handle_accept()
+
+    def disconnect(self, handler):
+        node_id = handler.id
+        if not node_id:
+            node_id = repr(handler)
+        print("Connection to node %s has been closed" % node_id)
+        if handler in self.server.awaiting_ids:
+            self.server.awaiting_ids.remove(handler)
+        elif self.server.routing_table.get(handler.id):
+            self.server.routing_table.pop(handler.id)
+        if handler.id and handler.id in self.server.outgoing:
+            self.server.outgoing.remove(handler.id)
+        elif handler.id and handler.id in self.server.incoming:
+            self.server.incoming.remove(handler.id)
 
 
 class p2p_socket(object):
@@ -206,6 +220,8 @@ class p2p_socket(object):
         self.protocol = prot
         self.routing_table = {}  # In format {ID: handler}
         self.awaiting_ids = []
+        self.outgoing = []
+        self.incoming = []
         self.queue = deque()
         self.waterfalls = deque()
         if out_addr:
@@ -226,6 +242,10 @@ class p2p_socket(object):
                 self.awaiting_ids.remove(handler)
                 return
             handler.id = packets[1]
+            if handler.outgoing:
+                self.outgoing.append(handler.id)
+            else:
+                self.incoming.append(handler.id)
             handler.addr = json.loads(packets[3])
             handler.compression = json.loads(packets[4])
             if handler in self.awaiting_ids:
@@ -234,7 +254,10 @@ class p2p_socket(object):
         elif packets[0] == 'peers':
             new_peers = json.loads(packets[1])
             for id, addr in new_peers:
-                pass # self.connect(addr[0], addr[1], id)
+                if len(self.outgoing) < max_outgoing and addr:
+                    self.connect(addr[0], addr[1], id)
+        elif packets[0] == 'whisper':
+            self.queue.appendleft(msg)
         else:
             if self.waterfall(msg):
                 self.queue.appendleft(msg)
@@ -242,14 +265,16 @@ class p2p_socket(object):
     def send(self, *args):
         # self.cleanup()
         # map(methodcaller('send', 'broadcast', 'broadcast', *args), self.routing_table.values())
-        multiprocessing.pool.ThreadPool().map(methodcaller('send', 'broadcast', 'broadcast', *args), self.routing_table.values())
+        for handler in self.routing_table.values():
+            handler.send('broadcast', 'broadcast', *args)
 
     def waterfall(self, msg):
         # self.cleanup()
         # print msg.id(), [i for i, t in self.waterfalls]
         if msg.id() not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id(), msg.time))
-            multiprocessing.pool.ThreadPool().map(methodcaller('send', 'waterfall', *msg.parse()), self.routing_table.values())
+            for handler in self.routing_table.values():
+                handler.send('waterfall', *msg.parse())
             self.waterfalls = deque(set(self.waterfalls))
             removes = []
             for i, t in self.waterfalls:
@@ -290,7 +315,7 @@ class p2p_socket(object):
                 conn = net.secureSocket()
             conn.connect((addr, port))
             conn.settimeout(0.1)
-            handler = p2p_connection(conn, self, self.protocol)
+            handler = p2p_connection(conn, self, self.protocol, outgoing=True)
             handler.id = id
             handler.send("whisper", "peers", json.dumps([(key, self.routing_table[key].addr) for key in self.routing_table.keys()]))
             handler.send("whisper", "handshake", self.id, self.protocol.id(), json.dumps(self.out_addr), json.dumps(compression))
