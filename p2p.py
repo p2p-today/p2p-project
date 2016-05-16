@@ -12,11 +12,8 @@ end_sequence = sep_sequence[::-1]
 compression = ['gzip']  # This should be in order of preference. IE: gzip is best, then none
 max_outgoing = 8
 
-base_protocol = namedtuple("protocol", ['end', 'sep', 'subnet', 'encryption'])
-base_message = namedtuple("message", ['msg', 'sender', 'protocol', 'time'])
 
-
-class protocol(base_protocol):
+class protocol(namedtuple("protocol", ['end', 'sep', 'subnet', 'encryption'])):
     def id(self):
         h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
         return to_base_58(int(h.hexdigest(), 16))
@@ -24,7 +21,7 @@ class protocol(base_protocol):
 default_protocol = protocol(end_sequence, sep_sequence, None, "PKCS1_v1.5")
 
 
-class message(base_message):
+class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time'])):
     def reply(self, *args):
         if self.sender:
             self.sender.send('whisper', 'whisper', *args)
