@@ -3,7 +3,6 @@
 
 import hashlib, json, multiprocessing.pool, socket, threading, traceback, uuid
 from collections import namedtuple, deque
-from operator import methodcaller
 
 version = "0.1.4"
 
