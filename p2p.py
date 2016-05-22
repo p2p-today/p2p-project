@@ -21,11 +21,12 @@ class protocol(namedtuple("protocol", ['end', 'sep', 'subnet', 'encryption'])):
 default_protocol = protocol(end_sequence, sep_sequence, None, "PKCS1_v1.5")
 
 
-class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time'])):
+class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'server'])):
     def reply(self, *args):
-        if self.sender:
+        if isinstance(self.sender, p2p_connection):
             self.sender.send('whisper', 'whisper', *args)
         else:
+            print("You aren't connected to the original sender. I'm currently investigating how to privately propagate this message.")
             return False
 
     def parse(self):
@@ -103,14 +104,18 @@ class p2p_connection(object):
             else:
                 pass  # print("New waterfall received. Proceeding as normal")
         msg = self.protocol.sep.join(packets[4:])  # Handle request without routing headers
-        self.server.handle_request(message(msg, self, self.protocol, from_base_58(packets[3])))
+        if packets[0] == 'waterfall':
+            reply_object = packets[1]
+        else:
+            reply_object = self
+        self.server.handle_request(message(msg, reply_object, self.protocol, from_base_58(packets[3]), self.server))
 
     def send(self, msg_type, *args):
         time = to_base_58(getUTC())
         msg_hash = hashlib.sha384((self.protocol.sep.join(list(args)) + time).encode()).hexdigest()
         msg_id = to_base_58(int(msg_hash, 16))
         if (msg_id, time) not in self.server.waterfalls:
-            self.server.waterfalls.appendleft((msg_id, from_base_58(time)))
+            self.server.waterfalls.appendleftif packets[0] == 'waterfall':((msg_id, from_base_58(time)))
         packets = [msg_type, self.server.id, msg_id, time] + list(args)
         # print("Sending %s to %s" % (args, self))
         msg = self.protocol.sep.join(packets).encode()
