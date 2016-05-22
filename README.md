@@ -59,6 +59,8 @@
          3. Reduce the queue size to 100
      3. Re-broadcast this message to all peers
 
+     ![Figure one](./figure_one.png)
+
 
 5.  **ID Constructions**
 
