@@ -1,7 +1,7 @@
 # TODO: Allow for peer cleanup
 # TODO: Fix incorrect sender on message construction, when routed around obstruction
 
-import hashlib, json, multiprocessing.pool, socket, threading, traceback, uuid
+import hashlib, json, socket, threading, traceback, uuid
 from collections import namedtuple, deque
 
 version = "0.1.4"
