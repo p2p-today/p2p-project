@@ -100,8 +100,7 @@ class p2p_connection(object):
         return self.protocol.end.encode() in ''.encode().join(self.buffer)
 
     def found_terminator(self):
-        raw_msg = ''.encode().join(self.buffer)
-        raw_msg = raw_msg.replace(self.protocol.end.encode(), ''.encode())
+        raw_msg = ''.encode().join(self.buffer)[:-len(self.protocol.end)]
         self.buffer = []
         for method in self.compression:
             if method in compression:
