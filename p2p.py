@@ -1,12 +1,13 @@
 # TODO: Allow for peer cleanup
 # TODO: Investigate request/response mechanism for replying to unconnected broadcast
 # TODO: Investigate non-connected peers in 4-node architectures
-# TODO: Fix blocking connect in net.py
+# TODO: Fix Sending too early on non-blocking net.py handshake
+# TODO: Add address to "already connected" filter
 
-import hashlib, json, socket, threading, traceback, uuid
+import hashlib, json, select, socket, threading, traceback, uuid
 from collections import namedtuple, deque
 
-version = "0.1.7"
+version = "0.1.8"
 
 user_salt    = str(uuid.uuid4())
 sep_sequence = "\x1c\x1d\x1e\x1f"
@@ -78,9 +79,8 @@ def from_base_58(string):
 
 def getUTC():
     """Returns the current unix time in UTC"""
-    from calendar import timegm
-    from time import gmtime
-    return timegm(gmtime())
+    import calendar, time
+    return calendar.timegm(time.gmtime())
 
 
 class p2p_connection(object):
@@ -97,11 +97,12 @@ class p2p_connection(object):
 
     def collect_incoming_data(self, data):
         """Collects incoming data"""
-        if data == '':
-            self.sock.close()
-            return ''
+        if not bool(data):
+            self.sock.shutdown(socket.SHUT_RDWR)
+            return False
         self.buffer.append(data)
         self.time = getUTC()
+        return True
 
     def find_terminator(self):
         """Returns whether the definied return sequences is found"""
@@ -109,7 +110,7 @@ class p2p_connection(object):
 
     def found_terminator(self):
         """Processes received messages"""
-        raw_msg = ''.encode().join(self.buffer)[:-len(self.protocol.end)]
+        raw_msg = ''.encode().join(self.buffer)[:-4]
         self.buffer = []
         for method in self.compression:
             if method in compression:
@@ -132,14 +133,19 @@ class p2p_connection(object):
             reply_object = self
         self.server.handle_request(message(msg, reply_object, self.protocol, from_base_58(packets[3]), self.server))
 
-    def send(self, msg_type, *args):
+    def send(self, msg_type, *args, **kargs):
         """Sends a message through its connection. The first argument is message type. All after that are content packets"""
-        time = to_base_58(getUTC())
+        id = kargs.get('id')
+        time = kargs.get('time')
+        if not kargs.get('time'):
+            time = to_base_58(getUTC())
+        if not id:
+            id = self.server.id
         msg_hash = hashlib.sha384((self.protocol.sep.join(list(args)) + time).encode()).hexdigest()
         msg_id = to_base_58(int(msg_hash, 16))
         if (msg_id, time) not in self.server.waterfalls:
             self.server.waterfalls.appendleft((msg_id, from_base_58(time)))
-        packets = [msg_type, self.server.id, msg_id, time] + list(args)
+        packets = [msg_type, id, msg_id, time] + list(args)
         if self.debug(4): print("Sending %s to %s" % (args, self))
         msg = self.protocol.sep.join(packets).encode()
         for method in compression:
@@ -149,7 +155,7 @@ class p2p_connection(object):
         try:
             self.sock.send(msg + self.protocol.end.encode())
         except IOError as e:
-            self.server.daemon.debug.append((e, traceback.format_exc()))
+            self.server.daemon.exceptions.append((e, traceback.format_exc()))
             self.server.daemon.disconnect(self)
 
     def compress(self, msg, method):
@@ -179,6 +185,9 @@ class p2p_connection(object):
             return lzma.decompress(msg)
         else:
             raise Exception('Unknown decompression method')
+
+    def fileno(self):
+        return self.sock.fileno()
 
     def debug(self, level=1):
         """Detects how verbose you want the printing to be"""
@@ -221,26 +230,28 @@ class p2p_daemon(object):
     def mainloop(self):
         """Daemon thread which handles all incoming data and connections"""
         while True:
-            for handler in list(self.server.routing_table.values()) + self.server.awaiting_ids:
-                # print("Collecting data from %s" % repr(handler))
-                try:
-                    while not handler.find_terminator():
-                        if handler.collect_incoming_data(handler.sock.recv(1)) == '':
-                            self.disconnect(handler)
-                    handler.found_terminator()
-                except socket.timeout:
-                    continue #socket.timeout
-                except socket.error as e:
-                    if e.args[0] in [9, 104, 10054]:
-                        node_id = handler.id
-                        if not node_id:
-                            node_id = repr(handler)
-                        if self.debug(1): print("Node %s has disconnected from the network" % node_id)
-                    else:
-                        if self.debug(0): print("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your p2p_socket.daemon.exceptions list to github.com/gappleto97/python-utils." % handler.id)
-                        self.debug.append((e, traceback.format_exc()))
-                    handler.sock.close()
-                    self.disconnect(handler)
+            # for handler in list(self.server.routing_table.values()) + self.server.awaiting_ids:
+            if list(self.server.routing_table.values()) + self.server.awaiting_ids:
+                for handler in select.select(list(self.server.routing_table.values()) + self.server.awaiting_ids, [], [], 0.01)[0]:
+                    # print("Collecting data from %s" % repr(handler))
+                    try:
+                        while not handler.find_terminator():
+                            if not handler.collect_incoming_data(handler.sock.recv(1)):
+                                self.disconnect(handler)
+                        handler.found_terminator()
+                    except socket.timeout:
+                        continue  # Shouldn't happen with select, but if it does...
+                    except socket.error as e:
+                        if isinstance(e, socket.error) and e.args[0] in [9, 104, 10054]:
+                            node_id = handler.id
+                            if not node_id:
+                                node_id = repr(handler)
+                            if self.debug(1): print("Node %s has disconnected from the network" % node_id)
+                        else:
+                            if self.debug(0): print("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your p2p_socket.daemon.exceptions list to github.com/gappleto97/python-utils." % handler.id)
+                            self.exceptions.append((e, traceback.format_exc()))
+                        handler.sock.shutdown(socket.SHUT_RDWR)
+                        self.disconnect(handler)
             self.handle_accept()
 
     def disconnect(self, handler):
@@ -343,8 +354,12 @@ class p2p_socket(object):
         if self.debug(3): print(msg.id(), [i for i, t in self.waterfalls])
         if msg.id() not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id(), msg.time))
+            if isinstance(msg.sender, p2p_connection):
+                id = msg.sender.id
+            else:
+                id = msg.sender
             for handler in self.routing_table.values():
-                handler.send('waterfall', *msg.parse())
+                handler.send('waterfall', *msg.parse(), time=to_base_58(msg.time), id=id)
             self.waterfalls = deque(set(self.waterfalls))
             removes = []
             for i, t in self.waterfalls:
@@ -374,30 +389,26 @@ class p2p_socket(object):
     def connect(self, addr, port, id=None):
         """Connects to a specified node. Specifying ID will immediately add to routing table. Blocking"""
         # self.cleanup()
-        try:
-            if self.debug(1): print("Attempting connection to %s:%s" % (addr, port))
-            if socket.getaddrinfo(addr, port)[0] == socket.getaddrinfo(*self.out_addr)[0] or \
-                                                        id and id in self.routing_table.keys():
-                if self.debug(1): print("Connection already established")
-                return False
-            if self.protocol.encryption == "Plaintext":
-                conn = socket.socket()
-            elif self.protocol.encryption == "PKCS1_v1.5":
-                import net
-                conn = net.secureSocket()
-            conn.connect((addr, port))
-            conn.settimeout(0.1)
-            handler = p2p_connection(conn, self, self.protocol, outgoing=True)
-            handler.id = id
-            handler.send("whisper", "handshake", self.id, self.protocol.id(), json.dumps(self.out_addr), json.dumps(compression))
-            if not id:
-                self.awaiting_ids.append(handler)
-            else:
-                self.routing_table.update({id: handler})
-            # print("Appended ", port, addr, " to handler list: ", handler)
-        except Exception as e:
-            if self.debug(0): print("Connection unsuccessful")
-            raise e
+        if self.debug(1): print("Attempting connection to %s:%s" % (addr, port))
+        if socket.getaddrinfo(addr, port)[0] == socket.getaddrinfo(*self.out_addr)[0] or \
+                                                    id and id in self.routing_table.keys():
+            if self.debug(1): print("Connection already established")
+            return False
+        if self.protocol.encryption == "Plaintext":
+            conn = socket.socket()
+        elif self.protocol.encryption == "PKCS1_v1.5":
+            import net
+            conn = net.secureSocket()
+        conn.settimeout(0.01)
+        conn.connect((addr, port))
+        handler = p2p_connection(conn, self, self.protocol, outgoing=True)
+        handler.id = id
+        handler.send("whisper", "handshake", self.id, self.protocol.id(), json.dumps(self.out_addr), json.dumps(compression))
+        if not id:
+            self.awaiting_ids.append(handler)
+        else:
+            self.routing_table.update({id: handler})
+        # print("Appended ", port, addr, " to handler list: ", handler)
 
     def debug(self, level=1):
         """Detects how verbose you want the printing to be"""
