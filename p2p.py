@@ -321,7 +321,7 @@ class p2p_socket(object):
 
     def waterfall(self, msg):
         # self.cleanup()
-        if self.debug(3): print msg.id(), [i for i, t in self.waterfalls]
+        if self.debug(3): print(msg.id(), [i for i, t in self.waterfalls])
         if msg.id() not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id(), msg.time))
             for handler in self.routing_table.values():
