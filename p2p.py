@@ -30,6 +30,7 @@ default_protocol = protocol(end_sequence, sep_sequence, None, "PKCS1_v1.5")
 
 class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'server'])):
     def reply(self, *args):
+        """Replies to the sender if you're directly connected. Tries to make a connection otherwise"""
         if isinstance(self.sender, p2p_connection):
             self.sender.send('whisper', 'whisper', *args)
         else:
@@ -40,6 +41,7 @@ class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'serve
             print("You aren't connected to the original sender. This reply is not guarunteed, but we're trying to make a connection and put the message through.")
 
     def parse(self):
+        """Return the message's component packets, including it's type in position 0"""
         return self.msg.split(self.protocol.sep)
 
     def __repr__(self):
@@ -50,11 +52,13 @@ class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'serve
             return string + self.sender + ")"
 
     def id(self):
+        """Returns the SHA384-based ID of the message"""
         msg_hash = hashlib.sha384((self.msg + to_base_58(self.time)).encode())
         return to_base_58(int(msg_hash.hexdigest(), 16))
 
 
 def to_base_58(i):
+    """Takes an integer and returns its corresponding base_58 string"""
     string = ""
     while i:
         string = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[i % 58] + string
@@ -63,6 +67,7 @@ def to_base_58(i):
 
 
 def from_base_58(string):
+    """Takes a base_58 string and returns its corresponding integer"""
     decimal = 0
     if isinstance(string, bytes):
         string = string.decode()
@@ -72,6 +77,7 @@ def from_base_58(string):
 
 
 def getUTC():
+    """Returns the current unix time in UTC"""
     from calendar import timegm
     from time import gmtime
     return timegm(gmtime())
@@ -90,6 +96,7 @@ class p2p_connection(object):
         self.compression = []
 
     def collect_incoming_data(self, data):
+        """Collects incoming data"""
         if data == '':
             self.sock.close()
             return ''
@@ -97,9 +104,11 @@ class p2p_connection(object):
         self.time = getUTC()
 
     def find_terminator(self):
+        """Returns whether the definied return sequences is found"""
         return self.protocol.end.encode() in ''.encode().join(self.buffer)
 
     def found_terminator(self):
+        """Processes received messages"""
         raw_msg = ''.encode().join(self.buffer)[:-len(self.protocol.end)]
         self.buffer = []
         for method in self.compression:
@@ -124,6 +133,7 @@ class p2p_connection(object):
         self.server.handle_request(message(msg, reply_object, self.protocol, from_base_58(packets[3]), self.server))
 
     def send(self, msg_type, *args):
+        """Sends a message through its connection. The first argument is message type. All after that are content packets"""
         time = to_base_58(getUTC())
         msg_hash = hashlib.sha384((self.protocol.sep.join(list(args)) + time).encode()).hexdigest()
         msg_id = to_base_58(int(msg_hash, 16))
@@ -143,6 +153,7 @@ class p2p_connection(object):
             self.server.daemon.disconnect(self)
 
     def compress(self, msg, method):
+        """Shortcut method for compression"""
         if method == 'gzip':
             import zlib
             return zlib.compress(msg)
@@ -156,6 +167,7 @@ class p2p_connection(object):
             raise Exception('Unknown compression method')
 
     def decompress(self, msg, method):
+        """Shortcut method for decompression"""
         if method == 'gzip':
             import zlib
             return zlib.decompress(msg)
@@ -169,6 +181,7 @@ class p2p_connection(object):
             raise Exception('Unknown decompression method')
 
     def debug(self, level=1):
+        """Detects how verbose you want the printing to be"""
         return self.server.debug(level)
 
 
@@ -192,6 +205,7 @@ class p2p_daemon(object):
         self.daemon.start()
 
     def handle_accept(self):
+        """Handle an incoming connection"""
         try:
             conn, addr = self.sock.accept()
             if conn is not None:
@@ -205,6 +219,7 @@ class p2p_daemon(object):
             pass
 
     def mainloop(self):
+        """Daemon thread which handles all incoming data and connections"""
         while True:
             for handler in list(self.server.routing_table.values()) + self.server.awaiting_ids:
                 # print("Collecting data from %s" % repr(handler))
@@ -229,6 +244,7 @@ class p2p_daemon(object):
             self.handle_accept()
 
     def disconnect(self, handler):
+        """Disconnects a node"""
         node_id = handler.id
         if not node_id:
             node_id = repr(handler)
@@ -243,6 +259,7 @@ class p2p_daemon(object):
             self.server.incoming.remove(handler.id)
 
     def debug(self, level=1):
+        """Detects how verbose you want the printing to be"""
         return self.server.debug(level)
 
 
@@ -267,6 +284,7 @@ class p2p_socket(object):
         self.daemon = p2p_daemon(addr, port, self, prot)
 
     def handle_request(self, msg):
+        """Decides how to handle various message types, allowing some to be handled automatically"""
         handler = msg.sender
         packets = msg.parse()
         if packets[0] == 'handshake':
@@ -309,6 +327,7 @@ class p2p_socket(object):
                 self.queue.appendleft(msg)
 
     def send(self, *args, **kargs):
+        """Sends data to all peers. type flag will override normal subflag. Defaults to 'broadcast'"""
         # self.cleanup()
         if kargs.get('type'):
             send_type = kargs.pop('type')
@@ -319,6 +338,7 @@ class p2p_socket(object):
             handler.send('broadcast', send_type, *args)
 
     def waterfall(self, msg):
+        """Handles the waterfalling of received messages"""
         # self.cleanup()
         if self.debug(3): print(msg.id(), [i for i, t in self.waterfalls])
         if msg.id() not in (i for i, t in self.waterfalls):
@@ -339,6 +359,7 @@ class p2p_socket(object):
         return False
 
     def recv(self, quantity=1):
+        """Receive 1 or several message objects. Returns none if none are present. Non-blocking."""
         if quantity != 1:
             ret_list = []
             while len(self.queue) and quantity > 0:
@@ -351,6 +372,7 @@ class p2p_socket(object):
             return None
 
     def connect(self, addr, port, id=None):
+        """Connects to a specified node. Specifying ID will immediately add to routing table. Blocking"""
         # self.cleanup()
         try:
             if self.debug(1): print("Attempting connection to %s:%s" % (addr, port))
@@ -378,4 +400,5 @@ class p2p_socket(object):
             raise e
 
     def debug(self, level=1):
+        """Detects how verbose you want the printing to be"""
         return self.debug_level > level
