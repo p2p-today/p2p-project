@@ -95,9 +95,9 @@ class secureSocket(socket.socket):
     def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False):
         super(secureSocket, self).__init__(sock_family, sock_type, proto, fileno)
         if not suppress_warnings:
-            if uses_RSA and keysize != 1024:
+            if uses_RSA and keysize < 1024:
                 import warnings
-                warnings.warn('Using the rsa module with a non-standard key length will make communication with PyCrypto implementations inconsistent', RuntimeWarning, stacklevel=2)
+                warnings.warn('Using the rsa module with a <1024 key length will make communication with PyCrypto implementations inconsistent', RuntimeWarning, stacklevel=2)
             if keysize < 354 or (keysize / 8) - 11 < len(end_of_message):
                 raise ValueError('This key is too small to be useful')
             elif keysize > 8192:
@@ -111,6 +111,7 @@ class secureSocket(socket.socket):
         self.peer_keysize = None
         self.peer_msgsize = None
         self.buffer = "".encode()
+        self.key_exchange = None
         from functools import partial
         import sys
         if sys.version_info[0] < 3:
@@ -123,7 +124,8 @@ class secureSocket(socket.socket):
         self.dup = partial(secureSocket.dup, self)
 
     def dup(self, conn=None):
-        """Duplicates this secureSocket, with all key information, connected to the same peer"""
+        """Duplicates this secureSocket, with all key information, connected to the same peer.
+        Blocks if keys are being exchanged."""
         import sys
         if sys.version_info[0] < 3:
             sock = secureSocket(self.family, self.type)
@@ -142,6 +144,9 @@ class secureSocket(socket.socket):
         sock.pub, sock.priv = self.pub, self.priv
         sock.keysize = self.keysize
         sock.msgsize = self.msgsize
+        if self.key_exchange:
+            self.key_exchange.join()
+            self.key_exchange = None
         sock.key = self.key
         sock.peer_keysize = self.peer_keysize
         sock.peer_msgsize = self.peer_msgsize
@@ -167,22 +172,26 @@ class secureSocket(socket.socket):
 
     def accept(self):
         """Accepts an incoming connection.
-        Like a native socket, it returns a copy of the socket and the connected address"""
+        Like a native socket, it returns a copy of the socket and the connected address."""
         conn, addr = super(secureSocket, self).accept()
         sock = self.dup(conn=conn)
-        t = conn.gettimeout()
-        conn.setblocking(True)
-        sock.sendKey()
-        sock.requestKey()
-        if t is not None:
-            conn.settimeout(t)
+        #sock.sendKey()
+        #sock.requestKey()
+        from threading import Thread
+        sock.key_exchange = Thread(target=sock.handshake, args=(1,))
+        sock.key_exchange.daemon = True
+        sock.key_exchange.start()
         return sock, addr
 
     def connect(self, ip):
         """Connects to another secureSocket"""
         super(secureSocket, self).connect(ip)
-        self.requestKey()
-        self.sendKey()
+        #self.requestKey()
+        #self.sendKey()
+        from threading import Thread
+        self.key_exchange = Thread(target=self.handshake, args=(0,))
+        self.key_exchange.daemon = True
+        self.key_exchange.start()
 
     def close(self):
         """Closes your connection to another socket, then cleans up metadata"""
@@ -192,14 +201,22 @@ class secureSocket(socket.socket):
         self.peer_msgsize = None
 
     def send(self, msg):
-        """Sends an encrypted copy of your message, and a signed+encrypted copy"""
-        if self.peer_msgsize == None:
+        """Sends an encrypted copy of your message, and an encrypted signature.
+        Blocks if keys are being exchanged."""
+        if self.key_exchange:
+            self.key_exchange.join()
+            self.key_exchange = None
+        elif self.peer_msgsize == None:
             raise socket.error("You aren't connected to anyone")
         self.__send__(msg)
         self.__send__(self.sign(msg))
 
     def recv(self, size=None):
-        """Receives and decrypts a message, then verifies it against the attached signature"""
+        """Receives and decrypts a message, then verifies it against the attached signature.
+        Blocks if keys are being exchanged, regardless of timeout settings."""
+        if self.key_exchange:
+            self.key_exchange.join()
+            self.key_exchange = None
         if self.buffer != "".encode():
             if size:
                 msg = self.buffer[:size]
@@ -210,7 +227,7 @@ class secureSocket(socket.socket):
             return msg
         msg = self.__recv__()
         sig = self.__recv__()
-        if msg == 0 or sig == 0:
+        if not msg or not sig:
             return ''
         if uses_RSA:
             try:
@@ -254,7 +271,7 @@ class secureSocket(socket.socket):
         return verify(msg, sig, key)
 
     def __send__(self, msg):
-        """Base method for sending a message. Encrypts and sends"""
+        """Base method for sending a message. Encrypts and sends. Use send instead."""
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = str(msg).encode('utf-8')
         x = 0
@@ -265,7 +282,7 @@ class secureSocket(socket.socket):
         super(secureSocket, self).sendall(encrypt(end_of_message, self.key))
 
     def __recv__(self):
-        """Base method for receiving a message. Receives and decrypts."""
+        """Base method for receiving a message. Receives and decrypts. Use recv instead."""
         received = b''
         packet = b''
         try:
@@ -279,7 +296,7 @@ class secureSocket(socket.socket):
             print("Decryption error---Content: " + repr(packet))
             raise decryption_error
         except ValueError as error:
-            if error.args[0] == "invalid literal for int() with base 16: ''":
+            if error.args[0] in ["invalid literal for int() with base 16: ''", "invalid literal for int() with base 16: b''"]:
                 return 0
             else:
                 raise error
@@ -320,3 +337,21 @@ class secureSocket(socket.socket):
         self.mapKey()
         print("Sending key")
         super(secureSocket, self).sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
+
+    def handshake(self, order):
+        """Wrapper for sendKey and requestKey"""
+        t = self.gettimeout()
+        super(secureSocket, self).settimeout(None)
+        if order:
+            self.sendKey()
+        self.requestKey()
+        if not order:
+            self.sendKey()
+        super(secureSocket, self).settimeout(t)
+
+    def settimeout(self, timeout):
+        """Sets the timeout for the socket. Blocks if keys are being exchanged."""
+        if self.key_exchange:
+            self.key_exchange.join()
+            self.key_exchange = None
+        super(secureSocket, self).settimeout(timeout)
