@@ -3,7 +3,7 @@
 # TODO: Fix Sending too early on non-blocking net.py handshake
 # TODO: Add address to "already connected" filter
 
-import hashlib, json, select, socket, struct, threading, traceback, uuid
+import hashlib, json, select, socket, struct, time, threading, traceback, uuid
 from collections import namedtuple, deque
 
 version = "0.1.C"
@@ -40,7 +40,7 @@ class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'serve
             request_hash = hashlib.sha384((self.sender + to_base_58(getUTC())).encode()).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type='request')
-            self.server.requests.update({request_id: args})
+            self.server.requests.update({request_id: ['whisper', 'whisper'] + list(args)})
             print("You aren't connected to the original sender. This reply is not guarunteed, but we're trying to make a connection and put the message through.")
 
     def parse(self):
@@ -105,7 +105,11 @@ class p2p_connection(object):
     def collect_incoming_data(self, data):
         """Collects incoming data"""
         if not bool(data):
-            self.sock.shutdown(socket.SHUT_RDWR)
+            if self.debug(5): print(data, time.time())
+            try:
+                self.sock.shutdown(socket.SHUT_RDWR)
+            except:
+                pass
             return False
         self.buffer.append(data)
         self.time = getUTC()
@@ -118,8 +122,8 @@ class p2p_connection(object):
     def found_terminator(self):
         """Processes received messages"""
         if not self.active:
+            if self.debug(4): print(self.buffer, self.expected, self.find_terminator())
             self.expected = struct.unpack("!L", ''.encode().join(self.buffer))[0]
-            if self.debug(4): print(self.buffer)
             self.buffer = []
             self.active = True
         else:
@@ -189,14 +193,16 @@ class p2p_connection(object):
         packets = [msg_type, id, msg_id, time] + list(args)
         if msg_type in ['whisper', 'broadcast']:
             self.last_sent = [msg_type] + list(args)
-        if self.debug(4): print("Sending %s to %s" % (packets, self))
         msg = self.protocol.sep.join(packets).encode()
+        compression_used = ""
         for method in compression:
             if method in self.compression:
-                if self.debug(4): print("Compressing with %s" % method)
+                compression_used = method
                 msg = self.compress(msg, method)
                 break
         size = struct.pack("!L", len(msg))
+        if self.debug(4): print("Sending %s to %s" % ([size] + packets, self))
+        if self.debug(4) and compression_used: print("Compressing with %s" % compression_used)
         try:
             self.sock.send(size)
             self.sock.send(msg)
@@ -283,7 +289,9 @@ class p2p_daemon(object):
                     try:
                         while not handler.find_terminator():
                             if not handler.collect_incoming_data(handler.sock.recv(1)):
+                                if self.debug(6): print("disconnecting node %s while in loop" % handler.id)
                                 self.disconnect(handler)
+                                raise socket.timeout()
                         handler.found_terminator()
                     except socket.timeout:
                         continue  # Shouldn't happen with select, but if it does...
