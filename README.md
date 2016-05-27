@@ -19,7 +19,7 @@
          Pathfinding header - [broadcast, waterfall, whisper, renegotiate]
          Sender ID          - A base_58 SHA384-based ID for the sender
          Message ID         - A base_58 SHA384-based ID for the message packets
-         Timestamp          - A base_58 unix timestamp of initial broadcast
+         Timestamp          - A base_58 unix UTC timestamp of initial broadcast
          Message packets
            Message header   - [broadcast, whisper, handshake, peers, request, response]
            Message contents
@@ -107,9 +107,10 @@
          The version is defined in the code itself. As of this document's last update the version is "0.1.C".
 
          ```python
-         def get_id(self):
-             h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
-             return to_base_58(int(h.hexdigest(), 16))
+         class protocol(namedtuple("protocol", ['sep', 'subnet', 'encryption'])):
+             def get_id(self):
+                 h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
+                 return to_base_58(int(h.hexdigest(), 16))
          ```
 
      3. Node IDs
@@ -128,9 +129,11 @@
          A message generates its ID by the following python pseudo-code, where this is called on a `namedtuple` containing the raw message contents (read: sans routing data), the protocol definition, and the base\_58 timestamp:
 
          ```python
-         def get_id(self):
-             h = hashlib.sha384((self.msg + str(self.time)).encode())
-             return to_base_58(int(h.hexdigest(), 16))
+         class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'server'])):
+             def id(self):
+                 """Returns the SHA384-based ID of the message"""
+                 msg_hash = hashlib.sha384((self.msg + to_base_58(self.time)).encode())
+                 return to_base_58(int(msg_hash.hexdigest(), 16))
          ```
 
      5. Request/Response IDs (beta)
