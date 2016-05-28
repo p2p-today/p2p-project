@@ -1,8 +1,3 @@
-# TODO: Allow for peer cleanup
-# TODO: Investigate non-connected peers in 4-node architectures
-# TODO: Fix Sending too early on non-blocking net.py handshake
-# TODO: Add address to "already connected" filter
-
 import hashlib, json, select, socket, struct, time, threading, traceback, uuid
 from collections import namedtuple, deque
 
