@@ -4,3 +4,6 @@
 [submodule "js/pack"]
 	path = js/pack
 	url = https://github.com/gappleto97/node-jspack
+[submodule "js/BigInteger"]
+	path = js/BigInteger
+	url = https://github.com/peterolson/BigInteger.js
