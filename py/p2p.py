@@ -84,6 +84,57 @@ def getUTC():
     import calendar, time
     return calendar.timegm(time.gmtime())
 
+
+def compress(msg, method):
+    """Shortcut method for compression"""
+    if method == 'gzip':
+        import zlib
+        return zlib.compress(msg)
+    elif method =='bz2':
+        import bz2
+        return bz2.compress(msg)
+    elif method =='lzma':
+        import lzma
+        return lzma.compress(msg)
+    else:
+        raise Exception('Unknown compression method')
+
+
+def decompress(msg, method):
+    """Shortcut method for decompression"""
+    if method == 'gzip':
+        import zlib
+        return zlib.decompress(msg, zlib.MAX_WBITS | 32)
+    elif method == 'bz2':
+        import bz2
+        return bz2.decompress(msg)
+    elif method =='lzma':
+        import lzma
+        return lzma.decompress(msg)
+    else:
+        raise Exception('Unknown decompression method')
+
+
+def construct_message(prot, comp_types, msg_type, id, packets, time=None):
+    time = kargs.get('time')
+    if not kargs.get('time'):
+        time = to_base_58(getUTC())
+
+    msg_hash = hashlib.sha384((prot.sep.join(list(packets)) + time).encode()).hexdigest()
+    msg_id = to_base_58(int(msg_hash, 16))
+
+    packets = [msg_type, id, msg_id, time] + list(packets)
+    msg = prot.sep.join(packets).encode()
+    compression_used = ""
+    for method in compression:
+        if method in comp_types:
+            compression_used = method
+            msg = compress(msg, method)
+            break
+
+    size = struct.pack("!L", len(msg))
+    return size, msg
+
 # End utility section
 
 
@@ -135,7 +186,7 @@ class p2p_connection(object):
             for method in self.compression:
                 if method in compression:
                     try:
-                        raw_msg = self.decompress(raw_msg, method)
+                        raw_msg = decompress(raw_msg, method)
                         compression_fail = False
                     except:
                         compression_fail = True
@@ -198,7 +249,7 @@ class p2p_connection(object):
         for method in compression:
             if method in self.compression:
                 compression_used = method
-                msg = self.compress(msg, method)
+                msg = compress(msg, method)
                 break
         size = struct.pack("!L", len(msg))
         if self.debug(4): print("Sending %s to %s" % ([size] + packets, self))
@@ -209,34 +260,6 @@ class p2p_connection(object):
         except IOError as e:
             self.server.daemon.exceptions.append((e, traceback.format_exc()))
             self.server.daemon.disconnect(self)
-
-    def compress(self, msg, method):
-        """Shortcut method for compression"""
-        if method == 'gzip':
-            import zlib
-            return zlib.compress(msg)
-        elif method =='bz2':
-            import bz2
-            return bz2.compress(msg)
-        elif method =='lzma':
-            import lzma
-            return lzma.compress(msg)
-        else:
-            raise Exception('Unknown compression method')
-
-    def decompress(self, msg, method):
-        """Shortcut method for decompression"""
-        if method == 'gzip':
-            import zlib
-            return zlib.decompress(msg, zlib.MAX_WBITS | 32)
-        elif method == 'bz2':
-            import bz2
-            return bz2.decompress(msg)
-        elif method =='lzma':
-            import lzma
-            return lzma.decompress(msg)
-        else:
-            raise Exception('Unknown decompression method')
 
     def fileno(self):
         return self.sock.fileno()
