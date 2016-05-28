@@ -110,7 +110,7 @@
 
          ```python
          class protocol(namedtuple("protocol", ['sep', 'subnet', 'encryption'])):
-             def get_id(self):
+             def id(self):
                  h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
                  return to_base_58(int(h.hexdigest(), 16))
          ```
@@ -138,7 +138,7 @@
 
          ```python
          def get_id(self):
-             info = [str(self.addr), self.protocol.get_id(), user_salt]
+             info = [str(self.addr), self.protocol.id(), user_salt]
              h = hashlib.sha384(''.join(info).encode())
              return to_base_58(int(h.hexdigest(), 16))
          ```
