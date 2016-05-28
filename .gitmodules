@@ -4,3 +4,6 @@
 [submodule "js/BigInteger"]
 	path = js/BigInteger
 	url = https://github.com/peterolson/BigInteger.js
+[submodule "js/pack"]
+	path = js/pack
+	url = https://github.com/ryanrolds/bufferpack
