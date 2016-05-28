@@ -7,3 +7,6 @@
 [submodule "js/pack"]
 	path = js/pack
 	url = https://github.com/ryanrolds/bufferpack
+[submodule "js/zlib"]
+	path = js/zlib
+	url = https://github.com/imaya/zlib.js

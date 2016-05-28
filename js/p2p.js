@@ -5,8 +5,10 @@ function p2p() {
     var BigInt = require('./BigInteger/BigInteger.js');
     var struct = require('./pack/bufferpack.js');
     var SHA = require('./SHA/src/sha.js');
+    var zlib = require('./zlib/bin/node-zlib.js');
 
     m.version = "0.1.C";
+    m.compression = ['gzip'];
 
     // User salt generation pulled from: http://stackoverflow.com/a/2117523
     m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -58,6 +60,26 @@ function p2p() {
     };
 
 
+    m.compress = function(text, method) {
+        if (method == "gzip") {
+            return zlib.deflateSync(Buffer(text));
+        }
+        else {
+            throw "Unknown compression method";
+        }
+    };
+
+
+    m.decompress = function(text, method) {
+        if (method == "gzip") {
+            return zlib.inflateSync(Buffer(text));
+        }
+        else {
+            throw "Unknown compression method";
+        }
+    };
+
+
     m.protocol = class protocol {
         constructor(sep, subnet, encryption) {
             this.sep = sep;
@@ -70,6 +92,8 @@ function p2p() {
             return m.to_base_58(BigInt(protocol_hash, 16));
         }
     };
+
+    m.default_protocol = m.protocol(Buffer([28, 29, 30, 31]), '', 'Plaintext');
 
 
     m.construct_message = function(prot, comp_types, msg_type, id, packets, time) {
