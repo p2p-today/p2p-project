@@ -1,5 +1,6 @@
 function p2p() {
-    m = this;
+    "use strict";
+    var m = this;
 
     var BigInt = require('./BigInteger/BigInteger.js');
     var struct = require('./pack/bufferpack.js');
@@ -15,7 +16,7 @@ function p2p() {
 
     m.to_base_58 = function(i) {
         //Takes an integer and returns its corresponding base_58 string
-        string = "";
+        var string = "";
         if (!BigInt.isInstance(i)) {
             i = BigInt(i);
         }
@@ -29,7 +30,7 @@ function p2p() {
 
     m.from_base_58 = function(string) {
         //Takes a base_58 string and returns its corresponding integer
-        decimal = BigInt(0);
+        var decimal = BigInt(0);
         //for char in string {
         for (i = 0; i < string.length; i++) {
             decimal = decimal.times(58).plus('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'.indexOf(string[i]));
