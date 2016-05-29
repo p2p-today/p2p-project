@@ -111,7 +111,8 @@
          ```python
          class protocol(namedtuple("protocol", ['sep', 'subnet', 'encryption'])):
              def id(self):
-                 h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
+                 info = [str(x) for x in self] + [version]
+                 h = hashlib.sha256(''.join(info).encode())
                  return to_base_58(int(h.hexdigest(), 16))
          ```
 
@@ -120,14 +121,15 @@
          ```javascript
          class protocol {
              constructor(sep, subnet, encryption) {
-                 this.sep = sep
-                 this.subnet = subnet
-                 this.encryption = encryption
+                 this.sep = sep;
+                 this.subnet = subnet;
+                 this.encryption = encryption;
              }
 
              id() {
-                 var hash = SHA256([this.sep, this.subnet, this.encryption, version].join(''))
-                 return to_base_58(BigInt(hash, 16))
+                 var info = [this.sep, this.subnet, this.encryption, version];
+                 var hash = SHA256(info.join(''));
+                 return to_base_58(BigInt(hash, 16));
              }
          }
          ```
@@ -145,13 +147,14 @@
 
      4. Message IDs
 
-         A message generates its ID by the following python pseudo-code, where this is called on a `namedtuple` containing the raw message contents (read: sans routing data), the protocol definition, and the base\_58 timestamp:
+         A message generates its ID by the following example class.
 
          ```python
-         class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'server'])):
+         class message(namedtuple("message", ['msg', 'time'])):
              def id(self):
                  """Returns the SHA384-based ID of the message"""
-                 msg_hash = hashlib.sha384((self.msg + to_base_58(self.time)).encode())
+                 info = self.msg + to_base_58(self.time)
+                 msg_hash = hashlib.sha384(info.encode())
                  return to_base_58(int(msg_hash.hexdigest(), 16))
          ```
 
@@ -162,7 +165,8 @@
          This section may be changed as the request/response mechanism is expanded upon.
 
          ```python
-         request_hash = hashlib.sha384((peer_id + to_base_58(getUTC())).encode())
+         request_info = peer_id + to_base_58(getUTC())
+         request_hash = hashlib.sha384(request_info.encode())
          request_id = to_base_58(int(request_hash.hexdigest(), 16))
          ```
 
@@ -189,7 +193,7 @@
              [message id]
              [timestamp]
              peers
-             [json-ized copy of your routing table]
+             [json-ized copy of your routing table in format: [[addr, port], id]]
 
 
 8.  **Methods of Encryption**
