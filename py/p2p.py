@@ -54,12 +54,14 @@ class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'serve
         msg_hash = hashlib.sha384((self.msg + to_base_58(self.time)).encode())
         return to_base_58(int(msg_hash.hexdigest(), 16))
 
+base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+
 
 def to_base_58(i):
     """Takes an integer and returns its corresponding base_58 string"""
     string = ""
     while i:
-        string = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[i % 58] + string
+        string = base_58[i % 58] + string
         i = i // 58
     return string
 
@@ -70,7 +72,7 @@ def from_base_58(string):
     if isinstance(string, bytes):
         string = string.decode()
     for char in string:
-        decimal = decimal * 58 + '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'.index(char)
+        decimal = decimal * 58 + base_58.index(char)
     return decimal
 
 
