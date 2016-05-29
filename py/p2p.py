@@ -388,10 +388,10 @@ class p2p_socket(object):
             if handler in self.awaiting_ids:
                 self.awaiting_ids.remove(handler)
             self.routing_table.update({packets[1]: handler})
-            handler.send("whisper", "peers", json.dumps([(key, self.routing_table[key].addr) for key in self.routing_table.keys()]))
+            handler.send("whisper", "peers", json.dumps([(self.routing_table[key].addr, key) for key in self.routing_table.keys()]))
         elif packets[0] == 'peers':
             new_peers = json.loads(packets[1])
-            for id, addr in new_peers:
+            for addr, id in new_peers:
                 if len(self.outgoing) < max_outgoing and addr:
                     self.connect(addr[0], addr[1], id)
         elif packets[0] == 'response':
