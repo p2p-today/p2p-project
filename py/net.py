@@ -7,7 +7,7 @@ except:
         from Crypto.PublicKey import RSA
         uses_RSA = False
         import warnings
-        warnings.warn('Using the PyCrypto module is not recommended. It makes communication with non-standard keylengths inconsistent. Please run \'pip install rsa\' to use this more effectively.', ImportWarning, stacklevel=2)
+        warnings.warn('Using the PyCrypto module is not recommended. It makes communication with smaller-than-standard keylengths inconsistent. Please run \'pip install rsa\' to use this more effectively.', ImportWarning, stacklevel=2)
 
         class DecryptionError(Exception): pass
 
