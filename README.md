@@ -1,3 +1,5 @@
+Documentation for individual implementations can be found in their respective folders.
+
 # Mass Broadcast Protocol
 
 1.  **Abstract**
