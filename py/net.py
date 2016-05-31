@@ -329,12 +329,11 @@ class secure_socket(socket.socket):
         received = b''
         packet = b''
         try:
-            while True:
+            while packet != end_of_message:
+                received += packet
                 packet = self.__sock_recv(self.__keysize // 8)
                 packet = decrypt(packet, self.priv)
-                if packet == end_of_message:
-                    return received
-                received += packet
+            return received
         except decryption_error as error:
             print("Decryption error---Content: " + repr(packet))
             raise error
@@ -360,18 +359,13 @@ class secure_socket(socket.socket):
         # Otherwise, get a message and signature from your peer
         msg = self.__recv()
         sig = self.__recv()
-        if not msg or not sig:
+        if not (msg or sig):
             return ''
-        try:
-            verify(msg, sig, self.key)  # Uses public API so it blocks when key is exchanging
-        except verification_error as error:
-            print(msg, sig)
-            raise error
+        verify(msg, sig, self.key)  # Uses public API so it blocks when key is exchanging
         # If a size isn't defined, return the whole message. Otherwise manage the buffer as well.
-        if not size:
-            return msg
-        else:
+        if size:
             self.__buffer += msg
             ret = self.__buffer[:size]
             self.__buffer = self.__buffer[size:]
             return ret
+        return msg
