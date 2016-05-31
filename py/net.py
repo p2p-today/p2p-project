@@ -122,6 +122,11 @@ class secure_socket(socket.socket):
         self.recv = partial(secure_socket.recv, self)
         self.dup = partial(secure_socket.dup, self)
 
+    def __print(self, *args):
+        """Private method to print if __silent is False"""
+        if not self.__silent:
+            print(*args)
+
     @property
     def keysize(self):
         """Your key size in bits"""
@@ -129,8 +134,7 @@ class secure_socket(socket.socket):
 
     def __map_key(self):
         """Private method to block if key is being generated"""
-        if not self.__silent:
-            print("Waiting to grab key")
+        self.__print("Waiting to grab key")
         self.__pub, self.__priv = self.__key_async.get()[0]
         del self.__key_async
 
@@ -150,37 +154,32 @@ class secure_socket(socket.socket):
 
     def __request_key(self):
         """Requests your peer's key over plaintext"""
-        if not self.__silent:
-            print("Requesting key size")
+        self.__print("Requesting key size")
         super(secure_socket, self).sendall(size_request)
         self.__peer_keysize = int(self.__sock_recv(16))
         if not uses_RSA and self.__peer_keysize < 1024:
             warnings.warn('Your peer is using a small key length. Because you\'re using PyCrypto, sending may silently fail, as on some keys PyCrypto will not construct it correctly. To fix this, please run \'pip install rsa\'.', RuntimeWarning, stacklevel=2)
         self.__peer_msgsize = (self.__peer_keysize // 8) - 11
-        if not self.__silent:
-            print("Requesting key")
+        self.__print("Requesting key")
         super(secure_socket, self).sendall(key_request)
         keys = self.__sock_recv(self.__peer_keysize)
         if isinstance(keys, type(b'')):
             keys = keys.decode()
         key = keys.split(",")
         self.__key = public_key(int(key[0]), int(key[1]))
-        if not self.__silent:
-            print("Key received")
+        self.__print("Key received")
     
     def __send_key(self):
         """Sends your key over plaintext"""
         req = self.__sock_recv(len(size_request))
         if req != size_request:
             raise ValueError("Handshake has failed due to invalid request from peer: %s" % req)
-        if not self.__silent:
-            print("Sending key size")
+        self.__print("Sending key size")
         super(secure_socket, self).sendall(str(self.keysize).encode("utf-8"))
         req = self.__sock_recv(len(key_request))
         if req != key_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
-        if not self.__silent:
-            print("Sending key")
+        self.__print("Sending key")
         super(secure_socket, self).sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
 
     def __handshake(self, order):
