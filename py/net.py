@@ -94,15 +94,14 @@ except ImportError:
 
 class secure_socket(socket.socket):
     """An RSA encrypted and secured socket. Requires either the rsa or PyCrypto module"""
-    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False, silent=False):
+    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, silent=False):
         super(secure_socket, self).__init__(sock_family, sock_type, proto, fileno)
-        if not suppress_warnings:
-            if uses_RSA and keysize < 1024:
-                warnings.warn('Using the rsa module with a <1024 key length will make communication with PyCrypto implementations inconsistent', RuntimeWarning, stacklevel=2)
-            if keysize < 354 or (keysize // 8) - 11 < len(end_of_message):
-                raise ValueError('This key is too small to be useful')
-            elif keysize > 8192:
-                raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
+        if keysize < 1024:
+            warnings.warn('Using a <1024 key length will make communication with PyCrypto implementations inconsistent. If you\'re using PyCrypto, expect an imminent exception.', RuntimeWarning, stacklevel=2)
+        if keysize < max(354, (len(end_of_message) + 11) * 8):
+            raise ValueError('This key is too small to be useful.')
+        elif keysize > 8192:
+            warnings.warn('This key is too large to be practical. Sending is easy. Generating is hard.', RuntimeWarning, stacklevel=2)
         self.__key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
         self.__pub, self.__priv = None, None    # Temporarily set to None so they can generate in background
         self.__keysize = keysize
@@ -284,7 +283,7 @@ class secure_socket(socket.socket):
             pass
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
-        elif self.keysize >= 745:  # This one uses public API so it blocks when key is generating
+        elif self.__keysize >= 745:
             return sign(msg, self.priv, 'SHA-512')
         elif self.__keysize >= 618:
             return sign(msg, self.priv, 'SHA-384')
@@ -316,7 +315,7 @@ class secure_socket(socket.socket):
         """Sends an encrypted copy of your message, and an encrypted signature.
         Blocks if keys are being exchanged."""
         self.__send(msg)
-        self.__send(self.sign(msg))
+        self.__send(self.sign(msg))  # Uses public API in order to use most comprehensive hash
 
     def __recv(self):
         """Base method for receiving a message. Receives and decrypts. Use recv instead."""
