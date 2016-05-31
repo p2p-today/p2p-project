@@ -16,7 +16,10 @@ except:
     except:
         raise ImportError("You cannot use this without the rsa or PyCrypto module. To install this, run 'pip install rsa'. The rsa module is recommended because, while it's slower, it's much more flexible, and ensures communication with other secureSockets.")
 
-import socket
+import socket, sys
+from threading import Thread
+from functools import partial
+from multiprocessing.pool import ThreadPool as Pool
 
 key_request = "Requesting key".encode('utf-8')
 size_request = "Requesting key size".encode('utf-8')
@@ -102,19 +105,17 @@ class secureSocket(socket.socket):
                 raise ValueError('This key is too small to be useful')
             elif keysize > 8192:
                 raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
-        from multiprocessing.pool import ThreadPool as Pool
         self.key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
-        self._pub, self._priv = None, None    # Temporarily set to None so they can generate in background
+        self.__pub, self.__priv = None, None    # Temporarily set to None so they can generate in background
         self.keysize = keysize
         self.msgsize = (keysize // 8) - 11
-        self._key = None
+        self.__key = None
         self.peer_keysize = None
         self.peer_msgsize = None
         self.buffer = "".encode()
         self.key_exchange = None
         self.silent = silent
-        from functools import partial
-        import sys
+        # Socket inheritence section
         if sys.version_info[0] < 3:
             self.__recv = self._sock.recv
         else:
@@ -127,34 +128,36 @@ class secureSocket(socket.socket):
     @property
     def pub(self):
         """Your public key; blocks if still generating"""
-        if not self._pub:
+        if not self.__pub:
             if not self.silent:
                 print("Waiting to grab key")
-            self._pub, self._priv = self.key_async.get()[0]
+            self.__pub, self.__priv = self.key_async.get()[0]
             del self.key_async
-        return self._pub
+        return self.__pub
 
     @property
     def priv(self):
         """Your private key; blocks if still generating"""
-        if not self._priv:
+        if not self.__priv:
             if not self.silent:
                 print("Waiting to grab key")
-            self._pub, self._priv = self.key_async.get()[0]
+            self.__pub, self.__priv = self.key_async.get()[0]
             del self.key_async
-        return self._priv
+        return self.__priv
 
     @property
     def key(self):
+        """Your peer's public key; blocks if you're receiving it"""
         if self.key_exchange:
             self.key_exchange.join()
             self.key_exchange = None
-        return self._key
+        return self.__key
     
     def dup(self, conn=None):
         """Duplicates this secureSocket, with all key information, connected to the same peer.
         Blocks if keys are being exchanged."""
-        import sys
+        # 
+        # Ridiculous python2/3 compatability secion
         if sys.version_info[0] < 3:
             sock = secureSocket(self.family, self.type)
             if not conn:
@@ -169,16 +172,16 @@ class secureSocket(socket.socket):
                 sock = secureSocket()
                 fd = _socket.dup(conn.fileno())
                 super(secureSocket, sock).__init__(conn.family, conn.type, conn.proto, fd)
-        sock._pub, sock._priv = self.pub, self.priv
+        # End ridiculous compatability section
+        sock.__pub, sock.__priv = self.pub, self.priv
         sock.keysize = self.keysize
         sock.msgsize = self.msgsize
-        sock._key = self.key
+        sock.__key = self.key
         sock.peer_keysize = self.peer_keysize
         sock.peer_msgsize = self.peer_msgsize
         sock.buffer = self.buffer
         sock.silent = self.silent
-        from functools import partial
-        import sys
+        # Socket inheritence section
         if sys.version_info[0] < 3:
             sock.__recv = sock._sock.recv
         else:
@@ -187,6 +190,7 @@ class secureSocket(socket.socket):
         sock.sendall = sock.send
         sock.recv = partial(secureSocket.recv, sock)
         sock.dup = partial(secureSocket.dup, sock)
+        # End socket inheritence section
         return sock
 
     def accept(self):
@@ -194,7 +198,6 @@ class secureSocket(socket.socket):
         Like a native socket, it returns a copy of the socket and the connected address."""
         conn, addr = super(secureSocket, self).accept()
         sock = self.dup(conn=conn)
-        from threading import Thread
         sock.key_exchange = Thread(target=sock.handshake, args=(1,))
         sock.key_exchange.daemon = True
         sock.key_exchange.start()
@@ -203,7 +206,6 @@ class secureSocket(socket.socket):
     def connect(self, ip):
         """Connects to another secureSocket"""
         super(secureSocket, self).connect(ip)
-        from threading import Thread
         self.key_exchange = Thread(target=self.handshake, args=(0,))
         self.key_exchange.daemon = True
         self.key_exchange.start()
@@ -211,7 +213,7 @@ class secureSocket(socket.socket):
     def close(self):
         """Closes your connection to another socket, then cleans up metadata"""
         super(secureSocket, self).close()
-        self._key = None
+        self.__key = None
         self.peer_keysize = None
         self.peer_msgsize = None
 
@@ -224,7 +226,8 @@ class secureSocket(socket.socket):
     def recv(self, size=None):
         """Receives and decrypts a message, then verifies it against the attached signature.
         Blocks if keys are being exchanged, regardless of timeout settings."""
-        if self.buffer != "".encode():
+        # If there's a buffer, return from that immediately
+        if self.buffer:
             if size:
                 msg = self.buffer[:size]
                 self.buffer = self.buffer[size:]
@@ -232,10 +235,13 @@ class secureSocket(socket.socket):
                 msg = self.buffer
                 self.buffer = "".encode()
             return msg
+        # Otherwise, get a message and signature from your peer
         msg = self.__recv__()
         sig = self.__recv__()
         if not msg or not sig:
             return ''
+        # TODO: Make this section more clear
+        # If rsa is being used, there's a known error to catch. This is less true of PyCrypto.
         if uses_RSA:
             try:
                 self.verify(msg, sig)
@@ -243,6 +249,7 @@ class secureSocket(socket.socket):
                 print(msg)
         else:
             self.verify(msg, sig)
+        # If a size isn't defined, return the whole message. Otherwise manage the buffer as well.
         if not size:
             return msg
         else:
@@ -326,7 +333,7 @@ class secureSocket(socket.socket):
                 if isinstance(keys, type(b'')):
                     keys = keys.decode()
                 key = keys.split(",")
-                self._key = PublicKey(int(key[0]), int(key[1]))
+                self.__key = PublicKey(int(key[0]), int(key[1]))
                 if not self.silent:
                     print("Key received")
                 break
