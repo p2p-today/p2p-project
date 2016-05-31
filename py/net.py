@@ -92,7 +92,7 @@ else:
 
 class secureSocket(socket.socket):
     """An RSA encrypted and secured socket. Requires either the rsa or PyCrypto module"""
-    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False):
+    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False, silent=False):
         super(secureSocket, self).__init__(sock_family, sock_type, proto, fileno)
         if not suppress_warnings:
             if uses_RSA and keysize < 1024:
@@ -104,14 +104,15 @@ class secureSocket(socket.socket):
                 raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
         from multiprocessing.pool import ThreadPool as Pool
         self.key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
-        self.pub, self.priv = None, None    # Temporarily set to None so they can generate in background
+        self._pub, self._priv = None, None    # Temporarily set to None so they can generate in background
         self.keysize = keysize
         self.msgsize = (keysize // 8) - 11
-        self.key = None
+        self._key = None
         self.peer_keysize = None
         self.peer_msgsize = None
         self.buffer = "".encode()
         self.key_exchange = None
+        self.silent = silent
         from functools import partial
         import sys
         if sys.version_info[0] < 3:
@@ -123,6 +124,33 @@ class secureSocket(socket.socket):
         self.recv = partial(secureSocket.recv, self)
         self.dup = partial(secureSocket.dup, self)
 
+    @property
+    def pub(self):
+        """Your public key; blocks if still generating"""
+        if not self._pub:
+            if not self.silent:
+                print("Waiting to grab key")
+            self._pub, self._priv = self.key_async.get()[0]
+            del self.key_async
+        return self._pub
+
+    @property
+    def priv(self):
+        """Your private key; blocks if still generating"""
+        if not self._priv:
+            if not self.silent:
+                print("Waiting to grab key")
+            self._pub, self._priv = self.key_async.get()[0]
+            del self.key_async
+        return self._priv
+
+    @property
+    def key(self):
+        if self.key_exchange:
+            self.key_exchange.join()
+            self.key_exchange = None
+        return self._key
+    
     def dup(self, conn=None):
         """Duplicates this secureSocket, with all key information, connected to the same peer.
         Blocks if keys are being exchanged."""
@@ -141,16 +169,14 @@ class secureSocket(socket.socket):
                 sock = secureSocket()
                 fd = _socket.dup(conn.fileno())
                 super(secureSocket, sock).__init__(conn.family, conn.type, conn.proto, fd)
-        sock.pub, sock.priv = self.pub, self.priv
+        sock._pub, sock._priv = self.pub, self.priv
         sock.keysize = self.keysize
         sock.msgsize = self.msgsize
-        if self.key_exchange:
-            self.key_exchange.join()
-            self.key_exchange = None
-        sock.key = self.key
+        sock._key = self.key
         sock.peer_keysize = self.peer_keysize
         sock.peer_msgsize = self.peer_msgsize
         sock.buffer = self.buffer
+        sock.silent = self.silent
         from functools import partial
         import sys
         if sys.version_info[0] < 3:
@@ -163,20 +189,11 @@ class secureSocket(socket.socket):
         sock.dup = partial(secureSocket.dup, sock)
         return sock
 
-    def mapKey(self):
-        """Deals with the asyncronous generation of keys"""
-        if self.pub is None:
-            print("Waiting to grab key")
-            self.pub, self.priv = self.key_async.get()[0]
-            del self.key_async
-
     def accept(self):
         """Accepts an incoming connection.
         Like a native socket, it returns a copy of the socket and the connected address."""
         conn, addr = super(secureSocket, self).accept()
         sock = self.dup(conn=conn)
-        #sock.sendKey()
-        #sock.requestKey()
         from threading import Thread
         sock.key_exchange = Thread(target=sock.handshake, args=(1,))
         sock.key_exchange.daemon = True
@@ -186,8 +203,6 @@ class secureSocket(socket.socket):
     def connect(self, ip):
         """Connects to another secureSocket"""
         super(secureSocket, self).connect(ip)
-        #self.requestKey()
-        #self.sendKey()
         from threading import Thread
         self.key_exchange = Thread(target=self.handshake, args=(0,))
         self.key_exchange.daemon = True
@@ -196,27 +211,19 @@ class secureSocket(socket.socket):
     def close(self):
         """Closes your connection to another socket, then cleans up metadata"""
         super(secureSocket, self).close()
-        self.key = None
+        self._key = None
         self.peer_keysize = None
         self.peer_msgsize = None
 
     def send(self, msg):
         """Sends an encrypted copy of your message, and an encrypted signature.
         Blocks if keys are being exchanged."""
-        if self.key_exchange:
-            self.key_exchange.join()
-            self.key_exchange = None
-        elif self.peer_msgsize == None:
-            raise socket.error("You aren't connected to anyone")
         self.__send__(msg)
         self.__send__(self.sign(msg))
 
     def recv(self, size=None):
         """Receives and decrypts a message, then verifies it against the attached signature.
         Blocks if keys are being exchanged, regardless of timeout settings."""
-        if self.key_exchange:
-            self.key_exchange.join()
-            self.key_exchange = None
         if self.buffer != "".encode():
             if size:
                 msg = self.buffer[:size]
@@ -250,7 +257,6 @@ class secureSocket(socket.socket):
             msg = msg.encode()
         except:
             pass
-        self.mapKey()
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
         elif self.keysize >= 745:
@@ -304,7 +310,8 @@ class secureSocket(socket.socket):
     def requestKey(self):
         """Requests your peer's key over plaintext"""
         while True:
-            print("Requesting key size")
+            if not self.silent:
+                print("Requesting key size")
             super(secureSocket, self).sendall(size_request)
             try:
                 self.peer_keysize = int(self.__recv(16))
@@ -312,14 +319,16 @@ class secureSocket(socket.socket):
                     import warnings
                     warnings.warn('Your peer is using a small key length. Because you\'re using PyCrypto, sending may silently fail, as on some keys PyCrypto will not construct it correctly. To fix this, please run \'pip install rsa\'.', RuntimeWarning, stacklevel=2)
                 self.peer_msgsize = (self.peer_keysize // 8) - 11
-                print("Requesting key")
+                if not self.silent:
+                    print("Requesting key")
                 super(secureSocket, self).sendall(key_request)
                 keys = self.__recv(self.peer_keysize)
                 if isinstance(keys, type(b'')):
                     keys = keys.decode()
                 key = keys.split(",")
-                self.key = PublicKey(int(key[0]), int(key[1]))
-                print("Key received")
+                self._key = PublicKey(int(key[0]), int(key[1]))
+                if not self.silent:
+                    print("Key received")
                 break
             except EOFError:
                 continue
@@ -329,13 +338,14 @@ class secureSocket(socket.socket):
         req = self.__recv(len(size_request))
         if req != size_request:
             raise ValueError("Handshake has failed due to invalid request from peer: %s" % req)
-        print("Sending key size")
+        if not self.silent:
+            print("Sending key size")
         super(secureSocket, self).sendall(str(self.keysize).encode("utf-8"))
         req = self.__recv(len(key_request))
         if req != key_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
-        self.mapKey()
-        print("Sending key")
+        if not self.silent:
+            print("Sending key")
         super(secureSocket, self).sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
 
     def handshake(self, order):
