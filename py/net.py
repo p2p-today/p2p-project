@@ -68,7 +68,7 @@ except:
 
         def verify(msg, sig, key):
             """Wrapper for PyCrypto RSA signature verification, to better match rsa's method"""
-            for hashop in [MD5, SHA, SHA256, SHA384, SHA512]:
+            for hashop in [SHA512, SHA384, SHA256, SHA, MD5]:
                 hsh = hashop.new()
                 hsh.update(msg)
                 check = PKCS1_v1_5.PKCS115_SigScheme(key)
@@ -93,29 +93,33 @@ class secure_socket(socket.socket):
         if not suppress_warnings:
             if uses_RSA and keysize < 1024:
                 warnings.warn('Using the rsa module with a <1024 key length will make communication with PyCrypto implementations inconsistent', RuntimeWarning, stacklevel=2)
-            if keysize < 354 or (keysize / 8) - 11 < len(end_of_message):
+            if keysize < 354 or (keysize // 8) - 11 < len(end_of_message):
                 raise ValueError('This key is too small to be useful')
             elif keysize > 8192:
                 raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
         self.__key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
         self.__pub, self.__priv = None, None    # Temporarily set to None so they can generate in background
-        self.keysize = keysize
-        self.__msgsize = (keysize // 8) - 11
+        self.__keysize = keysize
         self.__key = None
-        self.peer_keysize = None
+        self.__peer_keysize = None
         self.__peer_msgsize = None
         self.__buffer = "".encode()
         self.__key_exchange = None
         self.__silent = silent
         # Socket inheritence section
         if sys.version_info[0] < 3:
-            self.__recv = self._sock.recv
+            self.__sock_recv = self._sock.recv
         else:
-            self.__recv = super(secure_socket, self).recv
+            self.__sock_recv = super(secure_socket, self).recv
         self.send = partial(secure_socket.send, self)
         self.sendall = self.send
         self.recv = partial(secure_socket.recv, self)
         self.dup = partial(secure_socket.dup, self)
+
+    @property
+    def keysize(self):
+        """Your key size in bits"""
+        return self.__keysize
 
     @property
     def pub(self):
@@ -144,15 +148,15 @@ class secure_socket(socket.socket):
                 print("Requesting key size")
             super(secure_socket, self).sendall(size_request)
             try:
-                self.peer_keysize = int(self.__recv(16))
-                if not uses_RSA and self.peer_keysize < 1024:
+                self.__peer_keysize = int(self.__sock_recv(16))
+                if not uses_RSA and self.__peer_keysize < 1024:
                     import warnings
                     warnings.warn('Your peer is using a small key length. Because you\'re using PyCrypto, sending may silently fail, as on some keys PyCrypto will not construct it correctly. To fix this, please run \'pip install rsa\'.', RuntimeWarning, stacklevel=2)
-                self.__peer_msgsize = (self.peer_keysize // 8) - 11
+                self.__peer_msgsize = (self.__peer_keysize // 8) - 11
                 if not self.__silent:
                     print("Requesting key")
                 super(secure_socket, self).sendall(key_request)
-                keys = self.__recv(self.peer_keysize)
+                keys = self.__sock_recv(self.__peer_keysize)
                 if isinstance(keys, type(b'')):
                     keys = keys.decode()
                 key = keys.split(",")
@@ -165,13 +169,13 @@ class secure_socket(socket.socket):
     
     def __send_key(self):
         """Sends your key over plaintext"""
-        req = self.__recv(len(size_request))
+        req = self.__sock_recv(len(size_request))
         if req != size_request:
             raise ValueError("Handshake has failed due to invalid request from peer: %s" % req)
         if not self.__silent:
             print("Sending key size")
         super(secure_socket, self).sendall(str(self.keysize).encode("utf-8"))
-        req = self.__recv(len(key_request))
+        req = self.__sock_recv(len(key_request))
         if req != key_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
         if not self.__silent:
@@ -197,6 +201,11 @@ class secure_socket(socket.socket):
         super(secure_socket, self).settimeout(timeout)
 
     @property
+    def peer_keysize(self):
+        """Your peer's key size in bits"""
+        return self.__peer_keysize
+
+    @property
     def key(self):
         """Your peer's public key; blocks if you're receiving it"""
         if self.__key_exchange:
@@ -208,7 +217,7 @@ class secure_socket(socket.socket):
         """Closes your connection to another socket, then cleans up metadata"""
         super(secure_socket, self).close()
         self.__key = None
-        self.peer_keysize = None
+        self.__peer_keysize = None
         self.__peer_msgsize = None
     
     def dup(self, conn=None):
@@ -232,18 +241,17 @@ class secure_socket(socket.socket):
                 super(secure_socket, sock).__init__(conn.family, conn.type, conn.proto, fd)
         # End ridiculous compatability section
         sock.__pub, sock.__priv = self.pub, self.priv
-        sock.keysize = self.keysize
-        sock.__msgsize = self.__msgsize
+        sock.__keysize = self.__keysize
         sock.__key = self.key
-        sock.peer_keysize = self.peer_keysize
+        sock.__peer_keysize = self.__peer_keysize
         sock.__peer_msgsize = self.__peer_msgsize
         sock.__buffer = self.__buffer
         sock.__silent = self.__silent
         # Socket inheritence section
         if sys.version_info[0] < 3:
-            sock.__recv = sock._sock.recv
+            sock.__sock_recv = sock._sock.recv
         else:
-            sock.__recv == super(secure_socket, self).recv
+            sock.__sock_recv == super(secure_socket, self).recv
         sock.send = partial(secure_socket.send, sock)
         sock.sendall = sock.send
         sock.recv = partial(secure_socket.recv, sock)
@@ -293,7 +301,7 @@ class secure_socket(socket.socket):
             key = self.key
         return verify(msg, sig, key)
 
-    def __send__(self, msg):
+    def __send(self, msg):
         """Base method for sending a message. Encrypts and sends. Use send instead."""
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = str(msg).encode('utf-8')
@@ -307,23 +315,23 @@ class secure_socket(socket.socket):
     def send(self, msg):
         """Sends an encrypted copy of your message, and an encrypted signature.
         Blocks if keys are being exchanged."""
-        self.__send__(msg)
-        self.__send__(self.sign(msg))
+        self.__send(msg)
+        self.__send(self.sign(msg))
 
-    def __recv__(self):
+    def __recv(self):
         """Base method for receiving a message. Receives and decrypts. Use recv instead."""
         received = b''
         packet = b''
         try:
             while True:
-                packet = self.__recv(self.__msgsize + 11)
+                packet = self.__sock_recv(self.__keysize // 8)
                 packet = decrypt(packet, self.priv)
                 if packet == end_of_message:
                     return received
                 received += packet
-        except decryption_error:
+        except decryption_error as error:
             print("Decryption error---Content: " + repr(packet))
-            raise decryption_error
+            raise error
         except ValueError as error:
             if error.args[0] in ["invalid literal for int() with base 16: ''", "invalid literal for int() with base 16: b''"]:
                 return 0
@@ -343,8 +351,8 @@ class secure_socket(socket.socket):
                 self.__buffer = "".encode()
             return msg
         # Otherwise, get a message and signature from your peer
-        msg = self.__recv__()
-        sig = self.__recv__()
+        msg = self.__recv()
+        sig = self.__recv()
         if not msg or not sig:
             return ''
         try:
