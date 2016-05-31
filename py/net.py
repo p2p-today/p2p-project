@@ -347,15 +347,12 @@ class secureSocket(socket.socket):
         sig = self.__recv__()
         if not msg or not sig:
             return ''
-        # TODO: Make this section more clear
-        # If rsa is being used, there's a known error to catch. This is less true of PyCrypto.
-        if uses_RSA:
-            try:
-                self.verify(msg, sig)
-            except rsa.pkcs1.VerificationError as error:
-                print(msg)
-        else:
-            self.verify(msg, sig)
+        try:
+            if not self.verify(msg, sig):  # This is because PyCrypto returns 0, but rsa raises an exception
+                raise Exception("Could not verify the peer's signature")
+        except Exception as error:
+            print(msg)
+            raise error
         # If a size isn't defined, return the whole message. Otherwise manage the buffer as well.
         if not size:
             return msg
