@@ -16,6 +16,8 @@ function p2p() {
         return v.toString(16);
     });
 
+    m.base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
     m.to_base_58 = function(i) {
         //Takes an integer and returns its corresponding base_58 string
         var string = "";
@@ -23,7 +25,7 @@ function p2p() {
             i = BigInt(i);
         }
         while (i.notEquals(0)) {
-            string = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[i.mod(58)] + string;
+            string = m.base_58[i.mod(58)] + string;
             i = i.divide(58);
         }
         return string;
@@ -35,7 +37,7 @@ function p2p() {
         var decimal = BigInt(0);
         //for char in string {
         for (i = 0; i < string.length; i++) {
-            decimal = decimal.times(58).plus('123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'.indexOf(string[i]));
+            decimal = decimal.times(58).plus(m.base_58.indexOf(string[i]));
         }
         return decimal;
     };

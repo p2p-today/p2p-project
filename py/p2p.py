@@ -21,7 +21,7 @@ class protocol(namedtuple("protocol", ['sep', 'subnet', 'encryption'])):
         h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
         return to_base_58(int(h.hexdigest(), 16))
 
-default_protocol = protocol(sep_sequence, None, "PKCS1_v1.5")
+default_protocol = protocol(sep_sequence, '', "PKCS1_v1.5")
 
 
 class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'server'])):
@@ -54,12 +54,14 @@ class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'serve
         msg_hash = hashlib.sha384((self.msg + to_base_58(self.time)).encode())
         return to_base_58(int(msg_hash.hexdigest(), 16))
 
+base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+
 
 def to_base_58(i):
     """Takes an integer and returns its corresponding base_58 string"""
     string = ""
     while i:
-        string = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[i % 58] + string
+        string = base_58[i % 58] + string
         i = i // 58
     return string
 
@@ -70,7 +72,7 @@ def from_base_58(string):
     if isinstance(string, bytes):
         string = string.decode()
     for char in string:
-        decimal = decimal * 58 + '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'.index(char)
+        decimal = decimal * 58 + base_58.index(char)
     return decimal
 
 
@@ -272,7 +274,7 @@ class p2p_daemon(object):
             self.sock = socket.socket()
         elif self.protocol.encryption == "PKCS1_v1.5":
             import net
-            self.sock = net.secureSocket()
+            self.sock = net.secure_socket()
         else:
             raise Exception("Unknown encryption type")
         self.sock.bind((addr, port))
@@ -475,7 +477,7 @@ class p2p_socket(object):
             conn = socket.socket()
         elif self.protocol.encryption == "PKCS1_v1.5":
             import net
-            conn = net.secureSocket()
+            conn = net.secure_socket()
         conn.settimeout(0.01)
         conn.connect((addr, port))
         handler = p2p_connection(conn, self, self.protocol, outgoing=True)

@@ -1,3 +1,7 @@
+Documentation for individual implementations can be found in their respective folders.
+
+# Mass Broadcast Protocol
+
 1.  **Abstract**
 
      This project is meant to be a simple, portable peer-to-peer network. Part of its simplicity is that it will utilize no pathfinding or addressing structure outside of those provided by TCP/IP. This means that any message is either a direct transmission or a mass broadcast. This also makes it much simpler to translate the reference implementation into another language.
