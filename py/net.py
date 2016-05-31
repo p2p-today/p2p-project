@@ -127,24 +127,25 @@ class secure_socket(socket.socket):
         """Your key size in bits"""
         return self.__keysize
 
+    def __map_key(self):
+        """Private method to block if key is being generated"""
+        if not self.__silent:
+            print("Waiting to grab key")
+        self.__pub, self.__priv = self.__key_async.get()[0]
+        del self.__key_async
+
     @property
     def pub(self):
         """Your public key; blocks if still generating"""
         if not self.__pub:
-            if not self.__silent:
-                print("Waiting to grab key")
-            self.__pub, self.__priv = self.__key_async.get()[0]
-            del self.__key_async
+            self.__map_key()
         return self.__pub
 
     @property
     def priv(self):
         """Your private key; blocks if still generating"""
         if not self.__priv:
-            if not self.__silent:
-                print("Waiting to grab key")
-            self.__pub, self.__priv = self.__key_async.get()[0]
-            del self.__key_async
+            self.__map_key()
         return self.__priv
 
     def __request_key(self):
