@@ -14,13 +14,14 @@ try:
     import rsa
     uses_RSA = True
     decryption_error = rsa.pkcs1.DecryptionError
+    verification_error = rsa.pkcs1.VerificationError
     newkeys    = rsa.newkeys
     encrypt    = rsa.encrypt
     decrypt    = rsa.decrypt
     sign       = rsa.sign
     verify     = rsa.verify
     public_key = rsa.PublicKey
-except:
+except ImportError:
     try:
         from Crypto.Hash import SHA512, SHA384, SHA256, SHA, MD5
         from Crypto.Cipher.PKCS1_v1_5 import PKCS115_Cipher
@@ -32,8 +33,10 @@ except:
         warnings.warn('Using the PyCrypto module is not recommended. It makes communication with smaller-than-standard keylengths inconsistent. Please run \'pip install rsa\' to use this more effectively.', ImportWarning, stacklevel=2)
 
         class DecryptionError(Exception): pass
+        class VerificationError(Exception): pass
 
         decryption_error = DecryptionError("Decryption failed")
+        verification_error = VerificationError("Signature verification failed")
 
 
         def newkeys(size):
@@ -75,14 +78,17 @@ except:
                 res = check.verify(hsh, sig)
                 if res:
                     break
-            return res
+            if not res:
+                raise verification_error
+            else:
+                return True
             
 
         def public_key(n, e):
             """Wrapper for PyCrypto RSA key constructor, to better match rsa's method"""
             return RSA.construct((long(n), long(e)))
 
-    except:
+    except ImportError:
         raise ImportError("You cannot use this without the rsa or PyCrypto module. To install this, run 'pip install rsa'. The rsa module is recommended because, while it's slightly slower, it's much more flexible, and ensures communication with other secure_sockets.")
 
 
@@ -150,7 +156,6 @@ class secure_socket(socket.socket):
             try:
                 self.__peer_keysize = int(self.__sock_recv(16))
                 if not uses_RSA and self.__peer_keysize < 1024:
-                    import warnings
                     warnings.warn('Your peer is using a small key length. Because you\'re using PyCrypto, sending may silently fail, as on some keys PyCrypto will not construct it correctly. To fix this, please run \'pip install rsa\'.', RuntimeWarning, stacklevel=2)
                 self.__peer_msgsize = (self.__peer_keysize // 8) - 11
                 if not self.__silent:
@@ -240,9 +245,9 @@ class secure_socket(socket.socket):
                 fd = _socket.dup(conn.fileno())
                 super(secure_socket, sock).__init__(conn.family, conn.type, conn.proto, fd)
         # End ridiculous compatability section
-        sock.__pub, sock.__priv = self.pub, self.priv
+        sock.__pub, sock.__priv = self.pub, self.priv  # Uses public API so it blocks when key is generating
         sock.__keysize = self.__keysize
-        sock.__key = self.key
+        sock.__key = self.key  # Uses public API so it blocks when key is exchanging
         sock.__peer_keysize = self.__peer_keysize
         sock.__peer_msgsize = self.__peer_msgsize
         sock.__buffer = self.__buffer
@@ -284,15 +289,15 @@ class secure_socket(socket.socket):
             pass
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
-        elif self.keysize >= 745:
+        elif self.keysize >= 745:  # This one uses public API so it blocks when key is generating
             return sign(msg, self.priv, 'SHA-512')
-        elif self.keysize >= 618:
+        elif self.__keysize >= 618:
             return sign(msg, self.priv, 'SHA-384')
-        elif self.keysize >= 490:
+        elif self.__keysize >= 490:
             return sign(msg, self.priv, 'SHA-256')
-        elif self.keysize >= 362:
+        elif self.__keysize >= 362:
             return sign(msg, self.priv, 'SHA-1')
-        else:   # if self.keysize < 354: raises OverflowError
+        else:   # if self.__keysize < 354: raises OverflowError
             return sign(msg, self.priv, 'MD5')
 
     def verify(self, msg, sig, key=None):
@@ -341,6 +346,7 @@ class secure_socket(socket.socket):
     def recv(self, size=None):
         """Receives and decrypts a message, then verifies it against the attached signature.
         Blocks if keys are being exchanged, regardless of timeout settings."""
+        #
         # If there's a buffer, return from that immediately
         if self.__buffer:
             if size:
@@ -356,10 +362,9 @@ class secure_socket(socket.socket):
         if not msg or not sig:
             return ''
         try:
-            if not self.verify(msg, sig):  # This is because PyCrypto returns 0, but rsa raises an exception
-                raise Exception("Could not verify the peer's signature")
-        except Exception as error:
-            print(msg)
+            verify(msg, sig, self.key)  # Uses public API so it blocks when key is exchanging
+        except verification_error as error:
+            print(msg, sig)
             raise error
         # If a size isn't defined, return the whole message. Otherwise manage the buffer as well.
         if not size:
