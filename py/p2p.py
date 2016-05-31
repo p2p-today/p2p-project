@@ -21,7 +21,7 @@ class protocol(namedtuple("protocol", ['sep', 'subnet', 'encryption'])):
         h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
         return to_base_58(int(h.hexdigest(), 16))
 
-default_protocol = protocol(sep_sequence, None, "PKCS1_v1.5")
+default_protocol = protocol(sep_sequence, '', "PKCS1_v1.5")
 
 
 class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'server'])):
