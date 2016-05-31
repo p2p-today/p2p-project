@@ -274,7 +274,7 @@ class p2p_daemon(object):
             self.sock = socket.socket()
         elif self.protocol.encryption == "PKCS1_v1.5":
             import net
-            self.sock = net.secureSocket()
+            self.sock = net.secure_socket()
         else:
             raise Exception("Unknown encryption type")
         self.sock.bind((addr, port))
@@ -477,7 +477,7 @@ class p2p_socket(object):
             conn = socket.socket()
         elif self.protocol.encryption == "PKCS1_v1.5":
             import net
-            conn = net.secureSocket()
+            conn = net.secure_socket()
         conn.settimeout(0.01)
         conn.connect((addr, port))
         handler = p2p_connection(conn, self, self.protocol, outgoing=True)

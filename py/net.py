@@ -14,12 +14,12 @@ try:
     import rsa
     uses_RSA = True
     decryption_error = rsa.pkcs1.DecryptionError
-    newkeys   = rsa.newkeys
-    encrypt   = rsa.encrypt
-    decrypt   = rsa.decrypt
-    sign      = rsa.sign
-    verify    = rsa.verify
-    PublicKey = rsa.PublicKey
+    newkeys    = rsa.newkeys
+    encrypt    = rsa.encrypt
+    decrypt    = rsa.decrypt
+    sign       = rsa.sign
+    verify     = rsa.verify
+    public_key = rsa.PublicKey
 except:
     try:
         from Crypto.Hash import SHA512, SHA384, SHA256, SHA, MD5
@@ -78,18 +78,18 @@ except:
             return res
             
 
-        def PublicKey(n, e):
+        def public_key(n, e):
             """Wrapper for PyCrypto RSA key constructor, to better match rsa's method"""
             return RSA.construct((long(n), long(e)))
 
     except:
-        raise ImportError("You cannot use this without the rsa or PyCrypto module. To install this, run 'pip install rsa'. The rsa module is recommended because, while it's slightly slower, it's much more flexible, and ensures communication with other secureSockets.")
+        raise ImportError("You cannot use this without the rsa or PyCrypto module. To install this, run 'pip install rsa'. The rsa module is recommended because, while it's slightly slower, it's much more flexible, and ensures communication with other secure_sockets.")
 
 
-class secureSocket(socket.socket):
+class secure_socket(socket.socket):
     """An RSA encrypted and secured socket. Requires either the rsa or PyCrypto module"""
     def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False, silent=False):
-        super(secureSocket, self).__init__(sock_family, sock_type, proto, fileno)
+        super(secure_socket, self).__init__(sock_family, sock_type, proto, fileno)
         if not suppress_warnings:
             if uses_RSA and keysize < 1024:
                 warnings.warn('Using the rsa module with a <1024 key length will make communication with PyCrypto implementations inconsistent', RuntimeWarning, stacklevel=2)
@@ -111,11 +111,11 @@ class secureSocket(socket.socket):
         if sys.version_info[0] < 3:
             self.__recv = self._sock.recv
         else:
-            self.__recv = super(secureSocket, self).recv
-        self.send = partial(secureSocket.send, self)
+            self.__recv = super(secure_socket, self).recv
+        self.send = partial(secure_socket.send, self)
         self.sendall = self.send
-        self.recv = partial(secureSocket.recv, self)
-        self.dup = partial(secureSocket.dup, self)
+        self.recv = partial(secure_socket.recv, self)
+        self.dup = partial(secure_socket.dup, self)
 
     @property
     def pub(self):
@@ -137,12 +137,12 @@ class secureSocket(socket.socket):
             del self.__key_async
         return self.__priv
 
-    def requestKey(self):
+    def __request_key(self):
         """Requests your peer's key over plaintext"""
         while True:
             if not self.__silent:
                 print("Requesting key size")
-            super(secureSocket, self).sendall(size_request)
+            super(secure_socket, self).sendall(size_request)
             try:
                 self.peer_keysize = int(self.__recv(16))
                 if not uses_RSA and self.peer_keysize < 1024:
@@ -151,50 +151,50 @@ class secureSocket(socket.socket):
                 self.__peer_msgsize = (self.peer_keysize // 8) - 11
                 if not self.__silent:
                     print("Requesting key")
-                super(secureSocket, self).sendall(key_request)
+                super(secure_socket, self).sendall(key_request)
                 keys = self.__recv(self.peer_keysize)
                 if isinstance(keys, type(b'')):
                     keys = keys.decode()
                 key = keys.split(",")
-                self.__key = PublicKey(int(key[0]), int(key[1]))
+                self.__key = public_key(int(key[0]), int(key[1]))
                 if not self.__silent:
                     print("Key received")
                 break
             except EOFError:
                 continue
     
-    def sendKey(self):
+    def __send_key(self):
         """Sends your key over plaintext"""
         req = self.__recv(len(size_request))
         if req != size_request:
             raise ValueError("Handshake has failed due to invalid request from peer: %s" % req)
         if not self.__silent:
             print("Sending key size")
-        super(secureSocket, self).sendall(str(self.keysize).encode("utf-8"))
+        super(secure_socket, self).sendall(str(self.keysize).encode("utf-8"))
         req = self.__recv(len(key_request))
         if req != key_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
         if not self.__silent:
             print("Sending key")
-        super(secureSocket, self).sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
+        super(secure_socket, self).sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
 
-    def handshake(self, order):
+    def __handshake(self, order):
         """Wrapper for sendKey and requestKey"""
         t = self.gettimeout()
-        super(secureSocket, self).settimeout(None)
+        super(secure_socket, self).settimeout(None)
         if order:
-            self.sendKey()
-        self.requestKey()
+            self.__send_key()
+        self.__request_key()
         if not order:
-            self.sendKey()
-        super(secureSocket, self).settimeout(t)
+            self.__send_key()
+        super(secure_socket, self).settimeout(t)
 
     def settimeout(self, timeout):
         """Sets the timeout for the socket. Blocks if keys are being exchanged."""
         if self.__key_exchange:
             self.__key_exchange.join()
             self.__key_exchange = None
-        super(secureSocket, self).settimeout(timeout)
+        super(secure_socket, self).settimeout(timeout)
 
     @property
     def key(self):
@@ -206,30 +206,30 @@ class secureSocket(socket.socket):
 
     def close(self):
         """Closes your connection to another socket, then cleans up metadata"""
-        super(secureSocket, self).close()
+        super(secure_socket, self).close()
         self.__key = None
         self.peer_keysize = None
         self.__peer_msgsize = None
     
     def dup(self, conn=None):
-        """Duplicates this secureSocket, with all key information, connected to the same peer.
+        """Duplicates this secure_socket, with all key information, connected to the same peer.
         Blocks if keys are being exchanged."""
         # 
         # Ridiculous python2/3 compatability secion
         if sys.version_info[0] < 3:
-            sock = secureSocket(self.family, self.type)
+            sock = secure_socket(self.family, self.type)
             if not conn:
                 sock._sock = socket.socket.dup(self)
             else:
                 sock._sock = conn
         else:
             if not conn:
-                sock = super(secureSocket, self).dup()
+                sock = super(secure_socket, self).dup()
             else:
                 import _socket
-                sock = secureSocket()
+                sock = secure_socket()
                 fd = _socket.dup(conn.fileno())
-                super(secureSocket, sock).__init__(conn.family, conn.type, conn.proto, fd)
+                super(secure_socket, sock).__init__(conn.family, conn.type, conn.proto, fd)
         # End ridiculous compatability section
         sock.__pub, sock.__priv = self.pub, self.priv
         sock.keysize = self.keysize
@@ -243,28 +243,28 @@ class secureSocket(socket.socket):
         if sys.version_info[0] < 3:
             sock.__recv = sock._sock.recv
         else:
-            sock.__recv == super(secureSocket, self).recv
-        sock.send = partial(secureSocket.send, sock)
+            sock.__recv == super(secure_socket, self).recv
+        sock.send = partial(secure_socket.send, sock)
         sock.sendall = sock.send
-        sock.recv = partial(secureSocket.recv, sock)
-        sock.dup = partial(secureSocket.dup, sock)
+        sock.recv = partial(secure_socket.recv, sock)
+        sock.dup = partial(secure_socket.dup, sock)
         # End socket inheritence section
         return sock
 
     def accept(self):
         """Accepts an incoming connection.
         Like a native socket, it returns a copy of the socket and the connected address."""
-        conn, addr = super(secureSocket, self).accept()
+        conn, addr = super(secure_socket, self).accept()
         sock = self.dup(conn=conn)
-        sock.__key_exchange = Thread(target=sock.handshake, args=(1,))
+        sock.__key_exchange = Thread(target=sock.__handshake, args=(1,))
         sock.__key_exchange.daemon = True
         sock.__key_exchange.start()
         return sock, addr
 
     def connect(self, ip):
-        """Connects to another secureSocket"""
-        super(secureSocket, self).connect(ip)
-        self.__key_exchange = Thread(target=self.handshake, args=(0,))
+        """Connects to another secure_socket"""
+        super(secure_socket, self).connect(ip)
+        self.__key_exchange = Thread(target=self.__handshake, args=(0,))
         self.__key_exchange.daemon = True
         self.__key_exchange.start()
 
@@ -299,10 +299,10 @@ class secureSocket(socket.socket):
             msg = str(msg).encode('utf-8')
         x = 0
         while x < len(msg) - self.__peer_msgsize:
-            super(secureSocket, self).sendall(encrypt(msg[x:x+self.__peer_msgsize], self.key))
+            super(secure_socket, self).sendall(encrypt(msg[x:x+self.__peer_msgsize], self.key))
             x += self.__peer_msgsize
-        super(secureSocket, self).sendall(encrypt(msg[x:], self.key))
-        super(secureSocket, self).sendall(encrypt(end_of_message, self.key))
+        super(secure_socket, self).sendall(encrypt(msg[x:], self.key))
+        super(secure_socket, self).sendall(encrypt(end_of_message, self.key))
 
     def send(self, msg):
         """Sends an encrypted copy of your message, and an encrypted signature.
