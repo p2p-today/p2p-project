@@ -150,28 +150,23 @@ class secure_socket(socket.socket):
 
     def __request_key(self):
         """Requests your peer's key over plaintext"""
-        while True:
-            if not self.__silent:
-                print("Requesting key size")
-            super(secure_socket, self).sendall(size_request)
-            try:
-                self.__peer_keysize = int(self.__sock_recv(16))
-                if not uses_RSA and self.__peer_keysize < 1024:
-                    warnings.warn('Your peer is using a small key length. Because you\'re using PyCrypto, sending may silently fail, as on some keys PyCrypto will not construct it correctly. To fix this, please run \'pip install rsa\'.', RuntimeWarning, stacklevel=2)
-                self.__peer_msgsize = (self.__peer_keysize // 8) - 11
-                if not self.__silent:
-                    print("Requesting key")
-                super(secure_socket, self).sendall(key_request)
-                keys = self.__sock_recv(self.__peer_keysize)
-                if isinstance(keys, type(b'')):
-                    keys = keys.decode()
-                key = keys.split(",")
-                self.__key = public_key(int(key[0]), int(key[1]))
-                if not self.__silent:
-                    print("Key received")
-                break
-            except EOFError:
-                continue
+        if not self.__silent:
+            print("Requesting key size")
+        super(secure_socket, self).sendall(size_request)
+        self.__peer_keysize = int(self.__sock_recv(16))
+        if not uses_RSA and self.__peer_keysize < 1024:
+            warnings.warn('Your peer is using a small key length. Because you\'re using PyCrypto, sending may silently fail, as on some keys PyCrypto will not construct it correctly. To fix this, please run \'pip install rsa\'.', RuntimeWarning, stacklevel=2)
+        self.__peer_msgsize = (self.__peer_keysize // 8) - 11
+        if not self.__silent:
+            print("Requesting key")
+        super(secure_socket, self).sendall(key_request)
+        keys = self.__sock_recv(self.__peer_keysize)
+        if isinstance(keys, type(b'')):
+            keys = keys.decode()
+        key = keys.split(",")
+        self.__key = public_key(int(key[0]), int(key[1]))
+        if not self.__silent:
+            print("Key received")
     
     def __send_key(self):
         """Sends your key over plaintext"""
@@ -349,12 +344,8 @@ class secure_socket(socket.socket):
         #
         # If there's a buffer, return from that immediately
         if self.__buffer:
-            if size:
-                msg = self.__buffer[:size]
-                self.__buffer = self.__buffer[size:]
-            else:
-                msg = self.__buffer
-                self.__buffer = "".encode()
+            msg = self.__buffer[:size]  # If size is None, it grabs everything
+            self.__buffer = self.__buffer[len(msg):]
             return msg
         # Otherwise, get a message and signature from your peer
         msg = self.__recv()
