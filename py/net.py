@@ -38,6 +38,9 @@ except ImportError:
         decryption_error = DecryptionError("Decryption failed")
         verification_error = VerificationError("Signature verification failed")
 
+        if sys.version_info > (3,):
+            long = int
+
 
         def newkeys(size):
             """Wrapper for PyCrypto RSA key generation, to better match rsa's method"""
