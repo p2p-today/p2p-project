@@ -1,3 +1,4 @@
+from __future__ import print_function
 import warnings, socket, sys
 from threading import Thread
 from functools import partial
@@ -317,6 +318,7 @@ class secure_socket(socket.socket):
     def send(self, msg):
         """Sends an encrypted copy of your message, and an encrypted signature.
         Blocks if keys are being exchanged."""
+        wait = self.key  # Use public API to block until key exchanged
         self.__send(msg)
         self.__send(self.sign(msg))  # Uses public API in order to use most comprehensive hash
 

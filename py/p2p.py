@@ -1,3 +1,4 @@
+from __future__ import print_function
 import hashlib, json, select, socket, struct, time, threading, traceback, uuid
 from collections import namedtuple, deque
 
@@ -49,12 +50,18 @@ class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'serve
     @property
     def packets(self):
         """Return the message's component packets, including it's type in position 0"""
-        return self.msg.split(self.protocol.sep)
+        if isinstance(self.msg, str):
+            return self.msg.split(self.protocol.sep)
+        else:
+            return self.msg.split(self.protocol.sep.encode())
 
     @property
     def id(self):
         """Returns the SHA384-based ID of the message"""
-        msg_hash = hashlib.sha384((self.msg + to_base_58(self.time)).encode())
+        if isinstance(self.msg, str):
+            msg_hash = hashlib.sha384((self.msg + to_base_58(self.time)).encode())
+        else:
+            msg_hash = hashlib.sha384(self.msg + to_base_58(self.time).encode())            
         return to_base_58(int(msg_hash.hexdigest(), 16))
 
 base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -117,12 +124,13 @@ def decompress(msg, method):
 
 class pathfinding_message(object):
     @classmethod
-    def feed_string(cls, string, protocol, sizeless=False, compressions=None):
+    def feed_string(cls, protocol, string, sizeless=False, compressions=None):
         """Constructs a pathfinding_message from a string."""
         if not sizeless:
             if struct.unpack("!L", string[:4])[0] != len(string[4:]):
                 raise ValueError("Must assert struct.unpack(\"!L\", string[:4])[0] == len(string[4:]).")
             string = string[4:]
+        compression_fail = False
         if compressions:
             compression_fail = False
             for method in compressions:
@@ -135,24 +143,36 @@ class pathfinding_message(object):
                     except:
                         compression_fail = True
                         continue
-            if comression_fail:
+        packets = string.split(protocol.sep.encode())
+        try:
+            msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
+        except:
+            if compression_fail:
                 raise ValueError("Could not decompress the message")
-        packets = string.split(protocol.sep)
-        print(packets)
-        msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
+            print(string)
+            raise
         msg.time = from_base_58(packets[3])
+        msg.compression_fail = compression_fail
         return msg
 
     def __init__(self, protocol, msg_type, sender, payload, compression=None):
         self.protocol = protocol
         self.msg_type = msg_type
         self.sender = sender
-        self.payload = payload
+        self.__payload = payload
         self.time = getUTC()
         if compression:
             self.compression = compression
         else:
             self.compression = []
+        self.compression_fail = False
+
+    @property
+    def payload(self):
+        for i in range(len(self.__payload)):
+            if not isinstance(self.__payload[i], bytes):
+                self.__payload[i] = self.__payload[i].encode()
+        return self.__payload
 
     @property
     def compression_used(self):
@@ -169,20 +189,23 @@ class pathfinding_message(object):
     @property
     def id(self):
         """Returns the message id"""
-        payload_string = self.protocol.sep.join(self.payload)
-        payload_hash = hashlib.sha384((payload_string + self.time_58).encode())
+        payload_string = self.protocol.sep.encode().join(self.payload)
+        payload_hash = hashlib.sha384(payload_string + self.time_58.encode())
         return to_base_58(int(payload_hash.hexdigest(), 16))
 
     @property
     def packets(self):
-        return [self.msg_type, self.sender, self.id, self.time_58] + self.payload
-    
+        meta = [self.msg_type, self.sender, self.id, self.time_58]
+        for i in range(len(meta)):
+            if not isinstance(meta[i], bytes):
+                meta[i] = meta[i].encode()
+        return meta + self.payload
 
     @property
     def __non_len_string(self):
-        string = self.protocol.sep.join(self.packets)
+        string = self.protocol.sep.encode().join(self.packets)
         if self.compression_used:
-            string = compress(string, self.compresion_used)
+            string = compress(string, self.compression_used)
         return string
     
     @property
@@ -242,23 +265,17 @@ class p2p_connection(object):
         raw_msg = ''.encode().join(self.buffer)
         self.expected = 4
         self.buffer = []
-        compression_fail = False
         self.active = False
-        for method in self.compression:
-            if method in compression:
-                try:
-                    raw_msg = decompress(raw_msg, method)
-                    compression_fail = False
-                except:
-                    compression_fail = True
-                    continue
-                break
         try:
-            if isinstance(raw_msg, bytes):
-                raw_msg = raw_msg.decode()
-        except:
-            pass
-        packets = raw_msg.split(self.protocol.sep)
+            msg = pathfinding_message.feed_string(self.protocol, raw_msg, False, self.compression)
+        except ValueError as e:
+            if e.args[0] == "Could not decompress the message":
+                self.send('renegotiate', 'compression', json.dumps([algo for algo in self.compression if algo is not method]))
+                self.send('renegotiate', 'resend')
+                return
+            else: #if e.args[0] == "Must assert struct.unpack(\"!L\", string[:4])[0] == len(string[4:]).":
+                raise
+        packets = msg.packets
         if self.debug(1): print("Message received: %s" % packets)
         if packets[0] == 'waterfall':
             if (packets[2] in (i for i, t in self.server.waterfalls)):
@@ -277,11 +294,7 @@ class p2p_connection(object):
             elif packets[4] == 'resend':
                 self.send(*self.last_sent)
                 return
-        if compression_fail:
-            self.send('renegotiate', 'compression', json.dumps([algo for algo in self.compression if algo is not method]))
-            self.send('renegotiate', 'resend')
-            return
-        msg = self.protocol.sep.join(packets[4:])  # Handle request without routing headers
+        msg = self.protocol.sep.encode().join(packets[4:])  # Handle request without routing headers
         if packets[0] == 'waterfall':
             reply_object = packets[1]
         else:
@@ -301,7 +314,7 @@ class p2p_connection(object):
         # Begin real method
         msg = pathfinding_message(self.protocol, msg_type, id, list(args), self.compression)
         if (msg.id, msg.time) not in self.server.waterfalls:
-            self.server.waterfalls.appendleft((msg.id, msg.time_58))
+            self.server.waterfalls.appendleft((msg.id, msg.time))
         if msg_type in ['whisper', 'broadcast']:
             self.last_sent = [msg_type] + list(args)
         if self.debug(4): print("Sending %s to %s" % ([msg.len] + msg.packets, self))
