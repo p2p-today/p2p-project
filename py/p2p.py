@@ -17,6 +17,7 @@ except:
 # Utility method/class section; feel free to mostly ignore
 
 class protocol(namedtuple("protocol", ['sep', 'subnet', 'encryption'])):
+    @property
     def id(self):
         h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
         return to_base_58(int(h.hexdigest(), 16))
@@ -38,17 +39,19 @@ class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'serve
             self.server.requests.update({request_id: ['whisper', 'whisper'] + list(args)})
             print("You aren't connected to the original sender. This reply is not guarunteed, but we're trying to make a connection and put the message through.")
 
-    def parse(self):
-        """Return the message's component packets, including it's type in position 0"""
-        return self.msg.split(self.protocol.sep)
-
     def __repr__(self):
-        string = "message(type=" + repr(self.parse()[0]) + ", packets=" + repr(self.parse()[1:]) + ", sender="
+        string = "message(type=" + repr(self.packets[0]) + ", packets=" + repr(self.packets[1:]) + ", sender="
         if isinstance(self.sender, p2p_connection):
             return string + repr(self.sender.addr) + ")"
         else:
             return string + self.sender + ")"
 
+    @property
+    def packets(self):
+        """Return the message's component packets, including it's type in position 0"""
+        return self.msg.split(self.protocol.sep)
+
+    @property
     def id(self):
         """Returns the SHA384-based ID of the message"""
         msg_hash = hashlib.sha384((self.msg + to_base_58(self.time)).encode())
@@ -112,25 +115,62 @@ def decompress(msg, method):
         raise Exception('Unknown decompression method')
 
 
-def construct_message(prot, comp_types, msg_type, id, packets, time=None):
-    time = kargs.get('time')
-    if not kargs.get('time'):
-        time = to_base_58(getUTC())
+class pathfinding_message(object):
+    @classmethod
+    def feed_string(cls, string, protocol, sizeless=False, compressions=None):
+        """Constructs a pathfinding_message from a string."""
+        if not sizeless:
+            if struct.unpack("!L", string[:4])[0] != len(string[4:]):
+                raise ValueError("Must assert struct.unpack(\"!L\", string[:4])[0] == len(string[4:]).")
+            string = string[4:]
+        if compressions:
+            for method in compressions:
+                if method in compression:  # module scope compression
+                    print("Trying %s compression" % method)
+                    try:
+                        string = decompress(string, method)
+                    except:
+                        continue
+                    break
+        packets = string.split(protocol.sep)
+        print(packets)
+        msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
+        msg.time = from_base_58(packets[3])
+        return msg
 
-    msg_hash = hashlib.sha384((prot.sep.join(list(packets)) + time).encode()).hexdigest()
-    msg_id = to_base_58(int(msg_hash, 16))
+    def __init__(self, protocol, msg_type, sender, payload, compression=None):
+        self.protocol = protocol
+        self.msg_type = msg_type
+        self.sender = sender
+        self.payload = payload
+        self.time = getUTC()
+        if compression:
+            self.compression = compression
+        else:
+            self.compression = []
 
-    packets = [msg_type, id, msg_id, time] + list(packets)
-    msg = prot.sep.join(packets).encode()
-    compression_used = ""
-    for method in compression:
-        if method in comp_types:
-            compression_used = method
-            msg = compress(msg, method)
-            break
+    @property
+    def time_58(self):
+        """Returns the messages timestamp in base_58"""
+        return to_base_58(self.time)
 
-    size = struct.pack("!L", len(msg))
-    return size, msg
+    @property
+    def id(self):
+        """Returns the message id"""
+        payload_string = self.protocol.sep.join(self.payload)
+        payload_hash = hashlib.sha384((payload_string + self.time_58).encode())
+        return to_base_58(int(payload_hash.hexdigest(), 16))
+
+    @property
+    def string(self):
+        """Returns a string representation of the message"""
+        payload_string = self.protocol.sep.join(self.payload)
+        string = self.protocol.sep.join([self.msg_type, self.sender, self.id, self.time_58, payload_string])
+        for method in compression:
+            if method in self.compression:
+                string = compress(string, method)
+                break
+        return struct.pack("!L", len(string)) + string
 
 # End utility section
 
@@ -161,6 +201,10 @@ class p2p_connection(object):
             return False
         self.buffer.append(data)
         self.time = getUTC()
+        if not self.active and self.find_terminator():
+            if self.debug(4): print(self.buffer, self.expected, self.find_terminator())
+            self.expected = struct.unpack("!L", ''.encode().join(self.buffer))[0] + 4
+            self.active = True
         return True
 
     def find_terminator(self):
@@ -169,60 +213,54 @@ class p2p_connection(object):
 
     def found_terminator(self):
         """Processes received messages"""
-        if not self.active:
-            if self.debug(4): print(self.buffer, self.expected, self.find_terminator())
-            self.expected = struct.unpack("!L", ''.encode().join(self.buffer))[0]
-            self.buffer = []
-            self.active = True
-        else:
-            raw_msg = ''.encode().join(self.buffer)
-            self.expected = 4
-            self.buffer = []
-            compression_fail = False
-            self.active = False
-            for method in self.compression:
-                if method in compression:
-                    try:
-                        raw_msg = decompress(raw_msg, method)
-                        compression_fail = False
-                    except:
-                        compression_fail = True
-                        continue
-                    break
-            try:
-                if isinstance(raw_msg, bytes):
-                    raw_msg = raw_msg.decode()
-            except:
-                pass
-            packets = raw_msg.split(self.protocol.sep)
-            if self.debug(1): print("Message received: %s" % packets)
-            if packets[0] == 'waterfall':
-                if (packets[2] in (i for i, t in self.server.waterfalls)):
-                    if self.debug(2): print("Waterfall already captured")
-                    return
-                else:
-                    if self.debug(2): print("New waterfall received. Proceeding as normal")
-            elif packets[0] == 'renegotiate':
-                if packets[4] == 'compression':
-                    respond = (self.compression != json.loads(packets[5]))
-                    self.compression = json.loads(packets[5])
-                    if self.debug(2): print("Compression methods changed to: %s" % repr(self.compression))
-                    if respond:
-                        self.send('renegotiate', 'compression', json.dumps([method for method in compression if method in self.compression]))
-                    return
-                elif packets[4] == 'resend':
-                    self.send(*self.last_sent)
-                    return
-            if compression_fail:
-                self.send('renegotiate', 'compression', json.dumps([algo for algo in self.compression if algo is not method]))
-                self.send('renegotiate', 'resend')
+        raw_msg = ''.encode().join(self.buffer)
+        self.expected = 4
+        self.buffer = []
+        compression_fail = False
+        self.active = False
+        for method in self.compression:
+            if method in compression:
+                try:
+                    raw_msg = decompress(raw_msg, method)
+                    compression_fail = False
+                except:
+                    compression_fail = True
+                    continue
+                break
+        try:
+            if isinstance(raw_msg, bytes):
+                raw_msg = raw_msg.decode()
+        except:
+            pass
+        packets = raw_msg.split(self.protocol.sep)
+        if self.debug(1): print("Message received: %s" % packets)
+        if packets[0] == 'waterfall':
+            if (packets[2] in (i for i, t in self.server.waterfalls)):
+                if self.debug(2): print("Waterfall already captured")
                 return
-            msg = self.protocol.sep.join(packets[4:])  # Handle request without routing headers
-            if packets[0] == 'waterfall':
-                reply_object = packets[1]
             else:
-                reply_object = self
-            self.server.handle_request(message(msg, reply_object, self.protocol, from_base_58(packets[3]), self.server))
+                if self.debug(2): print("New waterfall received. Proceeding as normal")
+        elif packets[0] == 'renegotiate':
+            if packets[4] == 'compression':
+                respond = (self.compression != json.loads(packets[5]))
+                self.compression = json.loads(packets[5])
+                if self.debug(2): print("Compression methods changed to: %s" % repr(self.compression))
+                if respond:
+                    self.send('renegotiate', 'compression', json.dumps([method for method in compression if method in self.compression]))
+                return
+            elif packets[4] == 'resend':
+                self.send(*self.last_sent)
+                return
+        if compression_fail:
+            self.send('renegotiate', 'compression', json.dumps([algo for algo in self.compression if algo is not method]))
+            self.send('renegotiate', 'resend')
+            return
+        msg = self.protocol.sep.join(packets[4:])  # Handle request without routing headers
+        if packets[0] == 'waterfall':
+            reply_object = packets[1]
+        else:
+            reply_object = self
+        self.server.handle_request(message(msg, reply_object, self.protocol, from_base_58(packets[3]), self.server))
 
     def send(self, msg_type, *args, **kargs):
         """Sends a message through its connection. The first argument is message type. All after that are content packets"""
@@ -292,7 +330,7 @@ class p2p_daemon(object):
             if conn is not None:
                 if self.debug(1): print('Incoming connection from %s' % repr(addr))
                 handler = p2p_connection(conn, self.server, self.protocol)
-                handler.send("whisper", "handshake", self.server.id, self.protocol.id(), json.dumps(self.server.out_addr), json.dumps(compression))
+                handler.send("whisper", "handshake", self.server.id, self.protocol.id, json.dumps(self.server.out_addr), json.dumps(compression))
                 handler.sock.settimeout(0.01)
                 self.server.awaiting_ids.append(handler)
                 # print("Appended ", handler.addr, " to handler list: ", handler)
@@ -366,7 +404,7 @@ class p2p_socket(object):
             self.out_addr = out_addr
         else:
             self.out_addr = addr, port
-        info = [str(out_addr), prot.id(), user_salt]
+        info = [str(out_addr), prot.id, user_salt]
         h = hashlib.sha384(''.join(info).encode())
         self.id = to_base_58(int(h.hexdigest(), 16))
         self.daemon = p2p_daemon(addr, port, self, prot)
@@ -374,9 +412,9 @@ class p2p_socket(object):
     def handle_request(self, msg):
         """Decides how to handle various message types, allowing some to be handled automatically"""
         handler = msg.sender
-        packets = msg.parse()
+        packets = msg.packets
         if packets[0] == 'handshake':
-            if packets[2] != self.protocol.id():
+            if packets[2] != self.protocol.id:
                 handler.sock.close()
                 self.awaiting_ids.remove(handler)
                 return
@@ -430,15 +468,15 @@ class p2p_socket(object):
     def waterfall(self, msg):
         """Handles the waterfalling of received messages"""
         # self.cleanup()
-        if self.debug(3): print(msg.id(), [i for i, t in self.waterfalls])
-        if msg.id() not in (i for i, t in self.waterfalls):
-            self.waterfalls.appendleft((msg.id(), msg.time))
+        if self.debug(3): print(msg.id, [i for i, t in self.waterfalls])
+        if msg.id not in (i for i, t in self.waterfalls):
+            self.waterfalls.appendleft((msg.id, msg.time))
             if isinstance(msg.sender, p2p_connection):
                 id = msg.sender.id
             else:
                 id = msg.sender
             for handler in self.routing_table.values():
-                handler.send('waterfall', *msg.parse(), time=to_base_58(msg.time), id=id)
+                handler.send('waterfall', *msg.packets, time=to_base_58(msg.time), id=id)
             self.waterfalls = deque(set(self.waterfalls))
             removes = []
             for i, t in self.waterfalls:
@@ -482,7 +520,7 @@ class p2p_socket(object):
         conn.connect((addr, port))
         handler = p2p_connection(conn, self, self.protocol, outgoing=True)
         handler.id = id
-        handler.send("whisper", "handshake", self.id, self.protocol.id(), json.dumps(self.out_addr), json.dumps(compression))
+        handler.send("whisper", "handshake", self.id, self.protocol.id, json.dumps(self.out_addr), json.dumps(compression))
         if not id:
             self.awaiting_ids.append(handler)
         else:
