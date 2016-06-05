@@ -332,9 +332,9 @@ class secure_socket(socket.socket):
                 packet = self.__sock_recv(self.__keysize // 8)
                 packet = decrypt(packet, self.priv)
             return received
-        except decryption_error as error:
+        except decryption_error:
             print("Decryption error---Content: " + repr(packet))
-            raise error
+            raise
         except ValueError as error:
             if error.args[0] in ["invalid literal for int() with base 16: ''", "invalid literal for int() with base 16: b''"]:
                 return 0
@@ -355,11 +355,9 @@ class secure_socket(socket.socket):
         sig = self.__recv()
         if not (msg or sig):
             return ''
-        verify(msg, sig, self.key)  # Uses public API so it blocks when key is exchanging
+        self.verify(msg, sig)  # Uses public API so it blocks when key is exchanging
         # If a size isn't defined, return the whole message. Otherwise manage the buffer as well.
-        if size:
-            self.__buffer += msg
-            ret = self.__buffer[:size]
-            self.__buffer = self.__buffer[size:]
-            return ret
-        return msg
+        self.__buffer += msg
+        ret = self.__buffer[:size]
+        self.__buffer = self.__buffer[len(ret):]
+        return ret

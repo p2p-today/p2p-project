@@ -131,6 +131,7 @@ class pathfinding_message(object):
                 raise ValueError("Must assert struct.unpack(\"!L\", string[:4])[0] == len(string[4:]).")
             string = string[4:]
         compression_fail = False
+        print(compressions)
         if compressions:
             compression_fail = False
             for method in compressions:
@@ -442,8 +443,9 @@ class p2p_socket(object):
         """Decides how to handle various message types, allowing some to be handled automatically"""
         handler = msg.sender
         packets = msg.packets
-        if packets[0] == 'handshake':
-            if packets[2] != self.protocol.id:
+        if packets[0] == 'handshake'.encode():
+            print("Entering handshake stage")
+            if packets[2] != self.protocol.id.encode():
                 handler.sock.close()
                 self.awaiting_ids.remove(handler)
                 return
@@ -452,32 +454,33 @@ class p2p_socket(object):
                 self.outgoing.append(handler.id)
             else:
                 self.incoming.append(handler.id)
-            handler.addr = json.loads(packets[3])
-            handler.compression = json.loads(packets[4])
+            handler.addr = json.loads(packets[3].decode())
+            handler.compression = json.loads(packets[4].decode())
+            if self.debug(4): print("Compression methods changed to %s" % repr(handler.compression))
             if handler in self.awaiting_ids:
                 self.awaiting_ids.remove(handler)
             self.routing_table.update({packets[1]: handler})
-            handler.send("whisper", "peers", json.dumps([(self.routing_table[key].addr, key) for key in self.routing_table.keys()]))
-        elif packets[0] == 'peers':
-            new_peers = json.loads(packets[1])
+            handler.send("whisper", "peers", json.dumps([(self.routing_table[key].addr, key.decode()) for key in self.routing_table.keys()]))
+        elif packets[0] == 'peers'.encode():
+            new_peers = json.loads(packets[1].decode())
             for addr, id in new_peers:
                 if len(self.outgoing) < max_outgoing and addr:
                     self.connect(addr[0], addr[1], id)
-        elif packets[0] == 'response':
+        elif packets[0] == 'response'.encode():
             if self.debug(1): print("Response received for request id %s" % packets[1])
             if self.requests.get(packets[1]):
-                addr = json.loads(packets[2])
+                addr = json.loads(packets[2].decode())
                 if addr:
                     msg = self.requests.get(packets[1])
                     self.requests.pop(packets[1])
                     self.connect(addr[0][0], addr[0][1], addr[1])
                     self.routing_table[addr[1]].send(*msg)
-        elif packets[0] == 'request':
+        elif packets[0] == 'request'.encode():
             if self.routing_table.get(packets[2]):
-                handler.send('broadcast', 'response', packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2]]))
+                handler.send('broadcast', 'response', packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2].decode()]))
             elif packets[2] == '*':
                 self.send("broadcast", "peers", json.dumps([(key, self.routing_table[key].addr) for key in self.routing_table.keys()]))
-        elif packets[0] == 'whisper':
+        elif packets[0] == 'whisper'.encode():
             self.queue.appendleft(msg)
         else:
             if self.waterfall(msg):
@@ -497,7 +500,7 @@ class p2p_socket(object):
     def waterfall(self, msg):
         """Handles the waterfalling of received messages"""
         # self.cleanup()
-        if self.debug(3): print(msg.id, [i for i, t in self.waterfalls])
+        if self.debug(5): print(msg.id, [i for i, t in self.waterfalls])
         if msg.id not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id, msg.time))
             if isinstance(msg.sender, p2p_connection):
