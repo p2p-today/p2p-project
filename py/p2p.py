@@ -124,14 +124,19 @@ class pathfinding_message(object):
                 raise ValueError("Must assert struct.unpack(\"!L\", string[:4])[0] == len(string[4:]).")
             string = string[4:]
         if compressions:
+            compression_fail = False
             for method in compressions:
                 if method in compression:  # module scope compression
                     print("Trying %s compression" % method)
                     try:
                         string = decompress(string, method)
+                        compression_fail = False
+                        break
                     except:
+                        compression_fail = True
                         continue
-                    break
+            if comression_fail:
+                raise ValueError("Could not decompress the message")
         packets = string.split(protocol.sep)
         print(packets)
         msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
@@ -150,6 +155,13 @@ class pathfinding_message(object):
             self.compression = []
 
     @property
+    def compression_used(self):
+        for method in compression:
+            if method in self.compression:
+                return method
+        return None
+
+    @property
     def time_58(self):
         """Returns the messages timestamp in base_58"""
         return to_base_58(self.time)
@@ -162,15 +174,29 @@ class pathfinding_message(object):
         return to_base_58(int(payload_hash.hexdigest(), 16))
 
     @property
+    def packets(self):
+        return [self.msg_type, self.sender, self.id, self.time_58] + self.payload
+    
+
+    @property
+    def __non_len_string(self):
+        string = self.protocol.sep.join(self.packets)
+        if self.compression_used:
+            string = compress(string, self.compresion_used)
+        return string
+    
+    @property
     def string(self):
         """Returns a string representation of the message"""
-        payload_string = self.protocol.sep.join(self.payload)
-        string = self.protocol.sep.join([self.msg_type, self.sender, self.id, self.time_58, payload_string])
-        for method in compression:
-            if method in self.compression:
-                string = compress(string, method)
-                break
+        string = self.__non_len_string
         return struct.pack("!L", len(string)) + string
+
+    def __len__(self):
+        return len(self.__non_len_string)
+
+    @property
+    def len(self):
+        return struct.pack("!L", self.__len__())
 
 # End utility section
 
@@ -266,32 +292,22 @@ class p2p_connection(object):
         """Sends a message through its connection. The first argument is message type. All after that are content packets"""
         # This section handles waterfall-specific flags
         id = kargs.get('id')
-        time = kargs.get('time')
-        if not kargs.get('time'):
-            time = to_base_58(getUTC())
         if not id:
             id = self.server.id
+        if kargs.get('time'):
+            time = from_base_58(kargs.get('time'))
+        else:
+            time = getUTC()
         # Begin real method
-        msg_hash = hashlib.sha384((self.protocol.sep.join(list(args)) + time).encode()).hexdigest()
-        msg_id = to_base_58(int(msg_hash, 16))
-        if (msg_id, time) not in self.server.waterfalls:
-            self.server.waterfalls.appendleft((msg_id, from_base_58(time)))
-        packets = [msg_type, id, msg_id, time] + list(args)
+        msg = pathfinding_message(self.protocol, msg_type, id, list(args), self.compression)
+        if (msg.id, msg.time) not in self.server.waterfalls:
+            self.server.waterfalls.appendleft((msg.id, msg.time_58))
         if msg_type in ['whisper', 'broadcast']:
             self.last_sent = [msg_type] + list(args)
-        msg = self.protocol.sep.join(packets).encode()
-        compression_used = ""
-        for method in compression:
-            if method in self.compression:
-                compression_used = method
-                msg = compress(msg, method)
-                break
-        size = struct.pack("!L", len(msg))
-        if self.debug(4): print("Sending %s to %s" % ([size] + packets, self))
-        if self.debug(4) and compression_used: print("Compressing with %s" % compression_used)
+        if self.debug(4): print("Sending %s to %s" % ([msg.len] + msg.packets, self))
+        if self.debug(4) and msg.compression_used: print("Compressing with %s" % msg.compression_used)
         try:
-            self.sock.send(size)
-            self.sock.send(msg)
+            self.sock.send(msg.string)
         except IOError as e:
             self.server.daemon.exceptions.append((e, traceback.format_exc()))
             self.server.daemon.disconnect(self)
