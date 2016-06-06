@@ -243,7 +243,7 @@ class p2p_connection(object):
     def collect_incoming_data(self, data):
         """Collects incoming data"""
         if not bool(data):
-            if self.debug(5): print(data, time.time())
+            self.__print(data, time.time(), level=5)
             try:
                 self.sock.shutdown(socket.SHUT_RDWR)
             except:
@@ -252,7 +252,7 @@ class p2p_connection(object):
         self.buffer.append(data)
         self.time = getUTC()
         if not self.active and self.find_terminator():
-            if self.debug(4): print(self.buffer, self.expected, self.find_terminator())
+            self.__print(self.buffer, self.expected, self.find_terminator(), level=4)
             self.expected = struct.unpack("!L", ''.encode().join(self.buffer))[0] + 4
             self.active = True
         return True
@@ -277,18 +277,18 @@ class p2p_connection(object):
             else: #if e.args[0] == "Must assert struct.unpack(\"!L\", string[:4])[0] == len(string[4:]).":
                 raise
         packets = msg.packets
-        if self.debug(1): print("Message received: %s" % packets)
+        self.__print("Message received: %s" % packets, level=1)
         if packets[0] == 'waterfall':
             if (packets[2] in (i for i, t in self.server.waterfalls)):
-                if self.debug(2): print("Waterfall already captured")
+                self.__print("Waterfall already captured", level=2)
                 return
             else:
-                if self.debug(2): print("New waterfall received. Proceeding as normal")
+                self.__print("New waterfall received. Proceeding as normal", level=2)
         elif packets[0] == 'renegotiate':
             if packets[4] == 'compression':
                 respond = (self.compression != json.loads(packets[5]))
                 self.compression = json.loads(packets[5])
-                if self.debug(2): print("Compression methods changed to: %s" % repr(self.compression))
+                self.__print("Compression methods changed to: %s" % repr(self.compression), level=2)
                 if respond:
                     self.send('renegotiate', 'compression', json.dumps([method for method in compression if method in self.compression]))
                 return
@@ -318,8 +318,8 @@ class p2p_connection(object):
             self.server.waterfalls.appendleft((msg.id, msg.time))
         if msg_type in ['whisper', 'broadcast']:
             self.last_sent = [msg_type] + list(args)
-        if self.debug(4): print("Sending %s to %s" % ([msg.len] + msg.packets, self))
-        if self.debug(4) and msg.compression_used: print("Compressing with %s" % msg.compression_used)
+        self.__print("Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)
+        if msg.compression_used: self.__print("Compressing with %s" % msg.compression_used, level=4)
         try:
             self.sock.send(msg.string)
         except IOError as e:
@@ -329,9 +329,9 @@ class p2p_connection(object):
     def fileno(self):
         return self.sock.fileno()
 
-    def debug(self, level=1):
-        """Detects how verbose you want the printing to be"""
-        return self.server.debug(level)
+    def __print(self, *args, **kargs):
+        """Private method to print if level is >= self.server.__debug_level"""
+        self.server.__print(*args, **kargs)
 
 
 class p2p_daemon(object):
@@ -358,7 +358,7 @@ class p2p_daemon(object):
         try:
             conn, addr = self.sock.accept()
             if conn is not None:
-                if self.debug(1): print('Incoming connection from %s' % repr(addr))
+                self.__print('Incoming connection from %s' % repr(addr), level=1)
                 handler = p2p_connection(conn, self.server, self.protocol)
                 handler.send("whisper", "handshake", self.server.id, self.protocol.id, json.dumps(self.server.out_addr), json.dumps(compression))
                 handler.sock.settimeout(0.01)
@@ -377,7 +377,7 @@ class p2p_daemon(object):
                     try:
                         while not handler.find_terminator():
                             if not handler.collect_incoming_data(handler.sock.recv(1)):
-                                if self.debug(6): print("disconnecting node %s while in loop" % handler.id)
+                                self.__print("disconnecting node %s while in loop" % handler.id, level=6)
                                 self.disconnect(handler)
                                 raise socket.timeout()
                         handler.found_terminator()
@@ -388,9 +388,9 @@ class p2p_daemon(object):
                             node_id = handler.id
                             if not node_id:
                                 node_id = repr(handler)
-                            if self.debug(1): print("Node %s has disconnected from the network" % node_id)
+                            self.__print("Node %s has disconnected from the network" % node_id, level=1)
                         else:
-                            if self.debug(0): print("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your p2p_socket.daemon.exceptions list to github.com/gappleto97/python-utils." % handler.id)
+                            self.__print("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your p2p_socket.daemon.exceptions list to github.com/gappleto97/python-utils." % handler.id, level=0)
                             self.exceptions.append((e, traceback.format_exc()))
                         try:
                             handler.sock.shutdown(socket.SHUT_RDWR)
@@ -404,7 +404,7 @@ class p2p_daemon(object):
         node_id = handler.id
         if not node_id:
             node_id = repr(handler)
-        if self.debug(1): print("Connection to node %s has been closed" % node_id)
+        self.__print("Connection to node %s has been closed" % node_id, level=1)
         if handler in self.server.awaiting_ids:
             self.server.awaiting_ids.remove(handler)
         elif self.server.routing_table.get(handler.id):
@@ -414,9 +414,9 @@ class p2p_daemon(object):
         elif handler.id and handler.id in self.server.incoming:
             self.server.incoming.remove(handler.id)
 
-    def debug(self, level=1):
-        """Detects how verbose you want the printing to be"""
-        return self.server.debug(level)
+    def __print(self, *args, **kargs):
+        """Private method to print if level is >= self.server.__debug_level"""
+        self.server.__print(*args, **kargs)
 
 
 class p2p_socket(object):
@@ -456,7 +456,7 @@ class p2p_socket(object):
                 self.incoming.append(handler.id)
             handler.addr = json.loads(packets[3].decode())
             handler.compression = json.loads(packets[4].decode())
-            if self.debug(4): print("Compression methods changed to %s" % repr(handler.compression))
+            self.__print("Compression methods changed to %s" % repr(handler.compression), level=4)
             if handler in self.awaiting_ids:
                 self.awaiting_ids.remove(handler)
             self.routing_table.update({packets[1]: handler})
@@ -467,7 +467,7 @@ class p2p_socket(object):
                 if len(self.outgoing) < max_outgoing and addr:
                     self.connect(addr[0], addr[1], id)
         elif packets[0] == 'response'.encode():
-            if self.debug(1): print("Response received for request id %s" % packets[1])
+            self.__print("Response received for request id %s" % packets[1], level=1)
             if self.requests.get(packets[1]):
                 addr = json.loads(packets[2].decode())
                 if addr:
@@ -500,7 +500,7 @@ class p2p_socket(object):
     def waterfall(self, msg):
         """Handles the waterfalling of received messages"""
         # self.cleanup()
-        if self.debug(5): print(msg.id, [i for i, t in self.waterfalls])
+        self.__print(msg.id, [i for i, t in self.waterfalls], level=5)
         if msg.id not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id, msg.time))
             if isinstance(msg.sender, p2p_connection):
@@ -519,7 +519,7 @@ class p2p_socket(object):
             while len(self.waterfalls) > 100:
                 self.waterfalls.pop()
             return True
-        if self.debug(3): print("Not rebroadcasting")
+        self.__print("Not rebroadcasting", level=3)
         return False
 
     def recv(self, quantity=1):
@@ -538,10 +538,10 @@ class p2p_socket(object):
     def connect(self, addr, port, id=None):
         """Connects to a specified node. Specifying ID will immediately add to routing table. Blocking"""
         # self.cleanup()
-        if self.debug(1): print("Attempting connection to %s:%s" % (addr, port))
+        self.__print("Attempting connection to %s:%s" % (addr, port), level=1)
         if socket.getaddrinfo(addr, port)[0] == socket.getaddrinfo(*self.out_addr)[0] or \
                                                     id and id in self.routing_table.keys():
-            if self.debug(1): print("Connection already established")
+            self.__print("Connection already established", level=1)
             return False
         if self.protocol.encryption == "Plaintext":
             conn = socket.socket()
@@ -559,6 +559,7 @@ class p2p_socket(object):
             self.routing_table.update({id: handler})
         # print("Appended ", port, addr, " to handler list: ", handler)
 
-    def debug(self, level=1):
-        """Detects how verbose you want the printing to be"""
-        return self.debug_level >= level
+    def __print(self, *args, **kargs):
+        """Private method to print if level is >= self.__debug_level"""
+        if kargs.get('level') >= self.__debug_level:
+            print(*args)

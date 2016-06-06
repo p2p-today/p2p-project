@@ -129,7 +129,7 @@ Private methods:
 
 * `handle_request(msg)`: Allows the daemon to parse subflag-level actions
 * `waterfall(msg)`: Waterfalls a `message` to your peers
-* `debug(level=1)`: Determines whether a debug message should be printed
+* `__print(*args, level=None)`: Prints debug information if `level` is >= `__debug_level`
 
 ### p2p_daemon
 
@@ -148,7 +148,7 @@ Private methods:
 * `mainloop()`: Receives data from all ready `socket`s, acts on this data, then receives incoming connections
 * `handle_accept()`: Receives any incoming connections
 * `disconnect(handler)`: Removes a handler from all of the `p2p_socket`'s databases
-* `debug(level=1)`: Determines whether a debug message should be printed
+* `__print(*args, level=None)`: Prints debug information if `level` is >= `__debug_level`
 
 ### p2p_connection
 
@@ -179,7 +179,7 @@ Private methods:
 * `collect_incoming_data(data)`: Adds new data to the buffer
 * `find_terminator()`: Determines if a message has been fully received (name is a relic of when this had an end_of_tx flag)
 * `found_terminator()`: Ran when a message has been fully received (name is a relic of when this had an end_of_tx flag)
-* `debug(level=1)`: Determines whether a debug message should be printed
+* `__print(*args, level=None)`: Prints debug information if `level` is >= `__debug_level`
 
 # net.py
 
@@ -219,6 +219,7 @@ Private variables:
 * `__key_exchange`: A temporary `thread` which deals with the handshake
 * `__buffer`: Temporary storage for if you request a specific number of characters
 * `__peer_msgsize`: Your peer's maximum packet size
+* `__silent`: Decides whether to print debug information
 
 Public properties:
 
@@ -251,3 +252,4 @@ Private methods:
 * `__send_key()`: Send side of a handshake
 * `__handshake(order)`: Exchanges keys with your peer; If order evaluates to `True`, it sends the key first
 * `__map_key()`: If your keys are undefined, grabs them from `__key_async`
+* `__print(*args)`: Prints debug information if `__silent` is false
