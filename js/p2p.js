@@ -155,8 +155,10 @@ function p2p() {
 
         get compression_used() {
             for (var i = 0; i < m.compression.length; i++) {
-                if (m.compression[i] in this.compression) {
-                    return method
+                for (var j = 0; j < this.compression.length; j++) {
+                    if (m.compression[i] == this.compression[j]) {
+                        return m.compression[i]
+                    }
                 }
             }
             return null
