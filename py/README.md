@@ -21,7 +21,42 @@
 * `getUTC()`: Returns the current unix time in UTC (type: `int`)
 * `compress(msg, method)`: Shortcut method for compression (type: `str`/`bytes`)
 * `decompress(msg, method)`: Shortcut method for decompression (type: `str`/`bytes`)
-* `construct_message(prot, comp_types, msg_type, id, packets, time=None)`: Reference method which, given standard parameters, returns a protocol-valid message
+
+### pathfinding_message
+
+--------
+
+This class is used internally to deal with packet parsing from a socket level. If you find yourself calling this as a user, something's gone wrong.
+
+`pathfinding_message(protocol, msg_type, sender, payload, compression=None)`
+`pathfinding_message.feed_string(protocol, string, sizeless=False, compressions=None)`
+
+Constants:
+
+* `protocol`: The protocol this message is sent under
+* `msg_type`: The main flag of the message (ie: ['broadcast', 'waterfall', 'whisper', 'renegotiate'])
+* `sender`: The sender id of this message
+* `time`: An `int` of the message's timestamp
+* `compression`: The list of compression methods this message may be under
+* `compression_fail`: A debug property which is triggered if you give compression methods, but the message fed from `feed_string` is actually in plaintext
+
+Public properties:
+
+* `payload`: Returns the message's payload
+* `compression_used`: Returns the compression method used
+* `time_58`: Returns the timestamp in base_58
+* `id`: Returns the message's id
+* `len`: Returns the messages length header
+* `packets`: Returns a `list` of the packets in this message, excluding the length header
+* `string`: Returns a string version of the message, including the length header
+
+Private properties:
+
+* `__non_len_string`: Returns the string of this message without the size header
+
+Methods:
+
+* `__len__()`: Returns the length of this message excluding the length header
 
 ### message
 
@@ -39,10 +74,12 @@ Constants:
 * `time`: A UTC unix timestamp of the original broadcast
 * `server`: The `p2p_socket` which received the message
 
-Methods:
+Properties:
 
-* `parse()`: Returns a `list` of the packets received, with the first item being the subflag
-* `id()`: Returns the SHA384-based message id
+* `packets`: Returns a `list` of the packets received, with the first item being the subflag
+* `id`: Returns the SHA384-based message id
+
+Methods:
 * `reply(*args)`: Sends a `whisper` to the original sender with the arguments being each packet after that. If you are not connected, it uses the `request`/`response` mechanism to try making a connection
 
 ### protocol
@@ -59,9 +96,9 @@ Constants:
 * `subnet`: A mostly-unused flag to allow people with the same separator to operate different networks
 * `encryption`: Defines the encryption standard used on the socket
 
-Methods:
+Properties:
 
-* `id()`: Returns the SHA256-based protocol id
+* `id`: Returns the SHA256-based protocol id
 
 ### p2p_socket
 
