@@ -181,7 +181,7 @@ Private methods:
 * `found_terminator()`: Ran when a message has been fully received (name is a relic of when this had an end_of_tx flag)
 * `debug(level=1)`: Determines whether a debug message should be printed
 
-# rsa.py
+# net.py
 
 ### Constants
 
@@ -189,10 +189,10 @@ Private methods:
 
 * `uses_RSA`: Defines whether you're using the `rsa` module
 * `decryption_error`: The `Exception` this module catches when decryption fails
+* `verification_error`: The `Exception` this module catches when signature verification fails
 * `key_request`: The message used to request a peer's key
 * `size_request`: The message used to request a peer's keysize
 * `end_of_message`: The flag used to denote the end of a message
-* `hashtable`: (only used with PyCrypto) A `dict` containing the various hash methods used
 
 ### Methods
 
@@ -203,7 +203,7 @@ Private methods:
 * `decrypt(msg, key)`: Decrypts the given ciphertext
 * `sign(msg, key, hashop)`: Returns a signature given a message and hashop
 * `verify(msg, sig, key)`: Verifies a signature
-* `PublicKey(n, e)`: Returns a public key object
+* `public_key(n, e)`: Returns a public key object
 
 ### secureSocket
 
@@ -211,20 +211,22 @@ Private methods:
 
 This class inherits most of its methods from a `socket.socket`. This means that the methods should work *roughly* the same way, with a few differences. The `suppress_warnings` flag will allow you to make keys outside of `range(354, 8193)`. Note that if you're using PyCrypto, it will not let you build if `keysize % 256 != 0 or keysize < 1024`.
 
-`secureSocket(sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False)`
+`secure_socket(sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False)`
 
-Constants:
+Private variables:
 
-* `pub`: The `socket`'s public key
-* `priv`: The `socket`'s private key
-* `key_async`: A temporary `thread` which generates the `socket`'s key
+* `__key_async`: A temporary `thread` which generates the `socket`'s key
+* `__key_exchange`: A temporary `thread` which deals with the handshake
+* `__buffer`: Temporary storage for if you request a specific number of characters
+* `__peer_msgsize`: Your peer's maximum packet size
+
+Public properties:
+
+* `pub`: The `socket`'s public key (blocks if being generated)
+* `priv`: The `socket`'s private key (blocks if being generated)
 * `keysize`: The `socket`'s key size
-* 'msgsize`: The maximum packet size you can encrypt
-* `key`: Your peer's key
-* `peer_keysize`: Your peer's key size
-* `peer_msgsize`: Your peer's maximum packet size
-* `buffer`: Temporary storage for if you request a specific number of characters
-* `key_exchange`: A temporary `thread` which deals with the handshake
+* `key`: Your peer's key (blocks if being exchanged)
+* `peer_keysize`: Your peer's key size (blocks if being exchanged)
 
 Public methods:
 
@@ -242,10 +244,10 @@ Public methods:
 
 Private methods:
 
-* `__recv(size)`: `socket.socket`'s `recv` method
-* `__send__(msg)`: Sends an encrypted copy of the given text
-* `__recv__()`: Receives and decrypts a message
-* `requestKey()`: Request side of a handshake
-* `sendKey()`: Send side of a handshake
-* `handshake(order)`: Exchanges keys with your peer; If order evaluates to `True`, it sends the key first
-* `mapKey()`: If your keys are undefined, grabs them from `key_async`
+* `__sock_recv(size)`: `socket.socket`'s `recv` method
+* `__send(msg)`: Sends an encrypted copy of the given text
+* `__recv()`: Receives and decrypts a message
+* `__request_key()`: Request side of a handshake
+* `__send_key()`: Send side of a handshake
+* `__handshake(order)`: Exchanges keys with your peer; If order evaluates to `True`, it sends the key first
+* `__map_key()`: If your keys are undefined, grabs them from `__key_async`
