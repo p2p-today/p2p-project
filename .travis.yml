@@ -1,0 +1,54 @@
+matrix:
+  include:
+    - language: generic
+      python: 2.6
+      os: osx
+      env: Cov='true' pyver=2.6 pydist=homebrew
+#          pydist=macports
+    - language: generic
+      python: 2.7
+      os: osx
+      env: Cov='true' pyver=2.7 pydist=macpython
+#          pydist=macports
+#          pydist=homebrew
+    - language: generic
+      python: 3.3
+      os: osx
+      env: Cov='true' pyver=3.3 pydist=macpython
+#          pydist=macports
+#          pydist=homebrew
+    - language: generic
+      python: 3.4
+      os: osx
+      env: Cov='true' pyver=3.4 pydist=macpython
+#          pydist=macports
+#          pydist=homebrew
+    - language: generic
+      python: 3.5
+      os: osx
+      env: Cov='true' pyver=3.5 pydist=macpython
+#          pydist=macports
+#          pydist=homebrew
+    - language: generic
+      python: pypy
+      os: osx
+      env: Cov='true' pyver=pypy pydist=homebrew
+    - language: generic
+      python: pypy3
+      os: osx
+      env: Cov='true' pyver=pypy3 pydist=homebrew
+
+before_install:
+  - if [ $pyver != pypy ] && [ $pyver != pypy3 ]; then git clone https://github.com/gappleto97/terryfy; source terryfy/travis_tools.sh; get_python_environment  $pydist $pyver; fi
+  - if [ $pyver == pypy ] || [ $pyver == pypy3 ]; then brew install $pyver; PYTHON_EXE=$pyver; curl $GET_PIP_URL > $DOWNLOADS_SDIR/get-pip.py; sudo $PYTHON_EXE $DOWNLOADS_SDIR/get-pip.py --ignore-installed; PIP_CMD="sudo $PYTHON_EXE -m pip"; export PYTHON_EXE PIP_CMD; fi
+  - $PIP_CMD install virtualenv
+  - virtualenv -p $PYTHON_EXE venv
+  - source venv/bin/activate
+# Everything after this is user editable
+install: 
+  - if [ $Cov == 'true'  ]; then pip install codecov; fi
+script: 
+  - if [ $Cov == 'true'  ]; then python -m coverage run -a py/test.py; fi
+  - if [ $Cov == 'false' ]; then python test.py; fi
+after_success:
+  - if [ $Cov == 'true'  ]; then python -m coverage combine; codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5; fi
