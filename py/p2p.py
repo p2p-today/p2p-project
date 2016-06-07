@@ -511,7 +511,7 @@ class p2p_socket(object):
     def waterfall(self, msg):
         """Handles the waterfalling of received messages"""
         # self.cleanup()
-        self.__print(msg.id, [i for i, t in self.waterfalls], level=5)
+        # self.__print(msg.id, [i for i, t in self.waterfalls], level=5)
         if msg.id not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id, msg.time))
             if isinstance(msg.sender, p2p_connection):
