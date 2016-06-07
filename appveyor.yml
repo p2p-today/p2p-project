@@ -88,7 +88,7 @@ install:
 test: off
 
 build_script:
-  - "%COV% run -a test.py"
+  - "%COV% run -a py/test.py"
 
 on_success:
   - "%COV% combine"

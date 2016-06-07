@@ -48,7 +48,7 @@ before_install:
 install: 
   - if [ $Cov == 'true'  ]; then pip install codecov; fi
 script: 
-  - if [ $Cov == 'true'  ]; then python -m coverage run -a test.py; fi
+  - if [ $Cov == 'true'  ]; then python -m coverage run -a py/test.py; fi
   - if [ $Cov == 'false' ]; then python test.py; fi
 after_success:
   - if [ $Cov == 'true'  ]; then python -m coverage combine; codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5; fi
