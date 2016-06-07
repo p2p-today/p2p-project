@@ -22,6 +22,26 @@
 * `compress(msg, method)`: Shortcut method for compression (type: `str`/`bytes`)
 * `decompress(msg, method)`: Shortcut method for decompression (type: `str`/`bytes`)
 
+### flags
+
+--------
+
+This class is used as a namespace to store the various protocol defined flags.
+
+* `broadcast`
+* `bz2`
+* `compression`
+* `gzip`
+* `handshake`
+* `lzma`
+* `peers`
+* `waterfall`
+* `resend`
+* `response`
+* `renegotiate`
+* `request`
+* `whisper`
+
 ### pathfinding_message
 
 --------
