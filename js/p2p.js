@@ -115,39 +115,29 @@ function p2p() {
 
         static feed_string(protocol, string, sizeless, compressions) {
             if (!sizeless) {
-                if (struct.unpack("!L", Buffer(string.substring(0,4)))[0] != string.substring(4).length) {
-                    throw "The following expression must be true: struct.unpack(\"!L\", Buffer(string.substring(0,4)))[0] == string.substring(4).length"
+                if (struct.unpack("!L", Buffer(string.substring(0,4)))[0] !== string.substring(4).length) {
+                    throw "The following expression must be true: struct.unpack(\"!L\", Buffer(string.substring(0,4)))[0] === string.substring(4).length"
                 }
                 string = string.substring(4)
             }
             var compression_fail = false
-            if (compressions) {
-                compression_fail = false
-                for (var i = 0; i < compressions.length; i++) {
-                    if (compressions[i] in m.compression) {  // module scope compression
-                        console.log("Trying %s compression" % method)
-                        try {
-                            string = m.decompress(string, method)
-                            compression_fail = false
-                            break
-                        }
-                        catch(err) {
-                            compression_fail = true
-                            continue
-                        }
+            compressions = compressions || []
+            for (var i = 0; i < compressions.length; i++) {
+                if (compressions[i] in m.compression) {  // module scope compression
+                    console.log("Trying %s compression" % method)
+                    try {
+                        string = m.decompress(string, method)
+                        compression_fail = false
+                        break
+                    }
+                    catch(err) {
+                        compression_fail = true
+                        continue
                     }
                 }
             }
             var packets = string.split(protocol.sep)
-            try {
-                msg = new m.pathfinding_message(protocol, packets[0], packets[1], packets.slice(4), compressions)
-            }
-            catch(err) {
-                if (compression_fail) {
-                    throw "Could not decompress the message"
-                }
-                throw err
-            }
+            var msg = new m.pathfinding_message(protocol, packets[0], packets[1], packets.slice(4), compressions)
             msg.time = m.from_base_58(packets[3])
             msg.compression_fail = compression_fail
             return msg
