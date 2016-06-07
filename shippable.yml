@@ -1,0 +1,18 @@
+language: python
+
+python:
+  - 2.6
+  - 2.7
+  - 3.3
+  - 3.4
+  - 3.5
+  - pypy
+  - pypy3
+
+build:
+  ci:
+    - pip install codecov
+    - coverage run -a test.py
+  on_success:
+    - coverage combine
+    - codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
