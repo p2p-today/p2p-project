@@ -1,5 +1,5 @@
 from __future__ import print_function
-import bz2, hashlib, json, select, socket, struct, time, threading, traceback, uuid, zlib
+import hashlib, json, select, socket, struct, time, threading, traceback, uuid
 from collections import namedtuple, deque
 
 version = "0.1.E"
@@ -65,10 +65,13 @@ def getUTC():
 def compress(msg, method):
     """Shortcut method for compression"""
     if method == flags.gzip:
+        import zlib
         return zlib.compress(msg)
     elif method == flags.bz2:
+        import bz2
         return bz2.compress(msg)
     elif method == flags.lzma:
+        import lzma
         return lzma.compress(msg)
     else:
         raise Exception('Unknown compression method')
@@ -77,10 +80,13 @@ def compress(msg, method):
 def decompress(msg, method):
     """Shortcut method for decompression"""
     if method == flags.gzip:
+        import zlib
         return zlib.decompress(msg, zlib.MAX_WBITS | 32)
     elif method == flags.bz2:
+        import bz2
         return bz2.decompress(msg)
     elif method == flags.lzma:
+        import lzma
         return lzma.decompress(msg)
     else:
         raise Exception('Unknown decompression method')
@@ -342,8 +348,7 @@ class p2p_connection(object):
 
     def __print(self, *args, **kargs):
         """Private method to print if level is <= self.server.debug_level"""
-        if kargs.get('level') <= self.server.debug_level:
-            print(*args)
+        self.server.__print__(*args, **kargs)
 
 
 class p2p_daemon(object):
@@ -424,8 +429,7 @@ class p2p_daemon(object):
 
     def __print(self, *args, **kargs):
         """Private method to print if level is <= self.server.debug_level"""
-        if kargs.get('level') <= self.server.debug_level:
-            print(*args)
+        self.server.__print__(*args, **kargs)
 
 
 class p2p_socket(object):
@@ -570,7 +574,7 @@ class p2p_socket(object):
             self.routing_table.update({id: handler})
         # print("Appended ", port, addr, " to handler list: ", handler)
 
-    def __print(self, *args, **kargs):
+    def __print__(self, *args, **kargs):
         """Private method to print if level is <= self.__debug_level"""
         if kargs.get('level') <= self.debug_level:
             print(*args)
