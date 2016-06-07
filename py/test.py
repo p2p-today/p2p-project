@@ -31,8 +31,8 @@ def test_intersect(iters):
 
 def test_getUTC(secs):
     while secs:
-        assert int((datetime.datetime.utcnow() - \
-            datetime.datetime(1970, 1, 1)).total_seconds()) == p2p.getUTC()
+        a = datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)
+        assert a.days * 86400 + a.seconds == p2p.getUTC()
         time.sleep(1)
         secs -= 1
 
