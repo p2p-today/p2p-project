@@ -1,5 +1,5 @@
 from __future__ import print_function
-import hashlib, json, select, socket, struct, time, threading, traceback, uuid
+import bz2, hashlib, json, select, socket, struct, time, threading, traceback, uuid, zlib
 from collections import namedtuple, deque
 
 version = "0.1.E"
@@ -65,13 +65,10 @@ def getUTC():
 def compress(msg, method):
     """Shortcut method for compression"""
     if method == flags.gzip:
-        import zlib
         return zlib.compress(msg)
     elif method == flags.bz2:
-        import bz2
         return bz2.compress(msg)
     elif method == flags.lzma:
-        import lzma
         return lzma.compress(msg)
     else:
         raise Exception('Unknown compression method')
@@ -80,13 +77,10 @@ def compress(msg, method):
 def decompress(msg, method):
     """Shortcut method for decompression"""
     if method == flags.gzip:
-        import zlib
         return zlib.decompress(msg, zlib.MAX_WBITS | 32)
     elif method == flags.bz2:
-        import bz2
         return bz2.decompress(msg)
     elif method == flags.lzma:
-        import lzma
         return lzma.decompress(msg)
     else:
         raise Exception('Unknown decompression method')
@@ -94,7 +88,7 @@ def decompress(msg, method):
 
 def intersect(*args):
     """Returns the ordered intersection of all given iterables, where the order is defined by the first iterable"""
-    if not args or False in [bool(arg) for arg in args]:
+    if not all(args):
         return []
     intersection = args[0]
     for l in args[1:]:
@@ -168,12 +162,7 @@ class pathfinding_message(object):
                 compression_fail = True
                 continue
         packets = string.split(protocol.sep.encode())
-        try:
-            msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
-        except IndexError:
-            if compression_fail:
-                raise ValueError("Could not decompress the message")
-            raise
+        msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
         msg.time = from_base_58(packets[3])
         msg.compression_fail = compression_fail
         return msg
@@ -291,13 +280,10 @@ class p2p_connection(object):
         reply_object = self
         try:
             msg = pathfinding_message.feed_string(self.protocol, raw_msg, False, self.compression)
-        except ValueError as e:
-            if e.args[0] == "Could not decompress the message":
-                self.send(flags.renegotiate, flags.compression, json.dumps([algo for algo in self.compression if algo is not method]))
-                self.send(flags.renegotiate, flags.resend)
-                return
-            else: #if e.args[0] == "Must assert struct.unpack(\"!L\", string[:4])[0] == len(string[4:]).":
-                raise
+        except IndexError:
+            self.send(flags.renegotiate, flags.compression, json.dumps([algo for algo in self.compression if algo is not method]))
+            self.send(flags.renegotiate, flags.resend)
+            return
         packets = msg.packets
         self.__print("Message received: %s" % packets, level=1)
         if packets[0] == flags.waterfall:
@@ -472,11 +458,8 @@ class p2p_socket(object):
             self.__handle_response(packets, handler)
         elif packets[0] == flags.request:
             self.__handle_request(packets, handler)
-        elif packets[0] == flags.whisper:
+        elif packets[0] == flags.whisper or self.waterfall(msg):
             self.queue.appendleft(msg)
-        else:
-            if self.waterfall(msg):
-                self.queue.appendleft(msg)
 
     def __handle_handshake(self, packets, handler):
         if packets[2] != self.protocol.id.encode():
