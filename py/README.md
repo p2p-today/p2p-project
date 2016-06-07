@@ -21,7 +21,62 @@
 * `getUTC()`: Returns the current unix time in UTC (type: `int`)
 * `compress(msg, method)`: Shortcut method for compression (type: `str`/`bytes`)
 * `decompress(msg, method)`: Shortcut method for decompression (type: `str`/`bytes`)
-* `construct_message(prot, comp_types, msg_type, id, packets, time=None)`: Reference method which, given standard parameters, returns a protocol-valid message
+
+### flags
+
+--------
+
+This class is used as a namespace to store the various protocol defined flags.
+
+* `broadcast`
+* `bz2`
+* `compression`
+* `gzip`
+* `handshake`
+* `lzma`
+* `peers`
+* `waterfall`
+* `resend`
+* `response`
+* `renegotiate`
+* `request`
+* `whisper`
+
+### pathfinding_message
+
+--------
+
+This class is used internally to deal with packet parsing from a socket level. If you find yourself calling this as a user, something's gone wrong.
+
+`pathfinding_message(protocol, msg_type, sender, payload, compression=None)`
+`pathfinding_message.feed_string(protocol, string, sizeless=False, compressions=None)`
+
+Constants:
+
+* `protocol`: The protocol this message is sent under
+* `msg_type`: The main flag of the message (ie: ['broadcast', 'waterfall', 'whisper', 'renegotiate'])
+* `sender`: The sender id of this message
+* `time`: An `int` of the message's timestamp
+* `compression`: The list of compression methods this message may be under
+* `compression_fail`: A debug property which is triggered if you give compression methods, but the message fed from `feed_string` is actually in plaintext
+
+Public properties:
+
+* `payload`: Returns the message's payload
+* `compression_used`: Returns the compression method used
+* `time_58`: Returns the timestamp in base_58
+* `id`: Returns the message's id
+* `len`: Returns the messages length header
+* `packets`: Returns a `list` of the packets in this message, excluding the length header
+* `string`: Returns a string version of the message, including the length header
+
+Private properties:
+
+* `__non_len_string`: Returns the string of this message without the size header
+
+Methods:
+
+* `__len__()`: Returns the length of this message excluding the length header
 
 ### message
 
@@ -39,10 +94,12 @@ Constants:
 * `time`: A UTC unix timestamp of the original broadcast
 * `server`: The `p2p_socket` which received the message
 
-Methods:
+Properties:
 
-* `parse()`: Returns a `list` of the packets received, with the first item being the subflag
-* `id()`: Returns the SHA384-based message id
+* `packets`: Returns a `list` of the packets received, with the first item being the subflag
+* `id`: Returns the SHA384-based message id
+
+Methods:
 * `reply(*args)`: Sends a `whisper` to the original sender with the arguments being each packet after that. If you are not connected, it uses the `request`/`response` mechanism to try making a connection
 
 ### protocol
@@ -59,9 +116,9 @@ Constants:
 * `subnet`: A mostly-unused flag to allow people with the same separator to operate different networks
 * `encryption`: Defines the encryption standard used on the socket
 
-Methods:
+Properties:
 
-* `id()`: Returns the SHA256-based protocol id
+* `id`: Returns the SHA256-based protocol id
 
 ### p2p_socket
 
@@ -92,7 +149,7 @@ Private methods:
 
 * `handle_request(msg)`: Allows the daemon to parse subflag-level actions
 * `waterfall(msg)`: Waterfalls a `message` to your peers
-* `debug(level=1)`: Determines whether a debug message should be printed
+* `__print(*args, level=None)`: Prints debug information if `level` is >= `__debug_level`
 
 ### p2p_daemon
 
@@ -111,7 +168,7 @@ Private methods:
 * `mainloop()`: Receives data from all ready `socket`s, acts on this data, then receives incoming connections
 * `handle_accept()`: Receives any incoming connections
 * `disconnect(handler)`: Removes a handler from all of the `p2p_socket`'s databases
-* `debug(level=1)`: Determines whether a debug message should be printed
+* `__print(*args, level=None)`: Prints debug information if `level` is >= `__debug_level`
 
 ### p2p_connection
 
@@ -142,9 +199,9 @@ Private methods:
 * `collect_incoming_data(data)`: Adds new data to the buffer
 * `find_terminator()`: Determines if a message has been fully received (name is a relic of when this had an end_of_tx flag)
 * `found_terminator()`: Ran when a message has been fully received (name is a relic of when this had an end_of_tx flag)
-* `debug(level=1)`: Determines whether a debug message should be printed
+* `__print(*args, level=None)`: Prints debug information if `level` is >= `__debug_level`
 
-# rsa.py
+# net.py
 
 ### Constants
 
@@ -152,10 +209,10 @@ Private methods:
 
 * `uses_RSA`: Defines whether you're using the `rsa` module
 * `decryption_error`: The `Exception` this module catches when decryption fails
+* `verification_error`: The `Exception` this module catches when signature verification fails
 * `key_request`: The message used to request a peer's key
 * `size_request`: The message used to request a peer's keysize
 * `end_of_message`: The flag used to denote the end of a message
-* `hashtable`: (only used with PyCrypto) A `dict` containing the various hash methods used
 
 ### Methods
 
@@ -166,7 +223,7 @@ Private methods:
 * `decrypt(msg, key)`: Decrypts the given ciphertext
 * `sign(msg, key, hashop)`: Returns a signature given a message and hashop
 * `verify(msg, sig, key)`: Verifies a signature
-* `PublicKey(n, e)`: Returns a public key object
+* `public_key(n, e)`: Returns a public key object
 
 ### secureSocket
 
@@ -174,20 +231,23 @@ Private methods:
 
 This class inherits most of its methods from a `socket.socket`. This means that the methods should work *roughly* the same way, with a few differences. The `suppress_warnings` flag will allow you to make keys outside of `range(354, 8193)`. Note that if you're using PyCrypto, it will not let you build if `keysize % 256 != 0 or keysize < 1024`.
 
-`secureSocket(sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False)`
+`secure_socket(sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False)`
 
-Constants:
+Private variables:
 
-* `pub`: The `socket`'s public key
-* `priv`: The `socket`'s private key
-* `key_async`: A temporary `thread` which generates the `socket`'s key
+* `__key_async`: A temporary `thread` which generates the `socket`'s key
+* `__key_exchange`: A temporary `thread` which deals with the handshake
+* `__buffer`: Temporary storage for if you request a specific number of characters
+* `__peer_msgsize`: Your peer's maximum packet size
+* `__silent`: Decides whether to print debug information
+
+Public properties:
+
+* `pub`: The `socket`'s public key (blocks if being generated)
+* `priv`: The `socket`'s private key (blocks if being generated)
 * `keysize`: The `socket`'s key size
-* 'msgsize`: The maximum packet size you can encrypt
-* `key`: Your peer's key
-* `peer_keysize`: Your peer's key size
-* `peer_msgsize`: Your peer's maximum packet size
-* `buffer`: Temporary storage for if you request a specific number of characters
-* `key_exchange`: A temporary `thread` which deals with the handshake
+* `key`: Your peer's key (blocks if being exchanged)
+* `peer_keysize`: Your peer's key size (blocks if being exchanged)
 
 Public methods:
 
@@ -205,10 +265,11 @@ Public methods:
 
 Private methods:
 
-* `__recv(size)`: `socket.socket`'s `recv` method
-* `__send__(msg)`: Sends an encrypted copy of the given text
-* `__recv__()`: Receives and decrypts a message
-* `requestKey()`: Request side of a handshake
-* `sendKey()`: Send side of a handshake
-* `handshake(order)`: Exchanges keys with your peer; If order evaluates to `True`, it sends the key first
-* `mapKey()`: If your keys are undefined, grabs them from `key_async`
+* `__sock_recv(size)`: `socket.socket`'s `recv` method
+* `__send(msg)`: Sends an encrypted copy of the given text
+* `__recv()`: Receives and decrypts a message
+* `__request_key()`: Request side of a handshake
+* `__send_key()`: Send side of a handshake
+* `__handshake(order)`: Exchanges keys with your peer; If order evaluates to `True`, it sends the key first
+* `__map_key()`: If your keys are undefined, grabs them from `__key_async`
+* `__print(*args)`: Prints debug information if `__silent` is false

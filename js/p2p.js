@@ -36,7 +36,7 @@ function p2p() {
         //Takes a base_58 string and returns its corresponding integer
         var decimal = BigInt(0);
         //for char in string {
-        for (i = 0; i < string.length; i++) {
+        for (var i = 0; i < string.length; i++) {
             decimal = decimal.times(58).plus(m.base_58.indexOf(string[i]));
         }
         return decimal;
@@ -95,8 +95,103 @@ function p2p() {
         }
     };
 
-    m.default_protocol = m.protocol(Buffer([28, 29, 30, 31]), '', 'Plaintext');
+    m.default_protocol = new m.protocol(Buffer([28, 29, 30, 31]), '', 'Plaintext');
 
+    m.pathfinding_message = class pathfinding_message {
+        constructor(protocol, msg_type, sender, payload, compression) {
+            this.protocol = protocol
+            this.msg_type = msg_type
+            this.sender = sender
+            this.payload = payload
+            this.time = m.getUTC()
+            if (compression) {
+                this.compression = compression
+            }
+            else {
+                this.compression = []
+            }
+            this.compression_fail = false
+        }
+
+        static feed_string(protocol, string, sizeless, compressions) {
+            if (!sizeless) {
+                if (struct.unpack("!L", Buffer(string.substring(0,4)))[0] !== string.substring(4).length) {
+                    throw "The following expression must be true: struct.unpack(\"!L\", Buffer(string.substring(0,4)))[0] === string.substring(4).length"
+                }
+                string = string.substring(4)
+            }
+            var compression_fail = false
+            compressions = compressions || []
+            for (var i = 0; i < compressions.length; i++) {
+                if (compressions[i] in m.compression) {  // module scope compression
+                    console.log("Trying %s compression" % method)
+                    try {
+                        string = m.decompress(string, method)
+                        compression_fail = false
+                        break
+                    }
+                    catch(err) {
+                        compression_fail = true
+                        continue
+                    }
+                }
+            }
+            var packets = string.split(protocol.sep)
+            var msg = new m.pathfinding_message(protocol, packets[0], packets[1], packets.slice(4), compressions)
+            msg.time = m.from_base_58(packets[3])
+            msg.compression_fail = compression_fail
+            return msg
+        }
+
+        get compression_used() {
+            for (var i = 0; i < m.compression.length; i++) {
+                for (var j = 0; j < this.compression.length; j++) {
+                    if (m.compression[i] == this.compression[j]) {
+                        return m.compression[i]
+                    }
+                }
+            }
+            return null
+        }
+
+        get time_58() {
+            return m.to_base_58(this.time)
+        }
+
+        get id() {
+            var payload_string = this.protocol.sep.join(this.payload)
+            var payload_hash = m.SHA384(payload_string + this.time_58)
+            return m.to_base_58(BigInt(payload_hash, 16))
+        }
+
+        get packets() {
+            var meta = [this.msg_type, this.sender, this.id, this.time_58]
+            return meta.concat(this.payload)
+        }
+
+        get __non_len_string() {
+            var string = this.packets.join(this.protocol.sep)
+            if (this.compression_used) {
+                string = m.compress(string, this.compression_used)
+            }
+            return string
+        }
+        
+        get string() {
+            var string = this.__non_len_string
+            return struct.pack("!L", [string.length]) + string
+        }
+
+        get length() {
+            return this.__non_len_string.length
+        }
+
+        len() {
+            return struct.pack("!L", [this.length])
+        }
+    }
+
+    
 
     m.construct_message = function(prot, comp_types, msg_type, id, packets, time) {
         var time = typeof time !== 'undefined' ?  time : m.to_base_58(m.getUTC());

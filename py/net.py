@@ -1,3 +1,4 @@
+from __future__ import print_function
 import warnings, socket, sys
 from threading import Thread
 from functools import partial
@@ -37,6 +38,9 @@ except ImportError:
 
         decryption_error = DecryptionError("Decryption failed")
         verification_error = VerificationError("Signature verification failed")
+
+        if sys.version_info > (3,):
+            long = int
 
 
         def newkeys(size):
@@ -94,15 +98,14 @@ except ImportError:
 
 class secure_socket(socket.socket):
     """An RSA encrypted and secured socket. Requires either the rsa or PyCrypto module"""
-    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, suppress_warnings=False, silent=False):
+    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, silent=False):
         super(secure_socket, self).__init__(sock_family, sock_type, proto, fileno)
-        if not suppress_warnings:
-            if uses_RSA and keysize < 1024:
-                warnings.warn('Using the rsa module with a <1024 key length will make communication with PyCrypto implementations inconsistent', RuntimeWarning, stacklevel=2)
-            if keysize < 354 or (keysize // 8) - 11 < len(end_of_message):
-                raise ValueError('This key is too small to be useful')
-            elif keysize > 8192:
-                raise ValueError('This key is too large to be practical. Sending is easy. Generating is hard.')
+        if keysize < 1024:
+            warnings.warn('Using a <1024 key length will make communication with PyCrypto implementations inconsistent. If you\'re using PyCrypto, expect an imminent exception.', RuntimeWarning, stacklevel=2)
+        if keysize < max(354, (len(end_of_message) + 11) * 8):
+            raise ValueError('This key is too small to be useful.')
+        elif keysize > 8192:
+            warnings.warn('This key is too large to be practical. Sending is easy. Generating is hard.', RuntimeWarning, stacklevel=2)
         self.__key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
         self.__pub, self.__priv = None, None    # Temporarily set to None so they can generate in background
         self.__keysize = keysize
@@ -134,22 +137,21 @@ class secure_socket(socket.socket):
 
     def __map_key(self):
         """Private method to block if key is being generated"""
-        self.__print("Waiting to grab key")
-        self.__pub, self.__priv = self.__key_async.get()[0]
-        del self.__key_async
+        if not self.__pub:
+            self.__print("Waiting to grab key")
+            self.__pub, self.__priv = self.__key_async.get()[0]
+            del self.__key_async
 
     @property
     def pub(self):
         """Your public key; blocks if still generating"""
-        if not self.__pub:
-            self.__map_key()
+        self.__map_key()
         return self.__pub
 
     @property
     def priv(self):
         """Your private key; blocks if still generating"""
-        if not self.__priv:
-            self.__map_key()
+        self.__map_key()
         return self.__priv
 
     def __request_key(self):
@@ -284,7 +286,7 @@ class secure_socket(socket.socket):
             pass
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
-        elif self.keysize >= 745:  # This one uses public API so it blocks when key is generating
+        elif self.__keysize >= 745:
             return sign(msg, self.priv, 'SHA-512')
         elif self.__keysize >= 618:
             return sign(msg, self.priv, 'SHA-384')
@@ -315,8 +317,9 @@ class secure_socket(socket.socket):
     def send(self, msg):
         """Sends an encrypted copy of your message, and an encrypted signature.
         Blocks if keys are being exchanged."""
+        wait = self.key  # Use public API to block until key exchanged
         self.__send(msg)
-        self.__send(self.sign(msg))
+        self.__send(self.sign(msg))  # Uses public API in order to use most comprehensive hash
 
     def __recv(self):
         """Base method for receiving a message. Receives and decrypts. Use recv instead."""
@@ -328,9 +331,9 @@ class secure_socket(socket.socket):
                 packet = self.__sock_recv(self.__keysize // 8)
                 packet = decrypt(packet, self.priv)
             return received
-        except decryption_error as error:
+        except decryption_error:
             print("Decryption error---Content: " + repr(packet))
-            raise error
+            raise
         except ValueError as error:
             if error.args[0] in ["invalid literal for int() with base 16: ''", "invalid literal for int() with base 16: b''"]:
                 return 0
@@ -351,11 +354,9 @@ class secure_socket(socket.socket):
         sig = self.__recv()
         if not (msg or sig):
             return ''
-        verify(msg, sig, self.key)  # Uses public API so it blocks when key is exchanging
+        self.verify(msg, sig)  # Uses public API so it blocks when key is exchanging
         # If a size isn't defined, return the whole message. Otherwise manage the buffer as well.
-        if size:
-            self.__buffer += msg
-            ret = self.__buffer[:size]
-            self.__buffer = self.__buffer[size:]
-            return ret
-        return msg
+        self.__buffer += msg
+        ret = self.__buffer[:size]
+        self.__buffer = self.__buffer[len(ret):]
+        return ret
