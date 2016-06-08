@@ -195,14 +195,14 @@ class pathfinding_message(object):
     @property
     def time_58(self):
         """Returns the messages timestamp in base_58"""
-        return to_base_58(self.time)
+        return to_base_58(self.time).encode()
 
     @property
     def id(self):
         """Returns the message id"""
         payload_string = self.protocol.sep.encode().join(self.payload)
-        payload_hash = hashlib.sha384(payload_string + self.time_58.encode())
-        return to_base_58(int(payload_hash.hexdigest(), 16))
+        payload_hash = hashlib.sha384(payload_string + self.time_58)
+        return to_base_58(int(payload_hash.hexdigest(), 16)).encode()
 
     @property
     def packets(self):
