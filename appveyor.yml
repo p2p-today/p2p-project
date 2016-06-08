@@ -84,8 +84,8 @@ install:
   - "%PYPY%"
   - "%PIP% install codecov"
   - "set \a \"RSA=%random% %% 10\""
-  - "IF \\I \"%RSA%\" EQU \"0\" %PIP% install rsa"
-  - "IF \\I \"%RSA%\" NEQ \"0\" %PIP% install PyCrypto"
+  - "IF %RSA%==0 %PIP% install rsa"
+  - "IF %RSA%==1 %PIP% install PyCrypto"
   - "cd %HOME%"
 
 test: off

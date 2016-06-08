@@ -141,8 +141,8 @@ def main():
     test_pathfinding_message(200)
     print("Testing message state machine (sans network functions)")
     test_message_sans_network(1000)
-    print("Testing secure socket transmissions")
-    test_net(2)
+    #print("Testing secure socket transmissions")
+    #test_net(2)
 
 if __name__ == '__main__':
     main()
