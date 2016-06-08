@@ -82,9 +82,7 @@ install:
   - "ECHO %PYTHON% %PYTHON_VERSION%%APPVEYOR_BUILD_FOLDER%"
   - "set HOME=%APPVEYOR_BUILD_FOLDER%"
   - "%PYPY%"
-  - "%PIP% install codecov"
-  - "set \a \"RSA=%random% %% 10\""
-  - "IF \\I %RSA%==0 (%PIP% install rsa) ELSE (%PIP% install PyCrypto)"
+  - "%PIP% install codecov rsa"
   - "cd %HOME%"
 
 test: off
