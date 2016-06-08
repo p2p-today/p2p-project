@@ -177,7 +177,8 @@ class secure_socket(socket.socket):
         if req != size_request:
             raise ValueError("Handshake has failed due to invalid request from peer: %s" % req)
         self.__print("Sending key size")
-        super(secure_socket, self).sendall(str(self.keysize).encode("utf-8"))
+        keysize = str(self.keysize) + ' ' * (16 - len(str(self.keysize)))
+        super(secure_socket, self).sendall(keysize.encode("utf-8"))
         req = self.__sock_recv(len(key_request))
         if req != key_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
