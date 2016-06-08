@@ -83,6 +83,9 @@ install:
   - "set HOME=%APPVEYOR_BUILD_FOLDER%"
   - "%PYPY%"
   - "%PIP% install codecov"
+  - "set RSA=%RANDOM% %% 2"
+  - "IF \I \"%RSA%\"" EQU \"0\" %PIP% install rsa"
+  - "IF \I \"%RSA%\"" NEQ \"0\" %PIP% install PyCrypto"
   - "cd %HOME%"
 
 test: off

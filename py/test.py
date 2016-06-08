@@ -1,14 +1,8 @@
-import datetime, random, sys, time, uuid
-import p2p
+import datetime, hashlib, random, struct, sys, threading, time, uuid
+import p2p, net
 
 if sys.version_info[0] > 2:
     xrange = range
-
-def main():
-    test_base_58(1000)
-    test_intersect(200)
-    test_getUTC(20)
-    test_compression(1000)
 
 def test_base_58(iters):
     max_val = 2**32 - 1
@@ -41,6 +35,114 @@ def test_compression(iters):
         test = str(uuid.uuid4()).encode()
         for method in p2p.compression:
             assert test == p2p.decompress(p2p.compress(test, method), method)
+
+def test_pathfinding_message(iters):
+    max_val = 2**8
+    protocol = p2p.default_protocol
+    for i in xrange(iters):
+        length = random.randint(0, max_val)
+        array = [str(uuid.uuid4()).encode() for x in xrange(length)]
+        msg = p2p.pathfinding_message(protocol, p2p.flags.broadcast, 'TEST SENDER', array)
+        assert array == msg.payload
+        assert msg.packets == [p2p.flags.broadcast, 'TEST SENDER'.encode(), msg.id, msg.time_58] + array
+        for method in p2p.compression:
+            msg.compression = []
+            string = p2p.compress(msg.string[4:], method)
+            string = struct.pack('!L', len(string)) + string
+            msg.compression = [method]
+            assert msg.string == string
+            comp = p2p.pathfinding_message.feed_string(protocol, string, False, [method])
+            assert msg.string == comp.string
+            # Test certain errors
+            try:
+                p2p.pathfinding_message.feed_string(protocol, string, True, [method])
+            except:
+                pass
+            else:
+                assert False, "Erroneously parses sized message with sizeless"
+            try:
+                p2p.pathfinding_message.feed_string(protocol, msg.string[4:], False, [method])
+            except:
+                pass
+            else:
+                assert False, "Erroneously parses sizeless message with size"
+            try:
+                p2p.pathfinding_message.feed_string(protocol, string)
+            except:
+                pass
+            else:
+                assert False, "Erroneously parses compressed message as plaintext"
+
+def test_protocol(iters):
+    for i in range(iters):
+        sep = str(uuid.uuid4())
+        sub = str(uuid.uuid4())
+        enc = str(uuid.uuid4())
+        test = p2p.protocol(sep, sub, enc)
+        assert test.sep == sep
+        assert test[0] == sep
+        assert test.subnet == sub
+        assert test[1] == sub
+        assert test.encryption == enc
+        assert test[2] == enc
+        p_hash = hashlib.sha256(''.join([sep, sub, enc, p2p.version]).encode())
+        assert int(p_hash.hexdigest(), 16) == p2p.from_base_58(test.id)
+        assert test.id != p2p.default_protocol.id
+
+def test_message_sans_network(iters):
+    for i in range(iters):
+        sep = str(uuid.uuid4())
+        sub = str(uuid.uuid4())
+        enc = str(uuid.uuid4())
+        sen = str(uuid.uuid4())
+        pac = [str(uuid.uuid4()) for i in range(10)]
+        prot = p2p.protocol(sep, sub, enc)
+        test = p2p.message(sep.join(pac), sen, prot, p2p.getUTC(), None)
+        assert test.packets == pac
+        assert test.msg == sep.join(pac)
+        assert test[0] == sep.join(pac)
+        assert test.sender == sen
+        assert test[1] == sen
+        assert test.protocol == prot
+        assert test[2] == prot
+        assert test[3] == test.time
+        m_hash = hashlib.sha384((sep.join(pac) + p2p.to_base_58(test.time)).encode())
+        assert int(m_hash.hexdigest(), 16) == p2p.from_base_58(test.id)
+
+def test_net(iters):
+    for i in range(iters):
+        f = net.secure_socket(silent=True)
+        g = net.secure_socket(silent=True)
+        f.bind(('localhost', 4444+i))
+        f.listen(5)
+        t = threading.Thread(target=g.connect, args=(('localhost', 4444+i),))
+        t.start()
+        conn, addr = f.accept()
+        test = str(uuid.uuid4()).encode()
+        conn.settimeout(0.1)
+        g.settimeout(0.1)
+        g.send(test)
+        assert conn.recv() == test
+        conn.send(test)
+        assert g.recv() == test
+
+def main():
+    print("Testing base_58")
+    test_base_58(1000)
+    print("Testing intersect")
+    test_intersect(200)
+    print("Testing UTC fetch")
+    test_getUTC(20)
+    print("Testing compression methods")
+    test_compression(1000)
+    print("Testing protocol state machine")
+    test_protocol(1000)
+    print("Testing pathfinding state machine")
+    test_pathfinding_message(200)
+    print("Testing message state machine (sans network functions)")
+    test_message_sans_network(1000)
+    print("Testing secure socket transmissions")
+    test_net(2)
 
 if __name__ == '__main__':
     main()
