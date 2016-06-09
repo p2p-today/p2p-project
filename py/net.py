@@ -33,11 +33,8 @@ except ImportError:
         uses_RSA = False
         warnings.warn('Using the PyCrypto module is not recommended. It makes communication with smaller-than-standard keylengths inconsistent. Please run \'pip install rsa\' to use this more effectively.', ImportWarning, stacklevel=2)
 
-        class DecryptionError(Exception): pass
-        class VerificationError(Exception): pass
-
-        decryption_error = DecryptionError("Decryption failed")
-        verification_error = VerificationError("Signature verification failed")
+        class decryption_error(Exception): pass
+        class verification_error(Exception): pass
 
         if sys.version_info > (3,):
             long = int
@@ -57,7 +54,10 @@ except ImportError:
 
         def decrypt(msg, key):
             """Wrapper for PyCrypto RSA decryption method, to better match rsa's method"""
-            return PKCS115_Cipher(key).decrypt(msg, decryption_error)
+            ret = PKCS115_Cipher(key).decrypt(msg, None)
+            if not ret:
+                raise decryption_error("Decryption failed")
+            return ret
 
 
         def sign(msg, key, hashop):
@@ -83,16 +83,15 @@ except ImportError:
                 if res:
                     break
             if not res:
-                raise verification_error
-            else:
-                return True
+                raise verification_error("Signature verification failed")
+            return True
             
 
         def public_key(n, e):
             """Wrapper for PyCrypto RSA key constructor, to better match rsa's method"""
             return RSA.construct((long(n), long(e)))
 
-    except ImportError:
+    except ImportError:  # pragma: no cover
         raise ImportError("You cannot use this without the rsa or PyCrypto module. To install this, run 'pip install rsa'. The rsa module is recommended because, while it's slightly slower, it's much more flexible, and ensures communication with other secure_sockets.")
 
 
@@ -243,13 +242,14 @@ class secure_socket(socket.socket):
                 fd = _socket.dup(conn.fileno())
                 super(secure_socket, sock).__init__(conn.family, conn.type, conn.proto, fd)
         # End ridiculous compatability section
+        sock.__silent = self.__silent
+        sock.__map_key()
         sock.__pub, sock.__priv = self.pub, self.priv  # Uses public API so it blocks when key is generating
         sock.__keysize = self.__keysize
         sock.__key = self.key  # Uses public API so it blocks when key is exchanging
         sock.__peer_keysize = self.__peer_keysize
         sock.__peer_msgsize = self.__peer_msgsize
         sock.__buffer = self.__buffer
-        sock.__silent = self.__silent
         # Socket inheritence section
         if sys.version_info[0] < 3:
             sock.__sock_recv = sock._sock.recv

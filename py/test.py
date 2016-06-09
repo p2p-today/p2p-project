@@ -58,19 +58,19 @@ def test_pathfinding_message(iters):
                 p2p.pathfinding_message.feed_string(protocol, string, True, [method])
             except:
                 pass
-            else:
+            else:  # pragma: no cover
                 assert False, "Erroneously parses sized message with sizeless"
             try:
                 p2p.pathfinding_message.feed_string(protocol, msg.string[4:], False, [method])
             except:
                 pass
-            else:
+            else:  # pragma: no cover
                 assert False, "Erroneously parses sizeless message with size"
             try:
                 p2p.pathfinding_message.feed_string(protocol, string)
             except:
                 pass
-            else:
+            else:  # pragma: no cover
                 assert False, "Erroneously parses compressed message as plaintext"
 
 def test_protocol(iters):
@@ -109,22 +109,36 @@ def test_message_sans_network(iters):
         m_hash = hashlib.sha384((sep.join(pac) + p2p.to_base_58(test.time)).encode())
         assert int(m_hash.hexdigest(), 16) == p2p.from_base_58(test.id)
 
-def test_net(iters):
+def test_net_sans_network(iters):
     for i in range(iters):
-        f = net.secure_socket(silent=True)
-        g = net.secure_socket(silent=True)
-        f.bind(('localhost', 4444+i))
-        f.listen(5)
-        t = threading.Thread(target=g.connect, args=(('localhost', 4444+i),))
-        t.start()
-        conn, addr = f.accept()
+        f = net.secure_socket(silent=True, keysize=1024)
         test = str(uuid.uuid4()).encode()
-        conn.settimeout(0.1)
-        g.settimeout(0.1)
-        g.send(test)
-        assert conn.recv() == test
-        conn.send(test)
-        assert g.recv() == test
+        f.settimeout(1)
+        assert f.keysize == 1024
+        assert test == net.decrypt(net.encrypt(test, f.pub), f.priv)
+        for op in ['best', 'SHA-512']:
+            assert f.verify(test, f.sign(test, op), f.pub)
+        g = f.dup()
+        assert f.pub == g.pub
+        assert f.priv == g.priv
+        assert f.keysize == g.keysize
+        assert f.peer_keysize == g.peer_keysize
+        assert f.fileno() == g.fileno()
+        assert f.type == g.type
+        assert f.family == g.family
+        assert f.proto == g.proto
+        try:
+            net.decrypt('a' * (f.keysize // 8), f.priv)
+        except net.decryption_error:
+            pass
+        else:  # pragma: no cover
+            assert False
+        try:
+            net.verify('a' * (f.keysize // 8), 'b' * (f.keysize // 8), f.pub)
+        except net.verification_error:
+            pass
+        else:  # pragma: no cover
+            assert False
 
 def main():
     print("Testing base_58")
@@ -141,8 +155,8 @@ def main():
     test_pathfinding_message(200)
     print("Testing message state machine (sans network functions)")
     test_message_sans_network(1000)
-    #print("Testing secure socket transmissions")
-    #test_net(2)
+    print("Testing secure socket methods")
+    test_net_sans_network(2)
 
 if __name__ == '__main__':
     main()
