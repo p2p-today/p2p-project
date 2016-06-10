@@ -287,7 +287,7 @@ class secure_socket(socket.socket):
             pass
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
-        elif self.__keysize >= 745:
+        elif self.__keysize >= 746:
             return sign(msg, self.priv, 'SHA-512')
         elif self.__keysize >= 618:
             return sign(msg, self.priv, 'SHA-384')
