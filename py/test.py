@@ -146,8 +146,8 @@ def test_net_connection(iters):
     keysizeg = 1024
     for i in xrange(iters):
         if net.uses_RSA:
-            keysizef = random.choice([1024, 745, 618, 490, 362, 354])
-            keysizeg = random.choice([1024, 745, 618, 490, 362, 354])
+            keysizef = random.choice([1024, 746, 618, 490, 362, 354])
+            keysizeg = random.choice([1024, 746, 618, 490, 362, 354])
         f = net.secure_socket(silent=True, keysize=keysizef)
         g = net.secure_socket(silent=True, keysize=keysizeg)
         f.bind(('localhost', 4444+i))
