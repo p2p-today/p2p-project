@@ -182,7 +182,8 @@ class secure_socket(socket.socket):
         if req != key_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
         self.__print("Sending key")
-        super(secure_socket, self).sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
+        key = (str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8')
+        super(secure_socket, self).sendall(key + ' '.encode() * (self.keysize - len(key)))
 
     def __handshake(self, order):
         """Wrapper for sendKey and requestKey"""

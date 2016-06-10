@@ -128,13 +128,13 @@ def test_net_sans_network(iters):
         assert f.family == g.family
         assert f.proto == g.proto
         try:
-            net.decrypt('a' * (f.keysize // 8), f.priv)
+            net.decrypt('a'.encode() * (f.keysize // 8), f.priv)
         except net.decryption_error:
             pass
         else:  # pragma: no cover
             assert False
         try:
-            net.verify('a' * (f.keysize // 8), 'b' * (f.keysize // 8), f.pub)
+            net.verify('a'.encode() * (f.keysize // 8), 'b'.encode() * (f.keysize // 8), f.pub)
         except net.verification_error:
             pass
         else:  # pragma: no cover
