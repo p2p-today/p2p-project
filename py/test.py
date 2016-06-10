@@ -140,6 +140,26 @@ def test_net_sans_network(iters):
         else:  # pragma: no cover
             assert False
 
+def test_net_connection(iters):
+    import net
+    keysizef = 1024
+    keysizeg = 1024
+    for i in xrange(iters):
+        if net.uses_RSA:
+            keysizef = random.choice([1024, 745, 618, 490, 362, 354])
+            keysizeg = random.choice([1024, 745, 618, 490, 362, 354])
+        f = net.secure_socket(silent=True, keysize=keysizef)
+        g = net.secure_socket(silent=True, keysize=keysizeg)
+        f.bind(('localhost', 4444+i))
+        f.listen(5)
+        g.connect(('localhost', 4444+i))
+        conn, addr = f.accept()
+        test = str(uuid.uuid4()).encode()
+        conn.send(test)
+        assert test == g.recv()
+        f.close()
+        g.close()
+
 def main():
     print("Testing base_58")
     test_base_58(1000)
@@ -157,6 +177,8 @@ def main():
     test_message_sans_network(1000)
     print("Testing secure socket methods")
     test_net_sans_network(2)
+    print("Testing secure socket communications")
+    test_net_connection(2)
 
 if __name__ == '__main__':
     main()
