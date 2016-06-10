@@ -330,7 +330,7 @@ class secure_socket(socket.socket):
         try:
             while packet != end_of_message:
                 received += packet
-                packet = self.__sock_recv(self.__keysize // 8 + 1)
+                packet = self.__sock_recv((self.__keysize + 6) // 8)
                 packet = decrypt(packet, self.priv)
             return received
         except decryption_error:

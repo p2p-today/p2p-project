@@ -139,6 +139,7 @@ def test_net_sans_network(iters):
             pass
         else:  # pragma: no cover
             assert False
+        del f, g
 
 def test_net_connection(iters):
     import net
@@ -150,6 +151,7 @@ def test_net_connection(iters):
             keysizeg = random.choice([1024, 746, 618, 490, 362, 354])
         f = net.secure_socket(silent=True, keysize=keysizef)
         g = net.secure_socket(silent=True, keysize=keysizeg)
+        print(keysizef, keysizeg)
         f.bind(('localhost', 4444+i))
         f.listen(5)
         g.connect(('localhost', 4444+i))
@@ -159,6 +161,7 @@ def test_net_connection(iters):
         assert test == g.recv()
         f.close()
         g.close()
+        del conn, f, g
 
 def main():
     print("Testing base_58")
@@ -176,9 +179,9 @@ def main():
     print("Testing message state machine (sans network functions)")
     test_message_sans_network(1000)
     print("Testing secure socket methods")
-    test_net_sans_network(2)
+    test_net_sans_network(3)
     print("Testing secure socket communications")
-    test_net_connection(2)
+    test_net_connection(3)
 
 if __name__ == '__main__':
     main()
