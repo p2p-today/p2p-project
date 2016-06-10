@@ -1,4 +1,7 @@
 matrix:
+  allow_failures:
+    - env: Cov='true' pyver=pypy pydist=homebrew
+    - env: Cov='true' pyver=pypy3 pydist=homebrew
   include:
     - language: generic
       python: 2.6
@@ -47,7 +50,7 @@ before_install:
 # Everything after this is user editable
 install: 
   - if [ $Cov == 'true'  ]; then pip install codecov; fi
-  - if [ $((RANDOM % 2)) ]; then pip install rsa; else pip install PyCrypto; fi
+  - if [ $(($RANDOM % 2)) == 0 ]; then pip install rsa; else pip install PyCrypto; fi
 script: 
   - if [ $Cov == 'true'  ]; then python -m coverage run -a py/test.py; fi
   - if [ $Cov == 'false' ]; then python test.py; fi

@@ -12,7 +12,7 @@ python:
 build:
   ci:
     - pip install codecov
-    - if [ $((RANDOM % 2)) ]; then pip install rsa; else pip install PyCrypto; fi
+    - if [ $(($RANDOM % 2)) == 0 ]; then pip install rsa; else pip install PyCrypto; fi
     - coverage run -a py/test.py
   on_success:
     - coverage combine
