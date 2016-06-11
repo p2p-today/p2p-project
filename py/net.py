@@ -342,6 +342,7 @@ class secure_socket(socket.socket):
         except ValueError as error:
             if error.args[0] in ["invalid literal for int() with base 16: ''",\
                 "invalid literal for int() with base 16: b''", "Ciphertext with incorrect length."]:
+                print(packet)
                 return 0
             raise error
 
