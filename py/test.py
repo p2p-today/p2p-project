@@ -59,19 +59,19 @@ def test_pathfinding_message(iters):
             except:
                 pass
             else:  # pragma: no cover
-                assert False, "Erroneously parses sized message with sizeless"
+                raise Exception("Erroneously parses sized message with sizeless")
             try:
                 p2p.pathfinding_message.feed_string(protocol, msg.string[4:], False, [method])
             except:
                 pass
             else:  # pragma: no cover
-                assert False, "Erroneously parses sizeless message with size"
+                raise Exception("Erroneously parses sizeless message with size")
             try:
                 p2p.pathfinding_message.feed_string(protocol, string)
             except:
                 pass
             else:  # pragma: no cover
-                assert False, "Erroneously parses compressed message as plaintext"
+                raise Exception("Erroneously parses compressed message as plaintext")
 
 def test_protocol(iters):
     for i in range(iters):
@@ -132,13 +132,13 @@ def test_net_sans_network(iters):
         except net.decryption_error:
             pass
         else:  # pragma: no cover
-            assert False
+            raise Exception()
         try:
             net.verify('a'.encode() * (f.keysize // 8), 'b'.encode() * (f.keysize // 8), f.pub)
         except net.verification_error:
             pass
         else:  # pragma: no cover
-            assert False
+            raise Exception()
         del f, g
 
 def test_net_connection(iters):
@@ -169,7 +169,7 @@ def main():
     print("Testing intersect")
     test_intersect(200)
     print("Testing UTC fetch")
-    test_getUTC(20)
+    test_getUTC(5)
     print("Testing compression methods")
     test_compression(1000)
     print("Testing protocol state machine")
