@@ -138,7 +138,7 @@ def test_net_connection(iters):
         f.listen(5)
         g.connect(('localhost', 4444+i))
         conn, addr = f.accept()
-        conn.settimeout(100)
+        conn.settimeout(1)
         test = str(uuid.uuid4()).encode()
         conn.send(test)
         assert test == g.recv(4) + g.recv(4) + g.recv()
