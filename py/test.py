@@ -23,12 +23,12 @@ def test_intersect(iters):
         else:
             assert p2p.intersect(range(*pair1), range(*pair2)) == []
 
-def test_getUTC(iters):
-    for i in xrange(iters):
-        datenow, utcnow = datetime.datetime.utcnow(), p2p.getUTC()
-        dateepoch = datenow - datetime.datetime(1970, 1, 1)
-        assert dateepoch.days * 86400 + dateepoch.seconds == utcnow
-        time.sleep(random.random())
+def test_getUTC(secs):
+    while secs:
+        a = datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)
+        assert a.days * 86400 + a.seconds == p2p.getUTC()
+        time.sleep(1)
+        secs -= 1
 
 def test_compression(iters):
     for i in xrange(iters):
@@ -59,19 +59,19 @@ def test_pathfinding_message(iters):
             except:
                 pass
             else:  # pragma: no cover
-                raise Exception("Erroneously parses sized message with sizeless")
+                assert False, "Erroneously parses sized message with sizeless"
             try:
                 p2p.pathfinding_message.feed_string(protocol, msg.string[4:], False, [method])
             except:
                 pass
             else:  # pragma: no cover
-                raise Exception("Erroneously parses sizeless message with size")
+                assert False, "Erroneously parses sizeless message with size"
             try:
                 p2p.pathfinding_message.feed_string(protocol, string)
             except:
                 pass
             else:  # pragma: no cover
-                raise Exception("Erroneously parses compressed message as plaintext")
+                assert False, "Erroneously parses compressed message as plaintext"
 
 def test_protocol(iters):
     for i in range(iters):
@@ -115,16 +115,34 @@ def test_net_sans_network(iters):
         test = str(uuid.uuid4()).encode()
         f.settimeout(1)
         assert f.keysize == 1024
+        assert test == net.decrypt(net.encrypt(test, f.pub), f.priv)
+        for op in ['best', 'SHA-512']:
+            assert f.verify(test, f.sign(test, op), f.pub)
         g = f.dup()
-        assert (f.pub, f.priv) == (g.pub, g.priv)
+        assert f.pub == g.pub
+        assert f.priv == g.priv
         assert f.keysize == g.keysize
         assert f.peer_keysize == g.peer_keysize
+        # assert f.fileno() == g.fileno()  # This only works in python2, apparently
         assert f.type == g.type
         assert f.family == g.family
         assert f.proto == g.proto
+        try:
+            net.decrypt('a'.encode() * (f.keysize // 8), f.priv)
+        except net.decryption_error:
+            pass
+        else:  # pragma: no cover
+            assert False
+        try:
+            net.verify('a'.encode() * (f.keysize // 8), 'b'.encode() * (f.keysize // 8), f.pub)
+        except net.verification_error:
+            pass
+        else:  # pragma: no cover
+            assert False
         del f, g
 
 def test_net_connection(iters):
+    import net
     keysizef = 1024
     keysizeg = 1024
     for i in xrange(iters):
@@ -132,43 +150,18 @@ def test_net_connection(iters):
             keysizef = random.choice([1024, 746, 618, 490, 362, 354])
             keysizeg = random.choice([1024, 746, 618, 490, 362, 354])
         f = net.secure_socket(silent=True, keysize=keysizef)
-        g = net.secure_socket(silent=False, keysize=keysizeg)
+        g = net.secure_socket(silent=True, keysize=keysizeg)
         print(keysizef, keysizeg)
         f.bind(('localhost', 4444+i))
         f.listen(5)
         g.connect(('localhost', 4444+i))
         conn, addr = f.accept()
-        conn.settimeout(1)
         test = str(uuid.uuid4()).encode()
         conn.send(test)
-        assert test == g.recv(4) + g.recv(4) + g.recv()
+        assert test == g.recv()
         f.close()
         g.close()
-        assert conn.recv() == ''
-        conn.close()
         del conn, f, g
-
-def test_net_exceptions():
-    test_str = 'a'.encode() * 128
-    test_key = net.newkeys(1024)
-    try:
-        f = net.secure_socket(keysize=353)
-    except ValueError:
-        pass
-    else:
-        raise Exception("This should have raised a ValueError")
-    try:
-        net.decrypt(test_str, test_key[1])
-    except net.decryption_error:
-        pass
-    else:
-        raise Exception("This should not decrypt")
-    try:
-        net.verify(test_str, test_str, test_key[1])
-    except net.verification_error:
-        pass
-    else:
-        raise Exception("This should not decrypt")
 
 def main():
     print("Testing base_58")
@@ -176,7 +169,7 @@ def main():
     print("Testing intersect")
     test_intersect(200)
     print("Testing UTC fetch")
-    test_getUTC(5)
+    test_getUTC(20)
     print("Testing compression methods")
     test_compression(1000)
     print("Testing protocol state machine")
@@ -189,8 +182,6 @@ def main():
     test_net_sans_network(3)
     print("Testing secure socket communications")
     test_net_connection(3)
-    print("Testing secure socket Exceptions")
-    test_net_exceptions()
 
 if __name__ == '__main__':
     main()
