@@ -159,8 +159,8 @@ def test_net_connection(iters):
         test = str(uuid.uuid4()).encode()
         conn.send(test)
         assert test == g.recv(4) + g.recv(4) + g.recv()
-        f.close()
         g.close()
+        assert conn.recv() == ''
         del conn, f, g
 
 def main():
