@@ -132,7 +132,7 @@ def test_net_connection(iters):
             keysizef = random.choice([1024, 746, 618, 490, 362, 354])
             keysizeg = random.choice([1024, 746, 618, 490, 362, 354])
         f = net.secure_socket(silent=True, keysize=keysizef)
-        g = net.secure_socket(silent=False, keysize=keysizeg)
+        g = net.secure_socket(silent=True, keysize=keysizeg)
         print(keysizef, keysizeg)
         f.bind(('localhost', 4444+i))
         f.listen(5)
@@ -141,10 +141,8 @@ def test_net_connection(iters):
         test = str(uuid.uuid4()).encode()
         conn.send(test)
         assert test == g.recv(4) + g.recv(4) + g.recv()
-        f.close()
         g.close()
         assert conn.recv() == ''
-        conn.close()
         del conn, f, g
 
 def test_net_exceptions():
