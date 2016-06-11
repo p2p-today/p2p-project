@@ -98,11 +98,11 @@ class secure_socket(socket.socket):
     """An RSA encrypted and secured socket. Requires either the rsa or PyCrypto module"""
     def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, silent=False):
         super(secure_socket, self).__init__(sock_family, sock_type, proto, fileno)
-        if keysize < 1024:
+        if keysize < 1024:  # pragma: no cover
             warnings.warn('Using a <1024 key length will make communication with PyCrypto implementations inconsistent. If you\'re using PyCrypto, expect an imminent exception.', RuntimeWarning, stacklevel=2)
         if keysize < max(354, (len(end_of_message) + 11) * 8):
             raise ValueError('This key is too small to be useful.')
-        elif keysize > 8192:
+        elif keysize > 8192:  # pragma: no cover
             warnings.warn('This key is too large to be practical. Sending is easy. Generating is hard.', RuntimeWarning, stacklevel=2)
         self.__pub, self.__priv = None, None  # Temporarily set to None so they can generate in background
         self.__key_async = Thread(target=self.__set_key, args=(keysize,))  # Gen in background to reduce block
@@ -163,7 +163,7 @@ class secure_socket(socket.socket):
         self.__print("Requesting key size")
         super(secure_socket, self).sendall(size_request)
         self.__peer_keysize = int(self.__sock_recv(16))
-        if not uses_RSA and self.__peer_keysize < 1024:
+        if not uses_RSA and self.__peer_keysize < 1024:  # pragma: no cover
             warnings.warn('Your peer is using a small key length. Because you\'re using PyCrypto, sending may silently fail, as on some keys PyCrypto will not construct it correctly. To fix this, please run \'pip install rsa\'.', RuntimeWarning, stacklevel=2)
         self.__peer_msgsize = (self.__peer_keysize // 8) - 11
         self.__print("Requesting key")
@@ -338,7 +338,7 @@ class secure_socket(socket.socket):
                 packet = self.__sock_recv((self.__keysize + 6) // 8)
                 packet = decrypt(packet, self.priv)
             return received
-        except decryption_error:
+        except decryption_error:  # pragma: no cover
             print("Decryption error---Content: " + repr(packet))
             raise
         except ValueError as error:
