@@ -160,6 +160,7 @@ def test_net_connection(iters):
         conn.send(test)
         assert test == g.recv(4) + g.recv(4) + g.recv()
         g.shutdown(socket.SHUT_RDWR)
+        g.close()
         assert conn.recv() == ''
         del conn, f, g
 

@@ -219,12 +219,21 @@ class secure_socket(socket.socket):
             self.__key_exchange = None
         return self.__key
 
-    def close(self):
-        """Closes your connection to another socket, then cleans up metadata"""
-        super(secure_socket, self).close()
+    def __cleanup(self):
+        """Cleans up metadata"""
         self.__key = None
         self.__peer_keysize = None
         self.__peer_msgsize = None
+
+    def shutdown(self, val):
+        """Shuts down your connection to another socket, then cleans up metadata"""
+        super(secure_socket, self).shutdown(val)
+        self.__cleanup()
+
+    def close(self):
+        """Closes your connection to another socket, then cleans up metadata"""
+        super(secure_socket, self).close()
+        self.__cleanup()
     
     def dup(self, conn=None):
         """Duplicates this secure_socket, with all key information, connected to the same peer.
