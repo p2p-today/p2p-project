@@ -2,7 +2,6 @@ from __future__ import print_function
 import warnings, socket, sys
 from threading import Thread
 from functools import partial
-from multiprocessing.pool import ThreadPool as Pool
 
 key_request = "Requesting key".encode('utf-8')
 size_request = "Requesting key size".encode('utf-8')
@@ -28,16 +27,12 @@ except ImportError:
         from Crypto.Cipher.PKCS1_v1_5 import PKCS115_Cipher
         from Crypto.Signature import PKCS1_v1_5
         from Crypto.PublicKey import RSA
-        from Crypto import Random
 
         uses_RSA = False
         warnings.warn('Using the PyCrypto module is not recommended. It makes communication with smaller-than-standard keylengths inconsistent. Please run \'pip install rsa\' to use this more effectively.', ImportWarning, stacklevel=2)
 
-        class DecryptionError(Exception): pass
-        class VerificationError(Exception): pass
-
-        decryption_error = DecryptionError("Decryption failed")
-        verification_error = VerificationError("Signature verification failed")
+        class decryption_error(Exception): pass
+        class verification_error(Exception): pass
 
         if sys.version_info > (3,):
             long = int
@@ -45,8 +40,7 @@ except ImportError:
 
         def newkeys(size):
             """Wrapper for PyCrypto RSA key generation, to better match rsa's method"""
-            random_generator = Random.new().read
-            key = RSA.generate(size, random_generator)
+            key = RSA.generate(size)
             return key.publickey(), key
 
         
@@ -57,7 +51,10 @@ except ImportError:
 
         def decrypt(msg, key):
             """Wrapper for PyCrypto RSA decryption method, to better match rsa's method"""
-            return PKCS115_Cipher(key).decrypt(msg, decryption_error)
+            ret = PKCS115_Cipher(key).decrypt(msg, None)
+            if not ret:
+                raise decryption_error("Decryption failed")
+            return ret
 
 
         def sign(msg, key, hashop):
@@ -83,16 +80,15 @@ except ImportError:
                 if res:
                     break
             if not res:
-                raise verification_error
-            else:
-                return True
+                raise verification_error("Signature verification failed")
+            return True
             
 
         def public_key(n, e):
             """Wrapper for PyCrypto RSA key constructor, to better match rsa's method"""
             return RSA.construct((long(n), long(e)))
 
-    except ImportError:
+    except ImportError:  # pragma: no cover
         raise ImportError("You cannot use this without the rsa or PyCrypto module. To install this, run 'pip install rsa'. The rsa module is recommended because, while it's slightly slower, it's much more flexible, and ensures communication with other secure_sockets.")
 
 
@@ -100,14 +96,16 @@ class secure_socket(socket.socket):
     """An RSA encrypted and secured socket. Requires either the rsa or PyCrypto module"""
     def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, silent=False):
         super(secure_socket, self).__init__(sock_family, sock_type, proto, fileno)
-        if keysize < 1024:
+        if keysize < 1024:  # pragma: no cover
             warnings.warn('Using a <1024 key length will make communication with PyCrypto implementations inconsistent. If you\'re using PyCrypto, expect an imminent exception.', RuntimeWarning, stacklevel=2)
         if keysize < max(354, (len(end_of_message) + 11) * 8):
             raise ValueError('This key is too small to be useful.')
-        elif keysize > 8192:
+        elif keysize > 8192:  # pragma: no cover
             warnings.warn('This key is too large to be practical. Sending is easy. Generating is hard.', RuntimeWarning, stacklevel=2)
-        self.__key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
-        self.__pub, self.__priv = None, None    # Temporarily set to None so they can generate in background
+        self.__pub, self.__priv = None, None  # Temporarily set to None so they can generate in background
+        self.__key_async = Thread(target=self.__set_key, args=(keysize,))  # Gen in background to reduce block
+        self.__key_async.daemon = True
+        self.__key_async.start()
         self.__keysize = keysize
         self.__key = None
         self.__peer_keysize = None
@@ -139,8 +137,12 @@ class secure_socket(socket.socket):
         """Private method to block if key is being generated"""
         if not self.__pub:
             self.__print("Waiting to grab key")
-            self.__pub, self.__priv = self.__key_async.get()[0]
+            self.__key_async.join()
             del self.__key_async
+
+    def __set_key(self, keysize):
+        """Private method to set the keys given a size"""
+        self.__pub, self.__priv = newkeys(keysize)
 
     @property
     def pub(self):
@@ -159,7 +161,7 @@ class secure_socket(socket.socket):
         self.__print("Requesting key size")
         super(secure_socket, self).sendall(size_request)
         self.__peer_keysize = int(self.__sock_recv(16))
-        if not uses_RSA and self.__peer_keysize < 1024:
+        if not uses_RSA and self.__peer_keysize < 1024:  # pragma: no cover
             warnings.warn('Your peer is using a small key length. Because you\'re using PyCrypto, sending may silently fail, as on some keys PyCrypto will not construct it correctly. To fix this, please run \'pip install rsa\'.', RuntimeWarning, stacklevel=2)
         self.__peer_msgsize = (self.__peer_keysize // 8) - 11
         self.__print("Requesting key")
@@ -177,12 +179,14 @@ class secure_socket(socket.socket):
         if req != size_request:
             raise ValueError("Handshake has failed due to invalid request from peer: %s" % req)
         self.__print("Sending key size")
-        super(secure_socket, self).sendall(str(self.keysize).encode("utf-8"))
+        keysize = str(self.keysize) + ' ' * (16 - len(str(self.keysize)))
+        super(secure_socket, self).sendall(keysize.encode("utf-8"))
         req = self.__sock_recv(len(key_request))
         if req != key_request:
             raise ValueError("Handshake has failed due to invalid request from peer")
         self.__print("Sending key")
-        super(secure_socket, self).sendall((str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8'))
+        key = (str(self.pub.n) + "," + str(self.pub.e)).encode('utf-8')
+        super(secure_socket, self).sendall(key + ' '.encode() * (self.keysize - len(key)))
 
     def __handshake(self, order):
         """Wrapper for sendKey and requestKey"""
@@ -215,12 +219,21 @@ class secure_socket(socket.socket):
             self.__key_exchange = None
         return self.__key
 
-    def close(self):
-        """Closes your connection to another socket, then cleans up metadata"""
-        super(secure_socket, self).close()
+    def __cleanup(self):
+        """Cleans up metadata"""
         self.__key = None
         self.__peer_keysize = None
         self.__peer_msgsize = None
+
+    def shutdown(self, val):
+        """Shuts down your connection to another socket, then cleans up metadata"""
+        super(secure_socket, self).shutdown(val)
+        self.__cleanup()
+
+    def close(self):
+        """Closes your connection to another socket, then cleans up metadata"""
+        super(secure_socket, self).close()
+        self.__cleanup()
     
     def dup(self, conn=None):
         """Duplicates this secure_socket, with all key information, connected to the same peer.
@@ -242,13 +255,14 @@ class secure_socket(socket.socket):
                 fd = _socket.dup(conn.fileno())
                 super(secure_socket, sock).__init__(conn.family, conn.type, conn.proto, fd)
         # End ridiculous compatability section
+        sock.__silent = self.__silent
+        sock.__map_key()
         sock.__pub, sock.__priv = self.pub, self.priv  # Uses public API so it blocks when key is generating
         sock.__keysize = self.__keysize
         sock.__key = self.key  # Uses public API so it blocks when key is exchanging
         sock.__peer_keysize = self.__peer_keysize
         sock.__peer_msgsize = self.__peer_msgsize
         sock.__buffer = self.__buffer
-        sock.__silent = self.__silent
         # Socket inheritence section
         if sys.version_info[0] < 3:
             sock.__sock_recv = sock._sock.recv
@@ -286,7 +300,7 @@ class secure_socket(socket.socket):
             pass
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
-        elif self.__keysize >= 745:
+        elif self.__keysize >= 746:
             return sign(msg, self.priv, 'SHA-512')
         elif self.__keysize >= 618:
             return sign(msg, self.priv, 'SHA-384')
@@ -328,17 +342,17 @@ class secure_socket(socket.socket):
         try:
             while packet != end_of_message:
                 received += packet
-                packet = self.__sock_recv(self.__keysize // 8)
+                packet = self.__sock_recv((self.__keysize + 6) // 8)
                 packet = decrypt(packet, self.priv)
             return received
-        except decryption_error:
+        except decryption_error:  # pragma: no cover
             print("Decryption error---Content: " + repr(packet))
             raise
         except ValueError as error:
-            if error.args[0] in ["invalid literal for int() with base 16: ''", "invalid literal for int() with base 16: b''"]:
+            if error.args[0] in ["invalid literal for int() with base 16: ''",\
+                "invalid literal for int() with base 16: b''", "Ciphertext with incorrect length."]:
                 return 0
-            else:
-                raise error
+            raise error
 
     def recv(self, size=None):
         """Receives and decrypts a message, then verifies it against the attached signature.
