@@ -2,7 +2,6 @@ from __future__ import print_function
 import warnings, socket, sys
 from threading import Thread
 from functools import partial
-from multiprocessing.pool import ThreadPool as Pool
 
 key_request = "Requesting key".encode('utf-8')
 size_request = "Requesting key size".encode('utf-8')
@@ -105,8 +104,10 @@ class secure_socket(socket.socket):
             raise ValueError('This key is too small to be useful.')
         elif keysize > 8192:
             warnings.warn('This key is too large to be practical. Sending is easy. Generating is hard.', RuntimeWarning, stacklevel=2)
-        self.__key_async = Pool().map_async(newkeys, [keysize])  # Gen in background to reduce block
-        self.__pub, self.__priv = None, None    # Temporarily set to None so they can generate in background
+        self.__pub, self.__priv = None, None  # Temporarily set to None so they can generate in background
+        self.__key_async = Thread(target=self.__set_key, args=(keysize,))  # Gen in background to reduce block
+        self.__key_async.daemon = True
+        self.__key_async.start()
         self.__keysize = keysize
         self.__key = None
         self.__peer_keysize = None
@@ -138,8 +139,12 @@ class secure_socket(socket.socket):
         """Private method to block if key is being generated"""
         if not self.__pub:
             self.__print("Waiting to grab key")
-            self.__pub, self.__priv = self.__key_async.get()[0]
+            self.__key_async.join()
             del self.__key_async
+
+    def __set_key(self, keysize):
+        """Private method to set the keys given a size"""
+        self.__pub, self.__priv = newkeys(keysize)
 
     @property
     def pub(self):
