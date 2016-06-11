@@ -1,4 +1,4 @@
-import datetime, hashlib, random, struct, sys, threading, time, uuid
+import datetime, hashlib, random, socket, struct, sys, threading, time, uuid
 import p2p, net
 
 if sys.version_info[0] > 2:
@@ -159,7 +159,7 @@ def test_net_connection(iters):
         test = str(uuid.uuid4()).encode()
         conn.send(test)
         assert test == g.recv(4) + g.recv(4) + g.recv()
-        g.close()
+        g.shutdown(socket.SHUT_RDWR)
         assert conn.recv() == ''
         del conn, f, g
 
