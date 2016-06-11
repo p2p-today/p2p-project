@@ -27,7 +27,6 @@ except ImportError:
         from Crypto.Cipher.PKCS1_v1_5 import PKCS115_Cipher
         from Crypto.Signature import PKCS1_v1_5
         from Crypto.PublicKey import RSA
-        from Crypto import Random
 
         uses_RSA = False
         warnings.warn('Using the PyCrypto module is not recommended. It makes communication with smaller-than-standard keylengths inconsistent. Please run \'pip install rsa\' to use this more effectively.', ImportWarning, stacklevel=2)
@@ -41,8 +40,7 @@ except ImportError:
 
         def newkeys(size):
             """Wrapper for PyCrypto RSA key generation, to better match rsa's method"""
-            random_generator = Random.new().read
-            key = RSA.generate(size, random_generator)
+            key = RSA.generate(size)
             return key.publickey(), key
 
         
@@ -342,10 +340,10 @@ class secure_socket(socket.socket):
             print("Decryption error---Content: " + repr(packet))
             raise
         except ValueError as error:
-            if error.args[0] in ["invalid literal for int() with base 16: ''", "invalid literal for int() with base 16: b''"]:
+            if error.args[0] in ["invalid literal for int() with base 16: ''",\
+                "invalid literal for int() with base 16: b''", "Ciphertext with incorrect length."]:
                 return 0
-            else:
-                raise error
+            raise error
 
     def recv(self, size=None):
         """Receives and decrypts a message, then verifies it against the attached signature.
