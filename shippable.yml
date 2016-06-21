@@ -19,7 +19,7 @@ build:
     - pip install pytest-coverage codecov
     - if [ $(($RANDOM % 2)) == 0 ] || [ $SHIPPABLE_PYTHON_VERSION == pypy ] || [ $SHIPPABLE_PYTHON_VERSION == pypy3 ]; then pip install rsa; else pip install PyCrypto; fi
     - python setup.py build
-    - cd build/lib
+    - cd build/lib*
     - py.test -vv --cov=./p2p/
   on_success:
     - coverage combine
