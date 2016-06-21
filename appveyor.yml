@@ -88,7 +88,7 @@ install:
 test: off
 
 build_script:
-  - "%RUN% -m pytest -vv --cov=./py_src/"
+  - "%RUN% -m pytest -vv --cov=./py_src/ ./py_src/"
 
 on_success:
   - "%COV% combine"

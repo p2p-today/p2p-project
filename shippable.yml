@@ -18,7 +18,7 @@ build:
   ci:
     - pip install pytest-coverage codecov
     - if [ $(($RANDOM % 2)) == 0 ] || [ $SHIPPABLE_PYTHON_VERSION == pypy ] || [ $SHIPPABLE_PYTHON_VERSION == pypy3 ]; then pip install rsa; else pip install PyCrypto; fi
-    - py.test -vv --cov=./py_src/
+    - py.test -vv --cov=./py_src/ ./py_src/
   on_success:
     - coverage combine
     - codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file .coverage
