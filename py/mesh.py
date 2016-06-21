@@ -2,8 +2,8 @@ from __future__ import print_function
 import hashlib, json, select, socket, struct, threading, traceback
 from collections import namedtuple, deque
 from .base import flags, user_salt, compression, to_base_58, from_base_58, \
-        getUTC, compress, decompress, intersect, protocol, base_connection, \
-        base_daemon, base_socket, message, pathfinding_message
+        getUTC, compress, decompress, intersect, get_lan_ip, protocol, \
+        base_connection, base_daemon, base_socket, message, pathfinding_message
 
 max_outgoing = 8
 default_protocol = protocol("\x1c\x1d\x1e\x1f", 'mesh', "Plaintext")  # PKCS1_v1.5")
@@ -141,6 +141,8 @@ class mesh_socket(base_socket):
         self.queue = deque()        # Queue of received messages. Access through recv()
         if out_addr:                # Outward facing address, if you're port forwarding
             self.out_addr = out_addr
+        elif addr == '0.0.0.0':
+            self.out_addr = get_lan_ip(), port
         else:
             self.out_addr = addr, port
         info = [str(out_addr).encode(), prot.id, user_salt]
