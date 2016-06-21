@@ -23,4 +23,4 @@ build:
     - py.test -vv --cov=./p2p/
   on_success:
     - coverage combine
-    - codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
+    - codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file .coverage

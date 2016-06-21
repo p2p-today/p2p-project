@@ -1,4 +1,4 @@
-import random, sys, uuid
+import random, socket, sys, uuid
 from .. import net
 
 if sys.version_info[0] > 2:
@@ -44,7 +44,7 @@ def test_net_connection(iters=3):
             keysizef = random.choice([1024, 746, 618, 490, 362, 354])
             keysizeg = random.choice([1024, 746, 618, 490, 362, 354])
         f = net.secure_socket(silent=True, keysize=keysizef)
-        g = net.secure_socket(silent=True, keysize=keysizeg)
+        g = net.secure_socket(silent=False, keysize=keysizeg)
         print(keysizef, keysizeg)
         f.bind(('localhost', 4444+i))
         f.listen(5)
@@ -52,7 +52,8 @@ def test_net_connection(iters=3):
         conn, addr = f.accept()
         test = str(uuid.uuid4()).encode()
         conn.send(test)
-        assert test == g.recv()
-        f.close()
+        assert test == g.recv(4) + g.recv(4) + g.recv()
+        g.shutdown(socket.SHUT_RDWR)
         g.close()
+        assert conn.recv() == ''
         del conn, f, g
