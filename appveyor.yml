@@ -88,9 +88,7 @@ install:
 test: off
 
 build_script:
-  - "%RUN% setup.py build"
-  - "cd build\\lib"
-  - "%RUN% -m pytest -vv --cov=./p2p/"
+  - "%RUN% -m pytest -vv --cov=./py_src/"
 
 on_success:
   - "%COV% combine"
