@@ -2,7 +2,7 @@ from __future__ import print_function
 import bz2, hashlib, json, select, socket, struct, time, threading, traceback, uuid, zlib
 from collections import namedtuple, deque
 
-version = "0.2.0"
+version = "0.2.1"
 
 class flags():
     broadcast   = b'broadcast'
@@ -108,13 +108,13 @@ def get_lan_ip():
         s.shutdown(socket.SHUT_RDWR)
 
 
-class protocol(namedtuple("protocol", ['sep', 'subnet', 'encryption'])):
+class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
     @property
     def id(self):
         h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
         return to_base_58(int(h.hexdigest(), 16))
 
-default_protocol = protocol("\x1c\x1d\x1e\x1f", '', "Plaintext")  # PKCS1_v1.5")
+default_protocol = protocol('', "Plaintext")  # PKCS1_v1.5")
 
 
 class base_connection(object):
@@ -219,53 +219,20 @@ class base_socket(object):
             print(*args)
 
 
-class message(namedtuple("message", ['msg', 'sender', 'protocol', 'time', 'server'])):
-    def reply(self, *args):
-        """Replies to the sender if you're directly connected. Tries to make a connection otherwise"""
-        if isinstance(self.sender, base_connection):
-            self.sender.send(flags.whisper, flags.whisper, *args)
-        elif self.server.routing_table.get(self.sender):
-            self.server.routing_table.get(self.sender).send(flags.whisper, flags.whisper, *args)
-        else:
-            request_hash = hashlib.sha384(self.sender + to_base_58(getUTC())).hexdigest()
-            request_id = to_base_58(int(request_hash, 16))
-            self.server.send(request_id, self.sender, type=flags.request)
-            self.server.requests.update({request_id: [flags.whisper, flags.whisper] + list(args)})
-            print("You aren't connected to the original sender. This reply is not guarunteed, but we're trying to make a connection and put the message through.")
-
-    def __repr__(self):
-        string = "message(type=" + repr(self.packets[0]) + ", packets=" + repr(self.packets[1:]) + ", sender="
-        if isinstance(self.sender, base_connection):
-            return string + repr(self.sender.addr) + ")"
-        else:
-            return string + self.sender + ")"
-
-    @property
-    def packets(self):
-        """Return the message's component packets, including it's type in position 0"""
-        if isinstance(self.msg, str):
-            return self.msg.split(self.protocol.sep)
-        else:
-            return self.msg.split(self.protocol.sep.encode())
-
-    @property
-    def id(self):
-        """Returns the SHA384-based ID of the message"""
-        if isinstance(self.msg, str):
-            msg_hash = hashlib.sha384(self.msg.encode() + to_base_58(self.time))
-        else:
-            msg_hash = hashlib.sha384(self.msg + to_base_58(self.time))            
-        return to_base_58(int(msg_hash.hexdigest(), 16))
-
-
 class pathfinding_message(object):
     @classmethod
-    def feed_string(cls, protocol, string, sizeless=False, compressions=None):
-        """Constructs a pathfinding_message from a string."""
+    def feed_string(cls, string, sizeless=False, compressions=None):
+        """Constructs a pathfinding_message from a string or bytes object.
+        Possible errors:
+            AssertionError: Initial size header is incorrect
+            struct.error:   Packet headers are incorrect OR unrecognized compression
+            IndexError:     See struct.error"""
+        # First section checks size header
         if not sizeless:
             assert struct.unpack('!L', string[:4])[0] == len(string[4:]), \
                 "Must assert struct.unpack('!L', string[:4])[0] == len(string[4:])"
             string = string[4:]
+        # Then we attempt to decompress
         compression_fail = False
         for method in intersect(compressions, compression):  # second is module scope compression
             try:
@@ -275,7 +242,18 @@ class pathfinding_message(object):
             except:
                 compression_fail = True
                 continue
-        packets = string.split(protocol.sep.encode())
+        # After this, we process the packet size headers
+        processed, expected = 0, len(string)
+        pack_lens, packets = [], []
+        while processed != expected:
+            pack_lens.extend(struct.unpack("!L", string[processed:processed+4]))
+            processed += 4
+            expected -= pack_lens[-1]
+        # Then reconstruct the packets
+        for index, length in enumerate(pack_lens):
+            start = processed + sum(pack_lens[:index])
+            end = start + length
+            packets.append(string[start:end])
         msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
         msg.time = from_base_58(packets[3])
         msg.compression_fail = compression_fail
@@ -314,7 +292,7 @@ class pathfinding_message(object):
     @property
     def id(self):
         """Returns the message id"""
-        payload_string = self.protocol.sep.encode().join(self.payload)
+        payload_string = b''.join(self.payload)
         payload_hash = hashlib.sha384(payload_string + self.time_58)
         return to_base_58(int(payload_hash.hexdigest(), 16))
 
@@ -328,7 +306,10 @@ class pathfinding_message(object):
 
     @property
     def __non_len_string(self):
-        string = self.protocol.sep.encode().join(self.packets)
+        packets = self.packets
+        header = struct.pack("!" + str(len(packets)) + "L", 
+                                    *[len(x) for x in packets])
+        string = header + b''.join(packets)
         if self.compression_used:
             string = compress(string, self.compression_used)
         return string
@@ -345,3 +326,50 @@ class pathfinding_message(object):
     @property
     def len(self):
         return struct.pack("!L", self.__len__())
+
+
+class message(object):
+    def __init__(self, msg, server):
+        if not isinstance(msg, pathfinding_message):
+            raise TypeError("message must be passed a pathfinding_message")
+        self.msg = msg
+        self.server = server
+
+    @property
+    def sender(self):
+        return self.msg.sender
+
+    @property
+    def protocol(self):
+        return self.msg.protocol
+    
+    @property
+    def id(self):
+        return self.msg.id
+
+    @property
+    def packets(self):
+        """Return the message's component packets, including it's type in position 0"""
+        return self.msg.payload
+
+    def __len__(self):
+        return self.msg.__len__()
+
+    def __repr__(self):
+        packets = self.packets
+        string = "message(type=" + repr(packets[0]) + ", packets=" + repr(packets[1:]) + ", sender="
+        if isinstance(self.sender, base_connection):  # This should no longer happen, but just in case
+            return string + repr(self.sender.addr) + ")"
+        else:
+            return string + repr(self.sender) + ")"
+
+    def reply(self, *args):
+        """Replies to the sender if you're directly connected. Tries to make a connection otherwise"""
+        if self.server.routing_table.get(self.sender):
+            self.server.routing_table.get(self.sender).send(flags.whisper, flags.whisper, *args)
+        else:
+            request_hash = hashlib.sha384(self.sender + to_base_58(getUTC())).hexdigest()
+            request_id = to_base_58(int(request_hash, 16))
+            self.server.send(request_id, self.sender, type=flags.request)
+            self.server.requests.update({request_id: [flags.whisper, flags.whisper] + list(args)})
+            print("You aren't connected to the original sender. This reply is not guarunteed, but we're trying to make a connection and put the message through.")

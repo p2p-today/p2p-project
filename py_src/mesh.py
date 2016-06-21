@@ -6,7 +6,7 @@ from .base import flags, user_salt, compression, to_base_58, from_base_58, \
         base_connection, base_daemon, base_socket, message, pathfinding_message
 
 max_outgoing = 8
-default_protocol = protocol("\x1c\x1d\x1e\x1f", 'mesh', "Plaintext")  # PKCS1_v1.5")
+default_protocol = protocol('mesh', "Plaintext")  # PKCS1_v1.5")
 
 class mesh_connection(base_connection):
     def found_terminator(self):
@@ -17,7 +17,7 @@ class mesh_connection(base_connection):
         self.active = False
         reply_object = self
         try:
-            msg = pathfinding_message.feed_string(self.protocol, raw_msg, False, self.compression)
+            msg = pathfinding_message.feed_string(raw_msg, False, self.compression)
         except IndexError:
             self.__print__("Failed to decode message: %s. Expected compression: %s." % \
                             (raw_msg, intersect(compression, self.compression)[0]), level=1)
@@ -45,8 +45,7 @@ class mesh_connection(base_connection):
             elif packets[4] == flags.resend:
                 self.send(*self.last_sent)
                 return
-        msg = self.protocol.sep.encode().join(packets[4:])  # Handle request without routing headers
-        self.server.handle_msg(message(msg, reply_object, self.protocol, from_base_58(packets[3]), self.server))
+        self.server.handle_msg(message(msg, self.server), reply_object)
 
     def send(self, msg_type, *args, **kargs):
         """Sends a message through its connection. The first argument is message type. All after that are content packets"""
@@ -152,9 +151,8 @@ class mesh_socket(base_socket):
         self.id = to_base_58(int(h.hexdigest(), 16))
         self.daemon = mesh_daemon(addr, port, self, prot)
 
-    def handle_msg(self, msg):
+    def handle_msg(self, msg, handler):
         """Decides how to handle various message types, allowing some to be handled automatically"""
-        handler = msg.sender
         packets = msg.packets
         if packets[0] == flags.handshake:
             self.__handle_handshake(packets, handler)

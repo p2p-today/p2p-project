@@ -53,7 +53,7 @@ def test_pathfinding_message(iters=500):
     protocol = base.default_protocol
     for i in xrange(iters):
         length = random.randint(0, max_val)
-        array = [str(uuid.uuid4()).encode() for x in xrange(length)]  # TODO: Make this work with os.urandom(36)
+        array = [os.urandom(36) for x in xrange(length)]
         msg = base.pathfinding_message(protocol, base.flags.broadcast, 'TEST SENDER', array)
         assert array == msg.payload
         assert msg.packets == [base.flags.broadcast, 'TEST SENDER'.encode(), msg.id, msg.time_58] + array
@@ -63,23 +63,23 @@ def test_pathfinding_message(iters=500):
             string = struct.pack('!L', len(string)) + string
             msg.compression = [method]
             assert msg.string == string
-            comp = base.pathfinding_message.feed_string(protocol, string, False, [method])
+            comp = base.pathfinding_message.feed_string(string, False, [method])
             assert msg.string == comp.string
             # Test certain errors
             try:
-                base.pathfinding_message.feed_string(protocol, string, True, [method])
+                base.pathfinding_message.feed_string(string, True, [method])
             except:
                 pass
             else:  # pragma: no cover
                 assert False, "Erroneously parses sized message with sizeless: %s" % string
             try:
-                base.pathfinding_message.feed_string(protocol, msg.string[4:], False, [method])
+                base.pathfinding_message.feed_string(msg.string[4:], False, [method])
             except:
                 pass
             else:  # pragma: no cover
                 assert False, "Erroneously parses sizeless message with size %s" % string
             try:
-                base.pathfinding_message.feed_string(protocol, string)
+                base.pathfinding_message.feed_string(string)
             except:
                 pass
             else:  # pragma: no cover
@@ -87,37 +87,29 @@ def test_pathfinding_message(iters=500):
 
 def test_protocol(iters=200):
     for i in range(iters):
-        sep = str(uuid.uuid4())
         sub = str(uuid.uuid4())
         enc = str(uuid.uuid4())
-        test = base.protocol(sep, sub, enc)
-        assert test.sep == sep
-        assert test[0] == sep
+        test = base.protocol(sub, enc)
         assert test.subnet == sub
-        assert test[1] == sub
+        assert test[0] == sub
         assert test.encryption == enc
-        assert test[2] == enc
-        p_hash = hashlib.sha256(''.join([sep, sub, enc, base.version]).encode())
+        assert test[1] == enc
+        p_hash = hashlib.sha256(''.join([sub, enc, base.version]).encode())
         assert int(p_hash.hexdigest(), 16) == base.from_base_58(test.id)
         assert test.id != base.default_protocol.id
 
 def test_message_sans_network(iters=1000):
     for i in range(iters):
-        sep = str(uuid.uuid4())
         sub = str(uuid.uuid4())
         enc = str(uuid.uuid4())
         sen = str(uuid.uuid4())
-        pac = [str(uuid.uuid4()) for i in range(10)]
-        prot = base.protocol(sep, sub, enc)
-        test = base.message(sep.join(pac), sen, prot, base.getUTC(), None)
+        pac = [os.urandom(36) for i in range(10)]
+        prot = base.protocol(sub, enc)
+        base_msg = base.pathfinding_message(prot, base.flags.broadcast, sen, pac)
+        test = base.message(base_msg, None)
         assert test.packets == pac
-        assert test.msg == sep.join(pac)
-        assert test[0] == sep.join(pac)
+        assert test.msg == base_msg
         assert test.sender == sen
-        assert test[1] == sen
         assert test.protocol == prot
-        assert test[2] == prot
-        assert test[3] == test.time
-        m_hash = hashlib.sha384(sep.join(pac).encode() + base.to_base_58(test.time))
-        assert int(m_hash.hexdigest(), 16) == base.from_base_58(test.id)
+        assert test.id == base_msg.id
         assert sen in repr(test)
