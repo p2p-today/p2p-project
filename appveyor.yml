@@ -78,21 +78,19 @@ matrix:
     - PYTHON_VERSION: "pypy2"
     - PYTHON_VERSION: "pypy3"
 
-init:
-- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
 install:
   - "ECHO %PYTHON% %PYTHON_VERSION%%APPVEYOR_BUILD_FOLDER%"
   - "set HOME=%APPVEYOR_BUILD_FOLDER%"
   - "%PYPY%"
-  - "%PIP% install codecov rsa"
+  - "%PIP% install pytest-coverage codecov rsa"
   - "cd %HOME%"
 
 test: off
 
 build_script:
-  - "%COV% run -a py/test.py"
+  - "%RUN% -m pytest -vv --cov=./py_src/ ./py_src/"
 
 on_success:
   - "%COV% combine"
-  - "%RUN% -c \"import codecov; codecov.main(token='d89f9bd9-27a3-4560-8dbb-39ee3ba020a5')\""
+  - "%COV% xml"
+  - "%RUN% -c \"import codecov; codecov.main('--token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5', '--file=coverage.xml')\""

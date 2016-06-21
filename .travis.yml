@@ -49,10 +49,10 @@ before_install:
   - source venv/bin/activate
 # Everything after this is user editable
 install: 
-  - if [ $Cov == 'true'  ]; then pip install codecov; fi
+  - if [ $Cov == 'true'  ]; then pip install pytest-coverage codecov; fi
   - if [ $(($RANDOM % 2)) == 0 ] || [ $pyver == pypy ] || [ $pyver == pypy3 ]; then pip install rsa; else pip install PyCrypto; fi
-script: 
-  - if [ $Cov == 'true'  ]; then python -m coverage run -a py/test.py; fi
-  - if [ $Cov == 'false' ]; then python test.py; fi
+script:
+  - if [ $Cov == 'true'  ]; then py.test -vv --cov=./py_src/ ./py_src/; fi
+  - if [ $Cov == 'false' ]; then py.test -vv; fi
 after_success:
-  - if [ $Cov == 'true'  ]; then python -m coverage combine; codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5; fi
+  - if [ $Cov == 'true'  ]; then python -m coverage combine; python -m coverage xml; echo "$(cat coverage.xml)"; codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml; fi
