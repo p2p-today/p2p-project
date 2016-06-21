@@ -19,7 +19,9 @@ class mesh_connection(base_connection):
         try:
             msg = pathfinding_message.feed_string(self.protocol, raw_msg, False, self.compression)
         except IndexError:
-            self.send(flags.renegotiate, flags.compression, json.dumps([algo.decode() for algo in self.compression if algo != method]))
+            self.__print__("Failed to decode message: %s. Expected compression: %s." % \
+                            (raw_msg, intersect(compression, self.compression)[0]), level=1)
+            self.send(flags.renegotiate, flags.compression, json.dumps([]))
             self.send(flags.renegotiate, flags.resend)
             return
         packets = msg.packets
@@ -173,6 +175,7 @@ class mesh_socket(base_socket):
         handler.id = packets[1]
         handler.addr = json.loads(packets[3].decode())
         handler.compression = json.loads(packets[4].decode())
+        handler.compression = [algo.encode() for algo in handler.compression]
         self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
         if handler in self.awaiting_ids:
             self.awaiting_ids.remove(handler)
