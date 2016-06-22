@@ -16,7 +16,7 @@ def int_to_bin(key):
 
 
 def bin_to_int(key):
-    if isinstance(key, int) and bytes != str:
+    if isinstance(key, int) and bytes != str:  # pragma: no cover
         key = bytes([key])
     arr = struct.unpack("!" + "B" * len(key), key)
     i = 0
@@ -34,7 +34,8 @@ def construct_packets(msg, packet_size):
     while True:
         headers = int_to_bin(num_packets)
         num_headers = int_to_bin(len(headers))
-        if len(num_headers) > 1:
+        num_headers = b'\x00' * (4 - len(num_headers)) + num_headers
+        if len(num_headers) > 4:  # pragma: no cover
             raise ValueError("Too many packets being constructed")
         new_msg = num_headers + headers + msg
         new_num_packets = get_num_packets(new_msg, packet_size)
@@ -175,6 +176,11 @@ class secure_socket(socket.socket):
         """Your key size in bits"""
         return self.__keysize
 
+    @property
+    def recv_charlimit(self):
+        """The maximum number of characters you can recv in one message"""
+        return (256**4-1) * ((self.__keysize // 8) - 11) - 259
+
     def __map_key(self):
         """Private method to block if key is being generated"""
         if not self.__pub:
@@ -252,6 +258,11 @@ class secure_socket(socket.socket):
     def peer_keysize(self):
         """Your peer's key size in bits"""
         return self.__peer_keysize
+
+    @property
+    def send_charlimit(self):
+        """The maximum number of characters you can send in one message"""
+        return (256**4-1) * ((self.__peer_keysize // 8) - 11) - 259
 
     @property
     def key(self):
@@ -384,10 +395,10 @@ class secure_socket(socket.socket):
                 received += packet
                 packets_received += 1
                 if num_headers == -1:
-                    num_headers = bin_to_int(received[0])
-                if len(received) >= num_headers + 1:
-                    expected = bin_to_int(received[1:num_headers+1])
-            return received[1+num_headers:]
+                    num_headers = bin_to_int(received[0:4])
+                if len(received) >= num_headers + 4:
+                    expected = bin_to_int(received[4:num_headers+4])
+            return received[4+num_headers:]
         except decryption_error:  # pragma: no cover
             print("Decryption error---Content: " + repr(packet))
             raise
