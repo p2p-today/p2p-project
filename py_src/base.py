@@ -3,6 +3,7 @@ import bz2, hashlib, json, select, socket, struct, time, threading, traceback, u
 from collections import namedtuple, deque
 
 version = "0.2.1"
+build_num = "build.15"
 
 class flags():
     broadcast   = b'broadcast'

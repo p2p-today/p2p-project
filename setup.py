@@ -1,5 +1,6 @@
-from distutils.core import setup
-from py import __version__
+# from distutils.core import setup
+from setuptools import setup
+from py_src import __version__
 
 setup(name='p2p',
       description='A python library for peer-to-peer networking',

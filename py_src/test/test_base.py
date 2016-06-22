@@ -26,7 +26,7 @@ def test_intersect(iters=200):
 def test_getUTC(iters=20):
     while iters:
         nowa, nowb = datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1), base.getUTC()
-        assert nowa.days * 86400 + nowa.seconds == nowb
+        assert nowa.days * 86400 + nowa.seconds in xrange(nowb-1, nowb+2)  # 1 second error margin
         time.sleep(random.random())
         iters -= 1
 
