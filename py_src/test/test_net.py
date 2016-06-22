@@ -1,14 +1,15 @@
 import os, random, socket, sys, uuid
+from functools import partial
 from .. import net
+from .test_base import try_identity
 
 if sys.version_info[0] > 2:
     xrange = range
 
 def test_bin_recovery(iters=1000):
     max_val = 2**256
-    for i in xrange(iters):
-        test = random.randint(0, max_val)
-        assert test == net.bin_to_int(net.int_to_bin(test))
+    data_gen = partial(random.randint, 0, max_val)
+    try_identity(net.int_to_bin, net.bin_to_int, data_gen, iters)
 
 def test_packet_construction(iters=100):
     max_msg_len = 2**16
@@ -31,7 +32,7 @@ def test_net_properties(iters=6):
             keysize = random.choice([1024, 746, 618, 490, 362, 354])
         f = net.secure_socket(silent=True, keysize=keysize)
         assert f.keysize == keysize
-        assert f.recv_charlimit == (256**4-1) * ((keysize // 8) - 11) - 259
+        assert f.recv_charlimit == net.charlimit(keysize)
         del f
 
 def test_net_sans_network(iters=3):

@@ -1,14 +1,19 @@
 import datetime, hashlib, os, random, struct, sys, time, uuid
+from functools import partial
 from .. import base
 
 if sys.version_info[0] > 2:
     xrange = range
 
+def try_identity(in_func, out_func, data_gen, iters):
+    for i in xrange(iters):
+        test = data_gen()
+        assert test == out_func(in_func(test))
+
 def test_base_58(iters=1000):
     max_val = 2**32 - 1
-    for i in xrange(iters):
-        test = random.randint(0, max_val)
-        assert test == base.from_base_58(base.to_base_58(test))
+    data_gen = partial(random.randint, 0, max_val)
+    try_identity(base.to_base_58, base.from_base_58, data_gen, iters)
 
 def test_intersect(iters=200):
     max_val = 2**12 - 1
