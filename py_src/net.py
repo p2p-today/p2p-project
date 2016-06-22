@@ -387,7 +387,6 @@ class secure_socket(socket.socket):
     def __recv(self):
         """Base method for receiving a message. Receives and decrypts. Use recv instead."""
         received = b''
-        packet = b''
         expected = -1
         num_headers = -1
         packets_received = 0
@@ -402,9 +401,6 @@ class secure_socket(socket.socket):
                 if len(received) >= num_headers + 4:
                     expected = bin_to_int(received[4:num_headers+4])
             return received[4+num_headers:]
-        except decryption_error:  # pragma: no cover
-            print("Decryption error---Content: " + repr(packet))
-            raise
         except ValueError as error:
             if error.args[0] in ["invalid literal for int() with base 16: ''",\
                 "invalid literal for int() with base 16: b''", "Ciphertext with incorrect length."]:
