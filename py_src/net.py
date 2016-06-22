@@ -43,6 +43,8 @@ def construct_packets(msg, packet_size):
             return [new_msg[i * packet_size:(i+1) * packet_size] for i in range(0, num_packets)]
         num_packets = new_num_packets
 
+def charlimit(keysize):
+    return (256**4-1) * ((keysize // 8) - 11) - 259
 
 # This next section is to set up for different RSA implementations. Currently supported are rsa and PyCrypto. I plan to add cryptography in the future.
 
@@ -179,7 +181,7 @@ class secure_socket(socket.socket):
     @property
     def recv_charlimit(self):
         """The maximum number of characters you can recv in one message"""
-        return (256**4-1) * ((self.__keysize // 8) - 11) - 259
+        return charlimit(self.__keysize)
 
     def __map_key(self):
         """Private method to block if key is being generated"""
@@ -262,7 +264,8 @@ class secure_socket(socket.socket):
     @property
     def send_charlimit(self):
         """The maximum number of characters you can send in one message"""
-        return (256**4-1) * ((self.__peer_keysize // 8) - 11) - 259
+        if self.__peer_keysize:
+            return charlimit(self.__peer_keysize)
 
     @property
     def key(self):
