@@ -1,11 +1,31 @@
-import random, socket, sys, uuid
+import os, random, socket, sys, uuid
 from .. import net
 
 if sys.version_info[0] > 2:
     xrange = range
 
+def test_bin_recovery(iters=1000):
+    max_val = 2**256
+    for i in xrange(iters):
+        test = random.randint(0, max_val)
+        assert test == net.bin_to_int(net.int_to_bin(test))
+
+def test_packet_construction(iters=100):
+    max_msg_len = 2**16
+    max_pack_len = 8196 // 8 - 11
+    min_pack_len = 354 // 8 - 11
+    for i in xrange(iters):
+        msg = os.urandom(random.randint(1, max_msg_len))
+        pack_len = random.randint(min_pack_len, max_pack_len)
+        packets = net.construct_packets(msg, pack_len)
+        parsed_msg = b''.join(packets)
+        num_headers = net.bin_to_int(parsed_msg[0])
+        num_packets = net.bin_to_int(parsed_msg[1:num_headers+1])
+        assert num_packets == len(packets)
+        assert parsed_msg[num_headers+1:] == msg
+
 def test_net_sans_network(iters=3):
-    for i in range(iters):
+    for i in xrange(iters):
         f = net.secure_socket(silent=True, keysize=1024)
         test = str(uuid.uuid4()).encode()
         f.settimeout(1)

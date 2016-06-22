@@ -1,12 +1,41 @@
 from __future__ import print_function
-import warnings, socket, sys
+import warnings, socket, struct, sys
 from threading import Thread
 from functools import partial
 
 key_request = "Requesting key".encode('utf-8')
 size_request = "Requesting key size".encode('utf-8')
-end_of_message = '\x03\x04\x17\x04\x03'.encode('utf-8')  # For the ASCII nerds, that's:
-                                                         # End of text, End of tx, End of tx block, End of tx, End of text
+
+def int_to_bin(key):
+    arr = []
+    while key:
+        arr = [key % 256] + arr
+        key //= 256
+    return struct.pack("!" + "B" * len(arr), *arr)
+
+
+def bin_to_int(key):
+    arr = struct.unpack("!" + "B" * len(key), key)
+    i = 0
+    for n in arr:
+        i *= 256
+        i += n
+    return i
+
+
+def construct_packets(msg, packet_size):
+    num_packets = len(msg) // packet_size + bool(len(msg) % packet_size)
+    while True:
+        headers = int_to_bin(num_packets)
+        num_headers = int_to_bin(len(headers))
+        if len(num_headers) > 1:
+            raise ValueError("Too many packets being constructed")
+        new_msg = num_headers + headers + msg
+        new_num_packets = len(new_msg) // packet_size + bool(len(new_msg) % packet_size)
+        if new_num_packets == num_packets:
+            return [new_msg[i * packet_size:(i+1) * packet_size] for i in range(0, num_packets)]
+        num_packets = new_num_packets
+
 
 # This next section is to set up for different RSA implementations. Currently supported are rsa and PyCrypto. I plan to add cryptography in the future.
 
@@ -98,7 +127,7 @@ class secure_socket(socket.socket):
         super(secure_socket, self).__init__(sock_family, sock_type, proto, fileno)
         if keysize < 1024:  # pragma: no cover
             warnings.warn('Using a <1024 key length will make communication with PyCrypto implementations inconsistent. If you\'re using PyCrypto, expect an imminent exception.', RuntimeWarning, stacklevel=2)
-        if keysize < max(354, (len(end_of_message) + 11) * 8):
+        if keysize < 354:
             raise ValueError('This key is too small to be useful.')
         elif keysize > 8192:  # pragma: no cover
             warnings.warn('This key is too large to be practical. Sending is easy. Generating is hard.', RuntimeWarning, stacklevel=2)
@@ -321,12 +350,9 @@ class secure_socket(socket.socket):
         """Base method for sending a message. Encrypts and sends. Use send instead."""
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = str(msg).encode('utf-8')
-        x = 0
-        while x < len(msg) - self.__peer_msgsize:
-            super(secure_socket, self).sendall(encrypt(msg[x:x+self.__peer_msgsize], self.key))
-            x += self.__peer_msgsize
-        super(secure_socket, self).sendall(encrypt(msg[x:], self.key))
-        super(secure_socket, self).sendall(encrypt(end_of_message, self.key))
+        packets = construct_packets(msg, self.__peer_msgsize)
+        for packet in packets:
+            super(secure_socket, self).sendall(encrypt(packet, self.key))
 
     def send(self, msg):
         """Sends an encrypted copy of your message, and an encrypted signature.
@@ -339,12 +365,20 @@ class secure_socket(socket.socket):
         """Base method for receiving a message. Receives and decrypts. Use recv instead."""
         received = b''
         packet = b''
+        expected = -1
+        num_headers = -1
+        packets_received = 0
         try:
-            while packet != end_of_message:
-                received += packet
+            while packets_received != expected:
                 packet = self.__sock_recv((self.__keysize + 6) // 8)
                 packet = decrypt(packet, self.priv)
-            return received
+                received += packet
+                packets_received += 1
+                if num_headers == -1:
+                    num_headers = bin_to_int(received[0])
+                if len(received) >= num_headers + 1:
+                    expected = bin_to_int(received[1:num_headers+1])
+            return received[1+num_headers:]
         except decryption_error:  # pragma: no cover
             print("Decryption error---Content: " + repr(packet))
             raise
