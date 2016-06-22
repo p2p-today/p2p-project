@@ -6,6 +6,7 @@ from functools import partial
 key_request = "Requesting key".encode('utf-8')
 size_request = "Requesting key size".encode('utf-8')
 
+
 def int_to_bin(key):
     arr = []
     while key:
@@ -15,6 +16,8 @@ def int_to_bin(key):
 
 
 def bin_to_int(key):
+    if isinstance(key, int) and bytes != str:
+        key = bytes([key])
     arr = struct.unpack("!" + "B" * len(key), key)
     i = 0
     for n in arr:
@@ -23,15 +26,18 @@ def bin_to_int(key):
     return i
 
 
+def get_num_packets(msg, packet_size):
+    return len(msg) // packet_size + bool(len(msg) % packet_size)
+
 def construct_packets(msg, packet_size):
-    num_packets = len(msg) // packet_size + bool(len(msg) % packet_size)
+    num_packets = get_num_packets(msg, packet_size)
     while True:
         headers = int_to_bin(num_packets)
         num_headers = int_to_bin(len(headers))
         if len(num_headers) > 1:
             raise ValueError("Too many packets being constructed")
         new_msg = num_headers + headers + msg
-        new_num_packets = len(new_msg) // packet_size + bool(len(new_msg) % packet_size)
+        new_num_packets = get_num_packets(new_msg, packet_size)
         if new_num_packets == num_packets:
             return [new_msg[i * packet_size:(i+1) * packet_size] for i in range(0, num_packets)]
         num_packets = new_num_packets
@@ -47,9 +53,14 @@ try:
     newkeys    = rsa.newkeys
     encrypt    = rsa.encrypt
     decrypt    = rsa.decrypt
-    sign       = rsa.sign
     verify     = rsa.verify
     public_key = rsa.PublicKey
+
+    def sign(msg, key, hashop):
+        if not isinstance(msg, bytes):
+            msg = msg.encode()
+        return rsa.sign(msg, key, hashop)
+
 except ImportError:
     try:
         from Crypto.Hash import SHA512, SHA384, SHA256, SHA, MD5
@@ -93,6 +104,8 @@ except ImportError:
                          'SHA-256': SHA256,
                          'SHA-384': SHA384,
                          'SHA-512': SHA512}
+            if not isinstance(msg, bytes):
+                msg = msg.encode()
             hsh = hashtable.get(hashop).new()
             hsh.update(msg)
             signer = PKCS1_v1_5.PKCS115_SigScheme(key)
@@ -323,10 +336,6 @@ class secure_socket(socket.socket):
 
     def sign(self, msg, hashop='best'):
         """Signs a message with a given hash, or self-determined one. If using PyCrypto, always defaults to SHA-512"""
-        try:
-            msg = msg.encode()
-        except:
-            pass
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
         elif self.__keysize >= 746:
