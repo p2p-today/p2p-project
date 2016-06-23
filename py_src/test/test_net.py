@@ -48,13 +48,12 @@ def test_net_dup(iters=3):
     for i in xrange(iters):
         f = net.secure_socket(silent=True, keysize=1024)
         g = f.dup()
-        assert f.pub == g.pub
-        assert f.priv == g.priv
-        assert f.keysize == g.keysize
+        # Both should be None
         assert f.peer_keysize == g.peer_keysize
-        assert f.type == g.type
-        assert f.family == g.family
-        assert f.proto == g.proto
+        # Test key data in one go
+        assert (f.pub, f.priv, f.keysize) == (g.pub, g.priv, g.keysize)
+        # Test socket metadata in one go
+        assert (f.type, f.family, f.proto) == (g.type, g.family, g.proto)
         del f, g
 
 def test_net_connection(iters=3):
