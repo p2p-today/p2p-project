@@ -104,7 +104,7 @@ class mesh_daemon(base_daemon):
                     except socket.timeout:
                         continue  # Shouldn't happen with select, but if it does...
                     except Exception as e:
-                        if isinstance(e, socket.error) and e.args[0] in [9, 104, 10054, 10058]:
+                        if isinstance(e, socket.error) and e.args[0] in (9, 104, 10053, 10054, 10058):
                             node_id = handler.id
                             if not node_id:
                                 node_id = repr(handler)
@@ -184,7 +184,7 @@ class mesh_socket(base_socket):
         new_peers = json.loads(packets[1].decode())
         for addr, id in new_peers:
             if len(self.outgoing) < max_outgoing and addr:
-                self.connect(addr[0], addr[1], id)
+                self.connect(addr[0], addr[1], id.encode())
 
     def __handle_response(self, packets, handler):
         self.__print__("Response received for request id %s" % packets[1], level=1)
