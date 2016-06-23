@@ -337,6 +337,10 @@ class message(object):
         self.server = server
 
     @property
+    def time(self):
+        return self.msg.time    
+
+    @property
     def sender(self):
         return self.msg.sender
 

@@ -146,7 +146,7 @@ class mesh_socket(base_socket):
             self.out_addr = get_lan_ip(), port
         else:
             self.out_addr = addr, port
-        info = [str(out_addr).encode(), prot.id, user_salt]
+        info = [str(self.out_addr).encode(), prot.id, user_salt]
         h = hashlib.sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
         self.daemon = mesh_daemon(addr, port, self, prot)
