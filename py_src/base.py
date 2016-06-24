@@ -177,9 +177,13 @@ class base_daemon(object):
         self.sock.listen(5)
         self.sock.settimeout(0.1)
         self.exceptions = []
+        self.alive = True
         self.daemon = threading.Thread(target=self.mainloop)
         self.daemon.daemon = True
         self.daemon.start()
+
+    def __del__(self):
+        self.alive = False
 
     def __print__(self, *args, **kargs):
         """Private method to print if level is <= self.server.debug_level"""
@@ -218,6 +222,14 @@ class base_socket(object):
         """Private method to print if level is <= self.__debug_level"""
         if kargs.get('level') <= self.debug_level:
             print(*args)
+
+    def __del__(self):
+        for key in self.routing_table:
+            self.daemon.disconnect(self.routing_table[key])
+        for handler in awaiting_ids:
+            self.daemon.disconnect(handler)
+        self.daemon.alive = False
+        del self.daemon
 
 
 class pathfinding_message(object):
