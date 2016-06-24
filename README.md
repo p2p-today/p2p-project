@@ -2,7 +2,7 @@ Documentation for individual implementations can be found in their respective fo
 
 Current build status:
 
-[ ![Shippable Status for gappleto97/p2p-project](https://img.shields.io/shippable/5750887b2a8192902e225466/master.svg?maxAge=3600&label=Linux)](https://app.shippable.com/projects/5750887b2a8192902e225466) [ ![Travis-CI Status for gappleto97/p2p-project](https://img.shields.io/travis/gappleto97/p2p-project/master.svg?maxAge=3600&label=OSX)](https://travis-ci.org/gappleto97/p2p-project) [ ![Appveyor Status for gappleto97/p2p-project](https://img.shields.io/appveyor/ci/gappleto97/p2p-project/master.svg?maxAge=3600&label=WIndows)](https://ci.appveyor.com/project/gappleto97/p2p-project) [ ![Code Climate Score](https://img.shields.io/codeclimate/github/gappleto97/p2p-project.svg?maxAge=3600)](https://codeclimate.com/github/gappleto97/p2p-project) [ ![Codecov Status for gappleto97/p2p-project](https://img.shields.io/codecov/c/github/gappleto97/p2p-project/master.svg?maxAge=3600)](https://codecov.io/gh/gappleto97/p2p-project)
+[ ![Shippable Status for gappleto97/p2p-project](https://img.shields.io/shippable/5750887b2a8192902e225466/master.svg?maxAge=3600&label=Linux)](https://app.shippable.com/projects/5750887b2a8192902e225466) [ ![Travis-CI Status for gappleto97/p2p-project](https://img.shields.io/travis/gappleto97/p2p-project/master.svg?maxAge=3600&label=OSX)](https://travis-ci.org/gappleto97/p2p-project) [ ![Appveyor Status for gappleto97/p2p-project](https://img.shields.io/appveyor/ci/gappleto97/p2p-project/master.svg?maxAge=3600&label=Windows)](https://ci.appveyor.com/project/gappleto97/p2p-project) [ ![Code Climate Score](https://img.shields.io/codeclimate/github/gappleto97/p2p-project.svg?maxAge=3600)](https://codeclimate.com/github/gappleto97/p2p-project) [ ![Codecov Status for gappleto97/p2p-project](https://img.shields.io/codecov/c/github/gappleto97/p2p-project/master.svg?maxAge=3600)](https://codecov.io/gh/gappleto97/p2p-project)
 
 [ ![Issues in Progress](https://img.shields.io/waffle/label/gappleto97/p2p-project/backlog.svg?maxAge=3600&label=backlog)](https://waffle.io/gappleto97/p2p-project) [ ![Issues in Progress](https://img.shields.io/waffle/label/gappleto97/p2p-project/queued.svg?maxAge=3600&labal=queued)](https://waffle.io/gappleto97/p2p-project) [ ![Issues in Progress](https://img.shields.io/waffle/label/gappleto97/p2p-project/in%20progress.svg?maxAge=3600)](https://waffle.io/gappleto97/p2p-project) [ ![Issues in Progress](https://img.shields.io/waffle/label/gappleto97/p2p-project/in%20review.svg?maxAge=3600&label=in%20review)](https://waffle.io/gappleto97/p2p-project) 
 
@@ -23,9 +23,16 @@ Current build status:
 
      The second is a messaging layer. This deals with how nodes are supposed to respond to various signals, whether the message is for mass broadcast, etc.
 
-     Packets are arranged like so, separated by a pre-defined flag:
+     Packets are arranged like so:
 
          Size of message    - 4 (big-endian) bytes defining the size of the message
+         ------------------------All below may be compressed------------------------
+         Size of packet 1   - 4 bytes defining the plaintext size of packet 1
+         Size of packet 2   - 4 bytes defining the plaintext size of packet 2
+         ...
+         Size of packet n-1 - 4 bytes defining the plaintext size of packet n-1
+         Size of packet n   - 4 bytes defining the plaintext size of packet n
+         ---------------------------------End Header--------------------------------
          Pathfinding header - [broadcast, waterfall, whisper, renegotiate]
          Sender ID          - A base_58 SHA384-based ID for the sender
          Message ID         - A base_58 SHA384-based ID for the message packets
@@ -34,7 +41,7 @@ Current build status:
            Message header   - [broadcast, whisper, handshake, peers, request, response]
            Message contents
 
-     ID construction is defined in section 6.
+     ID construction is defined in section 6. In all other places where packet constructions are given, the header is not included.
 
 
 3.  **Node Construction**
@@ -49,10 +56,9 @@ Current build status:
      4. An incoming socket object to deal with new peers
      5. A quantity-limited list of outgoing connections
      6. A "protocol", which contains:
-         1. A separator string
-         2. A sub-net flag
-         3. An encryption method (or "Plaintext")
-         4. A way to obtain a SHA256-based ID of this (defined later)
+         1. A sub-net flag
+         2. An encryption method (or "Plaintext")
+         3. A way to obtain a SHA256-based ID of this (defined later)
 
 
 4.  **Connection Objects**
@@ -62,7 +68,7 @@ Current build status:
      1. A way to send to the connected node
      2. A way to receive from the connected node
      3. A way to communicate with the main object
-     4. The peer's id
+     4. The peer's ID
      5. A protocol definition
      6. A list of supported compression methods
      7. IF this list is not empty:
@@ -73,16 +79,18 @@ Current build status:
 
 5.  **Message Propagation**
 
-     A message is initially broadcast with the `broadcast` flag. The broadcasting node, as well as all receivers, store this message's hash and timestamp in their waterfall queue. The reciving nodes then re-broadcast this message to each of their peers, but changing the flag to `waterfall`.
+     A message is initially broadcast with the `broadcast` flag. The broadcasting node, as well as all receivers, store this message's ID and timestamp in their waterfall queue. The reciving nodes then re-broadcast this message to each of their peers, but changing the flag to `waterfall`.
 
      A node which receives these waterfall packets goes through the following checks:
 
-     1. If the message hash is not in the node's waterfall queue, continue and add it to the waterfall queue
+     1. If the message ID is not in the node's waterfall queue, continue and add it to the waterfall queue
      2. Perform cleanup on the waterfall queue
          1. Remove all possible duplicates (sending may be done in multiple threads, which may result in duplicate copies)
          2. Remove all IDs with a timestamp more than 1 minute ago
          3. Reduce the queue size to 100
      3. Re-broadcast this message to all peers
+
+     An optional optimization of this process is to not waterfall to the original sender.
 
      ![Figure one](./figure_one.png)
 
@@ -101,9 +109,11 @@ Current build status:
              while i:
                  string = base_58[i % 58] + string
                  i = i // 58    # Floor division is needed to prevent floats
-             return string
+             return string.encode()
 
          def from_base_58(string):
+             if isinstance(string, bytes):
+                 string = string.decode()
              decimal = 0
              for char in string:
                  decimal = decimal * 58 + base_58.index(char)
@@ -119,7 +129,8 @@ Current build status:
          python:
 
          ```python
-         class protocol(namedtuple("protocol", ['sep', 'subnet', 'encryption'])):
+         class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
+             @property
              def id(self):
                  info = [str(x) for x in self] + [version]
                  h = hashlib.sha256(''.join(info).encode())
@@ -130,14 +141,13 @@ Current build status:
 
          ```javascript
          class protocol {
-             constructor(sep, subnet, encryption) {
-                 this.sep = sep;
+             constructor(subnet, encryption) {
                  this.subnet = subnet;
                  this.encryption = encryption;
              }
 
              id() {
-                 var info = [this.sep, this.subnet, this.encryption, version];
+                 var info = [this.subnet, this.encryption, version];
                  var hash = SHA256(info.join(''));
                  return to_base_58(BigInt(hash, 16));
              }
@@ -150,7 +160,7 @@ Current build status:
 
          ```python
          def get_id(self):
-             info = [str(self.addr), self.protocol.id(), user_salt]
+             info = [str(self.out_addr), self.protocol.id, user_salt]
              h = hashlib.sha384(''.join(info).encode())
              return to_base_58(int(h.hexdigest(), 16))
          ```
@@ -160,12 +170,12 @@ Current build status:
          A message generates its ID by the following example class.
 
          ```python
-         class message(namedtuple("message", ['msg', 'time'])):
+         class message(namedtuple("message", ['packets'])):             
+             @property
              def id(self):
-                 """Returns the SHA384-based ID of the message"""
-                 info = self.msg + to_base_58(self.time)
-                 msg_hash = hashlib.sha384(info.encode())
-                 return to_base_58(int(msg_hash.hexdigest(), 16))
+                 payload_string = b''.join(self.packets[4:])
+                 payload_hash = hashlib.sha384(payload_string + self.packets[3])
+                 return to_base_58(int(payload_hash.hexdigest(), 16))
          ```
 
      5. Request/Response IDs (beta)
@@ -187,8 +197,7 @@ Current build status:
 
      In order to do so, you first make a connection to the receiving node. You and the recieving node then immediately broadcast two transactions to each other, the second only after verifying the first.
 
-         1.  [size]
-             whisper
+         1.  whisper
              [your id]
              [message id]
              [timestamp]
@@ -197,8 +206,7 @@ Current build status:
              [your outward-facing address]
              [json-ized list of supported compression methods, in order of preference]
 
-         2.  [size]
-             whisper
+         2.  whisper
              [your id]
              [message id]
              [timestamp]
@@ -217,7 +225,6 @@ Current build status:
 
      First, you broadcast a message to the network containing the `request` subflag. This is constructed as follows:
 
-         [size]
          broadcast
          [your id]
          [message id]
@@ -228,7 +235,6 @@ Current build status:
 
      Then you place this in a dictionary so you can watch when this is responded to. A peer who gets this will reply:
 
-         [size]
          broadcast
          [their id]
          [message id]
@@ -250,26 +256,26 @@ Current build status:
 
      First, the maximum message size is 4,294,967,299 bytes (including compression and headers). It could well be that in the future there will be more data to send in a single message. But equally so, a present-day attacker could use this to halt essentially every connection on the network. A short-term solution would be to have a soft-defined limit, but as has been shown in other protocols, this can calcify over time and do damage.
 
-     Second, in a worst case scenario, every node will receive a given message n-1 times, where n is the number of connected nodes. In most larger cases this will not happen, as a given node will not be connected to everyone else. But in smaller networks this will be common, and in well-connected networks this could slow things down. This calls for optimization, and will need to be explored.
+     Second, in a worst case scenario, every node will receive a given message n-1 times, and each message will generate n^2 total broadcasts, where n is the number of connected nodes. In most larger cases this will not happen, as a given node will not be connected to everyone else. But in smaller networks this will be common, and in well-connected networks this could slow things down. This calls for optimization, and will need to be explored. For instance, not propagating to a peer you receive a message from reduces the number of total broadcasts to (n-1)^2.
 
-     Thrid, there is quite a lot of extra data being sent. Using the default parameters, if you want to send a 4 character message it will be expanded to 184 characters. That's 46x larger. If you want these differences to be negligble, you need to send messages on the order of 512 characters. Then there is only an increase of ~36% (0% with decent compression). This can be improved by reducing the size of the various IDs being sent, or making the packet separators shorter. Both of these have disadvantages, however.
+     Thrid, there is quite a lot of extra data being sent. Using the default parameters, if you want to send a 4 character message it will be expanded to 175 characters. That's ~44x larger. If you want these differences to be negligble, you need to send messages on the order of 512 characters. Then there is only an increase of ~34% (0% with decent compression). This can be improved by reducing the size of the various IDs being sent, or making the packet headers shorter. Both of these have disadvantages, however.
 
-     Results using opportunistic compression look roughly as follows (last updated in 0.1.7):
+     Results using opportunistic compression look roughly as follows (last updated in 0.2.1+build.95):
 
      For 4 characters...
 
          original  4
-         plaintext 184  (4600%)
-         lzma      168  (4200%)
-         bz2       157  (3925%)
-         gzip      119  (2975%)
+         plaintext 175  (4375%)
+         lzma      228  (5700%)
+         bz2       192  (4800%)
+         gzip      163  (4075%)
 
      For 498 characters...
 
          original  498
-         plaintext 678  (136.1%)
-         lzma      492  (98.8%)
-         bz2       488  (98.0%)
-         gzip      414  (83.1%)
+         plaintext 669  (134.3%)
+         lzma      552  (110.8%)
+         bz2       533  (107.0%)
+         gzip      471  (94.6%)
 
      Because the reference implementation supports all of these (except for lzma in python2), this means that the overhead will drop away after ~500 characters. Communications with other implementations may be slower than this, however.

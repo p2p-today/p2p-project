@@ -3,7 +3,7 @@ import bz2, hashlib, json, select, socket, struct, time, threading, traceback, u
 from collections import namedtuple, deque
 
 version = "0.2.1"
-build_num = "build.15"
+build_num = "build.94"
 
 class flags():
     broadcast   = b'broadcast'
@@ -237,15 +237,41 @@ class pathfinding_message(object):
     def feed_string(cls, string, sizeless=False, compressions=None):
         """Constructs a pathfinding_message from a string or bytes object.
         Possible errors:
+            AttributeError: Fed a non-string, non-bytes argument
             AssertionError: Initial size header is incorrect
+            Exception:      Unrecognized compression method fed in compressions
             struct.error:   Packet headers are incorrect OR unrecognized compression
             IndexError:     See struct.error"""
         # First section checks size header
+        string = cls.sanitize_string(string, sizeless)
+        # Then we attempt to decompress
+        string, compression_fail = cls.decompress_string(string, compressions)
+        # After this, we process the packet size headers
+        packets = cls.process_string(string)
+        msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
+        msg.time = from_base_58(packets[3])
+        msg.compression_fail = compression_fail
+        return msg
+
+    @classmethod
+    def sanitize_string(cls, string, sizeless=False):
+        """Removes the size header for further processing. Also checks if the header is valid.
+        Possible errors:
+            AttributeError: Fed a non-string, non-bytes argument
+            AssertionError: Initial size header is incorrect"""
+        if not isinstance(string, bytes):
+            string = string.encode()
         if not sizeless:
             assert struct.unpack('!L', string[:4])[0] == len(string[4:]), \
                 "Must assert struct.unpack('!L', string[:4])[0] == len(string[4:])"
             string = string[4:]
-        # Then we attempt to decompress
+        return string
+
+    @classmethod
+    def decompress_string(cls, string, compressions=None):
+        """Returns a tuple containing the decompressed bytes and a boolean as to whether decompression failed or not
+        Possible errors:
+            Exception:  Unrecognized compression method fed in compressions"""
         compression_fail = False
         for method in intersect(compressions, compression):  # second is module scope compression
             try:
@@ -255,7 +281,14 @@ class pathfinding_message(object):
             except:
                 compression_fail = True
                 continue
-        # After this, we process the packet size headers
+        return (string, compression_fail)
+
+    @classmethod
+    def process_string(cls, string):
+        """Given a sanitized, plaintext string, returns a list of its packets
+        Possible errors:
+            struct.error:   Packet headers are incorrect OR not fed plaintext
+            IndexError:     See struct.error"""
         processed, expected = 0, len(string)
         pack_lens, packets = [], []
         while processed != expected:
@@ -267,10 +300,7 @@ class pathfinding_message(object):
             start = processed + sum(pack_lens[:index])
             end = start + length
             packets.append(string[start:end])
-        msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
-        msg.time = from_base_58(packets[3])
-        msg.compression_fail = compression_fail
-        return msg
+        return packets
 
     def __init__(self, protocol, msg_type, sender, payload, compression=None):
         self.protocol = protocol
