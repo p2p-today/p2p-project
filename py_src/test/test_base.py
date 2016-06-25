@@ -54,8 +54,8 @@ def lan_ip_validation_linux():
     command = """ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'"""
     if sys.version_info >= (2, 7):
         output = subprocess.check_output(command, universal_newlines=True, shell=True).split('\n')[0]
-    else:
-        output = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0]
+    else:  # fix taken from http://stackoverflow.com/a/4814985
+        output = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0].split('\n')[0]
     assert output == base.get_lan_ip()
 
 def lan_ip_validation_windows():
@@ -64,7 +64,7 @@ def lan_ip_validation_windows():
     command = """for /f "delims=[] tokens=2" %%a in ('ping %computername% -n -4 1 ^| findstr "["') do (echo %%a)"""
     if sys.version_info >= (2, 7):
         output = subprocess.check_output(command, shell=True)
-    else:
+    else:  # fix taken from http://stackoverflow.com/a/4814985
         output = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0]
     assert output == base.get_lan_ip()
 
