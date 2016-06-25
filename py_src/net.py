@@ -46,6 +46,18 @@ def construct_packets(msg, packet_size):
 def charlimit(keysize):
     return (256**4-1) * ((keysize // 8) - 11) - 259
 
+def best_hash(keysize):
+    if keysize >= 746:
+        return 'SHA-512'
+    elif keysize >= 618:
+        return 'SHA-384'
+    elif keysize >= 490:
+        return 'SHA-256'
+    elif keysize >= 362:
+        return 'SHA-1'
+    else:
+        return 'MD5'
+
 # This next section is to set up for different RSA implementations. Currently supported are rsa and PyCrypto. I plan to add cryptography in the future.
 
 try:
@@ -352,16 +364,8 @@ class secure_socket(socket.socket):
         """Signs a message with a given hash, or self-determined one. If using PyCrypto, always defaults to SHA-512"""
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
-        elif self.__keysize >= 746:
-            return sign(msg, self.priv, 'SHA-512')
-        elif self.__keysize >= 618:
-            return sign(msg, self.priv, 'SHA-384')
-        elif self.__keysize >= 490:
-            return sign(msg, self.priv, 'SHA-256')
-        elif self.__keysize >= 362:
-            return sign(msg, self.priv, 'SHA-1')
         else:   # if self.__keysize < 354: raises OverflowError
-            return sign(msg, self.priv, 'MD5')
+            return sign(msg, self.priv, best_hash(self.__keysize))
 
     def verify(self, msg, sig, key=None):
         """Verifies a message with a given key (Default: your peer's)"""

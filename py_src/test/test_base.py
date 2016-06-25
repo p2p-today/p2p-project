@@ -45,13 +45,13 @@ def test_compression(iters=100):
         except:
             pass
         else:  # pragma: no cover
-            assert False, "Unknown compression method should raise error"
+            raise Exception("Unknown compression method should raise error")
         try:
             base.decompress(test, os.urandom(4))
         except:
             pass
         else:  # pragma: no cover
-            assert False, "Unknown compression method should raise error"
+            raise Exception("Unknown compression method should raise error")
 
 def test_pathfinding_message(iters=500):
     max_val = 2**8
@@ -76,19 +76,19 @@ def test_pathfinding_message(iters=500):
             except:
                 pass
             else:  # pragma: no cover
-                assert False, "Erroneously parses sized message with sizeless: %s" % string
+                raise Exception("Erroneously parses sized message with sizeless: %s" % string)
             try:
                 base.pathfinding_message.feed_string(msg.string[4:], False, [method])
             except:
                 pass
             else:  # pragma: no cover
-                assert False, "Erroneously parses sizeless message with size %s" % string
+                raise Exception("Erroneously parses sizeless message with size %s" % string)
             try:
                 base.pathfinding_message.feed_string(string)
             except:
                 pass
             else:  # pragma: no cover
-                assert False, "Erroneously parses compressed message as plaintext %s" % string
+                raise Exception("Erroneously parses compressed message as plaintext %s" % string)
 
 def test_protocol(iters=200):
     for i in range(iters):
