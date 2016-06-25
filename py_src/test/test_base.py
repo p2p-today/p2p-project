@@ -68,7 +68,7 @@ def lan_ip_validation_windows():
     if sys.version_info >= (2, 7):
         output = subprocess.check_output(test_file)
     else:  # fix taken from http://stackoverflow.com/a/4814985
-        output = subprocess.Popen(test_file, stdout=subprocess.PIPE).communicate()[0]
+        output = subprocess.Popen(['test.batch'], stdout=subprocess.PIPE).communicate()[0]
     assert output == base.get_lan_ip()
     os.remove('test.batch')
 
