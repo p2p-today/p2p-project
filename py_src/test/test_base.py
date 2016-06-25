@@ -41,7 +41,9 @@ def test_getUTC(iters=20):
 def test_lan_ip():
     if sys.platform[:5] == 'linux':
         lan_ip_validation_linux()
-    elif sys.platform[:3] == 'win':
+    elif sys.platform == 'darwin':
+        lan_ip_validation_linux
+    elif sys.platform[:3] in ('win', 'cyg'):
         lan_ip_validation_windows()
     else:
         raise Exception("Unrecognized patform; don't know what command to test against")
@@ -50,14 +52,20 @@ def lan_ip_validation_linux():
     import subprocess
     # command pulled from http://stackoverflow.com/a/13322549
     command = """ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'"""
-    output = subprocess.check_output(command, shell=True).split('\n')[0]
+    if sys.version_info > (2, 6):
+        output = subprocess.check_output(command, universal_newlines=True, shell=True).split('\n')[0]
+    else:
+        output = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0]
     assert output == base.get_lan_ip()
 
 def lan_ip_validation_windows():
     import subprocess
     # command pulled from http://stackoverflow.com/a/17634009
     command = """for /f "delims=[] tokens=2" %%a in ('ping %computername% -n -4 1 ^| findstr "["') do (echo %%a)"""
-    output = subprocess.check_output(command, shell=True)
+    if sys.version_info > (2, 6):
+        output = subprocess.check_output(command, shell=True)
+    else:
+        output = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0]
     assert output == base.get_lan_ip()
 
 def test_compression(iters=100):
