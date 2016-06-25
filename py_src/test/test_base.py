@@ -56,7 +56,7 @@ def lan_ip_validation_linux():
         output = subprocess.check_output(command, universal_newlines=True, shell=True)
     else:  # fix taken from http://stackoverflow.com/a/4814985
         output = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0]
-    assert base.get_lan_ip().encode() in output.encode()
+    assert base.get_lan_ip() in output
 
 def lan_ip_validation_windows():
     import subprocess
@@ -69,7 +69,7 @@ def lan_ip_validation_windows():
         output = subprocess.check_output(['test.bat'])
     else:  # fix taken from http://stackoverflow.com/a/4814985
         output = subprocess.Popen(['test.bat'], stdout=subprocess.PIPE).communicate()[0]
-    assert base.get_lan_ip().encode() in output.encode()
+    assert base.get_lan_ip().encode() in output
     os.remove('test.bat')
 
 def test_compression(iters=100):
