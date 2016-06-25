@@ -10,6 +10,9 @@ def try_identity(in_func, out_func, data_gen, iters):
         test = data_gen()
         assert test == out_func(in_func(test))
 
+def gen_random_list(item_size, list_size):
+    return [os.urandom(item_size) for i in xrange(list_size)]
+
 def test_base_58(iters=1000):
     max_val = 2**32 - 1
     data_gen = partial(random.randint, 0, max_val)
@@ -60,39 +63,46 @@ def test_compression_exceptions(iters=100):
 
 def test_pathfinding_message(iters=500):
     max_val = 2**8
-    protocol = base.default_protocol
     for i in xrange(iters):
         length = random.randint(0, max_val)
-        array = [os.urandom(36) for x in xrange(length)]
-        msg = base.pathfinding_message(protocol, base.flags.broadcast, 'TEST SENDER', array)
-        assert array == msg.payload
-        assert msg.packets == [base.flags.broadcast, 'TEST SENDER'.encode(), msg.id, msg.time_58] + array
-        for method in base.compression:
-            msg.compression = []
-            string = base.compress(msg.string[4:], method)
-            string = struct.pack('!L', len(string)) + string
-            msg.compression = [method]
-            comp = base.pathfinding_message.feed_string(string, False, [method])
-            assert msg.string == string == comp.string
-            # Test certain errors
-            try:
-                base.pathfinding_message.feed_string(string, True, [method])
-            except:
-                pass
-            else:  # pragma: no cover
-                raise Exception("Erroneously parses sized message with sizeless: %s" % string)
-            try:
-                base.pathfinding_message.feed_string(msg.string[4:], False, [method])
-            except:
-                pass
-            else:  # pragma: no cover
-                raise Exception("Erroneously parses sizeless message with size %s" % string)
-            try:
-                base.pathfinding_message.feed_string(string)
-            except:
-                pass
-            else:  # pragma: no cover
-                raise Exception("Erroneously parses compressed message as plaintext %s" % string)
+        array = gen_random_list(36, length)
+        pathfinding_message_constructor_validation(array)
+        pathfinding_message_exceptions_validiation(array)
+
+def pathfinding_message_constructor_validation(array):
+    msg = base.pathfinding_message(base.default_protocol, base.flags.broadcast, 'TEST SENDER', array)
+    assert array == msg.payload
+    assert msg.packets == [base.flags.broadcast, 'TEST SENDER'.encode(), msg.id, msg.time_58] + array
+    for method in base.compression:
+        msg.compression = []
+        string = base.compress(msg.string[4:], method)
+        string = struct.pack('!L', len(string)) + string
+        msg.compression = [method]
+        comp = base.pathfinding_message.feed_string(string, False, [method])
+        assert msg.string == string == comp.string
+
+def pathfinding_message_exceptions_validiation(array):
+    msg = base.pathfinding_message(base.default_protocol, base.flags.broadcast, 'TEST SENDER', array)
+    for method in base.compression:
+        msg.compression = [method]
+        try:
+            base.pathfinding_message.feed_string(msg.string, True, [method])
+        except:
+            pass
+        else:  # pragma: no cover
+            raise Exception("Erroneously parses sized message with sizeless: %s" % string)
+        try:
+            base.pathfinding_message.feed_string(msg.string[4:], False, [method])
+        except:
+            pass
+        else:  # pragma: no cover
+            raise Exception("Erroneously parses sizeless message with size %s" % string)
+        try:
+            base.pathfinding_message.feed_string(msg.string)
+        except:
+            pass
+        else:  # pragma: no cover
+            raise Exception("Erroneously parses compressed message as plaintext %s" % string)
 
 def test_protocol(iters=200):
     for i in range(iters):
@@ -109,7 +119,7 @@ def test_message_sans_network(iters=1000):
         sub = str(uuid.uuid4())
         enc = str(uuid.uuid4())
         sen = str(uuid.uuid4())
-        pac = [os.urandom(36) for i in range(10)]
+        pac = gen_random_list(36, 10)
         prot = base.protocol(sub, enc)
         base_msg = base.pathfinding_message(prot, base.flags.broadcast, sen, pac)
         test = base.message(base_msg, None)
