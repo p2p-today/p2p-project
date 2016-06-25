@@ -1,12 +1,50 @@
 from __future__ import print_function
-import warnings, socket, sys
+import warnings, socket, struct, sys
 from threading import Thread
 from functools import partial
 
 key_request = "Requesting key".encode('utf-8')
 size_request = "Requesting key size".encode('utf-8')
-end_of_message = '\x03\x04\x17\x04\x03'.encode('utf-8')  # For the ASCII nerds, that's:
-                                                         # End of text, End of tx, End of tx block, End of tx, End of text
+
+
+def int_to_bin(key):
+    arr = []
+    while key:
+        arr = [key % 256] + arr
+        key //= 256
+    return struct.pack("!" + "B" * len(arr), *arr)
+
+
+def bin_to_int(key):
+    if isinstance(key, int) and bytes != str:  # pragma: no cover
+        key = bytes([key])
+    arr = struct.unpack("!" + "B" * len(key), key)
+    i = 0
+    for n in arr:
+        i *= 256
+        i += n
+    return i
+
+
+def get_num_packets(msg, packet_size):
+    return len(msg) // packet_size + bool(len(msg) % packet_size)
+
+def construct_packets(msg, packet_size):
+    num_packets = get_num_packets(msg, packet_size)
+    while True:
+        headers = int_to_bin(num_packets)
+        num_headers = int_to_bin(len(headers))
+        num_headers = b'\x00' * (4 - len(num_headers)) + num_headers
+        if len(num_headers) > 4:  # pragma: no cover
+            raise ValueError("Too many packets being constructed")
+        new_msg = num_headers + headers + msg
+        new_num_packets = get_num_packets(new_msg, packet_size)
+        if new_num_packets == num_packets:
+            return [new_msg[i * packet_size:(i+1) * packet_size] for i in range(0, num_packets)]
+        num_packets = new_num_packets
+
+def charlimit(keysize):
+    return (256**4-1) * ((keysize // 8) - 11) - 259
 
 # This next section is to set up for different RSA implementations. Currently supported are rsa and PyCrypto. I plan to add cryptography in the future.
 
@@ -18,9 +56,14 @@ try:
     newkeys    = rsa.newkeys
     encrypt    = rsa.encrypt
     decrypt    = rsa.decrypt
-    sign       = rsa.sign
     verify     = rsa.verify
     public_key = rsa.PublicKey
+
+    def sign(msg, key, hashop):
+        if not isinstance(msg, bytes):
+            msg = msg.encode()
+        return rsa.sign(msg, key, hashop)
+
 except ImportError:
     try:
         from Crypto.Hash import SHA512, SHA384, SHA256, SHA, MD5
@@ -64,6 +107,8 @@ except ImportError:
                          'SHA-256': SHA256,
                          'SHA-384': SHA384,
                          'SHA-512': SHA512}
+            if not isinstance(msg, bytes):
+                msg = msg.encode()
             hsh = hashtable.get(hashop).new()
             hsh.update(msg)
             signer = PKCS1_v1_5.PKCS115_SigScheme(key)
@@ -98,7 +143,7 @@ class secure_socket(socket.socket):
         super(secure_socket, self).__init__(sock_family, sock_type, proto, fileno)
         if keysize < 1024:  # pragma: no cover
             warnings.warn('Using a <1024 key length will make communication with PyCrypto implementations inconsistent. If you\'re using PyCrypto, expect an imminent exception.', RuntimeWarning, stacklevel=2)
-        if keysize < max(354, (len(end_of_message) + 11) * 8):
+        if keysize < 354:
             raise ValueError('This key is too small to be useful.')
         elif keysize > 8192:  # pragma: no cover
             warnings.warn('This key is too large to be practical. Sending is easy. Generating is hard.', RuntimeWarning, stacklevel=2)
@@ -132,6 +177,11 @@ class secure_socket(socket.socket):
     def keysize(self):
         """Your key size in bits"""
         return self.__keysize
+
+    @property
+    def recv_charlimit(self):
+        """The maximum number of characters you can recv in one message"""
+        return charlimit(self.__keysize)
 
     def __map_key(self):
         """Private method to block if key is being generated"""
@@ -210,6 +260,12 @@ class secure_socket(socket.socket):
     def peer_keysize(self):
         """Your peer's key size in bits"""
         return self.__peer_keysize
+
+    @property
+    def send_charlimit(self):
+        """The maximum number of characters you can send in one message"""
+        if self.__peer_keysize:
+            return charlimit(self.__peer_keysize)
 
     @property
     def key(self):
@@ -294,10 +350,6 @@ class secure_socket(socket.socket):
 
     def sign(self, msg, hashop='best'):
         """Signs a message with a given hash, or self-determined one. If using PyCrypto, always defaults to SHA-512"""
-        try:
-            msg = msg.encode()
-        except:
-            pass
         if hashop != 'best':
             return sign(msg, self.priv, hashop)
         elif self.__keysize >= 746:
@@ -321,12 +373,9 @@ class secure_socket(socket.socket):
         """Base method for sending a message. Encrypts and sends. Use send instead."""
         if not isinstance(msg, type("a".encode('utf-8'))):
             msg = str(msg).encode('utf-8')
-        x = 0
-        while x < len(msg) - self.__peer_msgsize:
-            super(secure_socket, self).sendall(encrypt(msg[x:x+self.__peer_msgsize], self.key))
-            x += self.__peer_msgsize
-        super(secure_socket, self).sendall(encrypt(msg[x:], self.key))
-        super(secure_socket, self).sendall(encrypt(end_of_message, self.key))
+        packets = construct_packets(msg, self.__peer_msgsize)
+        for packet in packets:
+            super(secure_socket, self).sendall(encrypt(packet, self.key))
 
     def send(self, msg):
         """Sends an encrypted copy of your message, and an encrypted signature.
@@ -338,16 +387,20 @@ class secure_socket(socket.socket):
     def __recv(self):
         """Base method for receiving a message. Receives and decrypts. Use recv instead."""
         received = b''
-        packet = b''
+        expected = -1
+        num_headers = -1
+        packets_received = 0
         try:
-            while packet != end_of_message:
-                received += packet
+            while packets_received != expected:
                 packet = self.__sock_recv((self.__keysize + 6) // 8)
                 packet = decrypt(packet, self.priv)
-            return received
-        except decryption_error:  # pragma: no cover
-            print("Decryption error---Content: " + repr(packet))
-            raise
+                received += packet
+                packets_received += 1
+                if num_headers == -1:
+                    num_headers = bin_to_int(received[0:4])
+                if len(received) >= num_headers + 4:
+                    expected = bin_to_int(received[4:num_headers+4])
+            return received[4+num_headers:]
         except ValueError as error:
             if error.args[0] in ["invalid literal for int() with base 16: ''",\
                 "invalid literal for int() with base 16: b''", "Ciphertext with incorrect length."]:

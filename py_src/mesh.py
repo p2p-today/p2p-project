@@ -6,7 +6,7 @@ from .base import flags, user_salt, compression, to_base_58, from_base_58, \
         base_connection, base_daemon, base_socket, message, pathfinding_message
 
 max_outgoing = 8
-default_protocol = protocol("\x1c\x1d\x1e\x1f", 'mesh', "Plaintext")  # PKCS1_v1.5")
+default_protocol = protocol('mesh', "Plaintext")  # PKCS1_v1.5")
 
 class mesh_connection(base_connection):
     def found_terminator(self):
@@ -17,7 +17,7 @@ class mesh_connection(base_connection):
         self.active = False
         reply_object = self
         try:
-            msg = pathfinding_message.feed_string(self.protocol, raw_msg, False, self.compression)
+            msg = pathfinding_message.feed_string(raw_msg, False, self.compression)
         except IndexError:
             self.__print__("Failed to decode message: %s. Expected compression: %s." % \
                             (raw_msg, intersect(compression, self.compression)[0]), level=1)
@@ -45,8 +45,7 @@ class mesh_connection(base_connection):
             elif packets[4] == flags.resend:
                 self.send(*self.last_sent)
                 return
-        msg = self.protocol.sep.encode().join(packets[4:])  # Handle request without routing headers
-        self.server.handle_msg(message(msg, reply_object, self.protocol, from_base_58(packets[3]), self.server))
+        self.server.handle_msg(message(msg, self.server), reply_object)
 
     def send(self, msg_type, *args, **kargs):
         """Sends a message through its connection. The first argument is message type. All after that are content packets"""
@@ -90,7 +89,7 @@ class mesh_daemon(base_daemon):
 
     def mainloop(self):
         """Daemon thread which handles all incoming data and connections"""
-        while True:
+        while self.alive:
             # for handler in list(self.server.routing_table.values()) + self.server.awaiting_ids:
             if list(self.server.routing_table.values()) + self.server.awaiting_ids:
                 for handler in select.select(list(self.server.routing_table.values()) + self.server.awaiting_ids, [], [], 0.01)[0]:
@@ -105,7 +104,7 @@ class mesh_daemon(base_daemon):
                     except socket.timeout:
                         continue  # Shouldn't happen with select, but if it does...
                     except Exception as e:
-                        if isinstance(e, socket.error) and e.args[0] in [9, 104, 10054, 10058]:
+                        if isinstance(e, socket.error) and e.args[0] in (9, 104, 10053, 10054, 10058):
                             node_id = handler.id
                             if not node_id:
                                 node_id = repr(handler)
@@ -147,14 +146,13 @@ class mesh_socket(base_socket):
             self.out_addr = get_lan_ip(), port
         else:
             self.out_addr = addr, port
-        info = [str(out_addr).encode(), prot.id, user_salt]
+        info = [str(self.out_addr).encode(), prot.id, user_salt]
         h = hashlib.sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
         self.daemon = mesh_daemon(addr, port, self, prot)
 
-    def handle_msg(self, msg):
+    def handle_msg(self, msg, handler):
         """Decides how to handle various message types, allowing some to be handled automatically"""
-        handler = msg.sender
         packets = msg.packets
         if packets[0] == flags.handshake:
             self.__handle_handshake(packets, handler)
@@ -186,7 +184,7 @@ class mesh_socket(base_socket):
         new_peers = json.loads(packets[1].decode())
         for addr, id in new_peers:
             if len(self.outgoing) < max_outgoing and addr:
-                self.connect(addr[0], addr[1], id)
+                self.connect(addr[0], addr[1], id.encode())
 
     def __handle_response(self, packets, handler):
         self.__print__("Response received for request id %s" % packets[1], level=1)

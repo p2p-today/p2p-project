@@ -1,39 +1,59 @@
-import random, socket, sys, uuid
+import os, random, socket, sys, uuid
+from functools import partial
 from .. import net
+from .test_base import try_identity
 
 if sys.version_info[0] > 2:
     xrange = range
 
+def test_bin_recovery(iters=1000):
+    max_val = 2**256
+    data_gen = partial(random.randint, 0, max_val)
+    try_identity(net.int_to_bin, net.bin_to_int, data_gen, iters)
+
+def test_packet_construction(iters=100):
+    max_msg_len = 2**16
+    max_pack_len = 8196 // 8 - 11
+    min_pack_len = 354 // 8 - 11
+    for i in xrange(iters):
+        msg = os.urandom(random.randint(1, max_msg_len))
+        pack_len = random.randint(min_pack_len, max_pack_len)
+        packets = net.construct_packets(msg, pack_len)
+        parsed_msg = b''.join(packets)
+        num_headers = net.bin_to_int(parsed_msg[0:4])
+        num_packets = net.bin_to_int(parsed_msg[4:num_headers+4])
+        assert num_packets == len(packets)
+        assert parsed_msg[num_headers+4:] == msg
+
+def test_net_properties(iters=6):
+    keysize = 1024
+    for i in xrange(iters):
+        if net.uses_RSA:
+            keysize = random.choice([1024, 746, 618, 490, 362, 354])
+        f = net.secure_socket(silent=True, keysize=keysize)
+        assert f.keysize == keysize
+        assert f.recv_charlimit == net.charlimit(keysize)
+        del f
+
 def test_net_sans_network(iters=3):
-    for i in range(iters):
+    for i in xrange(iters):
         f = net.secure_socket(silent=True, keysize=1024)
-        test = str(uuid.uuid4()).encode()
+        test = os.urandom(random.randint(1, 117))
         f.settimeout(1)
-        assert f.keysize == 1024
+        assert f.verify(test, f.sign(test, 'SHA-512'), f.pub)
         assert test == net.decrypt(net.encrypt(test, f.pub), f.priv)
-        for op in ['best', 'SHA-512']:
-            assert f.verify(test, f.sign(test, op), f.pub)
+        del f
+
+def test_net_dup(iters=3):
+    for i in xrange(iters):
+        f = net.secure_socket(silent=True, keysize=1024)
         g = f.dup()
-        assert f.pub == g.pub
-        assert f.priv == g.priv
-        assert f.keysize == g.keysize
+        # Both should be None
         assert f.peer_keysize == g.peer_keysize
-        # assert f.fileno() == g.fileno()  # This only works in python2, apparently
-        assert f.type == g.type
-        assert f.family == g.family
-        assert f.proto == g.proto
-        try:
-            net.decrypt('a'.encode() * (f.keysize // 8), f.priv)
-        except net.decryption_error:
-            pass
-        else:  # pragma: no cover
-            assert False
-        try:
-            net.verify('a'.encode() * (f.keysize // 8), 'b'.encode() * (f.keysize // 8), f.pub)
-        except net.verification_error:
-            pass
-        else:  # pragma: no cover
-            assert False
+        # Test key data in one go
+        assert (f.pub, f.priv, f.keysize) == (g.pub, g.priv, g.keysize)
+        # Test socket metadata in one go
+        assert (f.type, f.family, f.proto) == (g.type, g.family, g.proto)
         del f, g
 
 def test_net_connection(iters=3):
@@ -57,3 +77,20 @@ def test_net_connection(iters=3):
         g.close()
         assert conn.recv() == ''
         del conn, f, g
+
+def test_net_errors(iters=3):
+    for i in xrange(iters):
+        f = net.secure_socket(silent=True, keysize=1024)
+        try:
+            net.decrypt(b'a' * (f.keysize // 8), f.priv)
+        except net.decryption_error:
+            pass
+        else:  # pragma: no cover
+            raise Exception()
+        try:
+            net.verify(b'a' * (f.keysize // 8), b'b' * (f.keysize // 8), f.pub)
+        except net.verification_error:
+            pass
+        else:  # pragma: no cover
+            raise Exception()
+        del f

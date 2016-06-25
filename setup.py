@@ -1,5 +1,6 @@
-from distutils.core import setup
-from py import __version__
+# from distutils.core import setup
+from setuptools import setup
+from py_src import __version__
 
 setup(name='p2p',
       description='A python library for peer-to-peer networking',
@@ -7,10 +8,10 @@ setup(name='p2p',
       author='Gabe Appleton',
       author_email='gappleto97+development@gmail.com',
       url='https://github.com/gappleto97/p2p-project',
-      license='LGPL',
+      license='LGPLv3',
       packages=['p2p', 'p2p.test'],
       package_dir={'p2p': 'py_src'},
-      classifiers=['Development Status :: 2 - Pre-Alpha',
+      classifiers=['Development Status :: 3 - Alpha',
                    'Intended Audience :: Developers',
                    'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
                    'Programming Language :: Python :: 2',
@@ -20,6 +21,8 @@ setup(name='p2p',
                    'Programming Language :: Python :: 3.3',
                    'Programming Language :: Python :: 3.4',
                    'Programming Language :: Python :: 3.5',
-                   'Operating System :: OS Independent',
                    'Programming Language :: Python',
-                   'Programming Language :: JavaScript'])
+                   'Programming Language :: JavaScript',
+                   'Operating System :: OS Independent',
+                   'Topic :: Communications',
+                   'Topic :: Internet'])
