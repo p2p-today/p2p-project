@@ -62,11 +62,15 @@ def lan_ip_validation_windows():
     import subprocess
     # command pulled from http://stackoverflow.com/a/17634009
     command = """for /f "delims=[] tokens=2" %%a in ('ping %computername% -n -4 1 ^| findstr "["') do (echo %%a)"""
+    test_file = open('test.batch', 'w')
+    test_file.write(command)
+    test_file.close()
     if sys.version_info >= (2, 7):
-        output = subprocess.check_output(command)
+        output = subprocess.check_output(test_file)
     else:  # fix taken from http://stackoverflow.com/a/4814985
-        output = subprocess.Popen(command, stdout=subprocess.PIPE).communicate()[0]
+        output = subprocess.Popen(test_file, stdout=subprocess.PIPE).communicate()[0]
     assert output == base.get_lan_ip()
+    os.remove('test.batch')
 
 def test_compression(iters=100):
     for method in base.compression:
