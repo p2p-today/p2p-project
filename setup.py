@@ -2,15 +2,15 @@
 from setuptools import setup
 from py_src import __version__
 
-setup(name='p2p',
+setup(name='py2p',
       description='A python library for peer-to-peer networking',
       version=__version__,
       author='Gabe Appleton',
       author_email='gappleto97+development@gmail.com',
       url='https://github.com/gappleto97/p2p-project',
       license='LGPLv3',
-      packages=['p2p', 'p2p.test'],
-      package_dir={'p2p': 'py_src'},
+      packages=['py2p', 'py2p.test'],
+      package_dir={'py2p': 'py_src'},
       classifiers=['Development Status :: 3 - Alpha',
                    'Intended Audience :: Developers',
                    'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',

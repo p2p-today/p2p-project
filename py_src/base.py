@@ -107,6 +107,7 @@ def get_lan_ip():
         IP = '127.0.0.1'
     finally:
         s.shutdown(socket.SHUT_RDWR)
+        return IP
 
 
 class protocol(namedtuple("protocol", ['subnet', 'encryption'])):

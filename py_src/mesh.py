@@ -75,10 +75,7 @@ class mesh_daemon(base_daemon):
             if conn is not None:
                 self.__print__('Incoming connection from %s' % repr(addr), level=1)
                 handler = mesh_connection(conn, self.server, self.protocol)
-                if bytes != str:
-                    compression_to_send = [method.decode() for method in compression]
-                else:
-                    compression_to_send = compression
+                compression_to_send = [method.decode() for method in compression]
                 handler.send(flags.whisper, flags.handshake, self.server.id, self.protocol.id, json.dumps(self.server.out_addr),\
                              json.dumps(compression_to_send))
                 handler.sock.settimeout(0.01)
@@ -252,10 +249,7 @@ class mesh_socket(base_socket):
         conn.connect((addr, port))
         handler = mesh_connection(conn, self, self.protocol, outgoing=True)
         handler.id = id
-        if bytes != str:
-            compression_to_send = [method.decode() for method in compression]
-        else:
-            compression_to_send = compression
+        compression_to_send = [method.decode() for method in compression]
         handler.send(flags.whisper, flags.handshake, self.id, self.protocol.id, json.dumps(self.out_addr),\
                     json.dumps(compression_to_send))
         if not id:
