@@ -36,10 +36,15 @@ def test_getUTC(iters=20):
         iters -= 1
 
 def test_compression(iters=100):
+    for method in base.compression:
+        compress = partial(base.compress, method=method)
+        decompress = partial(base.decompress, method=method)
+        data_gen = partial(os.urandom, 36)
+        try_identity(compress, decompress, data_gen, iters)
+
+def test_compression_exceptions(iters=100):
     for i in xrange(iters):
         test = os.urandom(36)
-        for method in base.compression:
-            assert test == base.decompress(base.compress(test, method), method)
         try:
             base.compress(test, os.urandom(4))
         except:
@@ -67,9 +72,8 @@ def test_pathfinding_message(iters=500):
             string = base.compress(msg.string[4:], method)
             string = struct.pack('!L', len(string)) + string
             msg.compression = [method]
-            assert msg.string == string
             comp = base.pathfinding_message.feed_string(string, False, [method])
-            assert msg.string == comp.string
+            assert msg.string == string == comp.string
             # Test certain errors
             try:
                 base.pathfinding_message.feed_string(string, True, [method])
