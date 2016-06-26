@@ -16,7 +16,7 @@ def test_propagation(iters=3):
             nodes.append(new_node)
         time.sleep(0.5)
         nodes[0].send(b"hello")
-        time.sleep(0.5)
+        time.sleep(2)
         print(nodes[0].id)
         for node in nodes[1:]:
             print(node.status)
