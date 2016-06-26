@@ -4,10 +4,10 @@
 
 ## Constants
 
-* `version`: A string containing the major, minor, and patch release number. This version refers to the underlying protocol.
-* `build_num`: The build number associated with this version. This refers to the node and its policies.
-* `__version__`: A string containing both `version` and `build_num` separated by a `"+"`. This is guarunteed to be unique.
+* `__version__`: A string containing the major, minor, and patch release number. This version refers to the underlying protocol.
 * `version_info`: A `tuple` version of the above
+* `protocol_version`: A string containing the major and minor release number. This refers to the underlying protocol
+* `node_policy_version`: A string containing the build number associated with this version. This refers to the node and its policies.
 * `uses_RSA`: This value says whether it is using the underlying `rsa` module. If `None`, it means neither `rsa` nor any of its fallbacks could be imported. Currently `False` means it relies on `PyCrypto`, and `True` means it relies on `rsa`.
 * `if uses_RSA is not None`
     * `decryption_error`: The error a call to `decrypt` will throw if decryption of a given ciphertext fails
@@ -36,7 +36,8 @@ This is used mostly for inheriting common functions with [`mesh.py`](#meshpy) an
 ## Constants
 
 * `version`: A string containing the major, minor, and patch release number. This version refers to the underlying protocol.
-* `build_num`: The build number associated with this version. This refers to the node and its policies.
+* `protocol_version`: A string containing the major and minor release number. This refers to the underlying protocol
+* `node_policy_version`: A string containing the build number associated with this version. This refers to the node and its policies.
 * `user_salt`: A `uuid4` which is generated uniquely in each running instance
 * `compression`: A `list` of the compression methods your instance supports
 * `default_protocol`: The default [`protocol`](#protocol) definition. This uses an empty string as the subnet and `PKCS1_v1.5` encryption, as supplied by [`net.py`](#netpy) (in alpha releases this will use `Plaintext`)

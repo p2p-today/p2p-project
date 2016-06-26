@@ -6,9 +6,9 @@ In this module:
 
     Constants
 
-      * version: A string containing the major, minor, and patch release number. This version refers to the underlying protocol.
-      * build_num: The build number associated with this version. This refers to the node and its policies.
-      * __version__: A string containing both version and build_num separated by a "+". This is guarunteed to be unique.
+      * __version__: A string containing the major, minor, and patch release number.
+      * protocol_version: A string containing the major and minor release number. This refers to the underlying protocol
+      * node_policy_version: A string containing the build number associated with this version. This refers to the node and its policies.
       * version_info: A tuple version of the above
       * uses_RSA: This value says whether it is using the underlying rsa module. If None, it means neither rsa nor any of its fallbacks could be imported. Currently False means it relies on PyCrypto, and True means it relies on rsa.
 
@@ -48,7 +48,7 @@ Submodules:
 
 from .mesh import mesh_socket
 # from .chord import chord_socket
-from .base import version, build_num
+from .base import version as __version__
 
 try:
     from .net import uses_RSA, decryption_error, verification_error, newkeys,\
@@ -58,8 +58,7 @@ except ImportError:  # pragma: no cover
     warnings.warn("Could not import encrypted socket module. Please install rsa from pip.", ImportWarning)
     uses_RSA = None
 
-__version__ = version + "+" + build_num
-version_info = tuple(map(int, version.split("."))) + (build_num.split('.')[0],) + tuple(map(int, build_num.split('.')[1:]))
+version_info = tuple(map(int, __version__.split(".")))
 
 __all__ = ["mesh", "chord", "base"]
 

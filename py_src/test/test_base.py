@@ -145,7 +145,7 @@ def test_protocol(iters=200):
         test = base.protocol(sub, enc)
         assert test.subnet == test[0] == sub
         assert test.encryption == test[1] == enc
-        p_hash = hashlib.sha256(''.join([sub, enc, base.version]).encode())
+        p_hash = hashlib.sha256(''.join([sub, enc, base.protocol_version]).encode())
         assert int(p_hash.hexdigest(), 16) == base.from_base_58(test.id)
 
 def test_message_sans_network(iters=1000):

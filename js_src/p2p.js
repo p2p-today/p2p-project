@@ -13,8 +13,10 @@ function p2p() {
         };
     }
 
-    m.version = "0.2.1";
-    m.build_num = "build.135"
+    var protocol_version = "0.2";
+    var node_policy_version = "136";
+
+    version = [protocol_version, node_policy_version].join('.');
     m.compression = ['gzip'];
 
     // User salt generation pulled from: http://stackoverflow.com/a/2117523

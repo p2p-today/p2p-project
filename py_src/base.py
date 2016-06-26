@@ -4,8 +4,10 @@ from __future__ import print_function
 import bz2, hashlib, json, select, socket, struct, time, threading, traceback, uuid, zlib
 from collections import namedtuple, deque
 
-version = "0.2.1"
-build_num = "build.135"
+protocol_version = "0.2"
+node_policy_version = "136"
+
+version = '.'.join([protocol_version, node_policy_version])
 
 class flags():
     """A namespace to hold protocol-defined flags"""
@@ -120,7 +122,7 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
     """Defines service variables so that you can reject connections looking for a different service"""
     @property
     def id(self):
-        h = hashlib.sha256(''.join([str(x) for x in self] + [version]).encode())
+        h = hashlib.sha256(''.join([str(x) for x in self] + [protocol_version]).encode())
         return to_base_58(int(h.hexdigest(), 16))
 
 default_protocol = protocol('', "Plaintext")  # PKCS1_v1.5")
