@@ -7,7 +7,7 @@ Constants
 ---------
 
 -  ``__version__``: A string containing the major, minor, and patch
-   release number. This version refers to the underlying protocol.
+   release number.
 -  ``version_info``: A ``tuple`` version of the above
 -  ``protocol_version``: A string containing the major and minor release
    number. This refers to the underlying protocol
