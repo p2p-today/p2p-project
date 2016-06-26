@@ -1,18 +1,25 @@
+var BigInt = require('./BigInteger/BigInteger.js');
+var struct = require('./pack/bufferpack.js');
+var SHA = require('./SHA/src/sha.js');
+var zlib = require('./zlib/bin/node-zlib.js');
+
 function p2p() {
     "use strict";
     var m = this;
 
-    var BigInt = require('./BigInteger/BigInteger.js');
-    var struct = require('./pack/bufferpack.js');
-    var SHA = require('./SHA/src/sha.js');
-    var zlib = require('./zlib/bin/node-zlib.js');
+    if (!Array.prototype.last) {
+        Array.prototype.last = function() {
+            return this[this.length - 1];
+        };
+    }
 
-    m.version = "0.1.C";
+    m.version = "0.2.1";
+    m.build_num = "build.117"
     m.compression = ['gzip'];
 
     // User salt generation pulled from: http://stackoverflow.com/a/2117523
     m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+        var r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8);
         return v.toString(16);
     });
 
@@ -63,7 +70,7 @@ function p2p() {
 
 
     m.compress = function(text, method) {
-        if (method == "gzip") {
+        if (method === "gzip") {
             return zlib.deflateSync(Buffer(text));
         }
         else {
@@ -73,7 +80,7 @@ function p2p() {
 
 
     m.decompress = function(text, method) {
-        if (method == "gzip") {
+        if (method === "gzip") {
             return zlib.inflateSync(Buffer(text));
         }
         else {
@@ -83,19 +90,18 @@ function p2p() {
 
 
     m.protocol = class protocol {
-        constructor(sep, subnet, encryption) {
-            this.sep = sep;
+        constructor(subnet, encryption) {
             this.subnet = subnet;
             this.encryption = encryption;
         }
 
         id() {
-            var protocol_hash = m.SHA256([this.sep, this.subnet, this.encryption, m.version].join(''));
+            var protocol_hash = m.SHA256([this.subnet, this.encryption, m.version].join(''));
             return m.to_base_58(BigInt(protocol_hash, 16));
         }
     };
 
-    m.default_protocol = new m.protocol(Buffer([28, 29, 30, 31]), '', 'Plaintext');
+    m.default_protocol = new m.protocol('', 'Plaintext');
 
     m.pathfinding_message = class pathfinding_message {
         constructor(protocol, msg_type, sender, payload, compression) {
@@ -114,12 +120,28 @@ function p2p() {
         }
 
         static feed_string(protocol, string, sizeless, compressions) {
+            string = m.pathfinding_message.sanitize_string(string, sizeless)
+            var compression_return = m.pathfinding_message.decompress_string(string, compressions)
+            var compression_fail = compression_return[1]
+            string = compression_return[0]
+            var packets = m.pathfinding_message.process_string(string)
+            var msg = new m.pathfinding_message(protocol, packets[0], packets[1], packets.slice(4), compressions)
+            msg.time = m.from_base_58(packets[3])
+            msg.compression_fail = compression_fail
+            return msg
+        }
+
+        static sanitize_string(string, sizeless) {
             if (!sizeless) {
                 if (struct.unpack("!L", Buffer(string.substring(0,4)))[0] !== string.substring(4).length) {
                     throw "The following expression must be true: struct.unpack(\"!L\", Buffer(string.substring(0,4)))[0] === string.substring(4).length"
                 }
                 string = string.substring(4)
             }
+            return string
+        }
+
+        static decompress_string(string, compressions) {
             var compression_fail = false
             compressions = compressions || []
             for (var i = 0; i < compressions.length; i++) {
@@ -136,17 +158,35 @@ function p2p() {
                     }
                 }
             }
-            var packets = string.split(protocol.sep)
-            var msg = new m.pathfinding_message(protocol, packets[0], packets[1], packets.slice(4), compressions)
-            msg.time = m.from_base_58(packets[3])
-            msg.compression_fail = compression_fail
-            return msg
+            return [string, compression_fail]
+        }
+
+        static process_string(string) {
+            var processed = 0
+            var expected = string.length
+            var pack_lens = []
+            var packets = []
+            function add(a, b) {
+                return a + b
+            }
+            while (processed !== expected) {
+                pack_lens = pack_lens.concat(struct.unpack("!L", Buffer(string.substring(processed, processed+4))))
+                processed += 4
+                expected -= pack_lens.last()
+            }
+            // Then reconstruct the packets
+            for (var i=0; i < pack_lens.length; i++) {
+                var start = processed + pack_lens.slice(0, i).reduce(add, 0)
+                var end = start + pack_lens[i]
+                packets = packets.concat([string.substring(start, end)])
+            }
+            return packets
         }
 
         get compression_used() {
             for (var i = 0; i < m.compression.length; i++) {
                 for (var j = 0; j < this.compression.length; j++) {
-                    if (m.compression[i] == this.compression[j]) {
+                    if (m.compression[i] === this.compression[j]) {
                         return m.compression[i]
                     }
                 }
@@ -159,7 +199,7 @@ function p2p() {
         }
 
         get id() {
-            var payload_string = this.protocol.sep.join(this.payload)
+            var payload_string = this.payload.join('')
             var payload_hash = m.SHA384(payload_string + this.time_58)
             return m.to_base_58(BigInt(payload_hash, 16))
         }
@@ -170,7 +210,12 @@ function p2p() {
         }
 
         get __non_len_string() {
-            var string = this.packets.join(this.protocol.sep)
+            var string = this.packets.join('')
+            var headers = []
+            for (var i = 0; i < this.packets.length; i++) {
+                headers = headers.concat(struct.pack("!L", [this.packets[i].length]))
+            }
+            string = headers.join('') + string
             if (this.compression_used) {
                 string = m.compress(string, this.compression_used)
             }
@@ -189,28 +234,6 @@ function p2p() {
         len() {
             return struct.pack("!L", [this.length])
         }
-    }
-
-    
-
-    m.construct_message = function(prot, comp_types, msg_type, id, packets, time) {
-        var time = typeof time !== 'undefined' ?  time : m.to_base_58(m.getUTC());
-
-        var msg_hash = m.SHA384(packets.join(prot.sep) + time);
-        var msg_id = m.to_base_58(BigInt(msg_hash, 16));
-
-        var packets = [msg_type, id, msg_id, time].concat(packets);
-        var msg = new Buffer(packets.join(prot.sep));
-
-        //compression_used = ""
-        //for method in compression:
-        //    if method in comp_types:
-        //        compression_used = method
-        //        msg = compress(msg, method)
-        //        break
-
-        var size = struct.pack("!L", [msg.length]);
-        return [size, msg];
     }
 }
 
