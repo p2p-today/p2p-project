@@ -13,10 +13,10 @@ function p2p() {
         };
     }
 
-    var protocol_version = "0.2";
-    var node_policy_version = "136";
+    m.protocol_version = "0.2";
+    m.node_policy_version = "136";
 
-    version = [protocol_version, node_policy_version].join('.');
+    m.version = [m.protocol_version, m.node_policy_version].join('.');
     m.compression = ['gzip'];
 
     // User salt generation pulled from: http://stackoverflow.com/a/2117523
@@ -98,7 +98,7 @@ function p2p() {
         }
 
         id() {
-            var protocol_hash = m.SHA256([this.subnet, this.encryption, m.version].join(''));
+            var protocol_hash = m.SHA256([this.subnet, this.encryption, m.protocol_version].join(''));
             return m.to_base_58(BigInt(protocol_hash, 16));
         }
     };
@@ -134,13 +134,18 @@ function p2p() {
         }
 
         static sanitize_string(string, sizeless) {
-            if (!sizeless) {
-                if (struct.unpack("!L", Buffer(string.substring(0,4)))[0] !== string.substring(4).length) {
-                    throw "The following expression must be true: struct.unpack(\"!L\", Buffer(string.substring(0,4)))[0] === string.substring(4).length"
-                }
-                string = string.substring(4)
+            try {
+                string = string.toString()
             }
-            return string
+            finally {
+                if (!sizeless) {
+                    if (struct.unpack("!L", Buffer(string.substring(0,4)))[0] !== string.substring(4).length) {
+                        throw "The following expression must be true: struct.unpack(\"!L\", Buffer(string.substring(0,4)))[0] === string.substring(4).length"
+                    }
+                    string = string.substring(4)
+                }
+                return string
+            }
         }
 
         static decompress_string(string, compressions) {
@@ -236,7 +241,42 @@ function p2p() {
         len() {
             return struct.pack("!L", [this.length])
         }
-    }
+    };
+
+    m.message = class message {
+        constructor(msg, server) {
+            this.msg = msg
+            this.server = server
+        }
+
+        get time() {
+            return this.msg.time
+        }
+
+        get sender() {
+            return this.msg.sender
+        }
+
+        get protocol() {
+            return this.msg.protocol
+        }
+
+        get id() {
+            return this.msg.id
+        }
+
+        get packets() {
+            return this.msg.payload
+        }
+
+        get length() {
+            return this.msg.length
+        }
+
+        reply(args) {
+            throw "Not implemented"
+        }
+    };
 }
 
 if( typeof exports !== 'undefined' ) {
