@@ -164,8 +164,8 @@ class mesh_socket(base_socket):
 
     def __handle_handshake(self, packets, handler):
         if packets[2] != self.protocol.id:
-            handler.sock.close()
-            self.awaiting_ids.remove(handler)
+            handler.sock.shutdown(socket.SHUT_RDWR)
+            self.daemon.disconnect(handler)
             return
         handler.id = packets[1]
         handler.addr = json.loads(packets[3].decode())
@@ -202,10 +202,7 @@ class mesh_socket(base_socket):
     def send(self, *args, **kargs):
         """Sends data to all peers. type flag will override normal subflag. Defaults to 'broadcast'"""
         # self.cleanup()
-        if kargs.get('type'):
-            send_type = kargs.pop('type')
-        else:
-            send_type = flags.broadcast
+        send_type = kargs.pop('type', flags.broadcast)
         # map(methodcaller('send', 'broadcast', 'broadcast', *args), self.routing_table.values())
         for handler in self.routing_table.values():
             handler.send(flags.broadcast, send_type, *args)
@@ -216,14 +213,11 @@ class mesh_socket(base_socket):
         # self.__print__(msg.id, [i for i, t in self.waterfalls], level=5)
         if msg.id not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id, msg.time))
-            if isinstance(msg.sender, mesh_connection):
-                id = msg.sender.id
-            else:
-                id = msg.sender
+            sender_id = msg.sender
             for handler in self.routing_table.values():
-                handler.send(flags.waterfall, *msg.packets, time=to_base_58(msg.time), id=id)
+                handler.send(flags.waterfall, *msg.packets, time=to_base_58(msg.time), id=sender_id)
             self.waterfalls = deque(set(self.waterfalls))
-            self.waterfalls = deque([i for i in self.waterfalls if i[1] - getUTC() > 60])
+            self.waterfalls = deque([j for j in self.waterfalls if j[1] - getUTC() > 60])
             while len(self.waterfalls) > 100:
                 self.waterfalls.pop()
             return True
