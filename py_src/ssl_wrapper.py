@@ -5,7 +5,7 @@ if sys.version_info < (3, ):
     import atexit
     cleanup_files = []
 
-    def cleanup():
+    def cleanup():  # pragma: no cover
         for f in cleanup_files:
             os.remove(f)
 
