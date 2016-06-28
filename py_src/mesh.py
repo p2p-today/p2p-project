@@ -117,6 +117,7 @@ class mesh_daemon(base_daemon):
                         except:
                             pass
                         self.disconnect(handler)
+                        self.server.send(flags.request, '*')  # Requests your peers to broadcast their peers
             self.handle_accept()
 
     def disconnect(self, handler):
