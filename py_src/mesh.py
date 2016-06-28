@@ -5,7 +5,7 @@ from .base import flags, user_salt, compression, to_base_58, from_base_58, \
         getUTC, compress, decompress, intersect, get_lan_ip, protocol, \
         base_connection, base_daemon, base_socket, message, pathfinding_message
 
-max_outgoing = 8
+max_outgoing = 4
 default_protocol = protocol('mesh', "Plaintext")  # PKCS1_v1.5")
 
 class mesh_connection(base_connection):
@@ -18,7 +18,7 @@ class mesh_connection(base_connection):
         reply_object = self
         try:
             msg = pathfinding_message.feed_string(self.protocol, raw_msg, False, self.compression)
-        except IndexError:
+        except (IndexError, struct.error):
             self.__print__("Failed to decode message: %s. Expected compression: %s." % \
                             (raw_msg, intersect(compression, self.compression)[0]), level=1)
             self.send(flags.renegotiate, flags.compression, json.dumps([]))
@@ -29,6 +29,9 @@ class mesh_connection(base_connection):
         if packets[0] == flags.waterfall:
             if packets[2] in (i for i, t in self.server.waterfalls):
                 self.__print__("Waterfall already captured", level=2)
+                return
+            elif from_base_58(packets[3]) > getUTC() - 60:
+                self.__print__("Waterfall expired", level=2)
                 return
             self.__print__("New waterfall received. Proceeding as normal", level=2)
             reply_object = packets[1]
@@ -207,22 +210,25 @@ class mesh_socket(base_socket):
         for handler in self.routing_table.values():
             handler.send(flags.broadcast, send_type, *args)
 
+    def __clean_waterfalls(self):
+        """Cleans up the waterfall deque"""
+        self.waterfalls = deque(set(self.waterfalls))
+        self.waterfalls = deque((i for i in self.waterfalls if i[1] > getUTC() - 60))
+
     def waterfall(self, msg):
         """Handles the waterfalling of received messages"""
         # self.cleanup()
         # self.__print__(msg.id, [i for i, t in self.waterfalls], level=5)
         if msg.id not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id, msg.time))
-            sender_id = msg.sender
             for handler in self.routing_table.values():
-                handler.send(flags.waterfall, *msg.packets, time=to_base_58(msg.time), id=sender_id)
-            self.waterfalls = deque(set(self.waterfalls))
-            self.waterfalls = deque([j for j in self.waterfalls if j[1] - getUTC() > 60])
-            while len(self.waterfalls) > 100:
-                self.waterfalls.pop()
+                if handler.id != msg.sender:
+                    handler.send(flags.waterfall, *msg.packets, time=msg.time_58, id=msg.sender)
+            self.__clean_waterfalls()
             return True
-        self.__print__("Not rebroadcasting", level=3)
-        return False
+        else:
+            self.__print__("Not rebroadcasting", level=3)
+            return False
 
     def connect(self, addr, port, id=None):
         """Connects to a specified node. Specifying ID will immediately add to routing table. Blocking"""
