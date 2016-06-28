@@ -99,6 +99,7 @@ class mesh_daemon(base_daemon):
                             if not handler.collect_incoming_data(handler.sock.recv(1)):
                                 self.__print__("disconnecting node %s while in loop" % handler.id, level=6)
                                 self.disconnect(handler)
+                                self.server.send('*', type=flags.request)  # Requests your peers to broadcast their peers
                                 raise socket.timeout()  # Quick, error free breakout
                         handler.found_terminator()
                     except socket.timeout:
@@ -117,7 +118,7 @@ class mesh_daemon(base_daemon):
                         except:
                             pass
                         self.disconnect(handler)
-                        self.server.send(flags.request, '*')  # Requests your peers to broadcast their peers
+                        self.server.send('*', type=flags.request)  # Requests your peers to broadcast their peers
             self.handle_accept()
 
     def disconnect(self, handler):
@@ -179,7 +180,7 @@ class mesh_socket(base_socket):
         if handler in self.awaiting_ids:
             self.awaiting_ids.remove(handler)
         self.routing_table.update({packets[1]: handler})
-        handler.send(flags.whisper, flags.peers, json.dumps([(self.routing_table[key].addr, key.decode()) for key in self.routing_table.keys()]))
+        handler.send(flags.whisper, flags.peers, json.dumps([(self.routing_table[key].addr, key.decode()) for key in self.routing_table]))
 
     def __handle_peers(self, packets, handler):
         new_peers = json.loads(packets[1].decode())
@@ -198,10 +199,10 @@ class mesh_socket(base_socket):
                 self.routing_table[addr[1]].send(*msg)
 
     def __handle_request(self, packets, handler):
-        if self.routing_table.get(packets[2]):
+        if packets[1] == '*'.encode():
+            self.send(json.dumps([(self.routing_table[key].addr, key.decode()) for key in self.routing_table]), type=flags.peers)
+        elif self.routing_table.get(packets[2]):
             handler.send(flags.broadcast, flags.response, packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2].decode()]))
-        elif packets[2] == '*'.encode():
-            self.send(flags.broadcast, flags.peers, json.dumps([(key, self.routing_table[key].addr) for key in self.routing_table.keys()]))
 
     def send(self, *args, **kargs):
         """Sends data to all peers. type flag will override normal subflag. Defaults to 'broadcast'"""

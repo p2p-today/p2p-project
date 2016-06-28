@@ -242,9 +242,8 @@ class base_socket(object):
             print(*args)
 
     def __del__(self):
-        for key in self.routing_table:
-            self.daemon.disconnect(self.routing_table[key])
-        for handler in self.awaiting_ids:
+        handlers = list(self.routing_table.values()) + self.awaiting_ids
+        for handler in handlers:
             self.daemon.disconnect(handler)
         self.daemon.alive = False
         del self.daemon
