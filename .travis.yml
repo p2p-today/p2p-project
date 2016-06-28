@@ -51,6 +51,7 @@ before_install:
 install: 
   - if [ $Cov == 'true'  ]; then pip install pytest-coverage codecov; fi
   - if [ $(($RANDOM % 2)) == 0 ] || [ $pyver == pypy ] || [ $pyver == pypy3 ]; then pip install rsa; else pip install PyCrypto; fi
+  - pip install PyOpenSSL
 script:
   - if [ $Cov == 'true'  ]; then py.test -vv --cov=./py_src/ ./py_src/; fi
   - if [ $Cov == 'false' ]; then py.test -vv; fi
