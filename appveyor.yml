@@ -43,7 +43,6 @@ environment:
       COV: "%RUN% -m coverage"
 
 matrix:
-  fast_finish: true
   allow_failures:
     - PYTHON_VERSION: "pypy2"
     - PYTHON_VERSION: "pypy3"
