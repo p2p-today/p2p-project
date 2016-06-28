@@ -30,7 +30,7 @@ class mesh_connection(base_connection):
             if packets[2] in (i for i, t in self.server.waterfalls):
                 self.__print__("Waterfall already captured", level=2)
                 return
-            elif from_base_58(packets[3]) > getUTC() - 60:
+            elif from_base_58(packets[3]) < getUTC() - 60:
                 self.__print__("Waterfall expired", level=2)
                 return
             self.__print__("New waterfall received. Proceeding as normal", level=2)
