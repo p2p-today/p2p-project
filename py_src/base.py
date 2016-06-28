@@ -1,7 +1,7 @@
 """A library to store common functions and protocol definitions"""
 
 from __future__ import print_function
-import bz2, hashlib, json, select, socket, struct, time, threading, traceback, uuid, zlib
+import bz2, hashlib, json, select, socket, struct, time, threading, traceback, uuid, warnings, zlib
 from collections import namedtuple, deque
 
 protocol_version = "0.2"
@@ -180,8 +180,12 @@ class base_daemon(object):
         self.server = server
         if self.protocol.encryption == "Plaintext":
             self.sock = socket.socket()
+        elif self.protocol.encryption == "SSL":
+            from . import ssl_wrapper
+            self.sock = ssl_wrapper.get_socket(True)
         elif self.protocol.encryption == "PKCS1_v1.5":
-            import net
+            from . import net
+            warnings.warn(DeprecationWarning, "The net module is scheduled to be deprecated in the next release")
             self.sock = net.secure_socket(silent=True)
         else:
             raise Exception("Unknown encryption type")
@@ -240,7 +244,7 @@ class base_socket(object):
     def __del__(self):
         for key in self.routing_table:
             self.daemon.disconnect(self.routing_table[key])
-        for handler in awaiting_ids:
+        for handler in self.awaiting_ids:
             self.daemon.disconnect(handler)
         self.daemon.alive = False
         del self.daemon
@@ -402,7 +406,12 @@ class message(object):
     @property
     def time(self):
         """The time this message was sent at"""
-        return self.msg.time    
+        return self.msg.time
+
+    @property
+    def time_58(self):
+        """Returns the messages timestamp in base_58"""
+        return self.msg.time_58
 
     @property
     def sender(self):

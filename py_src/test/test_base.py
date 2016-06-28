@@ -162,4 +162,5 @@ def test_message_sans_network(iters=1000):
         assert test.sender == sen
         assert test.protocol == prot
         assert test.id == base_msg.id
+        assert test.time == base_msg.time == base.from_base_58(test.time_58) == base.from_base_58(base_msg.time_58)
         assert sen in repr(test)

@@ -1,12 +1,12 @@
 from __future__ import print_function
-import hashlib, json, select, socket, struct, threading, traceback
+import hashlib, json, select, socket, struct, threading, traceback, warnings
 from collections import namedtuple, deque
 from .base import flags, user_salt, compression, to_base_58, from_base_58, \
         getUTC, compress, decompress, intersect, get_lan_ip, protocol, \
         base_connection, base_daemon, base_socket, message, pathfinding_message
 
 max_outgoing = 4
-default_protocol = protocol('mesh', "Plaintext")  # PKCS1_v1.5")
+default_protocol = protocol('mesh', "Plaintext")  # SSL")
 
 class mesh_connection(base_connection):
     def found_terminator(self):
@@ -81,7 +81,7 @@ class mesh_daemon(base_daemon):
                 compression_to_send = [method.decode() for method in compression]
                 handler.send(flags.whisper, flags.handshake, self.server.id, self.protocol.id, json.dumps(self.server.out_addr),\
                              json.dumps(compression_to_send))
-                handler.sock.settimeout(0.01)
+                handler.sock.settimeout(1)
                 self.server.awaiting_ids.append(handler)
                 # print("Appended ", handler.addr, " to handler list: ", handler)
         except socket.timeout:
@@ -235,17 +235,21 @@ class mesh_socket(base_socket):
         # self.cleanup()
         self.__print__("Attempting connection to %s:%s" % (addr, port), level=1)
         if socket.getaddrinfo(addr, port)[0] == socket.getaddrinfo(*self.out_addr)[0] or \
-                                                            id in self.routing_table.keys():
+                                                            id in self.routing_table:
             self.__print__("Connection already established", level=1)
             return False
         if self.protocol.encryption == "Plaintext":
             conn = socket.socket()
+        elif self.protocol.encryption == "SSL":
+            from . import ssl_wrapper
+            conn = ssl_wrapper.get_socket(False)
         elif self.protocol.encryption == "PKCS1_v1.5":
-            import net
+            from . import net
+            warnings.warn(DeprecationWarning, "The net module is scheduled to be deprecated in the next release")
             conn = net.secure_socket(silent=True)
         else:
             raise ValueError("Unkown encryption method")
-        conn.settimeout(0.01)
+        conn.settimeout(1)
         conn.connect((addr, port))
         handler = mesh_connection(conn, self, self.protocol, outgoing=True)
         handler.id = id
