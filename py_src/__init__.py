@@ -37,7 +37,7 @@ import warnings
 try:
     from .net import uses_RSA, decryption_error, verification_error, newkeys,\
                      encrypt, decrypt, sign, verify, secure_socket
-    warnings.warn(DeprecationWarning, "The net module will be removed in the next release due to its general insecurity")
+    warnings.warn("The net module will be removed in the next release due to its general insecurity", DeprecationWarning)
 except ImportError:  # pragma: no cover
     warnings.warn("Could not import encrypted socket module. Please install rsa from pip.", ImportWarning)
     uses_RSA = None

@@ -245,7 +245,7 @@ class mesh_socket(base_socket):
             conn = ssl_wrapper.get_socket(False)
         elif self.protocol.encryption == "PKCS1_v1.5":
             from . import net
-            warnings.warn(DeprecationWarning, "The net module is scheduled to be deprecated in the next release")
+            warnings.warn("The net module is scheduled to be deprecated in the next release", DeprecationWarning)
             conn = net.secure_socket(silent=True)
         else:
             raise ValueError("Unkown encryption method")
