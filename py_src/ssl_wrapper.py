@@ -1,5 +1,15 @@
-import os, socket, ssl, tempfile
+import os, socket, ssl, sys, tempfile
 from OpenSSL import crypto
+
+if sys.version_info < (3, ):
+    import atexit
+    cleanup_files = []
+
+    def cleanup():
+        for f in cleanup_files:
+            os.remove(f)
+
+    atexit.register(cleanup)
 
 def generate_self_signed_cert(cert_file, key_file):
     """Generate a SSL certificate.
@@ -37,8 +47,11 @@ def get_socket(server_side):
                 generate_self_signed_cert(cert_file, key_file)
                 names = (cert_file.name, key_file.name)
         sock = ssl.wrap_socket(socket.socket(), server_side=True, keyfile=names[1], certfile=names[0])
-        os.remove(names[0])
-        os.remove(names[1])
+        if sys.version_info >= (3, ):
+            os.remove(names[0])
+            os.remove(names[1])
+        else:
+            cleanup_files.extend(names)
         return sock
     else:
         return ssl.wrap_socket(socket.socket(), server_side=False)
