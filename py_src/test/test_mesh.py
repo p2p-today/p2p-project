@@ -39,7 +39,7 @@ def protocol_rejection_validation(iters, start_port, encryption):
         del f, g
 
 def test_protocol_rejection_Plaintext(iters=3):
-    protocol_rejection_validation(iters, 5000, 'Plaintext')
+    protocol_rejection_validation(iters, 5100, 'Plaintext')
 
 def test_protocol_rejection_SSL(iters=3):
     protocol_rejection_validation(iters, 6700, 'SSL')

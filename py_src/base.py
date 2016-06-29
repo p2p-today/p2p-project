@@ -182,6 +182,7 @@ class base_daemon(object):
             self.sock = socket.socket()
         elif self.protocol.encryption == "SSL":
             from . import ssl_wrapper
+            warnings.warn("SSL encryption is not fully supported yet. You may experience some failures.", Warning)
             self.sock = ssl_wrapper.get_socket(True)
         elif self.protocol.encryption == "PKCS1_v1.5":
             from . import net
