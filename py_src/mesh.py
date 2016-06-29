@@ -1,5 +1,5 @@
 from __future__ import print_function
-import hashlib, json, select, socket, ssl, struct, threading, traceback, warnings
+import hashlib, json, select, socket, ssl, struct, sys, threading, traceback, warnings
 from collections import namedtuple, deque
 from .base import flags, user_salt, compression, to_base_58, from_base_58, \
         getUTC, compress, decompress, intersect, get_lan_ip, protocol, \
