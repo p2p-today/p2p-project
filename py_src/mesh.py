@@ -103,7 +103,7 @@ class mesh_daemon(base_daemon):
                             if not handler.collect_incoming_data(handler.sock.recv(1)):
                                 self.__print__("disconnecting node %s while in loop" % handler.id, level=6)
                                 self.disconnect(handler)
-                                self.server.send('*', type=flags.request)  # Requests your peers to broadcast their peers
+                                self.server.request_peers()
                                 raise socket.timeout()  # Quick, error free breakout
                         handler.found_terminator()
                     except socket.timeout:
@@ -118,7 +118,7 @@ class mesh_daemon(base_daemon):
                             self.__print__("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.daemon.exceptions list to github.com/gappleto97/python-utils." % handler.id, level=0)
                             self.exceptions.append((e, traceback.format_exc()))
                         self.disconnect(handler)
-                        self.server.send('*', type=flags.request, flag=flags.whisper)  # Requests your peers to broadcast their peers
+                        self.server.request_peers()
             self.handle_accept()
 
     def disconnect(self, handler):
@@ -270,3 +270,6 @@ class mesh_socket(base_socket):
         else:
             self.routing_table.update({id: handler})
         # print("Appended ", port, addr, " to handler list: ", handler)
+
+    def request_peers(self):
+        self.send('*', type=flags.request, flag=flags.whisper)
