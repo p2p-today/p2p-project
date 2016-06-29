@@ -185,7 +185,10 @@ class mesh_socket(base_socket):
         new_peers = json.loads(packets[1].decode())
         for addr, id in new_peers:
             if len(self.outgoing) < max_outgoing and addr:
-                self.connect(addr[0], addr[1], id.encode())
+                try:
+                    self.connect(addr[0], addr[1], id.encode())
+                except:  # pragma: no cover
+                    continue
 
     def __handle_response(self, packets, handler):
         self.__print__("Response received for request id %s" % packets[1], level=1)

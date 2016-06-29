@@ -201,6 +201,10 @@ class base_daemon(object):
 
     def __del__(self):
         self.alive = False
+        try:
+            self.sock.shutdown(socket.SHUT_RDWR)
+        except:  # pragma: no cover
+            pass
 
     def __print__(self, *args, **kargs):
         """Private method to print if level is <= self.server.debug_level"""
@@ -246,7 +250,6 @@ class base_socket(object):
         handlers = list(self.routing_table.values()) + self.awaiting_ids
         for handler in handlers:
             self.daemon.disconnect(handler)
-        self.daemon.alive = False
         del self.daemon
 
 

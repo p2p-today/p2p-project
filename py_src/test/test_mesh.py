@@ -24,10 +24,10 @@ def propagation_validation(iters, start_port, num_nodes, encryption):
         del nodes[:]
 
 def test_propagation_Plaintext(iters=3):
-    propagation_validation(iters, 5555, 3, 'Plaintext')
+    propagation_validation(iters, 5100, 3, 'Plaintext')
 
 def test_propagation_SSL(iters=3):
-    propagation_validation(iters, 6600, 3, 'SSL')
+    propagation_validation(iters, 5200, 3, 'SSL')
 
 def protocol_rejection_validation(iters, start_port, encryption):
     for i in xrange(iters):
@@ -39,12 +39,22 @@ def protocol_rejection_validation(iters, start_port, encryption):
         del f, g
 
 def test_protocol_rejection_Plaintext(iters=3):
-    protocol_rejection_validation(iters, 5100, 'Plaintext')
+    protocol_rejection_validation(iters, 5300, 'Plaintext')
 
 def test_protocol_rejection_SSL(iters=3):
-    protocol_rejection_validation(iters, 6700, 'SSL')
+    protocol_rejection_validation(iters, 5400, 'SSL')
 
-def disconnect_recovery_validation(iters, start_port, encryption):
+def disconnect(node, method):
+    if method == 'crash':
+        connection = list(node.routing_table.values())[0]
+        connection.sock.shutdown(socket.SHUT_RDWR)
+        del connection
+    elif method == 'disconnect':
+        node.daemon.disconnect(list(node.routing_table.values())[0])
+    else:  # pragma: no cover
+        raise ValueError()
+
+def connection_recovery_validation(iters, start_port, encryption, method):
     for i in xrange(iters):
         f = mesh.mesh_socket('localhost', start_port + i*3, prot=mesh.protocol('', encryption))
         g = mesh.mesh_socket('localhost', start_port + i*3 + 1, prot=mesh.protocol('', encryption))
@@ -53,9 +63,7 @@ def disconnect_recovery_validation(iters, start_port, encryption):
         g.connect('localhost', start_port + i*3 + 2)
         time.sleep(0.5)
         assert len(f.routing_table) == len(g.routing_table) == len(h.routing_table) == 2, "Initial connection failed"
-        connection = list(f.routing_table.values())[0]
-        connection.sock.shutdown(socket.SHUT_RDWR)
-        del connection
+        disconnect(f, method)
         time.sleep(2)
         try:
             assert len(f.routing_table) == len(g.routing_table) == len(h.routing_table) == 2, "Network recovery failed"
@@ -67,7 +75,13 @@ def disconnect_recovery_validation(iters, start_port, encryption):
         del f, g, h
 
 def test_disconnect_recovery_Plaintext(iters=3):
-    disconnect_recovery_validation(iters, 5200, 'Plaintext')
+    connection_recovery_validation(iters, 5500, 'Plaintext', 'disconnect')
 
 def test_disconnect_recovery_SSL(iters=3):
-    disconnect_recovery_validation(iters, 6900, 'SSL')
+    connection_recovery_validation(iters, 5600, 'SSL', 'disconnect')
+
+def test_conn_error_recovery_Plaintext(iters=3):
+    connection_recovery_validation(iters, 5700, 'Plaintext', 'crash')
+
+def test_conn_error_recovery_SSL(iters=3):
+    connection_recovery_validation(iters, 5800, 'SSL', 'crash')
