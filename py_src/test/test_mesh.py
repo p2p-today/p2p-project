@@ -48,7 +48,6 @@ def disconnect(node, method):
     if method == 'crash':
         connection = list(node.routing_table.values())[0]
         connection.sock.shutdown(socket.SHUT_RDWR)
-        del connection
     elif method == 'disconnect':
         node.daemon.disconnect(list(node.routing_table.values())[0])
     else:  # pragma: no cover
@@ -56,9 +55,9 @@ def disconnect(node, method):
 
 def connection_recovery_validation(iters, start_port, encryption, method):
     for i in xrange(iters):
-        f = mesh.mesh_socket('localhost', start_port + i*3, prot=mesh.protocol('', encryption))
-        g = mesh.mesh_socket('localhost', start_port + i*3 + 1, prot=mesh.protocol('', encryption))
-        h = mesh.mesh_socket('localhost', start_port + i*3 + 2, prot=mesh.protocol('', encryption))
+        f = mesh.mesh_socket('localhost', start_port + i*3, prot=mesh.protocol('', encryption), debug_level=2)
+        g = mesh.mesh_socket('localhost', start_port + i*3 + 1, prot=mesh.protocol('', encryption), debug_level=2)
+        h = mesh.mesh_socket('localhost', start_port + i*3 + 2, prot=mesh.protocol('', encryption), debug_level=2)
         f.connect('localhost', start_port + i*3 + 1)
         g.connect('localhost', start_port + i*3 + 2)
         time.sleep(0.5)
@@ -67,10 +66,10 @@ def connection_recovery_validation(iters, start_port, encryption, method):
         time.sleep(2)
         try:
             assert len(f.routing_table) == len(g.routing_table) == len(h.routing_table) == 2, "Network recovery failed"
-        except:
-            print("f.status: {}\n".format(f.status))
-            print("g.status: {}\n".format(g.status))
-            print("h.status: {}\n".format(h.status))
+        except:  # pragma: no cover
+            print("f.status: %s\n" % repr(f.status))
+            print("g.status: %s\n" % repr(g.status))
+            print("h.status: %s\n" % repr(h.status))
             raise
         del f, g, h
 

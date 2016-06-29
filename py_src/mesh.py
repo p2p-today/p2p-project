@@ -84,7 +84,7 @@ class mesh_daemon(base_daemon):
                 handler.sock.settimeout(1)
                 self.server.awaiting_ids.append(handler)
                 # print("Appended ", handler.addr, " to handler list: ", handler)
-        except socket.timeout:
+        except (socket.timeout, ssl.SSLEOFError):
             pass
 
     def mainloop(self):
