@@ -73,7 +73,7 @@ class mesh_connection(base_connection):
 class mesh_daemon(base_daemon):
     def handle_accept(self):
         """Handle an incoming connection"""
-        if sys.version_info >= (2, 7):
+        if sys.version_info >= (3, 0):
             exception_list = (socket.timeout, ssl.SSLEOFError)
         else:
             exception_list = (socket.timeout, )
