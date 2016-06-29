@@ -46,19 +46,24 @@ def test_protocol_rejection_SSL(iters=3):
 
 def disconnect_recovery_validation(iters, start_port, encryption):
     for i in xrange(iters):
-        f = mesh.mesh_socket('localhost', start_port + i*3, prot=mesh.protocol('', encryption), debug_level=6)
-        g = mesh.mesh_socket('localhost', start_port + i*3 + 1, prot=mesh.protocol('', encryption), debug_level=6)
-        h = mesh.mesh_socket('localhost', start_port + i*3 + 2, prot=mesh.protocol('', encryption), debug_level=6)
+        f = mesh.mesh_socket('localhost', start_port + i*3, prot=mesh.protocol('', encryption))
+        g = mesh.mesh_socket('localhost', start_port + i*3 + 1, prot=mesh.protocol('', encryption))
+        h = mesh.mesh_socket('localhost', start_port + i*3 + 2, prot=mesh.protocol('', encryption))
         f.connect('localhost', start_port + i*3 + 1)
         g.connect('localhost', start_port + i*3 + 2)
         time.sleep(0.5)
-        assert len(f.routing_table) == len(g.routing_table) == len(h.routing_table) == 2
+        assert len(f.routing_table) == len(g.routing_table) == len(h.routing_table) == 2, "Initial connection failed"
         connection = list(f.routing_table.values())[0]
-        f.daemon.disconnect(connection)
         connection.sock.shutdown(socket.SHUT_RDWR)
         del connection
         time.sleep(2)
-        assert len(f.routing_table) == len(g.routing_table) == len(h.routing_table) == 2
+        try:
+            assert len(f.routing_table) == len(g.routing_table) == len(h.routing_table) == 2, "Network recovery failed"
+        except:
+            print("f.status: {}\n".format(f.status))
+            print("g.status: {}\n".format(g.status))
+            print("h.status: {}\n".format(h.status))
+            raise
         del f, g, h
 
 def test_disconnect_recovery_Plaintext(iters=3):

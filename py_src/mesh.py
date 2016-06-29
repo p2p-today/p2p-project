@@ -199,7 +199,7 @@ class mesh_socket(base_socket):
 
     def __handle_request(self, packets, handler):
         if packets[1] == '*'.encode():
-            self.send(json.dumps([(self.routing_table[key].addr, key.decode()) for key in self.routing_table]), type=flags.peers)
+            self.send(json.dumps([(self.routing_table[key].addr, key.decode()) for key in self.routing_table]), type=flags.peers, flag=flags.whisper)
         elif self.routing_table.get(packets[2]):
             handler.send(flags.broadcast, flags.response, packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2].decode()]))
 
@@ -207,9 +207,10 @@ class mesh_socket(base_socket):
         """Sends data to all peers. type flag will override normal subflag. Defaults to 'broadcast'"""
         # self.cleanup()
         send_type = kargs.pop('type', flags.broadcast)
+        main_flag = kargs.pop('flag', flags.broadcast)
         # map(methodcaller('send', 'broadcast', 'broadcast', *args), self.routing_table.values())
         for handler in self.routing_table.values():
-            handler.send(flags.broadcast, send_type, *args)
+            handler.send(main_flag, send_type, *args)
 
     def __clean_waterfalls(self):
         """Cleans up the waterfall deque"""
