@@ -4,8 +4,8 @@ from __future__ import print_function
 import bz2, hashlib, json, select, socket, struct, time, threading, traceback, uuid, warnings, zlib
 from collections import namedtuple, deque
 
-protocol_version = "0.2"
-node_policy_version = "136"
+protocol_version = "0.3"
+node_policy_version = "154"
 
 version = '.'.join([protocol_version, node_policy_version])
 
