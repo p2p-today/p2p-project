@@ -73,6 +73,10 @@ class mesh_connection(base_connection):
 class mesh_daemon(base_daemon):
     def handle_accept(self):
         """Handle an incoming connection"""
+        if sys.version_info >= (2, 7):
+            exception_list = (socket.timeout, ssl.SSLEOFError)
+        else:
+            exception_list = (socket.timeout, )
         try:
             conn, addr = self.sock.accept()
             if conn is not None:
@@ -84,7 +88,7 @@ class mesh_daemon(base_daemon):
                 handler.sock.settimeout(1)
                 self.server.awaiting_ids.append(handler)
                 # print("Appended ", handler.addr, " to handler list: ", handler)
-        except (socket.timeout, ssl.SSLEOFError):
+        except exception_list:
             pass
 
     def mainloop(self):
