@@ -245,9 +245,7 @@ Current build status:
 
      When this is received, you remove the request from your dictionary, make a connection to the given address, and send the message.
 
-     A special case is if a node requests `*`. In this case, a node receiving it should `broadcast` their routing table to the network using the standard `peers` subflag.
-
-     Potential problems to overcome: This may break if you have a compression method in common, because the message in question is sent before you have completed a handshake. If you do not, things should be fine. Fix in progress.
+     A special case is if a node requests `*`. In this case, a node receiving it should reply with their routing table using the standard `peers` subflag.
 
 
 10.	**Potential Flaws**

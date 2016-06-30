@@ -43,7 +43,6 @@ environment:
       COV: "%RUN% -m coverage"
 
 matrix:
-  fast_finish: true
   allow_failures:
     - PYTHON_VERSION: "pypy2"
     - PYTHON_VERSION: "pypy3"
@@ -52,7 +51,7 @@ install:
   - "ECHO %PYTHON% %PYTHON_VERSION%%APPVEYOR_BUILD_FOLDER%"
   - "set HOME=%APPVEYOR_BUILD_FOLDER%"
   - "%PYPY%"
-  - "%PIP% install pytest-coverage codecov rsa"
+  - "%PIP% install pytest-coverage codecov rsa PyOpenSSL"
   - "cd %HOME%"
 
 test: off

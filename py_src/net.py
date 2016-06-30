@@ -161,7 +161,7 @@ except ImportError:
 
 class secure_socket(socket.socket):
     """An RSA encrypted and secured socket. Requires either the rsa or PyCrypto module"""
-    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, silent=False):
+    def __init__(self, sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=2048, silent=False):
         super(secure_socket, self).__init__(sock_family, sock_type, proto, fileno)
         if keysize < 1024:  # pragma: no cover
             warnings.warn('Using a <1024 key length will make communication with PyCrypto implementations inconsistent. If you\'re using PyCrypto, expect an imminent exception.', RuntimeWarning, stacklevel=2)

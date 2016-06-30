@@ -14,43 +14,11 @@ Constants
 -  ``node_policy_version``: A string containing the build number
    associated with this version. This refers to the node and its
    policies.
--  ``uses_RSA``: This value says whether it is using the underlying
-   ``rsa`` module. If ``None``, it means neither ``rsa`` nor any of its
-   fallbacks could be imported. Currently ``False`` means it relies on
-   ``PyCrypto``, and ``True`` means it relies on ``rsa``.
--  ``if uses_RSA is not None``
-
-   -  ``decryption_error``: The error a call to ``decrypt`` will throw
-      if decryption of a given ciphertext fails
-   -  ``verification_error``: The error a call to ``verify`` will throw
-      if verification of a given signature fails
-
-Methods
--------
-
--  ``if uses_RSA is not None``
-
-   -  ``newkeys(keysize)``: Returns a tuple containing an RSA public and
-      private key. The private key is guarunteed to work wherever a
-      public key does. Format: ``(public_key, private_key)``
-   -  ``encrypt(msg, key)``: Given a ``bytes`` plaintext and a
-      ``public_key``, returns an encrypted ``bytes``
-   -  ``decrypt(msg, key)``: Given a ``bytes`` ciphertext and a
-      ``private_key``, either returns a decrypted ``bytes`` or throws
-      ``decryption_error``
-   -  ``sign(msg, key, hashop)``: Given a ``bytes``, a ``private_key``,
-      and a hashop
-      (``["MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512"]``), returns a
-      signed ``bytes``
-   -  ``verify(msg, sig, key)``: Given a ``bytes`` message, a ``bytes``
-      signautre, and a ``public_key``, either returns ``True`` or throws
-      ``verification_error``
 
 Classes
 -------
 
 -  `mesh_socket <#mesh_socket>`__
--  ``if uses_RSA is not None:`` `secure_socket <#secure_socket>`__
 
 File-wise API
 =============
@@ -77,7 +45,7 @@ Constants
    supports
 -  ``default_protocol``: The default `protocol <#protocol>`__
    definition. This uses an empty string as the subnet and
-   ``PKCS1_v1.5`` encryption, as supplied by `net.py <#netpy>`__ (in
+   ``SSL`` encryption, as supplied by `ssl_wrapper.py <#ssl_wrapperpy>`__ (in
    alpha releases this will use ``Plaintext``)
 -  ``base_58``: The characterspace of base\_58, ordered from least to
    greatest value
@@ -179,8 +147,8 @@ Methods
 -  ``__len__()``: Returns the length of this message excluding the
    length header
 
-Class Methods:
-^^^^^^^^^^^^^^
+Class Methods
+^^^^^^^^^^^^^
 
 -  ``feed_string(ptorocol, string, sizeless=False, compressions=None)``:
    Given a `protocol <#protocol>`__, a string or ``bytes``, process
@@ -312,8 +280,8 @@ Properties
    ``base_socket.daemon.exceptions`` if there are ``Exceptions``
    collected
 
-Methods:
-^^^^^^^^
+Methods
+^^^^^^^
 
 -  ``recv(quantity=1)``: Receive `message <#message>`__\ s; If
    ``quantity != 1``, returns a ``list`` of
@@ -366,8 +334,8 @@ Constructor
 -  ``prot``: This node's `protocol <#protocol>`__
 -  ``outgoing``: Whether or not this node is an outgoing connection
 
-Variables:
-^^^^^^^^^^
+Variables
+^^^^^^^^^
 
 -  ``sock``: This connection's ``socket`` object
 -  ``server``: A pointer to this connection's
@@ -410,10 +378,9 @@ Constants
    supports
 -  ``max_outgoing``: The (rough) maximum number of outgoing connections
    your node will maintain
--  ``default_protocol``: The default `protocol <#protocol>`__
-   definition. This uses ``'mesh'`` as the subnet and ``PKCS1_v1.5``
-   encryption, as supplied by `net.py <#netpy>`__ (in alpha releases
-   this will use ``Plaintext``)
+-  ``default_protocol``: The default `protocol <#protocol>`__ definition. This uses ``'mesh'`` as the subnet and
+   ``SSL`` encryption, as supplied by `ssl\_wrapper.py <#ssl\_wrapperpy>`__ (in
+   alpha releases this will use ``Plaintext``)
 
 Classes
 -------
@@ -539,8 +506,8 @@ Constructor
 -  ``prot``: This node's `protocol <#protocol>`__
 -  ``outgoing``: Whether or not this node is an outgoing connection
 
-Variables:
-^^^^^^^^^^
+Variables
+^^^^^^^^^
 
 -  ``sock``: This connection's ``socket`` object
 -  ``server``: A pointer to this connection's
@@ -577,117 +544,19 @@ Methods
 net.py
 ======
 
-Constants
----------
+Deprecated. Set to be removed in next release.
 
--  ``uses_RSA``: Defines whether you're using the ``rsa`` module
--  ``decryption_error``: The ``Exception`` this module catches when
-   decryption fails
--  ``verification_error``: The ``Exception`` this module catches when
-   signature verification fails
--  ``key_request``: The message used to request a peer's key
--  ``size_request``: The message used to request a peer's keysize
-
-Methods
--------
-
--  ``newkeys(keysize)``: Returns a tuple containing an RSA public and
-   private key. The private key is guarunteed to work wherever a public
-   key does. Format: ``(public_key, private_key)``
--  ``encrypt(msg, key)``: Given a ``bytes`` plaintext and a
-   ``public_key``, returns an encrypted ``bytes``
--  ``decrypt(msg, key)``: Given a ``bytes`` ciphertext and a
-   ``private_key``, either returns a decrypted ``bytes`` or throws
-   ``decryption_error``
--  ``sign(msg, key, hashop)``: Given a ``bytes``, a ``private_key``, and
-   a hashop (``["MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512"]``),
-   returns a signed ``bytes``
--  ``verify(msg, sig, key)``: Given a ``bytes`` message, a ``bytes``
-   signautre, and a ``public_key``, either returns ``True`` or throws
-   ``verification_error``
--  ``public_key(n, e)``: Returns a public key object
-
-Classes
--------
-
-secure\_socket
-~~~~~~~~~~~~~~
-
-This is a socket through which all information is encrypted with RSA. It
-behaves like a ``socket.socket``, with a few caveats.
-
-1. There is a character limit on a single send call. Mind you, this is
-   ~133 GiB at its most restrictive, but it exists.
-2. You don't need to specify how many bytes to read. If you don't, it
-   will return a single message. If you do, it will return up to that
-   size, but (like a ``socket.socket``) is not guarunteed to. It keeps
-   an internal buffer, and if you request more than this buffer, it will
-   only return up to that buffer. It will not look for more information.
-   This latter part is a possible improvement to make.
-3. If there is data in its internal buffer, and no data is set to be
-   received, ``select.select`` will not report it as available to read.
-
-Constructor
-^^^^^^^^^^^
-
-``secure_socket(sock_family=socket.AF_INET, sock_type=socket.SOCK_STREAM, proto=0, fileno=None, keysize=1024, silent=False)``
-
--  ``sock_family``: Equivalent to the ``family`` argument on a
-   ``socket.socket``
--  ``sock_type``: Equivalent to the ``type`` argument on a
-   ``socket.socket``
--  ``proto``: Equivalent to the ``proto`` argument on a
-   ``socket.socket``
--  ``fileno``: Equivalent to the ``fileno`` argument on a python3
-   ``socket.socket``, or the ``_sock`` argument on a python2
-   ``socket.socket``
--  ``keysize``: The RSA keysize you wish to generate. If ``PyCrypto`` is
-   the underlying library, it will only accept it if
-   ``keysize % 256 != 0 and keysize >= 1024``. The object itself will
-   reject any value not in ``range(354, 8197)``. Higher than this will
-   raise a warning, lower a ``ValueError``
--  ``silent``: This will suppress the prints from handshaking
+ssl\_wrapper.py
+==============
 
 Variables
-^^^^^^^^^
+---------
 
--  ``family``: Inherited from ``socket.socket``
--  ``type``: Inherited from ``socket.socket``
--  ``proto``: Inherited from ``socket.socket``
--  ``keysize``: The keysize you specified while constructing
--  ``pub``: Your public key
--  ``priv``: Your private key
--  ``recv_charlimit``: The maximum number of characters you can receive
-   in a single message (guarunteed >85899345640)
--  ``peer_keysize``: Your peer's keysize (or ``None`` if you are not
-   connected)
--  ``key``: Your peer's key (or ``None`` if you are not connected)
--  ``send_charlimit``: The maximum number of characters you can send in
-   a single message (guarunteed >85899345640, or ``None`` if not
-   connected)
+-  ``cleanup_files``: Only present in python2; A list of files to clean up using the ``atexit`` module. Because of this setup, sudden crashes of Python will not clean up keys or certs.
 
 Methods
-^^^^^^^
+-------
 
--  ``connect(ip)``: Attempts to connect to the given address
--  ``bind(ip)``: Binds to the given ip address (inherited from
-   ``socket.socket``)
--  ``listen(i)``: Allow the given number of incoming connections to
-   queue
--  ``accept()``: Returns a connection and address
--  ``close()``: Closes the connection
--  ``dup()``: Returns a copy of the ``socket``
--  ``settimeout(i)``: Sets the ``socket`` timeout; blocks if a handshake
-   is occurring
--  ``send(msg)``: Sends an encrypted message, with an encrypted
-   signature; blocks if a handshake is occurring
--  ``recv(size=None)``: Receives a message. If a size is given, returns
-   that number of characters. Blocks if no message is available, or
-   ``raise``\ s ``socket.timeout`` if not received within the assigned
-   timeout; blocks completely if a handshake is occurring
--  ``sign(msg, hashop='best')``: Returns a signature of the given text;
-   If you define a hashop, it will use that. Otherwise it uses the
-   largest available. Valid ops are
-   ``['SHA-512', 'SHA-384', 'SHA-256', 'SHA-1', 'MD5']``
--  ``verify(msg, sig, key=None)``: Returns whether the signature is
-   valid. If a key is not specified, defaults to its own key
+-  ``generate_self_signed_cert(cert_file, key_file)``: Given two file-like objects, generate an SSL certificate and key file
+-  ``get_socket(server_side)``: Returns an ``ssl.SSLSocket`` for use in other parts of this library
+-  ``cleanup()``: Only present in python2; Calls ``os.remove`` on all files in ``cleanup_files``.
