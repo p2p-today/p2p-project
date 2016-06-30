@@ -79,13 +79,13 @@ def connection_recovery_validation(iters, start_port, encryption, method):
             print("h.status: %s\n" % repr(h.status))
         del f, g, h
 
-def test_disconnect_recovery_Plaintext(iters=3):
+def test_disconnect_recovery_Plaintext(iters=1):
     connection_recovery_validation(iters, 5500, 'Plaintext', 'disconnect')
 
 # def test_disconnect_recovery_SSL(iters=3):
 #     connection_recovery_validation(iters, 5600, 'SSL', 'disconnect')
 
-def test_conn_error_recovery_Plaintext(iters=3):
+def test_conn_error_recovery_Plaintext(iters=1):
     connection_recovery_validation(iters, 5600, 'Plaintext', 'crash')
 
 # def test_conn_error_recovery_SSL(iters=3):
