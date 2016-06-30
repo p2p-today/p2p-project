@@ -23,5 +23,4 @@ build:
   on_success:
     - coverage combine
     - coverage xml
-    - echo "$(cat coverage.xml)"
     - codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml
