@@ -20,8 +20,7 @@ In this module:
              py2p.mesh.mesh_daemon prints debug information
 
 Submodules:
-  
-  Guaranteed
+
     * base:        A library of common functions and classes to enable mesh and the planned chord
     * mesh:        A library to deal with mesh networking
     * chord:       A planned library to deal with distributed hash tables
@@ -45,6 +44,3 @@ except ImportError:  # pragma: no cover
 version_info = tuple(map(int, __version__.split(".")))
 
 __all__ = ["mesh", "chord", "base", "ssl_wrapper"]
-
-if uses_RSA is not None:
-    __all__.append("net")
