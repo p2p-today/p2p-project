@@ -46,7 +46,7 @@ def get_socket(server_side):
             with tempfile.NamedTemporaryFile(delete=False, suffix=".key", dir=self_path) as key_file:
                 generate_self_signed_cert(cert_file, key_file)
                 names = (cert_file.name, key_file.name)
-        sock = ssl.wrap_socket(socket.socket(), server_side=True, keyfile=names[1], certfile=names[0])
+        sock = ssl.wrap_socket(socket.socket(), suppress_ragged_eofs=True, server_side=True, keyfile=names[1], certfile=names[0])
         if sys.version_info >= (3, ):
             os.remove(names[0])
             os.remove(names[1])
@@ -54,4 +54,4 @@ def get_socket(server_side):
             cleanup_files.extend(names)
         return sock
     else:
-        return ssl.wrap_socket(socket.socket(), server_side=False)
+        return ssl.wrap_socket(socket.socket(), server_side=False, suppress_ragged_eofs=True)

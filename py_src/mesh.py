@@ -1,5 +1,5 @@
 from __future__ import print_function
-import hashlib, json, select, socket, ssl, struct, sys, threading, traceback, warnings
+import hashlib, json, random, select, socket, struct, sys, traceback, warnings
 from collections import namedtuple, deque
 from .base import flags, user_salt, compression, to_base_58, from_base_58, \
         getUTC, compress, decompress, intersect, get_lan_ip, protocol, \
@@ -65,7 +65,7 @@ class mesh_connection(base_connection):
         if msg.compression_used: self.__print__("Compressing with %s" % msg.compression_used, level=4)
         try:
             self.sock.send(msg.string)
-        except IOError as e:
+        except (IOError, socket.error) as e:
             self.server.daemon.exceptions.append((e, traceback.format_exc()))
             self.server.daemon.disconnect(self)
 
@@ -73,6 +73,10 @@ class mesh_connection(base_connection):
 class mesh_daemon(base_daemon):
     def handle_accept(self):
         """Handle an incoming connection"""
+        if sys.version_info >= (3, 3):
+            exceptions = (socket.error, ConnectionError)
+        else:
+            exceptions = (socket.error, )
         try:
             conn, addr = self.sock.accept()
             if conn is not None:
@@ -84,7 +88,9 @@ class mesh_daemon(base_daemon):
                 handler.sock.settimeout(1)
                 self.server.awaiting_ids.append(handler)
                 # print("Appended ", handler.addr, " to handler list: ", handler)
-        except (socket.timeout, ):
+            else:
+                self.__print__("Somehow the handle_accept got triggered", level=1)
+        except exceptions:
             pass
 
     def mainloop(self):
@@ -125,7 +131,7 @@ class mesh_daemon(base_daemon):
         self.__print__("Connection to node %s has been closed" % node_id, level=1)
         if handler in self.server.awaiting_ids:
             self.server.awaiting_ids.remove(handler)
-        elif self.server.routing_table.get(handler.id):
+        elif self.server.routing_table.get(handler.id) is handler:
             self.server.routing_table.pop(handler.id)
         try:
             handler.sock.shutdown(socket.SHUT_RDWR)
@@ -167,10 +173,31 @@ class mesh_socket(base_socket):
         elif packets[0] == flags.whisper or self.waterfall(msg):
             self.queue.appendleft(msg)
 
+    def __get_peer_list(self):
+        peer_list = [(self.routing_table[key].addr, key.decode()) for key in self.routing_table]
+        random.shuffle(peer_list)
+        return peer_list
+
+    def __resolve_connection_conflict(self, handler, h_id):
+        self.__print__("Resolving peer conflict on id %s" % repr(h_id), level=1)
+        to_keep, to_kill = None, None
+        if bool(from_base_58(self.id) > from_base_58(h_id)) ^ bool(handler.outgoing):  # logical xor
+            self.__print__("Closing outgoing connection", level=1)
+            to_keep, to_kill = self.routing_table[h_id], handler
+            self.__print__(to_keep.outgoing, level=1)
+        else:
+            self.__print__("Closing incoming connection", level=1)
+            to_keep, to_kill = handler, self.routing_table[h_id]
+            self.__print__(not to_keep.outgoing, level=1)
+        self.daemon.disconnect(to_kill)
+        self.routing_table.update({h_id: to_keep})
+
     def __handle_handshake(self, packets, handler):
         if packets[2] != self.protocol.id:
             self.daemon.disconnect(handler)
             return
+        elif handler is not self.routing_table.get(packets[1], handler):
+            self.__resolve_connection_conflict(handler, packets[1])
         handler.id = packets[1]
         handler.addr = json.loads(packets[3].decode())
         handler.compression = json.loads(packets[4].decode())
@@ -179,7 +206,7 @@ class mesh_socket(base_socket):
         if handler in self.awaiting_ids:
             self.awaiting_ids.remove(handler)
         self.routing_table.update({packets[1]: handler})
-        handler.send(flags.whisper, flags.peers, json.dumps([(self.routing_table[key].addr, key.decode()) for key in self.routing_table]))
+        handler.send(flags.whisper, flags.peers, json.dumps(self.__get_peer_list()))
 
     def __handle_peers(self, packets, handler):
         new_peers = json.loads(packets[1].decode())
@@ -188,6 +215,7 @@ class mesh_socket(base_socket):
                 try:
                     self.connect(addr[0], addr[1], id.encode())
                 except:  # pragma: no cover
+                    self.__print__("Could not connect to %s:%s because\n%s" % (addr[0], addr[1], traceback.format_exc()), level=1)
                     continue
 
     def __handle_response(self, packets, handler):
@@ -202,7 +230,7 @@ class mesh_socket(base_socket):
 
     def __handle_request(self, packets, handler):
         if packets[1] == '*'.encode():
-            handler.send(flags.whisper, flags.peers, json.dumps([(self.routing_table[key].addr, key.decode()) for key in self.routing_table]))
+            handler.send(flags.whisper, flags.peers, json.dumps(self.__get_peer_list()))
         elif self.routing_table.get(packets[2]):
             handler.send(flags.broadcast, flags.response, packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2].decode()]))
 
@@ -238,7 +266,7 @@ class mesh_socket(base_socket):
     def connect(self, addr, port, id=None):
         """Connects to a specified node. Specifying ID will immediately add to routing table. Blocking"""
         # self.cleanup()
-        self.__print__("Attempting connection to %s:%s" % (addr, port), level=1)
+        self.__print__("Attempting connection to %s:%s with id %s" % (addr, port, repr(id)), level=1)
         if socket.getaddrinfo(addr, port)[0] == socket.getaddrinfo(*self.out_addr)[0] or \
                                                             id in self.routing_table:
             self.__print__("Connection already established", level=1)

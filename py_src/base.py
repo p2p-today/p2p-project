@@ -244,7 +244,7 @@ class base_socket(object):
     def __print__(self, *args, **kargs):
         """Private method to print if level is <= self.__debug_level"""
         if kargs.get('level') <= self.debug_level:
-            print(*args)
+            print(self.out_addr[1], *args)
 
     def __del__(self):
         handlers = list(self.routing_table.values()) + self.awaiting_ids
