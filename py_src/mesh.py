@@ -240,7 +240,7 @@ class mesh_socket(base_socket):
         send_type = kargs.pop('type', flags.broadcast)
         main_flag = kargs.pop('flag', flags.broadcast)
         # map(methodcaller('send', 'broadcast', 'broadcast', *args), self.routing_table.values())
-        handlers = self.routing_table.values()
+        handlers = list(self.routing_table.values())
         for handler in handlers:
             handler.send(main_flag, send_type, *args)
 
