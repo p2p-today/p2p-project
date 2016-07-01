@@ -5,7 +5,7 @@ import bz2, hashlib, json, select, socket, struct, time, threading, traceback, u
 from collections import namedtuple, deque
 
 protocol_version = "0.3"
-node_policy_version = "154"
+node_policy_version = "182"
 
 version = '.'.join([protocol_version, node_policy_version])
 
@@ -249,8 +249,7 @@ class base_socket(object):
     def __del__(self):
         handlers = list(self.routing_table.values()) + self.awaiting_ids
         for handler in handlers:
-            self.daemon.disconnect(handler)
-        del self.daemon
+            self.disconnect(handler)
 
 
 class pathfinding_message(object):
