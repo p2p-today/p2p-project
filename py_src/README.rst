@@ -45,7 +45,7 @@ Constants
    supports
 -  ``default_protocol``: The default `protocol <#protocol>`__
    definition. This uses an empty string as the subnet and
-   ``SSL`` encryption, as supplied by `ssl_wrapper.py <#ssl_wrapperpy>`__ (in
+   ``SSL`` encryption, as supplied by `ssl\_wrapper.py <#ssl_wrapperpy>`__ (in
    alpha releases this will use ``Plaintext``)
 -  ``base_58``: The characterspace of base\_58, ordered from least to
    greatest value
@@ -378,9 +378,10 @@ Constants
    supports
 -  ``max_outgoing``: The (rough) maximum number of outgoing connections
    your node will maintain
--  ``default_protocol``: The default `protocol <#protocol>`__ definition. This uses ``'mesh'`` as the subnet and
-   ``SSL`` encryption, as supplied by `ssl\_wrapper.py <#ssl\_wrapperpy>`__ (in
-   alpha releases this will use ``Plaintext``)
+-  ``default_protocol``: The default `protocol <#protocol>`__
+   definition. This uses ``'mesh'`` as the subnet and ``SSL``
+   encryption, as supplied by `ssl\_wrapper.py <#ssl_wrapperpy>`__ (in alpha releases
+   this will use ``Plaintext``)
 
 Classes
 -------
@@ -544,10 +545,10 @@ Methods
 net.py
 ======
 
-Deprecated. Set to be removed in next release.
+Deprecated. Scheduled to be removed in the next release.
 
 ssl\_wrapper.py
-==============
+===============
 
 Variables
 ---------
