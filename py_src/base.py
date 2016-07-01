@@ -249,8 +249,7 @@ class base_socket(object):
     def __del__(self):
         handlers = list(self.routing_table.values()) + self.awaiting_ids
         for handler in handlers:
-            self.daemon.disconnect(handler)
-        del self.daemon
+            self.disconnect(handler)
 
 
 class pathfinding_message(object):

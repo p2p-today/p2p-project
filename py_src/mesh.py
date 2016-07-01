@@ -67,7 +67,7 @@ class mesh_connection(base_connection):
             self.sock.send(msg.string)
         except (IOError, socket.error) as e:
             self.server.daemon.exceptions.append((e, traceback.format_exc()))
-            self.server.daemon.disconnect(self)
+            self.server.disconnect(self)
 
 
 class mesh_daemon(base_daemon):
@@ -123,21 +123,6 @@ class mesh_daemon(base_daemon):
                         self.server.request_peers()
             self.handle_accept()
 
-    def disconnect(self, handler):
-        """Disconnects a node"""
-        node_id = handler.id
-        if not node_id:
-            node_id = repr(handler)
-        self.__print__("Connection to node %s has been closed" % node_id, level=1)
-        if handler in self.server.awaiting_ids:
-            self.server.awaiting_ids.remove(handler)
-        elif self.server.routing_table.get(handler.id) is handler:
-            self.server.routing_table.pop(handler.id)
-        try:
-            handler.sock.shutdown(socket.SHUT_RDWR)
-        except:
-            pass
-
 
 class mesh_socket(base_socket):
     def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
@@ -189,12 +174,12 @@ class mesh_socket(base_socket):
             self.__print__("Closing incoming connection", level=1)
             to_keep, to_kill = handler, self.routing_table[h_id]
             self.__print__(not to_keep.outgoing, level=1)
-        self.daemon.disconnect(to_kill)
+        self.disconnect(to_kill)
         self.routing_table.update({h_id: to_keep})
 
     def __handle_handshake(self, packets, handler):
         if packets[2] != self.protocol.id:
-            self.daemon.disconnect(handler)
+            self.disconnect(handler)
             return
         elif handler is not self.routing_table.get(packets[1], handler):
             self.__resolve_connection_conflict(handler, packets[1])
@@ -295,6 +280,21 @@ class mesh_socket(base_socket):
         else:
             self.routing_table.update({id: handler})
         # print("Appended ", port, addr, " to handler list: ", handler)
+
+    def disconnect(self, handler):
+        """Disconnects a node"""
+        node_id = handler.id
+        if not node_id:
+            node_id = repr(handler)
+        self.__print__("Connection to node %s has been closed" % node_id, level=1)
+        if handler in self.awaiting_ids:
+            self.awaiting_ids.remove(handler)
+        elif self.routing_table.get(handler.id) is handler:
+            self.routing_table.pop(handler.id)
+        try:
+            handler.sock.shutdown(socket.SHUT_RDWR)
+        except:
+            pass
 
     def request_peers(self):
         self.send('*', type=flags.request, flag=flags.whisper)
