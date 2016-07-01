@@ -40,10 +40,9 @@ def generate_self_signed_cert(cert_file, key_file):
 
 def get_socket(server_side):
     if server_side:
-        self_path = os.path.dirname(os.path.realpath(__file__))
         names = (None, None)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".cert", dir=self_path) as cert_file:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".key", dir=self_path) as key_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".cert") as cert_file:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".key") as key_file:
                 generate_self_signed_cert(cert_file, key_file)
                 names = (cert_file.name, key_file.name)
         sock = ssl.wrap_socket(socket.socket(), suppress_ragged_eofs=True, server_side=True, keyfile=names[1], certfile=names[0])
