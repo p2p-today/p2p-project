@@ -184,10 +184,6 @@ class base_daemon(object):
             from . import ssl_wrapper
             warnings.warn("SSL encryption is not fully supported yet. You may experience some failures.", Warning)
             self.sock = ssl_wrapper.get_socket(True)
-        elif self.protocol.encryption == "PKCS1_v1.5":
-            from . import net
-            warnings.warn("The net module is scheduled to be deprecated in the next release", DeprecationWarning)
-            self.sock = net.secure_socket(silent=True)
         else:
             raise Exception("Unknown encryption type")
         self.sock.bind((addr, port))

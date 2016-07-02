@@ -25,21 +25,12 @@ Submodules:
     * mesh:        A library to deal with mesh networking
     * chord:       A planned library to deal with distributed hash tables
     * ssl_wrapper: A shortcut library to generate peer-to-peer ssl.SSLSockets
+    * test:        Unit tests for this library
 """
 
 from .mesh import mesh_socket
 # from .chord import chord_socket
 from .base import version as __version__
-
-import warnings
-
-try:
-    from .net import uses_RSA, decryption_error, verification_error, newkeys,\
-                     encrypt, decrypt, sign, verify, secure_socket
-    warnings.warn("The net module will be removed in the next release due to its general insecurity", DeprecationWarning)
-except ImportError:  # pragma: no cover
-    warnings.warn("Could not import encrypted socket module. Please install rsa from pip.", ImportWarning)
-    uses_RSA = None
 
 version_info = tuple(map(int, __version__.split(".")))
 
