@@ -12,10 +12,7 @@ if sys.version_info < (3, ):
     atexit.register(cleanup)
 
 def generate_self_signed_cert(cert_file, key_file):
-    """Generate a SSL certificate.
-
-    If the cert_path and the key_path are present they will be overwritten.
-    """
+    """Given two file-like objects, generate an SSL key and certificate."""
     # create a key pair
     key = crypto.PKey()
     key.generate_key(crypto.TYPE_RSA, 2048)
