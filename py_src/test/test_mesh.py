@@ -1,4 +1,4 @@
-import platform, socket, sys, time
+import socket, sys, time
 from .. import mesh
 from ..base import flags
 
@@ -13,10 +13,10 @@ def propagation_validation(iters, start_port, num_nodes, encryption):
             new_node = mesh.mesh_socket('localhost', start_port + i*num_nodes + j, prot=mesh.protocol('', encryption), debug_level=5)
             nodes[-1].connect('localhost', start_port + i*num_nodes + j)
             nodes.append(new_node)
-        time.sleep(0.5)
+            time.sleep(0.5)
         print("----------------------Test event----------------------")
         nodes[0].send(b"hello")
-        time.sleep(num_nodes * (1 + (platform.python_implementation().lower()[:4] == 'pypy')))  # Wait twice as long if in PyPy
+        time.sleep(num_nodes)
         print("----------------------Test ended----------------------")
         print(nodes[0].id)
         print([len(n.routing_table) for n in nodes])
