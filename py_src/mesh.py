@@ -48,7 +48,10 @@ class mesh_connection(base_connection):
             elif packets[4] == flags.resend:
                 self.send(*self.last_sent)
                 return
-        self.server.handle_msg(message(msg, self.server), reply_object)
+        parsed_msg = message(msg, self.server)
+        self.server.handle_msg(parsed_msg, reply_object)
+        if packets[0] in [flags.broadcast, flags.waterfall]:
+            self.server.waterfall(parsed_msg)
 
     def send(self, msg_type, *args, **kargs):
         """Sends a message through its connection. The first argument is message type. All after that are content packets"""
@@ -143,6 +146,8 @@ class mesh_socket(base_socket):
         h = hashlib.sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
         self.daemon = mesh_daemon(addr, port, self, prot)
+        self.handlers = [self.__handle_handshake, self.__handle_peers, 
+                         self.__handle_response, self.__handle_request]
 
     def handle_msg(self, msg, handler):
         """Decides how to handle various message types, allowing some to be handled automatically"""
@@ -155,7 +160,7 @@ class mesh_socket(base_socket):
             self.__handle_response(packets, handler)
         elif packets[0] == flags.request:
             self.__handle_request(packets, handler)
-        elif packets[0] == flags.whisper or self.waterfall(msg):
+        elif packets[0] in [flags.whisper, flags.broadcast]:
             self.queue.appendleft(msg)
 
     def __get_peer_list(self):
