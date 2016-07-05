@@ -51,7 +51,7 @@ install:
   - "ECHO %PYTHON% %PYTHON_VERSION%%APPVEYOR_BUILD_FOLDER%"
   - "set HOME=%APPVEYOR_BUILD_FOLDER%"
   - "%PYPY%"
-  - "%PIP% install pytest-coverage codecov rsa PyOpenSSL"
+  - "%PIP% install pytest-coverage codecov PyOpenSSL"
   - "cd %HOME%"
 
 test: off

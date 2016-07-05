@@ -17,8 +17,7 @@ matrix:
 build:
   ci:
     - pip install pytest-coverage codecov
-    - if [ $(($RANDOM % 2)) == 0 ] || [ $SHIPPABLE_PYTHON_VERSION == pypy ] || [ $SHIPPABLE_PYTHON_VERSION == pypy3 ]; then pip install rsa; else pip install PyCrypto; fi
-    - pip install PyOpenSSL
+    - if [ $(($RANDOM % 2)) == 0 ] || [ $SHIPPABLE_PYTHON_VERSION == pypy ] || [ $SHIPPABLE_PYTHON_VERSION == pypy3 ]; then pip install cryptography; else pip install PyOpenSSL; fi
     - py.test -vv --cov=./py_src/ ./py_src/
   on_success:
     - coverage combine
