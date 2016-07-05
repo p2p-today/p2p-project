@@ -26,13 +26,13 @@ class mesh_connection(base_connection):
             return
         packets = msg.packets
         self.__print__("Message received: %s" % packets, level=1)
-        if packets[0] == flags.waterfall:
-            if packets[2] in (i for i, t in self.server.waterfalls):
-                self.__print__("Waterfall already captured", level=2)
-                return
-            elif from_base_58(packets[3]) < getUTC() - 60:
+        if packets[0] in [flags.waterfall, flags.broadcast]:
+            if from_base_58(packets[3]) < getUTC() - 60:
                 self.__print__("Waterfall expired", level=2)
                 return
+            elif not self.server.waterfall(message(msg, self.server)):
+                self.__print__("Waterfall already captured", level=2)
+                return                
             self.__print__("New waterfall received. Proceeding as normal", level=2)
             reply_object = packets[1]
         elif packets[0] == flags.renegotiate:
@@ -48,10 +48,7 @@ class mesh_connection(base_connection):
             elif packets[4] == flags.resend:
                 self.send(*self.last_sent)
                 return
-        parsed_msg = message(msg, self.server)
-        self.server.handle_msg(parsed_msg, reply_object)
-        if packets[0] in [flags.broadcast, flags.waterfall]:
-            self.server.waterfall(parsed_msg)
+        self.server.handle_msg(message(msg, self.server), reply_object)
 
     def send(self, msg_type, *args, **kargs):
         """Sends a message through its connection. The first argument is message type. All after that are content packets"""
