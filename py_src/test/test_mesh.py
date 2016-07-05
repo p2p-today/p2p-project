@@ -16,7 +16,7 @@ def propagation_validation(iters, start_port, num_nodes, encryption):
         time.sleep(0.5)
         print("----------------------Test event----------------------")
         nodes[0].send(b"hello")
-        time.sleep(num_nodes * (1 + platform.python_implementation().lower()[:4] == 'pypy'))  # Wait twice as long if in PyPy
+        time.sleep(num_nodes * (1 + (platform.python_implementation().lower()[:4] == 'pypy')))  # Wait twice as long if in PyPy
         print("----------------------Test ended----------------------")
         print(nodes[0].id)
         print([len(n.routing_table) for n in nodes])
