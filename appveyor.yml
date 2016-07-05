@@ -30,17 +30,17 @@ environment:
       PIP: "%PYTHON%\\Scripts\\pip"
       COV: "%PYTHON%\\Scripts\\coverage"
 
-    - PYTHON_VERSION: "pypy2"
-      RUN: "%APPVEYOR_BUILD_FOLDER%\\pypy-4.0.1-win32\\pypy"
-      PIP: "%RUN% -m pip"
-      PYPY: 'powershell.exe %APPVEYOR_BUILD_FOLDER%\\.installers\\installpypy2.ps1'
-      COV: "%RUN% -m coverage"
+    # - PYTHON_VERSION: "pypy2"
+    #   RUN: "%APPVEYOR_BUILD_FOLDER%\\pypy-4.0.1-win32\\pypy"
+    #   PIP: "%RUN% -m pip"
+    #   PYPY: 'powershell.exe %APPVEYOR_BUILD_FOLDER%\\.installers\\installpypy2.ps1'
+    #   COV: "%RUN% -m coverage"
 
-    - PYTHON_VERSION: "pypy3"
-      RUN: "%APPVEYOR_BUILD_FOLDER%\\pypy3-2.4.0-win32\\pypy"
-      PIP: "%RUN% -m pip"
-      PYPY: "powershell.exe %APPVEYOR_BUILD_FOLDER%\\.installers\\installpypy3.ps1"
-      COV: "%RUN% -m coverage"
+    # - PYTHON_VERSION: "pypy3"
+    #   RUN: "%APPVEYOR_BUILD_FOLDER%\\pypy3-2.4.0-win32\\pypy"
+    #   PIP: "%RUN% -m pip"
+    #   PYPY: "powershell.exe %APPVEYOR_BUILD_FOLDER%\\.installers\\installpypy3.ps1"
+    #   COV: "%RUN% -m coverage"
 
 matrix:
   allow_failures:
