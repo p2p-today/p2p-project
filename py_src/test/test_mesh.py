@@ -7,14 +7,17 @@ if sys.version_info[0] > 2:
 
 def propagation_validation(iters, start_port, num_nodes, encryption):
     for i in xrange(iters):
+        print("----------------------Test start----------------------")
         nodes = [mesh.mesh_socket('localhost', start_port + i*num_nodes, prot=mesh.protocol('', encryption))]
         for j in xrange(1, num_nodes):
             new_node = mesh.mesh_socket('localhost', start_port + i*num_nodes + j, prot=mesh.protocol('', encryption))
             nodes[-1].connect('localhost', start_port + i*num_nodes + j)
             nodes.append(new_node)
         time.sleep(0.5)
+        print("----------------------Test event----------------------")
         nodes[0].send(b"hello")
         time.sleep(num_nodes)
+        print("----------------------Test ended----------------------")
         print(nodes[0].id)
         print([len(n.routing_table) for n in nodes])
         for node in nodes[1:]:
@@ -32,10 +35,13 @@ def test_propagation_SSL(iters=3):
 
 def protocol_rejection_validation(iters, start_port, encryption):
     for i in xrange(iters):
+        print("----------------------Test start----------------------")
         f = mesh.mesh_socket('localhost', start_port + i*2, prot=mesh.protocol('test', encryption))
         g = mesh.mesh_socket('localhost', start_port + i*2 + 1, prot=mesh.protocol('test2', encryption))
+        print("----------------------Test event----------------------")
         g.connect('localhost', start_port + i*2)
         time.sleep(0.5)
+        print("----------------------Test ended----------------------")
         assert len(f.routing_table) == len(f.awaiting_ids) == len(g.routing_table) == len(g.awaiting_ids) == 0
         del f, g
 
@@ -47,6 +53,7 @@ def test_protocol_rejection_SSL(iters=3):
 
 def handler_registry_validation(iters, start_port, encryption):
     for i in xrange(iters):
+        print("----------------------Test start----------------------")
         f = mesh.mesh_socket('localhost', start_port + i*2, prot=mesh.protocol('', encryption), debug_level=5)
         g = mesh.mesh_socket('localhost', start_port + i*2 + 1, prot=mesh.protocol('', encryption), debug_level=5)
 
@@ -59,8 +66,10 @@ def handler_registry_validation(iters, start_port, encryption):
         f.register_handler(register)
         g.connect('localhost', start_port + i*2)
         time.sleep(0.5)
+        print("----------------------Test event----------------------")
         g.send('test')
         time.sleep(1)
+        print("----------------------Test ended----------------------")
         assert not f.recv()
         assert g.recv()
         del f, g
