@@ -15,7 +15,6 @@ class mesh_connection(base_connection):
         self.expected = 4
         self.buffer = []
         self.active = False
-        reply_object = self
         try:
             msg = pathfinding_message.feed_string(self.protocol, raw_msg, False, self.compression)
         except (IndexError, struct.error):
@@ -34,7 +33,6 @@ class mesh_connection(base_connection):
                 self.__print__("Waterfall already captured", level=2)
                 return                
             self.__print__("New waterfall received. Proceeding as normal", level=2)
-            reply_object = packets[1]
         elif packets[0] == flags.renegotiate:
             if packets[4] == flags.compression:
                 encoded_methods = [algo.encode() for algo in json.loads(packets[5].decode())]
@@ -48,7 +46,7 @@ class mesh_connection(base_connection):
             elif packets[4] == flags.resend:
                 self.send(*self.last_sent)
                 return
-        self.server.handle_msg(message(msg, self.server), reply_object)
+        self.server.handle_msg(message(msg, self.server), self)
 
     def send(self, msg_type, *args, **kargs):
         """Sends a message through its connection. The first argument is message type. All after that are content packets"""
@@ -104,7 +102,7 @@ class mesh_daemon(base_daemon):
                         while not handler.find_terminator():
                             if not handler.collect_incoming_data(handler.sock.recv(1)):
                                 self.__print__("disconnecting node %s while in loop" % handler.id, level=6)
-                                self.disconnect(handler)
+                                self.server.disconnect(handler)
                                 self.server.request_peers()
                                 raise socket.timeout()  # Quick, error free breakout
                         handler.found_terminator()
@@ -119,7 +117,7 @@ class mesh_daemon(base_daemon):
                         else:
                             self.__print__("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.daemon.exceptions list to github.com/gappleto97/python-utils." % handler.id, level=0)
                             self.exceptions.append((e, traceback.format_exc()))
-                        self.disconnect(handler)
+                        self.server.disconnect(handler)
                         self.server.request_peers()
             self.handle_accept()
 
@@ -146,19 +144,14 @@ class mesh_socket(base_socket):
         self.handlers = [self.__handle_handshake, self.__handle_peers, 
                          self.__handle_response, self.__handle_request]
 
-    def handle_msg(self, msg, handler):
+    def handle_msg(self, msg, conn):
         """Decides how to handle various message types, allowing some to be handled automatically"""
-        packets = msg.packets
-        if packets[0] == flags.handshake:
-            self.__handle_handshake(packets, handler)
-        elif packets[0] == flags.peers:
-            self.__handle_peers(packets, handler)
-        elif packets[0] == flags.response:
-            self.__handle_response(packets, handler)
-        elif packets[0] == flags.request:
-            self.__handle_request(packets, handler)
-        elif packets[0] in [flags.whisper, flags.broadcast]:
-            self.queue.appendleft(msg)
+        for handler in self.handlers:
+            if handler(msg, conn):
+                break
+        else:  # misnomer: more accurately "if not break"
+            if msg.packets[0] in [flags.whisper, flags.broadcast]:
+                self.queue.appendleft(msg)
 
     def __get_peer_list(self):
         peer_list = [(self.routing_table[key].addr, key.decode()) for key in self.routing_table]
@@ -179,47 +172,59 @@ class mesh_socket(base_socket):
         self.disconnect(to_kill)
         self.routing_table.update({h_id: to_keep})
 
-    def __handle_handshake(self, packets, handler):
-        if packets[2] != self.protocol.id:
-            self.disconnect(handler)
-            return
-        elif handler is not self.routing_table.get(packets[1], handler):
-            self.__resolve_connection_conflict(handler, packets[1])
-        handler.id = packets[1]
-        handler.addr = json.loads(packets[3].decode())
-        handler.compression = json.loads(packets[4].decode())
-        handler.compression = [algo.encode() for algo in handler.compression]
-        self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
-        if handler in self.awaiting_ids:
-            self.awaiting_ids.remove(handler)
-        self.routing_table.update({packets[1]: handler})
-        handler.send(flags.whisper, flags.peers, json.dumps(self.__get_peer_list()))
-
-    def __handle_peers(self, packets, handler):
-        new_peers = json.loads(packets[1].decode())
-        for addr, id in new_peers:
-            if len(self.outgoing) < max_outgoing and addr:
-                try:
-                    self.connect(addr[0], addr[1], id.encode())
-                except:  # pragma: no cover
-                    self.__print__("Could not connect to %s:%s because\n%s" % (addr[0], addr[1], traceback.format_exc()), level=1)
-                    continue
-
-    def __handle_response(self, packets, handler):
-        self.__print__("Response received for request id %s" % packets[1], level=1)
-        if self.requests.get(packets[1]):
-            addr = json.loads(packets[2].decode())
-            if addr:
-                msg = self.requests.get(packets[1])
-                self.requests.pop(packets[1])
-                self.connect(addr[0][0], addr[0][1], addr[1])
-                self.routing_table[addr[1]].send(*msg)
-
-    def __handle_request(self, packets, handler):
-        if packets[1] == '*'.encode():
+    def __handle_handshake(self, msg, handler):
+        packets = msg.packets
+        if packets[0] == flags.handshake:
+            if packets[2] != self.protocol.id:
+                self.disconnect(handler)
+                return
+            elif handler is not self.routing_table.get(packets[1], handler):
+                self.__resolve_connection_conflict(handler, packets[1])
+            handler.id = packets[1]
+            handler.addr = json.loads(packets[3].decode())
+            handler.compression = json.loads(packets[4].decode())
+            handler.compression = [algo.encode() for algo in handler.compression]
+            self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
+            if handler in self.awaiting_ids:
+                self.awaiting_ids.remove(handler)
+            self.routing_table.update({packets[1]: handler})
             handler.send(flags.whisper, flags.peers, json.dumps(self.__get_peer_list()))
-        elif self.routing_table.get(packets[2]):
-            handler.send(flags.broadcast, flags.response, packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2].decode()]))
+            return True
+
+    def __handle_peers(self, msg, handler):
+        packets = msg.packets
+        if packets[0] == flags.peers:
+            new_peers = json.loads(packets[1].decode())
+            for addr, id in new_peers:
+                if len(self.outgoing) < max_outgoing:
+                    try:
+                        self.connect(addr[0], addr[1], id.encode())
+                    except:  # pragma: no cover
+                        self.__print__("Could not connect to %s:%s because\n%s" % (addr[0], addr[1], traceback.format_exc()), level=1)
+                        continue
+            return True
+
+    def __handle_response(self, msg, handler):
+        packets = msg.packets
+        if packets[0] == flags.response:
+            self.__print__("Response received for request id %s" % packets[1], level=1)
+            if self.requests.get(packets[1]):
+                addr = json.loads(packets[2].decode())
+                if addr:
+                    msg = self.requests.get(packets[1])
+                    self.requests.pop(packets[1])
+                    self.connect(addr[0][0], addr[0][1], addr[1])
+                    self.routing_table[addr[1]].send(*msg)
+            return True
+
+    def __handle_request(self, msg, handler):
+        packets = msg.packets
+        if packets[0] == flags.request:
+            if packets[1] == b'*':
+                handler.send(flags.whisper, flags.peers, json.dumps(self.__get_peer_list()))
+            elif self.routing_table.get(packets[2]):
+                handler.send(flags.broadcast, flags.response, packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2].decode()]))
+            return True
 
     def send(self, *args, **kargs):
         """Sends data to all peers. type flag will override normal subflag. Defaults to 'broadcast'"""
