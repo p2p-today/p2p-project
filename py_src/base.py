@@ -91,7 +91,7 @@ def compress(msg, method):  # takes bytes, returns bytes
         return bz2.compress(msg)
     elif method == flags.lzma:
         return lzma.compress(msg)
-    else:
+    else:  # pragma: no cover
         raise Exception('Unknown compression method')
 
 
@@ -103,7 +103,7 @@ def decompress(msg, method):  # takes bytes, returns bytes
         return bz2.decompress(msg)
     elif method == flags.lzma:
         return lzma.decompress(msg)
-    else:
+    else:  # pragma: no cover
         raise Exception('Unknown decompression method')
 
 
@@ -198,7 +198,7 @@ class base_daemon(object):
             from . import ssl_wrapper
             warnings.warn("SSL encryption is not fully supported yet. You may experience some failures.", Warning)
             self.sock = ssl_wrapper.get_socket(True)
-        else:
+        else:  # pragma: no cover
             raise Exception("Unknown encryption type")
         self.sock.bind((addr, port))
         self.sock.listen(5)
@@ -410,7 +410,7 @@ class pathfinding_message(object):
 class message(object):
     """An object which gets returned to a user, containing all necessary information to parse and reply to a message"""
     def __init__(self, msg, server):
-        if not isinstance(msg, pathfinding_message):
+        if not isinstance(msg, pathfinding_message):  # pragma: no cover
             raise TypeError("message must be passed a pathfinding_message")
         self.msg = msg
         self.server = server

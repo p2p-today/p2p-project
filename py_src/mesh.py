@@ -86,7 +86,7 @@ class mesh_daemon(base_daemon):
                 handler.sock.settimeout(1)
                 self.server.awaiting_ids.append(handler)
                 # print("Appended ", handler.addr, " to handler list: ", handler)
-            else:
+            else:  # pragma: no cover
                 self.__print__("Somehow the handle_accept got triggered", level=1)
         except exceptions:
             pass
@@ -104,9 +104,9 @@ class mesh_daemon(base_daemon):
                                 self.__print__("disconnecting node %s while in loop" % handler.id, level=6)
                                 self.server.disconnect(handler)
                                 self.server.request_peers()
-                                raise socket.timeout()  # Quick, error free breakout
+                                break
                         handler.found_terminator()
-                    except socket.timeout:
+                    except socket.timeout:  # pragma: no cover
                         continue  # Shouldn't happen with select, but if it does...
                     except Exception as e:
                         if isinstance(e, socket.error) and e.args[0] in (9, 104, 10053, 10054, 10058):
@@ -115,7 +115,7 @@ class mesh_daemon(base_daemon):
                                 node_id = repr(handler)
                             self.__print__("Node %s has disconnected from the network" % node_id, level=1)
                         else:
-                            self.__print__("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.daemon.exceptions list to github.com/gappleto97/python-utils." % handler.id, level=0)
+                            self.__print__("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to github.com/gappleto97/p2p-project/issues." % handler.id, level=0)
                             self.exceptions.append((e, traceback.format_exc()))
                         self.server.disconnect(handler)
                         self.server.request_peers()
@@ -180,7 +180,7 @@ class mesh_socket(base_socket):
         if packets[0] == flags.handshake:
             if packets[2] != self.protocol.id:
                 self.disconnect(handler)
-                return
+                return True
             elif handler is not self.routing_table.get(packets[1], handler):
                 self.__resolve_connection_conflict(handler, packets[1])
             handler.id = packets[1]
@@ -272,7 +272,7 @@ class mesh_socket(base_socket):
         elif self.protocol.encryption == "SSL":
             from . import ssl_wrapper
             conn = ssl_wrapper.get_socket(False)
-        else:
+        else:  # pragma: no cover
             raise ValueError("Unkown encryption method")
         conn.settimeout(1)
         conn.connect((addr, port))

@@ -72,7 +72,7 @@ except ImportError:
             ))
             cert_file.write(certificate.public_bytes(Encoding.PEM))
 
-    except ImportError:
+    except ImportError:  # pragma: no cover
         raise
 
 def get_socket(server_side):
