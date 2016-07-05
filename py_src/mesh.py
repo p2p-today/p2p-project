@@ -78,6 +78,17 @@ class mesh_connection(base_connection):
 
 
 class mesh_daemon(base_daemon):
+    def mainloop(self):
+        """Daemon thread which handles all incoming data and connections"""
+        while self.alive:
+            conns = list(self.server.routing_table.values()) + self.server.awaiting_ids
+            if conns:
+                for handler in select.select(conns, [], [], 0.01)[0]:
+                    self.process_data(handler)
+                for handler in conns:
+                    self.kill_old_nodes(handler)
+            self.handle_accept()
+
     def handle_accept(self):
         """Handle an incoming connection"""
         if sys.version_info >= (3, 3):
@@ -95,16 +106,8 @@ class mesh_daemon(base_daemon):
         except exceptions:
             pass
 
-    def mainloop(self):
-        """Daemon thread which handles all incoming data and connections"""
-        while self.alive:
-            conns = list(self.server.routing_table.values()) + self.server.awaiting_ids
-            if conns:
-                for handler in select.select(conns, [], [], 0.01)[0]:
-                    self.process_data(handler)
-            self.handle_accept()
-
     def process_data(self, handler):
+        """Collects incoming data from nodes"""
         try:
             while not handler.find_terminator():
                 if not handler.collect_incoming_data(handler.sock.recv(1)):
@@ -126,6 +129,11 @@ class mesh_daemon(base_daemon):
                 self.exceptions.append((e, traceback.format_exc()))
             self.server.disconnect(handler)
             self.server.request_peers()
+
+    def kill_old_nodes(self, handler):
+        """Cleans out connections which never finish a message"""
+        if handler.active and handler.time < getUTC() - 60:
+            self.server.disconnect(handler)
 
 
 class mesh_socket(base_socket):
