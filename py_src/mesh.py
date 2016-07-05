@@ -7,6 +7,7 @@ from .base import flags, user_salt, compression, to_base_58, from_base_58, \
 
 max_outgoing = 4
 default_protocol = protocol('mesh', "Plaintext")  # SSL")
+json_compressions = json.dumps([method.decode() for method in compression])
 
 class mesh_connection(base_connection):
     def found_terminator(self):
@@ -77,49 +78,46 @@ class mesh_daemon(base_daemon):
             exceptions = (socket.error, )
         try:
             conn, addr = self.sock.accept()
-            if conn is not None:
-                self.__print__('Incoming connection from %s' % repr(addr), level=1)
-                handler = mesh_connection(conn, self.server, self.protocol)
-                compression_to_send = [method.decode() for method in compression]
-                handler.send(flags.whisper, flags.handshake, self.server.id, self.protocol.id, json.dumps(self.server.out_addr),\
-                             json.dumps(compression_to_send))
-                handler.sock.settimeout(1)
-                self.server.awaiting_ids.append(handler)
-                # print("Appended ", handler.addr, " to handler list: ", handler)
-            else:  # pragma: no cover
-                self.__print__("Somehow the handle_accept got triggered", level=1)
+            self.__print__('Incoming connection from %s' % repr(addr), level=1)
+            handler = mesh_connection(conn, self.server, self.protocol)
+            handler.send(flags.whisper, flags.handshake, self.server.id, self.protocol.id, \
+                            json.dumps(self.server.out_addr), json_compressions)
+            handler.sock.settimeout(1)
+            self.server.awaiting_ids.append(handler)
         except exceptions:
             pass
 
     def mainloop(self):
         """Daemon thread which handles all incoming data and connections"""
         while self.alive:
-            # for handler in list(self.server.routing_table.values()) + self.server.awaiting_ids:
-            if list(self.server.routing_table.values()) + self.server.awaiting_ids:
-                for handler in select.select(list(self.server.routing_table.values()) + self.server.awaiting_ids, [], [], 0.01)[0]:
-                    # print("Collecting data from %s" % repr(handler))
-                    try:
-                        while not handler.find_terminator():
-                            if not handler.collect_incoming_data(handler.sock.recv(1)):
-                                self.__print__("disconnecting node %s while in loop" % handler.id, level=6)
-                                self.server.disconnect(handler)
-                                self.server.request_peers()
-                                break
-                        handler.found_terminator()
-                    except socket.timeout:  # pragma: no cover
-                        continue  # Shouldn't happen with select, but if it does...
-                    except Exception as e:
-                        if isinstance(e, socket.error) and e.args[0] in (9, 104, 10053, 10054, 10058):
-                            node_id = handler.id
-                            if not node_id:
-                                node_id = repr(handler)
-                            self.__print__("Node %s has disconnected from the network" % node_id, level=1)
-                        else:
-                            self.__print__("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to github.com/gappleto97/p2p-project/issues." % handler.id, level=0)
-                            self.exceptions.append((e, traceback.format_exc()))
-                        self.server.disconnect(handler)
-                        self.server.request_peers()
+            conns = list(self.server.routing_table.values()) + self.server.awaiting_ids
+            if conns:
+                for handler in select.select(conns, [], [], 0.01)[0]:
+                    self.process_data(handler)
             self.handle_accept()
+
+    def process_data(self, handler):
+        try:
+            while not handler.find_terminator():
+                if not handler.collect_incoming_data(handler.sock.recv(1)):
+                    self.__print__("disconnecting node %s while in loop" % handler.id, level=6)
+                    self.server.disconnect(handler)
+                    self.server.request_peers()
+                    return
+            handler.found_terminator()
+        except socket.timeout:  # pragma: no cover
+            return  # Shouldn't happen with select, but if it does...
+        except Exception as e:
+            if isinstance(e, socket.error) and e.args[0] in (9, 104, 10053, 10054, 10058):
+                node_id = handler.id
+                if not node_id:
+                    node_id = repr(handler)
+                self.__print__("Node %s has disconnected from the network" % node_id, level=1)
+            else:
+                self.__print__("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to github.com/gappleto97/p2p-project/issues." % handler.id, level=0)
+                self.exceptions.append((e, traceback.format_exc()))
+            self.server.disconnect(handler)
+            self.server.request_peers()
 
 
 class mesh_socket(base_socket):
@@ -147,8 +145,9 @@ class mesh_socket(base_socket):
     def handle_msg(self, msg, conn):
         """Decides how to handle various message types, allowing some to be handled automatically"""
         for handler in self.__handlers:
-            self.__print__("Entering into handler: %s" % handler.__name__, level=4)
+            self.__print__("Checking handler: %s" % handler.__name__, level=4)
             if handler(msg, conn):
+                self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
                 break
         else:  # misnomer: more accurately "if not break"
             if msg.packets[0] in [flags.whisper, flags.broadcast]:
@@ -231,7 +230,6 @@ class mesh_socket(base_socket):
 
     def send(self, *args, **kargs):
         """Sends data to all peers. type flag will override normal subflag. Defaults to 'broadcast'"""
-        # self.cleanup()
         send_type = kargs.pop('type', flags.broadcast)
         main_flag = kargs.pop('flag', flags.broadcast)
         # map(methodcaller('send', 'broadcast', 'broadcast', *args), self.routing_table.values())
@@ -246,8 +244,6 @@ class mesh_socket(base_socket):
 
     def waterfall(self, msg):
         """Handles the waterfalling of received messages"""
-        # self.cleanup()
-        # self.__print__(msg.id, [i for i, t in self.waterfalls], level=5)
         if msg.id not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id, msg.time))
             for handler in self.routing_table.values():
@@ -261,7 +257,6 @@ class mesh_socket(base_socket):
 
     def connect(self, addr, port, id=None):
         """Connects to a specified node. Specifying ID will immediately add to routing table. Blocking"""
-        # self.cleanup()
         self.__print__("Attempting connection to %s:%s with id %s" % (addr, port, repr(id)), level=1)
         if socket.getaddrinfo(addr, port)[0] == socket.getaddrinfo(*self.out_addr)[0] or \
                                                             id in self.routing_table:
@@ -278,14 +273,12 @@ class mesh_socket(base_socket):
         conn.connect((addr, port))
         handler = mesh_connection(conn, self, self.protocol, outgoing=True)
         handler.id = id
-        compression_to_send = [method.decode() for method in compression]
-        handler.send(flags.whisper, flags.handshake, self.id, self.protocol.id, json.dumps(self.out_addr),\
-                    json.dumps(compression_to_send))
-        if not id:
-            self.awaiting_ids.append(handler)
-        else:
+        handler.send(flags.whisper, flags.handshake, self.id, self.protocol.id, \
+                     json.dumps(self.out_addr), json_compressions)
+        if id:
             self.routing_table.update({id: handler})
-        # print("Appended ", port, addr, " to handler list: ", handler)
+        else:
+            self.awaiting_ids.append(handler)
 
     def disconnect(self, handler):
         """Disconnects a node"""
@@ -303,6 +296,7 @@ class mesh_socket(base_socket):
             pass
 
     def request_peers(self):
+        """Requests your peers' routing tables"""
         self.send('*', type=flags.request, flag=flags.whisper)
 
     def register_handler(self, method):

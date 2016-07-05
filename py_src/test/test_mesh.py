@@ -40,7 +40,7 @@ def protocol_rejection_validation(iters, start_port, encryption):
         g = mesh.mesh_socket('localhost', start_port + i*2 + 1, prot=mesh.protocol('test2', encryption), debug_level=5)
         print("----------------------Test event----------------------")
         g.connect('localhost', start_port + i*2)
-        time.sleep(0.5)
+        time.sleep(1)
         print("----------------------Test ended----------------------")
         assert len(f.routing_table) == len(f.awaiting_ids) == len(g.routing_table) == len(g.awaiting_ids) == 0
         del f, g
