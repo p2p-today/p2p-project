@@ -2,7 +2,7 @@ from __future__ import print_function
 import hashlib, inspect, json, random, select, socket, struct, sys, traceback, warnings
 from collections import namedtuple, deque
 from .base import flags, user_salt, compression, to_base_58, from_base_58, \
-        getUTC, compress, decompress, intersect, get_lan_ip, protocol, \
+        getUTC, compress, decompress, intersect, get_lan_ip, protocol, get_socket, \
         base_connection, base_daemon, base_socket, message, pathfinding_message
 
 max_outgoing = 4
@@ -270,13 +270,7 @@ class mesh_socket(base_socket):
                                                             id in self.routing_table:
             self.__print__("Connection already established", level=1)
             return False
-        if self.protocol.encryption == "Plaintext":
-            conn = socket.socket()
-        elif self.protocol.encryption == "SSL":
-            from . import ssl_wrapper
-            conn = ssl_wrapper.get_socket(False)
-        else:  # pragma: no cover
-            raise ValueError("Unkown encryption method")
+        conn = get_socket(self.protocol, False)
         conn.settimeout(1)
         conn.connect((addr, port))
         handler = mesh_connection(conn, self, self.protocol, outgoing=True)

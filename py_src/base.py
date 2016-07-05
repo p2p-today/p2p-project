@@ -142,6 +142,16 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
 default_protocol = protocol('', "Plaintext")  # PKCS1_v1.5")
 
 
+def get_socket(protocol, serverside=False):
+    if protocol.encryption == "Plaintext":
+        return socket.socket()
+    elif protocol.encryption == "SSL":
+        from . import ssl_wrapper
+        return ssl_wrapper.get_socket(serverside)
+    else:  # pragma: no cover
+        raise ValueError("Unkown encryption method")
+
+
 class base_connection(object):
     """The base class for a connection"""
     def __init__(self, sock, server, prot=default_protocol, outgoing=False):
@@ -192,14 +202,7 @@ class base_daemon(object):
     def __init__(self, addr, port, server, prot=default_protocol):
         self.protocol = prot
         self.server = server
-        if self.protocol.encryption == "Plaintext":
-            self.sock = socket.socket()
-        elif self.protocol.encryption == "SSL":
-            from . import ssl_wrapper
-            warnings.warn("SSL encryption is not fully supported yet. You may experience some failures.", Warning)
-            self.sock = ssl_wrapper.get_socket(True)
-        else:  # pragma: no cover
-            raise Exception("Unknown encryption type")
+        self.sock = get_socket(self.protocol, True)
         self.sock.bind((addr, port))
         self.sock.listen(5)
         self.sock.settimeout(0.1)
