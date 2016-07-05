@@ -1,7 +1,7 @@
 """A library to store common functions and protocol definitions"""
 
 from __future__ import print_function
-import bz2, hashlib, json, select, socket, struct, time, threading, traceback, uuid, warnings, zlib
+import hashlib, json, select, socket, struct, time, threading, traceback, uuid, warnings
 from collections import namedtuple, deque
 
 protocol_version = "0.3"
@@ -31,12 +31,26 @@ class flags():
     lzma = b'lzma'
 
 user_salt    = str(uuid.uuid4()).encode()
-compression = [flags.gzip, flags.bz2]  # This should be in order of preference. IE: gzip is best, then bz2, then none
+compression = []  # This should be in order of preference, with None being implied as last
+
+# Compression testing section
+
+try:
+    import zlib
+    compression.append(flags.gzip)
+except:  # pragma: no cover
+    pass
+
+try:
+    import bz2
+    compression.append(flags.bz2)
+except:  # pragma: no cover
+    pass
 
 try:
     import lzma
     compression.append(flags.lzma)
-except:
+except:  # pragma: no cover
     pass
 
 # Utility method/class section; feel free to mostly ignore
