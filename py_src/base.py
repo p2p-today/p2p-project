@@ -5,7 +5,7 @@ import hashlib, json, select, socket, struct, time, threading, traceback, uuid, 
 from collections import namedtuple, deque
 
 protocol_version = "0.3"
-node_policy_version = "212"
+node_policy_version = "213"
 
 version = '.'.join([protocol_version, node_policy_version])
 
