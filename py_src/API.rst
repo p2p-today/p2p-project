@@ -19,6 +19,7 @@ Classes
 -------
 
 -  `mesh_socket <#mesh_socket>`__
+-  `protocol <#protocol>`__
 
 File-wise API
 =============
@@ -53,17 +54,13 @@ Constants
 Methods
 -------
 
--  ``to_base_58(i)``: Takes an ``int`` (or ``long``) and returns its
-   corresponding base\_58 string (type: ``bytes``)
--  ``from_base_58(string)``: Takes a base\_58 string (or ``bytes``) and
-   returns its corresponding integer (type: ``int``, ``long``)
+-  ``to_base_58(i)``: Takes an ``int`` (or ``long``) and returns its corresponding base\_58 string (type: ``bytes``)
+-  ``from_base_58(string)``: Takes a base\_58 string (or ``bytes``) and returns its corresponding integer (type: ``int``, ``long``)
 -  ``getUTC()``: Returns the current unix time in UTC (type: ``int``)
--  ``compress(msg, method)``: Shortcut method for compression (type:
-   ``bytes``)
--  ``decompress(msg, method)``: Shortcut method for decompression (type:
-   ``bytes``)
--  ``get_lan_ip()``: Returns either your current local IP, or
-   ``"127.0.0.1"``
+-  ``compress(msg, method)``: Shortcut method for compression (type: ``bytes``)
+-  ``decompress(msg, method)``: Shortcut method for decompression (type: ``bytes``)
+-  ``get_lan_ip()``: Returns either your current local IP, or ``"127.0.0.1"``
+-  ``get_socket(protocol, serverside)``: Shortcut method to generate an appropriate socket object
 
 Classes
 -------
@@ -102,26 +99,21 @@ Constructor
 ``pathfinding_message.feed_string(protocol, string, sizeless=False, compressions=None)``
 
 -  ``protocol``: The `protocol <#protocol>`__ this message uses
--  ``msg_type``: The chief `flag <#flags>`__ this message uses, to
-   broadcast intent
+-  ``msg_type``: The chief `flag <#flags>`__ this message uses, to broadcast intent
 -  ``sender``: The SHA384-based sender ID
 -  ``payload``: A ``list`` of additional packets to send
--  ``compressions``: A ``list`` of possible compression methods used/to
-   use
+-  ``compressions``: A ``list`` of possible compression methods used/to use
 -  ``string``: The raw message to parse
--  ``sizeless``: An indicator as to whether this message contains the
-   length header
+-  ``sizeless``: An indicator as to whether this message contains the length header
 
 Constants
 ^^^^^^^^^
 
 -  ``protocol``: The protocol this message is sent under
--  ``msg_type``: The main `flag <#flags>`__ of the message (ie:
-   ``['broadcast', 'waterfall', 'whisper', 'renegotiate']``)
+-  ``msg_type``: The main `flag <#flags>`__ of the message (ie: ``['broadcast', 'waterfall', 'whisper', 'renegotiate']``)
 -  ``sender``: The sender id of this message
 -  ``time``: An ``int`` of the message's timestamp
--  ``compression``: The ``list`` of compression methods this message may
-   be under
+-  ``compression``: The ``list`` of compression methods this message may be under
 -  ``compression_fail``: A debug property which is triggered if you give
    compression methods, but the message fed from ``feed_string`` is
    actually in plaintext
@@ -134,18 +126,14 @@ Properties
 -  ``time_58``: Returns the timestamp in base\_58
 -  ``id``: Returns the message's id
 -  ``len``: Returns the messages length header
--  ``packets``: Returns a ``list`` of the packets in this message,
-   excluding the length header
--  ``string``: Returns a string version of the message, including the
-   length header
--  ``__non_len_string``: Returns the string of this message without the
-   size header
+-  ``packets``: Returns a ``list`` of the packets in this message, excluding the length header
+-  ``string``: Returns a string version of the message, including the length header
+-  ``__non_len_string``: Returns the string of this message without the size header
 
 Methods
 ^^^^^^^
 
--  ``__len__()``: Returns the length of this message excluding the
-   length header
+-  ``__len__()``: Returns the length of this message excluding the length header
 
 Class Methods
 ^^^^^^^^^^^^^
@@ -374,14 +362,9 @@ values will *not* be listed here, for brevity's sake.
 Constants
 ---------
 
--  ``compression``: A ``list`` of the compression methods your instance
-   supports
--  ``max_outgoing``: The (rough) maximum number of outgoing connections
-   your node will maintain
--  ``default_protocol``: The default `protocol <#protocol>`__
-   definition. This uses ``'mesh'`` as the subnet and ``SSL``
-   encryption, as supplied by `ssl\_wrapper.py <#ssl_wrapperpy>`__ (in alpha releases
-   this will use ``Plaintext``)
+-  ``json_compression``: A json dump of the ``list`` of the compression methods your instance supports
+-  ``max_outgoing``: The (rough) maximum number of outgoing connections your node will maintain
+-  ``default_protocol``: The default `protocol <#protocol>`__ definition. This uses ``'mesh'`` as the subnet and ``SSL`` encryption, as supplied by `ssl\_wrapper.py <#ssl_wrapperpy>`__ (in alpha releases this will use ``Plaintext``)
 
 Classes
 -------
@@ -405,47 +388,49 @@ Constructor
 -  ``addr``: The address you'd like to bind to
 -  ``port``: The port you'd like to bind to
 -  ``prot``: The `protocol <#protocol>`__ you'd like to use
--  ``out_addr``: Your outward-facing address, if that is different from
-   ``(addr, port)``
--  ``debug_level``: The verbosity at which this and its associated
-   `mesh_daemon <#mesh_daemon>`__ prints debug information
+-  ``out_addr``: Your outward-facing address, if that is different from ``(addr, port)``
+-  ``debug_level``: The verbosity at which this and its associated `mesh_daemon <#mesh_daemon>`__ prints debug information
 
 Variables
 ^^^^^^^^^
 
--  ``protocol``: A `protocol <#protocol>`__ object which contains
-   the subnet flag and the encryption method
+-  ``protocol``: A `protocol <#protocol>`__ object which contains the subnet flag and the encryption method
 -  ``debug_level``: The verbosity of the socket with debug prints
--  ``routing_table``: The current ``dict`` of peers in format
-   ``{id: connection}``
+-  ``routing_table``: The current ``dict`` of peers in format ``{id: connection}``
 -  ``awaiting_ids``: A ``list`` of connections awaiting a handshake
 -  ``outgoing``: A ``list`` of ids for outgoing connections
 -  ``incoming``: A ``list`` of ids for incoming connections
--  ``requests``: A ``dict`` of the requests this node has made in format
-   ``{request_id: delayed_message_contents}``
--  ``waterfalls``: A ``deque`` of metadata for recently received
-   `message <#message>`__\ s
--  ``queue``: A ``deque`` of recently received
-   `message <#message>`__\ s
--  ``out_addr``: A ``tuple`` which contains the outward facing address
-   and port
+-  ``requests``: A ``dict`` of the requests this node has made in format ``{request_id: delayed_message_contents}``
+-  ``waterfalls``: A ``deque`` of metadata for recently received `message <#message>`__\ s
+-  ``queue``: A ``deque`` of recently received `message <#message>`__\ s
+-  ``out_addr``: A ``tuple`` which contains the outward facing address and port
 -  ``id``: This node's SHA384-based id
 -  ``daemon``: This node's `mesh_daemon <#mesh_daemon>`__ object
 
 Methods
 ^^^^^^^
 
--  ``connect(addr, port, id=None)``: Connect to another ``mesh_socket``
-   (and assigns id if specified)
--  ``send(*args, type='broadcast')``: Send a message to your peers with
-   each argument as a packet
--  ``recv(quantity=1)``: Receive `message <#message>`__\ s; If
-   ``quantity != 1``, returns a ``list`` of
+-  ``connect(addr, port, id=None)``: Connect to another ``mesh_socket`` (and assigns id if specified)
+-  ``send(*args, flag=flags.broadcast, type=flags.broadcast)``: Send a message to your peers with each argument as a packet Type specifies the subflag (packet 4), flag specifies the flag (packet 0).
+-  ``recv(quantity=1)``: Receive `message <#message>`__\ s; If ``quantity != 1``, returns a ``list`` of
    `message <#message>`__\ s, otherwise returns one
--  ``handle_request(msg)``: Allows the daemon to parse subflag-level
-   actions
--  ``waterfall(msg)``: Waterfalls a `message <#message>`__ to your
-   peers
+-  ``handle_msg(msg, conn)``: Allows the daemon to parse subflag-level actions
+-  ``waterfall(msg)``: Waterfalls a `message <#message>`__ to your peers.
+-  ``disconnect(handler)``: Closes a given `mesh_connection <#mesh_connection>`__ and removes its information from the various routing tables
+-  ``register_handler(method)``: Registers a callback method for certain types of messages. This is appended after the default callbacks and should take the format:
+
+   .. code-block:: python
+   
+       >>> def relay_tx(msg, handler):
+       ...     """Relays bitcoin transactions to various services"""
+       ...     packets = msg.packets  # Gives a list of the non-metadata packets
+       ...     server = msg.server    # Returns your mesh_socket object
+       ...     if packets[0] == b'tx_relay':  # It's important that this flag is bytes
+       ...         from pycoin import tx, services
+       ...         relay = tx.Tx.from_bin(packets[1])
+       ...         services.blockchain_info.send_tx(relay)
+       ...         services.insight.InsightProvider().send_tx(relay)
+       ...         return True        # This tells the daemon to stop calling handlers
 
 mesh\_daemon
 ~~~~~~~~~~~~
@@ -483,12 +468,10 @@ Methods
    as long as ``alive`` is ``True``, and alternately calls the
    ``collect_incoming_data`` methods of
    `mesh_connection <#mesh_connection>`__\ s and ``handle_accept``.
+-  ``process_data()``: The portion of ``mainloop`` which handles received data
 -  ``handle_accept()``: Deals with incoming connections
--  ``disconnect(handler)``: Closes a given
-   `mesh_connection <#mesh_connection>`__ and removes its
-   information from ``server``
--  ``__print__(*args, level=None)``: Prints debug information if
-   ``level >= server.debug_level``
+-  ``kill_old_nodes(handler)``: If a node hasn't completed their message within 60 seconds, disconnects it
+-  ``__print__(*args, level=None)``: Prints debug information if ``level >= server.debug_level``
 
 mesh\_connection
 ~~~~~~~~~~~~~~~~
