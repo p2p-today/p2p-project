@@ -31,6 +31,7 @@ Submodules:
 from .mesh import mesh_socket
 # from .chord import chord_socket
 from .base import version as __version__
+from .base import protocol
 
 version_info = tuple(map(int, __version__.split(".")))
 
