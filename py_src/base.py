@@ -1,11 +1,11 @@
 """A library to store common functions and protocol definitions"""
 
 from __future__ import print_function
-import bz2, hashlib, json, select, socket, struct, time, threading, traceback, uuid, warnings, zlib
+import hashlib, json, select, socket, struct, time, threading, traceback, uuid, warnings
 from collections import namedtuple, deque
 
 protocol_version = "0.3"
-node_policy_version = "186"
+node_policy_version = "212"
 
 version = '.'.join([protocol_version, node_policy_version])
 
@@ -31,12 +31,26 @@ class flags():
     lzma = b'lzma'
 
 user_salt    = str(uuid.uuid4()).encode()
-compression = [flags.gzip, flags.bz2]  # This should be in order of preference. IE: gzip is best, then bz2, then none
+compression = []  # This should be in order of preference, with None being implied as last
+
+# Compression testing section
+
+try:
+    import zlib
+    compression.append(flags.gzip)
+except:  # pragma: no cover
+    pass
+
+try:
+    import bz2
+    compression.append(flags.bz2)
+except:  # pragma: no cover
+    pass
 
 try:
     import lzma
     compression.append(flags.lzma)
-except:
+except:  # pragma: no cover
     pass
 
 # Utility method/class section; feel free to mostly ignore
@@ -77,7 +91,7 @@ def compress(msg, method):  # takes bytes, returns bytes
         return bz2.compress(msg)
     elif method == flags.lzma:
         return lzma.compress(msg)
-    else:
+    else:  # pragma: no cover
         raise Exception('Unknown compression method')
 
 
@@ -89,7 +103,7 @@ def decompress(msg, method):  # takes bytes, returns bytes
         return bz2.decompress(msg)
     elif method == flags.lzma:
         return lzma.decompress(msg)
-    else:
+    else:  # pragma: no cover
         raise Exception('Unknown decompression method')
 
 
@@ -126,6 +140,16 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
         return to_base_58(int(h.hexdigest(), 16))
 
 default_protocol = protocol('', "Plaintext")  # PKCS1_v1.5")
+
+
+def get_socket(protocol, serverside=False):
+    if protocol.encryption == "Plaintext":
+        return socket.socket()
+    elif protocol.encryption == "SSL":
+        from . import ssl_wrapper
+        return ssl_wrapper.get_socket(serverside)
+    else:  # pragma: no cover
+        raise ValueError("Unkown encryption method")
 
 
 class base_connection(object):
@@ -178,18 +202,7 @@ class base_daemon(object):
     def __init__(self, addr, port, server, prot=default_protocol):
         self.protocol = prot
         self.server = server
-        if self.protocol.encryption == "Plaintext":
-            self.sock = socket.socket()
-        elif self.protocol.encryption == "SSL":
-            from . import ssl_wrapper
-            warnings.warn("SSL encryption is not fully supported yet. You may experience some failures.", Warning)
-            self.sock = ssl_wrapper.get_socket(True)
-        elif self.protocol.encryption == "PKCS1_v1.5":
-            from . import net
-            warnings.warn("The net module is scheduled to be deprecated in the next release", DeprecationWarning)
-            self.sock = net.secure_socket(silent=True)
-        else:
-            raise Exception("Unknown encryption type")
+        self.sock = get_socket(self.protocol, True)
         self.sock.bind((addr, port))
         self.sock.listen(5)
         self.sock.settimeout(0.1)
@@ -400,7 +413,7 @@ class pathfinding_message(object):
 class message(object):
     """An object which gets returned to a user, containing all necessary information to parse and reply to a message"""
     def __init__(self, msg, server):
-        if not isinstance(msg, pathfinding_message):
+        if not isinstance(msg, pathfinding_message):  # pragma: no cover
             raise TypeError("message must be passed a pathfinding_message")
         self.msg = msg
         self.server = server

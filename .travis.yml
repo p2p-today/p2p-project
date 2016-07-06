@@ -32,14 +32,14 @@ matrix:
       env: Cov='true' pyver=3.5 pydist=macpython
 #          pydist=macports
 #          pydist=homebrew
-    - language: generic
-      python: pypy
-      os: osx
-      env: Cov='true' pyver=pypy pydist=homebrew
-    - language: generic
-      python: pypy3
-      os: osx
-      env: Cov='true' pyver=pypy3 pydist=homebrew
+    # - language: generic
+    #   python: pypy
+    #   os: osx
+    #   env: Cov='true' pyver=pypy pydist=homebrew
+    # - language: generic
+    #   python: pypy3
+    #   os: osx
+    #   env: Cov='true' pyver=pypy3 pydist=homebrew
 
 before_install:
   - if [ $pyver != pypy ] && [ $pyver != pypy3 ]; then git clone https://github.com/gappleto97/terryfy; source terryfy/travis_tools.sh; get_python_environment  $pydist $pyver; fi
@@ -50,8 +50,7 @@ before_install:
 # Everything after this is user editable
 install: 
   - if [ $Cov == 'true'  ]; then pip install pytest-coverage codecov; fi
-  - if [ $(($RANDOM % 2)) == 0 ] || [ $pyver == pypy ] || [ $pyver == pypy3 ]; then pip install rsa; else pip install PyCrypto; fi
-  - pip install PyOpenSSL
+  - if [ $(($RANDOM % 2)) == 0 ] || [ $pyver == pypy ] || [ $pyver == pypy3 ]; then pip install cryptography; else pip install PyOpenSSL; fi
 script:
   - if [ $Cov == 'true'  ]; then py.test -vv --cov=./py_src/ ./py_src/; fi
   - if [ $Cov == 'false' ]; then py.test -vv; fi

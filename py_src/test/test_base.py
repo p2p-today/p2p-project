@@ -39,13 +39,11 @@ def test_getUTC(iters=20):
         iters -= 1
 
 def test_lan_ip():
-    if sys.platform[:5] == 'linux':
-        lan_ip_validation_linux()
-    elif sys.platform == 'darwin':
+    if sys.platform[:5] in ('linux', 'darwi'):
         lan_ip_validation_linux()
     elif sys.platform[:3] in ('win', 'cyg'):
         lan_ip_validation_windows()
-    else:
+    else:  # pragma: no cover
         raise Exception("Unrecognized patform; don't know what command to test against")
 
 def lan_ip_validation_linux():
