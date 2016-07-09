@@ -125,6 +125,10 @@ class chord_socket(base_socket):
         self.register_handler(self.__handle_request)
 
     @property
+    def addr(self):
+        return self.out_addr
+    
+    @property
     def id_10(self):
         return from_base_58(self.id)
 
@@ -146,7 +150,7 @@ class chord_socket(base_socket):
 
     def handle_msg(self, msg, conn):
         """Decides how to handle various message types, allowing some to be handled automatically"""
-        if not super(mesh_socket, self).handle_msg(msg, conn):
+        if not super(chord_socket, self).handle_msg(msg, conn):
             self.__print__("Ignoring message with invalid subflag", level=4)
 
     def __handle_handshake(self, msg, handler):
@@ -167,7 +171,7 @@ class chord_socket(base_socket):
             handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers(handler.id_10)))
             for x in xrange(k):
                 goal = self.id_10 + 2**x
-                if distance(self.__findFinger__(goal).id_10, goal) > distance(key, goal):
+                if distance(self.__findFinger__(goal).id_10, goal) > distance(handler.id_10, goal):
                     former = self.__findFinger__(goal)
                     self.routing_table[x] = handler
                     if former.outgoing and former not in self.routing_table.values():
@@ -272,7 +276,7 @@ class chord_socket(base_socket):
         elif handler in self.routing_table.values():
             for key in self.routing_table:
                 if self.routing_table[key] is handler:
-                    self.routing_table.remove(key)
+                    self.routing_table.pop(key)
         try:
             handler.sock.shutdown(socket.SHUT_RDWR)
         except:
