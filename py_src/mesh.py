@@ -118,8 +118,10 @@ class mesh_socket(base_socket):
         self.waterfalls = deque()   # Metadata of messages to waterfall
         self.queue = deque()        # Queue of received messages. Access through recv()
         self.daemon = mesh_daemon(addr, port, self)
-        self.__handlers = [self.__handle_handshake, self.__handle_peers, 
-                           self.__handle_response, self.__handle_request]
+        self.register_handler(self.__handle_handshake)
+        self.register_handler(self.__handle_peers)
+        self.register_handler(self.__handle_response)
+        self.register_handler(self.__handle_request)
 
     @property
     def outgoing(self):
@@ -133,34 +135,11 @@ class mesh_socket(base_socket):
 
     def handle_msg(self, msg, conn):
         """Decides how to handle various message types, allowing some to be handled automatically"""
-        for handler in self.__handlers:
-            self.__print__("Checking handler: %s" % handler.__name__, level=4)
-            if handler(msg, conn):
-                self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
-                break
-        else:  # misnomer: more accurately "if not break"
+        if not super(mesh_socket, self).handle_msg(msg, conn):
             if msg.packets[0] in [flags.whisper, flags.broadcast]:
                 self.queue.appendleft(msg)
             else:
                 self.__print__("Ignoring message with invalid subflag", level=4)
-
-    def register_handler(self, method):
-        """Register a handler for incoming method. Should be roughly of the form:
-        def handler(msg, handler):
-            packets = msg.packets
-            if packets[0] == expected_value:
-                action()
-                return True
-        """
-        if sys.version_info >= (3, 0):
-            args = inspect.signature(method)
-            if len(args.parameters) != 2:
-                raise ValueError("This method must contain exactly two arguments")
-        else:
-            args = inspect.getargspec(method)
-            if args[1:] != (None, None, None) or len(args[0]) != 2:
-                raise ValueError("This method must contain exactly two arguments")
-        self.__handlers.append(method)
 
     def __get_peer_list(self):
         peer_list = [(self.routing_table[key].addr, key.decode()) for key in self.routing_table]

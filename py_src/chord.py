@@ -119,8 +119,10 @@ class chord_socket(base_socket):
         super(chord_socket, self).__init__(addr, port, prot, out_addr, debug_level)
         self.data = dict(((method, {}) for method in hashes))
         self.daemon = chord_daemon(addr, port, self)
-        self.__handlers = [self.__handle_handshake, self.__handle_peers, 
-                           self.__handle_response, self.__handle_request]
+        self.register_handler(self.__handle_handshake)
+        self.register_handler(self.__handle_peers)
+        self.register_handler(self.__handle_response)
+        self.register_handler(self.__handle_request)
 
     @property
     def id_10(self):
@@ -144,12 +146,7 @@ class chord_socket(base_socket):
 
     def handle_msg(self, msg, conn):
         """Decides how to handle various message types, allowing some to be handled automatically"""
-        for handler in self.__handlers:
-            self.__print__("Checking handler: %s" % handler.__name__, level=4)
-            if handler(msg, conn):
-                self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
-                break
-        else:  # misnomer: more accurately "if not break"
+        if not super(mesh_socket, self).handle_msg(msg, conn):
             self.__print__("Ignoring message with invalid subflag", level=4)
 
     def __handle_handshake(self, msg, handler):

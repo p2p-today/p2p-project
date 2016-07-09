@@ -1,7 +1,7 @@
 """A library to store common functions and protocol definitions"""
 
 from __future__ import print_function
-import hashlib, json, select, socket, struct, sys, time, threading, \
+import hashlib, inspect, json, select, socket, struct, sys, time, threading, \
         traceback, uuid, warnings
 from collections import namedtuple, deque
 
@@ -278,6 +278,33 @@ class base_socket(object):
         info = [str(self.out_addr).encode(), prot.id, user_salt]
         h = hashlib.sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
+        self.__handlers = []
+
+    def register_handler(self, method):
+        """Register a handler for incoming method. Should be roughly of the form:
+        def handler(msg, handler):
+            packets = msg.packets
+            if packets[0] == expected_value:
+                action()
+                return True
+        """
+        if sys.version_info >= (3, 0):
+            args = inspect.signature(method)
+            if len(args.parameters) != (3 if args.parameters.get('self') else 2):
+                raise ValueError("This method must contain exactly two arguments")
+        else:
+            args = inspect.getargspec(method)
+            if args[1:] != (None, None, None) or len(args[0]) != (3 if args[0][0] == 'self' else 2):
+                raise ValueError("This method must contain exactly two arguments")
+        self.__handlers.append(method)
+
+    def handle_msg(self, msg, conn):
+        """Decides how to handle various message types, allowing some to be handled automatically"""
+        for handler in self.__handlers:
+            self.__print__("Checking handler: %s" % handler.__name__, level=4)
+            if handler(msg, conn):
+                self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
+                return True
 
     @property
     def status(self):
