@@ -159,8 +159,6 @@ class chord_socket(base_socket):
             if packets[2] != self.protocol.id:
                 self.disconnect(handler)
                 return True
-            elif handler is not self.routing_table.get(packets[1], handler):
-                self.__resolve_connection_conflict(handler, packets[1])
             handler.id = packets[1]
             handler.addr = json.loads(packets[3].decode())
             handler.compression = json.loads(packets[4].decode())
@@ -174,7 +172,7 @@ class chord_socket(base_socket):
                 if distance(self.__findFinger__(goal).id_10, goal) > distance(handler.id_10, goal):
                     former = self.__findFinger__(goal)
                     self.routing_table[x] = handler
-                    if former.outgoing and former not in self.routing_table.values():
+                    if former not in self.routing_table.values():
                         self.disconnect(former)
             return True
 
@@ -274,7 +272,7 @@ class chord_socket(base_socket):
         if handler in self.awaiting_ids:
             self.awaiting_ids.remove(handler)
         elif handler in self.routing_table.values():
-            for key in self.routing_table:
+            for key in list(self.routing_table.keys()):
                 if self.routing_table[key] is handler:
                     self.routing_table.pop(key)
         try:
