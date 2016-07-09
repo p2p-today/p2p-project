@@ -1,7 +1,8 @@
 """A library to store common functions and protocol definitions"""
 
 from __future__ import print_function
-import hashlib, json, select, socket, struct, time, threading, traceback, uuid, warnings
+import hashlib, inspect, json, select, socket, struct, sys, time, threading, \
+        traceback, uuid, warnings
 from collections import namedtuple, deque
 
 protocol_version = "0.3"
@@ -171,7 +172,7 @@ class base_connection(object):
 
     @property
     def protocol(self):
-        return self.server.protocol    
+        return self.server.protocol
 
     def collect_incoming_data(self, data):
         """Collects incoming data"""
@@ -193,6 +194,30 @@ class base_connection(object):
     def find_terminator(self):
         """Returns whether the definied return sequences is found"""
         return len(''.encode().join(self.buffer)) == self.expected
+
+    def found_terminator(self):
+        """Processes received messages"""
+        raw_msg = ''.encode().join(self.buffer)
+        self.expected = 4
+        self.buffer = []
+        self.active = False
+        msg = pathfinding_message.feed_string(self.protocol, raw_msg, False, self.compression)
+        return msg
+
+    def __handle_renegotiate(self, packets):
+        if packets[0] == flags.renegotiate:
+            if packets[4] == flags.compression:
+                encoded_methods = [algo.encode() for algo in json.loads(packets[5].decode())]
+                respond = (self.compression != encoded_methods)
+                self.compression = encoded_methods
+                self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
+                if respond:
+                    decoded_methods = [algo.decode() for algo in intersect(compression, self.compression)]
+                    self.send(flags.renegotiate, flags.compression, json.dumps(decoded_methods))
+                return True
+            elif packets[4] == flags.resend:
+                self.send(*self.last_sent)
+                return True
 
     def fileno(self):
         return self.sock.fileno()
@@ -220,6 +245,11 @@ class base_daemon(object):
     def protocol(self):
         return self.server.protocol
 
+    def kill_old_nodes(self, handler):
+        """Cleans out connections which never finish a message"""
+        if handler.active and handler.time < getUTC() - 60:
+            self.server.disconnect(handler)
+
     def __del__(self):
         self.alive = False
         try:
@@ -238,6 +268,7 @@ class base_socket(object):
         self.protocol = prot
         self.debug_level = debug_level
         self.routing_table = {}     # In format {ID: handler}
+        self.awaiting_ids = []      # Connected, but not handshook yet
         if out_addr:                # Outward facing address, if you're port forwarding
             self.out_addr = out_addr
         elif addr == '0.0.0.0':
@@ -247,6 +278,32 @@ class base_socket(object):
         info = [str(self.out_addr).encode(), prot.id, user_salt]
         h = hashlib.sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
+
+    def handle_msg(self, msg, conn):
+        """Decides how to handle various message types, allowing some to be handled automatically"""
+        for handler in self.__handlers:
+            self.__print__("Checking handler: %s" % handler.__name__, level=4)
+            if handler(msg, conn):
+                self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
+                return True
+
+    def register_handler(self, method):
+        """Register a handler for incoming method. Should be roughly of the form:
+        def handler(msg, handler):
+            packets = msg.packets
+            if packets[0] == expected_value:
+                action()
+                return True
+        """
+        if sys.version_info >= (3, 0):
+            args = inspect.signature(method)
+            if len(args.parameters) != 2:
+                raise ValueError("This method must contain exactly two arguments")
+        else:
+            args = inspect.getargspec(method)
+            if args[1:] != (None, None, None) or len(args[0]) != 2:
+                raise ValueError("This method must contain exactly two arguments")
+        self.__handlers.append(method)
 
     @property
     def status(self):
