@@ -43,7 +43,7 @@ class chord_daemon(base_daemon):
 class chord_socket(base_socket):
     def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
         super(chord_socket, self).__init__(addr, port, prot, out_addr, debug_level)
-        self.data = {method: {} for method in hashes}
+        self.data = dict(((method, {}) for method in hashes))
         self.daemon = chord_daemon(addr, port, self)
 
     @property
@@ -52,7 +52,7 @@ class chord_socket(base_socket):
 
     def dump_data(self, start, end=None):
         i = start
-        ret = {method: {} for method in methods}
+        ret = dict(((method, {}) for method in hashes))
         for method in self.data:
             for key in self.data[method]:
                 if key >= start % limit and (not end or key < end % limit):
