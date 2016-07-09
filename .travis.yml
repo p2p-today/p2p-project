@@ -6,8 +6,7 @@ matrix:
     - language: generic
       python: 2.6
       os: osx
-      env: Cov='true' pyver=2.6 pydist=homebrew
-#          pydist=macports
+      env: Cov='true' pyver=2.6 pydist=macports
     - language: generic
       python: 2.7
       os: osx
