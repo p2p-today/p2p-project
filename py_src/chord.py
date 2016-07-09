@@ -1,5 +1,5 @@
 from __future__ import print_function
-import hashlib, json, random, select, socket, struct, sys, traceback
+import hashlib, inspect, json, random, select, socket, struct, sys, traceback
 from .base import flags, compression, to_base_58, from_base_58, getUTC, \
                 intersect, protocol, get_socket, base_connection, message, \
                 base_daemon, base_socket, pathfinding_message, json_compressions
@@ -54,7 +54,11 @@ class chord_connection(base_connection):
             self.send(flags.renegotiate, flags.compression, json.dumps([]))
             self.send(flags.renegotiate, flags.resend)
             return
-        self.server.handle_msg(message(msg, self), self)
+        packets = msg.packets
+        self.__print__("Message received: %s" % packets, level=1)
+        if self.handle_renegotiate(packets):
+            return
+        self.server.handle_msg(message(msg, self.server), self)
 
     @property
     def id_10(self):
@@ -115,8 +119,8 @@ class chord_socket(base_socket):
         super(chord_socket, self).__init__(addr, port, prot, out_addr, debug_level)
         self.data = dict(((method, {}) for method in hashes))
         self.daemon = chord_daemon(addr, port, self)
-        self._base_socket__handlers = [self.__handle_handshake, self.__handle_peers, 
-                                       self.__handle_response, self.__handle_request]
+        self.__handlers = [self.__handle_handshake, self.__handle_peers, 
+                           self.__handle_response, self.__handle_request]
 
     @property
     def id_10(self):
@@ -139,7 +143,13 @@ class chord_socket(base_socket):
         return peer_list
 
     def handle_msg(self, msg, conn):
-        if not super(chord_socket, self).handle_msg(msg, conn):
+        """Decides how to handle various message types, allowing some to be handled automatically"""
+        for handler in self.__handlers:
+            self.__print__("Checking handler: %s" % handler.__name__, level=4)
+            if handler(msg, conn):
+                self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
+                break
+        else:  # misnomer: more accurately "if not break"
             self.__print__("Ignoring message with invalid subflag", level=4)
 
     def __handle_handshake(self, msg, handler):
