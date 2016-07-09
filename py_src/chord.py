@@ -5,7 +5,7 @@ from .base import flags, compression, to_base_58, from_base_58, getUTC, \
                 base_daemon, base_socket, pathfinding_message, json_compressions
 
 default_protocol = protocol('chord', "Plaintext")  # SSL")
-k = 160  # SHA-1 namespace
+k = 10  # 160  # SHA-1 namespace
 limit = 2**k
 hashes = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512']
 
@@ -16,6 +16,8 @@ def distance(a, b):
     """This is a clockwise ring distance function.
     It depends on a globally defined k, the key size.
     The largest possible node id is 2**k (or limit)."""
+    a = a % limit
+    b = b % limit
     if a == b:
         return 0
     elif a < b:
@@ -64,6 +66,9 @@ class chord_connection(base_connection):
     def id_10(self):
         return from_base_58(self.id)
 
+    def __hash__(self):
+        return self.id_10 or id(self)
+
 class chord_daemon(base_daemon): 
     def mainloop(self):
         while self.alive:
@@ -74,6 +79,7 @@ class chord_daemon(base_daemon):
                 for handler in conns:
                     self.kill_old_nodes(handler)
             self.handle_accept()
+            self.server.update_fingers()
 
     def handle_accept(self):
         """Handle an incoming connection"""
@@ -148,6 +154,17 @@ class chord_socket(base_socket):
             peer_list.append((finger.addr, x, finger.id))
         return peer_list
 
+    def update_fingers(self):
+        for handler in list(self.routing_table.values()) + self.awaiting_ids:
+            if handler.id:
+                for x in xrange(k):
+                    goal = self.id_10 + 2**x
+                    if distance(self.__findFinger__(goal).id_10, goal) > distance(handler.id_10, goal):
+                        former = self.__findFinger__(goal)
+                        self.routing_table[x] = handler
+                        if former not in self.routing_table.values():
+                            self.disconnect(former)
+
     def handle_msg(self, msg, conn):
         """Decides how to handle various message types, allowing some to be handled automatically"""
         if not super(chord_socket, self).handle_msg(msg, conn):
@@ -164,16 +181,7 @@ class chord_socket(base_socket):
             handler.compression = json.loads(packets[4].decode())
             handler.compression = [algo.encode() for algo in handler.compression]
             self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
-            if handler in self.awaiting_ids:
-                self.awaiting_ids.remove(handler)
             handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers(handler.id_10)))
-            for x in xrange(k):
-                goal = self.id_10 + 2**x
-                if distance(self.__findFinger__(goal).id_10, goal) > distance(handler.id_10, goal):
-                    former = self.__findFinger__(goal)
-                    self.routing_table[x] = handler
-                    if former not in self.routing_table.values():
-                        self.disconnect(former)
             return True
 
     def __handle_peers(self, msg, handler):
@@ -182,7 +190,9 @@ class chord_socket(base_socket):
             new_peers = json.loads(packets[1].decode())
             for addr, index, key in new_peers:
                 goal = self.id_10 + 2**index
-                if distance(self.__findFinger__(goal).id_10, goal) > distance(key, goal):
+                self.__print__("%s : %s" % (distance(self.__findFinger__(goal).id_10, goal),
+                                            distance(from_base_58(key), goal)), level=5)
+                if distance(self.__findFinger__(goal).id_10, goal) > distance(from_base_58(key), goal):
                     self.connect(*addr)
             return True
 
@@ -203,7 +213,7 @@ class chord_socket(base_socket):
         packets = msg.packets
         if packets[0] == flags.request:
             if packets[1] == b'*':
-                handler.send(flags.whisper, flags.peers, json.dumps(self.__get_peer_list()))
+                handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers(handler.id_10)))
             elif self.routing_table.get(packets[2]):
                 handler.send(flags.broadcast, flags.response, packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2].decode()]))
             return True
