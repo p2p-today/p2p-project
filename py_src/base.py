@@ -53,6 +53,8 @@ try:
 except:  # pragma: no cover
     pass
 
+json_compressions = json.dumps([method.decode() for method in compression])
+
 # Utility method/class section; feel free to mostly ignore
 
 base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -154,10 +156,9 @@ def get_socket(protocol, serverside=False):
 
 class base_connection(object):
     """The base class for a connection"""
-    def __init__(self, sock, server, prot=default_protocol, outgoing=False):
+    def __init__(self, sock, server, outgoing=False):
         self.sock = sock
         self.server = server
-        self.protocol = prot
         self.outgoing = outgoing
         self.buffer = []
         self.id = None
@@ -167,6 +168,10 @@ class base_connection(object):
         self.last_sent = []
         self.expected = 4
         self.active = False
+
+    @property
+    def protocol(self):
+        return self.server.protocol    
 
     def collect_incoming_data(self, data):
         """Collects incoming data"""
@@ -199,8 +204,7 @@ class base_connection(object):
 
 class base_daemon(object):
     """The base class for a daemon"""    
-    def __init__(self, addr, port, server, prot=default_protocol):
-        self.protocol = prot
+    def __init__(self, addr, port, server):
         self.server = server
         self.sock = get_socket(self.protocol, True)
         self.sock.bind((addr, port))
@@ -211,6 +215,10 @@ class base_daemon(object):
         self.daemon = threading.Thread(target=self.mainloop)
         self.daemon.daemon = True
         self.daemon.start()
+
+    @property
+    def protocol(self):
+        return self.server.protocol
 
     def __del__(self):
         self.alive = False
@@ -226,33 +234,24 @@ class base_daemon(object):
 
 class base_socket(object):
     """The base class for a peer-to-peer socket"""
-    def recv(self, quantity=1):
-        """Receive 1 or several message objects. Returns none if none are present. Non-blocking."""
-        if quantity != 1:
-            ret_list = []
-            while len(self.queue) and quantity > 0:
-                ret_list.append(self.queue.pop())
-                quantity -= 1
-            return ret_list
-        elif len(self.queue):
-            return self.queue.pop()
+    def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
+        self.protocol = prot
+        self.debug_level = debug_level
+        self.routing_table = {}     # In format {ID: handler}
+        if out_addr:                # Outward facing address, if you're port forwarding
+            self.out_addr = out_addr
+        elif addr == '0.0.0.0':
+            self.out_addr = get_lan_ip(), port
         else:
-            return None
+            self.out_addr = addr, port
+        info = [str(self.out_addr).encode(), prot.id, user_salt]
+        h = hashlib.sha384(b''.join(info))
+        self.id = to_base_58(int(h.hexdigest(), 16))
 
     @property
     def status(self):
         """Returns "Nominal" if all is going well, or a list of unexpected (Excpetion, traceback) tuples if not"""
-        return self.daemon.exceptions or "Nominal"   
-
-    @property
-    def outgoing(self):
-        """IDs of outgoing connections"""
-        return [handler.id for handler in self.routing_table.values() if handler.outgoing]
-
-    @property
-    def incoming(self):
-        """IDs of incoming connections"""
-        return [handler.id for handler in self.routing_table.values() if not handler.outgoing]
+        return self.daemon.exceptions or "Nominal"
 
     def __print__(self, *args, **kargs):
         """Private method to print if level is <= self.__debug_level"""

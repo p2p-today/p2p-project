@@ -1,13 +1,12 @@
 from __future__ import print_function
-import hashlib, inspect, json, random, select, socket, struct, sys, traceback, warnings
-from collections import namedtuple, deque
-from .base import flags, user_salt, compression, to_base_58, from_base_58, \
-        getUTC, compress, decompress, intersect, get_lan_ip, protocol, get_socket, \
-        base_connection, base_daemon, base_socket, message, pathfinding_message
+import inspect, json, random, select, socket, struct, sys, traceback
+from collections import deque
+from .base import flags, compression, to_base_58, from_base_58, getUTC, \
+                intersect, protocol, get_socket, base_connection, message, \
+                base_daemon, base_socket, pathfinding_message, json_compressions
 
 max_outgoing = 4
 default_protocol = protocol('mesh', "Plaintext")  # SSL")
-json_compressions = json.dumps([method.decode() for method in compression])
 
 class mesh_connection(base_connection):
     def found_terminator(self):
@@ -98,7 +97,7 @@ class mesh_daemon(base_daemon):
         try:
             conn, addr = self.sock.accept()
             self.__print__('Incoming connection from %s' % repr(addr), level=1)
-            handler = mesh_connection(conn, self.server, self.protocol)
+            handler = mesh_connection(conn, self.server)
             handler.send(flags.whisper, flags.handshake, self.server.id, self.protocol.id, \
                             json.dumps(self.server.out_addr), json_compressions)
             handler.sock.settimeout(1)
@@ -138,25 +137,24 @@ class mesh_daemon(base_daemon):
 
 class mesh_socket(base_socket):
     def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
-        self.protocol = prot
-        self.debug_level = debug_level
-        self.routing_table = {}     # In format {ID: handler}
+        super(mesh_socket, self).__init__(addr, port, prot, out_addr, debug_level)
         self.awaiting_ids = []      # Connected, but not handshook yet
         self.requests = {}          # Metadata about message replies where you aren't connected to the sender
         self.waterfalls = deque()   # Metadata of messages to waterfall
         self.queue = deque()        # Queue of received messages. Access through recv()
-        if out_addr:                # Outward facing address, if you're port forwarding
-            self.out_addr = out_addr
-        elif addr == '0.0.0.0':
-            self.out_addr = get_lan_ip(), port
-        else:
-            self.out_addr = addr, port
-        info = [str(self.out_addr).encode(), prot.id, user_salt]
-        h = hashlib.sha384(b''.join(info))
-        self.id = to_base_58(int(h.hexdigest(), 16))
-        self.daemon = mesh_daemon(addr, port, self, prot)
+        self.daemon = mesh_daemon(addr, port, self)
         self.__handlers = [self.__handle_handshake, self.__handle_peers, 
                            self.__handle_response, self.__handle_request]
+
+    @property
+    def outgoing(self):
+        """IDs of outgoing connections"""
+        return [handler.id for handler in self.routing_table.values() if handler.outgoing]
+
+    @property
+    def incoming(self):
+        """IDs of incoming connections"""
+        return [handler.id for handler in self.routing_table.values() if not handler.outgoing]
 
     def handle_msg(self, msg, conn):
         """Decides how to handle various message types, allowing some to be handled automatically"""
@@ -281,7 +279,7 @@ class mesh_socket(base_socket):
         conn = get_socket(self.protocol, False)
         conn.settimeout(1)
         conn.connect((addr, port))
-        handler = mesh_connection(conn, self, self.protocol, outgoing=True)
+        handler = mesh_connection(conn, self, outgoing=True)
         handler.id = id
         handler.send(flags.whisper, flags.handshake, self.id, self.protocol.id, \
                      json.dumps(self.out_addr), json_compressions)
@@ -326,3 +324,16 @@ class mesh_socket(base_socket):
             if args[1:] != (None, None, None) or len(args[0]) != 2:
                 raise ValueError("This method must contain exactly two arguments")
         self.__handlers.append(method)
+
+    def recv(self, quantity=1):
+        """Receive 1 or several message objects. Returns none if none are present. Non-blocking."""
+        if quantity != 1:
+            ret_list = []
+            while len(self.queue) and quantity > 0:
+                ret_list.append(self.queue.pop())
+                quantity -= 1
+            return ret_list
+        elif len(self.queue):
+            return self.queue.pop()
+        else:
+            return None
