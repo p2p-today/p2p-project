@@ -280,23 +280,33 @@ class base_socket(object):
         self.id = to_base_58(int(h.hexdigest(), 16))
         self.__handlers = []
 
-    def register_handler(self, method):
-        """Register a handler for incoming method. Should be roughly of the form:
-        def handler(msg, handler):
-            packets = msg.packets
-            if packets[0] == expected_value:
-                action()
-                return True
-        """
-        if sys.version_info >= (3, 0):
+    if sys.version_info >= (3, ):
+        def register_handler(self, method):
+            """Register a handler for incoming method. Should be roughly of the form:
+            def handler(msg, handler):
+                packets = msg.packets
+                if packets[0] == expected_value:
+                    action()
+                    return True
+            """
             args = inspect.signature(method)
             if len(args.parameters) != (3 if args.parameters.get('self') else 2):
                 raise ValueError("This method must contain exactly two arguments")
-        else:
+            self.__handlers.append(method)
+
+    else:
+        def register_handler(self, method):
+            """Register a handler for incoming method. Should be roughly of the form:
+            def handler(msg, handler):
+                packets = msg.packets
+                if packets[0] == expected_value:
+                    action()
+                    return True
+            """
             args = inspect.getargspec(method)
             if args[1:] != (None, None, None) or len(args[0]) != (3 if args[0][0] == 'self' else 2):
                 raise ValueError("This method must contain exactly two arguments")
-        self.__handlers.append(method)
+            self.__handlers.append(method)
 
     def handle_msg(self, msg, conn):
         """Decides how to handle various message types, allowing some to be handled automatically"""
