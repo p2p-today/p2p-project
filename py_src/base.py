@@ -21,6 +21,7 @@ class flags():
     # sub-flags
     handshake   = b'handshake'
     request     = b'request'
+    store       = b'store'
     response    = b'response'
     resend      = b'resend'
     peers       = b'peers'

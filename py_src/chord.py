@@ -129,8 +129,9 @@ class chord_socket(base_socket):
         self.register_handler(self.__handle_peers)
         self.register_handler(self.__handle_response)
         self.register_handler(self.__handle_request)
-        self.next = None
-        self.prev = None
+        self.register_handler(self.__handle_store)
+        self.next = self
+        self.prev = self
 
     @property
     def addr(self):
@@ -152,11 +153,12 @@ class chord_socket(base_socket):
         """Returns a finger table for your peer"""
         peer_list = []
         for x in xrange(k):
-            finger = self.routing_table.get(k, self)
-            peer_list.append((finger.addr, finger.id))
-        if self.next:
+            finger = self.routing_table.get(k)
+            if finger:
+                peer_list.append((finger.addr, finger.id))
+        if self.next is not self:
             peer_list.append((self.next.addr, self.next.id))
-        if self.prev:
+        if self.prev is not self:
             peer_list.append((self.prev.addr, self.prev.id))
         return peer_list
 
@@ -188,9 +190,9 @@ class chord_socket(base_socket):
             handler.compression = [algo.encode() for algo in handler.compression]
             self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
             handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
-            if not self.next or distance(self.id_10, self.next.id_10) > distance(self.id_10, handler.id_10):
+            if distance(self.id_10, self.next.id_10-1) > distance(self.id_10, handler.id_10):
                 self.next = handler
-            if not self.prev or distance(self.prev.id_10, self.id_10) > distance(handler.id_10, self.id_10):
+            if distance(self.prev.id_10+1, self.id_10) > distance(handler.id_10, self.id_10):
                 self.prev = handler
             return True
 
@@ -206,9 +208,9 @@ class chord_socket(base_socket):
                                                 distance(key, goal)), level=5)
                     if distance(self.__findFinger__(goal).id_10, goal) > distance(key, goal):
                         self.connect(*addr)
-                if not self.next or distance(self.id_10, self.next.id_10) > distance(self.id_10, key):
+                if distance(self.id_10, self.next.id_10) > distance(self.id_10, key):
                     self.connect(*addr)
-                if not self.prev or distance(self.prev.id_10, self.id_10) > distance(key, self.id_10):
+                if distance(self.prev.id_10, self.id_10) > distance(key, self.id_10):
                     self.connect(*addr)
             return True
 
@@ -229,9 +231,17 @@ class chord_socket(base_socket):
         packets = msg.packets
         if packets[0] == flags.request:
             if packets[1] == b'*':
-                handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers(handler.id_10)))
+                handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
             elif self.routing_table.get(packets[2]):
                 handler.send(flags.broadcast, flags.response, packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2].decode()]))
+            return True
+
+    def __handle_store(self, msg, handler):
+        packets = msg.packets
+        if packets[0] == flags.store:
+            method = packets[1]
+            key = from_base_58(packets[2])
+            self.__store(method, key, packets[3])
             return True
 
     def dump_data(self, start, end=None):
@@ -275,7 +285,11 @@ class chord_socket(base_socket):
         return self.lookup(key)
 
     def __store(self, method, key, value):
-        raise NotImplementedError
+        node = self.__findFinger__(key)
+        if node == self:
+            self.data[method].update({key: value})
+        else:
+            node.send(flags.whisper, flags.store, method, to_base_58(key), value)
 
     def update(self, update_dict):
         for key in update_dict:
