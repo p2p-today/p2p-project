@@ -10,17 +10,29 @@ Current build status:
 
 1.  **Abstract**
 
-    This project is meant to be a simple, portable peer-to-peer network. Part of its simplicity is that it will utilize no pathfinding or addressing structure outside of those provided by TCP/IP. This means that any message is either a direct transmission or a mass broadcast. This also makes it much simpler to translate the reference implementation into another language.
+    This project is meant to be a simple, portable peer-to-peer network, which can be implemented in other languages without much difficulty.
 
-    It also is meant to be as modular as possible. If one wishes to operate on a different protocol or subnet, it takes one change to make this happen. If one wishes to use an encrypted communications channel, this is also relatively easy, so long as it inherits normal socket functions. If one wishes to compress information, this takes little change. If not, simply don't broadcast support.
+2.  **Problem**
+    
+    There are very few ways to construct a peer to peer network in dynamic languages. Everyone who does this needs to reinvent the wheel. For example, in Python, the only two such libraries either never made it out of beta, or were to connect to a cryptocurrency. There is certainly no way to communicate *between* these languages.
 
-    This proposal is meant to formally outline the structure of such a network and its various nodes, as well as communicate this approach's disadvantages. To define the protocol, we will walk through the basic construction of a node.
+3.  **Design Goals**
 
-2.  **Packet Structure**
+    The network should be unorganized. This means that it's very simple for connections to be added, and for routes to repair themselves in the event of obstruction. It also means that there is no central point of failure, nor overhead to maintaining a structure.
 
-    The first step to any of this is being able to understand messages sent through the network. To do this, you need to build a parser. Each message can be considered to have three segments: a header, metadata, and payload. The header is used to figure out the size of a message, as well as how to divide up its various packets. The metadata is used to assist routing functions. And the payload is what the user on the other end receives.
+    The network should also be as flexible as possible. It should be able to carry binary data and should have various flags to determine how a message is treated.
 
-    A more formal definitions would look like:
+    In languages that allow it, network nodes should be able to register custom callbacks, which can respond to incoming data in real time and act upon it as needed.
+
+    Most importantly, nodes should use features that are common across multiple languages.
+
+    And as an afterthought, nodes should be optimized for performance and data density where possible.
+
+4.  **Packet Structure**
+
+    The first step to any of this is being able to understand messages sent through the network. To do this, you need to build a parser. Each message can be considered to have three segments: a header, metadata, and payload. The header is used to figure out the size of a message, as well as how to divide up its various packets. The metadata is used to assist propagation functions. And the payload is what the user on the other end receives.
+
+    A more formal definition would look like:
 
         Size of message    - 4 (big-endian) bytes defining the size of the message
         ------------------------All below may be compressed------------------------
@@ -42,30 +54,29 @@ Current build status:
 
     `['broadcast', '6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V', '72tG7phqoAnoeWRKtWoSmseurpCtYg2wHih1y5ZX1AmUvihcH7CPZHThtm9LGvKtj7', '3EfSDb', 'broadcast', 'test message']`.
 
-    The pathfinding header alerts nodes to how they should treat the message. If it is `broadcast` or `waterfall` they are to forward this message to their peers. If it is `whisper` they are not to do so. `renegotiate` is exclusivley uesd for connection management.
+    The pathfinding header alerts nodes to how they should treat the message. If it is `broadcast` or `waterfall` they are to forward this message to their peers. If it is `whisper` they are not to do so. `renegotiate` is exclusivley used for connection management.
 
-    The sender ID is used to identify a user in your routing table. So if you go to reply to a message, it looks up this ID in your routing table. As will be discussed below, there are methods you can specifically request a user ID to connect to.
+    The sender ID is used to identify a user in your routing table. So if a user wants to reply to a message, they look up this ID in their routing table. As will be discussed below, there are methods you can specifically request a user ID to connect to.
 
-    The message ID is used to filter out messages that you have seen before. If you wanted you could also use this as a checksum.
+    The message ID is used to filter out messages that a node has seen before. This can also be used as a checksum.
 
-    One thing to notice is that the sender ID, message ID and timestamp are all in a strange encoding. This is base_58, borrowed from Bitcoin. It's a way to encode numbers that allows for sufficient density while still maintaining some human readability. This will get defined formally later in the paper.
+    One thing to notice is that the sender ID, message ID, and timestamp are all in a strange encoding. This is base_58, borrowed from Bitcoin. It's a way to encode numbers that allows for sufficient density while still maintaining some human readability. This will get defined formally later in the paper.
 
     All of this still leaves out the header. Constructing this goes as follows:
 
-    For each packet, compute its length and pack this into four bytes. So a message of length 6 would look like `'\x00\x00\x00\x06'`. Take the resulting string and prepend it to your packets. In this example, you would end up with: `'\x00\x00\x00\t\x00\x00\x00B\x00\x00\x00B\x00\x00\x00\x06\x00\x00\x00\t\x00\x00\x00\x0cbroadcast6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V7iSCRDcHZwYtxGbTCz1rwDbUkt7YrbAh2VdS4A75hRuM6xan2gjmZqiVjLkMqiHE3Q3EfSDbbroadcasttest message'`.
+    For each packet, compute its length and pack this into four bytes. So a message of length 6 would look like `'\x00\x00\x00\x06'`. Take the resulting string and prepend it to the packets. In this example, you would end up with: `'\x00\x00\x00\t\x00\x00\x00B\x00\x00\x00B\x00\x00\x00\x06\x00\x00\x00\t\x00\x00\x00\x0cbroadcast6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V7iSCRDcHZwYtxGbTCz1rwDbUkt7YrbAh2VdS4A75hRuM6xan2gjmZqiVjLkMqiHE3Q3EfSDbbroadcasttest message'`.
 
-    After running this message through whatever compression algorith you've negotiated with your peer, compute its size, and pack it into four bytes: `'\x00\x00\x00\xc0'`. This results in a final message of:
+    After running this message through whatever compression algorith which has been negotiated with the node's peer, it compute the message's size, and pack this into four bytes: `'\x00\x00\x00\xc0'`. This results in a final message of:
 
     `'\x00\x00\x00\xc0\x00\x00\x00\t\x00\x00\x00B\x00\x00\x00B\x00\x00\x00\x06\x00\x00\x00\t\x00\x00\x00\x0cbroadcast6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V7iSCRDcHZwYtxGbTCz1rwDbUkt7YrbAh2VdS4A75hRuM6xan2gjmZqiVjLkMqiHE3Q3EfSDbbroadcasttest message'`
 
-3.  **Parsing a Message**
+5.  **Parsing a Message**
 
     Let's keep with our example above. How do we parse the resulting string?
 
-    First, check the first four bytes. Because we don't know how much data to receive through our socket, we always first check for a four byte header. Then we toss it aside and collect that much information. If we know the message will be compressed, now is when it gets decompressed.
+    First, check the first four bytes. Because we don't know how much data to receive through our socket, we always first check for a four byte header. Then we can toss it aside and collect that much information. If we know the message will be compressed, this is when it gets decompressed.
 
-    Next, we need to split up the packets. To do that, we take each four bytes and sum their values until the number of remaining bytes equals that sum. If it does not, we throw an error. An example script would look like:
-
+    Next, we need to split up the packets. To do that, take each four bytes and sum their values until the number of remaining bytes equals that sum. If it does not, throw an error. An example script would look like:
 
     ```python
     def get_packets(string):
@@ -91,15 +102,15 @@ Current build status:
 
     A node will use the entirety of this list to decide what to do with it. In this case, it would forward it to its peers, then present to the user the payload: `['broadcast', 'test message']`.
 
-    Now that we know how to construct a message, my examples will no longer include the headers. They will include the metadata and payload only.
+    Now that we know how to construct a message, examples will no longer include the headers. They will include the metadata and payload only.
 
-4.  **IDs and Encoding**
+6.  **IDs and Encoding**
 
     Knowing the overall message structure is great, but it's not very useful if you can't construct the metadata. To do this, there are three parts.
 
     *   _base_58_
 
-        This encoding is taken from Bitcoin. If you've ever seen a Bitcoin address, you've seen base_58 encoding in action. The goal behind it is to provide data compression without compromising its human readability. Base_58, for the purposes of this protocol, is defined by the following python methods.
+        This encoding is taken from Bitcoin. If you've ever seen a Bitcoin address, you've seen base\_58 encoding in action. The goal behind it is to provide data compression without compromising its human readability. Base\_58, for the purposes of this protocol, is defined by the following python methods.
 
         ```python
         base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -132,9 +143,9 @@ Current build status:
 
         To get the hash, first join each packet together in order. Append to this the message's timestamp in base\_58. The ID you will use is the hash of this string, encoded into base\_58.
 
-5.  **Node Construction**
+7.  **Node Construction**
 
-    Now you're ready to parse the messages on the network, but you can't yet connect. There are important elements you need to store in order to interact with it correctly.
+    Now your node is ready to parse messages on the network, but it can't yet connect. There are important elements it needs to store in order to interact with it correctly.
 
     1.  A daemon thread which receives messages and incoming connections
     2.  A routing table of peers with the IDs and corresponding connection objects
@@ -173,11 +184,11 @@ Current build status:
     }
     ```
 
-6.  **Connecting to the Network**
+8.  **Connecting to the Network**
 
     This is where the protocol object becomes important.
 
-    When you connect to a node, each of you will send a message in the following format:
+    When you connect to a node, each will send a message in the following format:
 
         whisper
         [your id]
@@ -189,9 +200,9 @@ Current build status:
         [your outward-facing address]
         [json-ized list of supported compression methods, in order of preference]
 
-    When you receive the corresponding message, the first thing you do is compare their protocol ID against your own. If they do not match, you shut down the connection.
+    When your node receives the corresponding message, the first thing your node does is compare their protocol ID against your own. If they do not match, your node shuts down the connection.
 
-    If they do match, you add them to your routing table (`{ID: connection}`), and make a note of their outward facing address and supported compression methods. Then you send a standard response:
+    If they do match, your node adds them to your routing table (`{ID: connection}`), and makes a note of their outward facing address and supported compression methods. Then your node sends a standard response:
 
         whisper
         [your id]
@@ -200,9 +211,9 @@ Current build status:
         peers
         [json-ized copy of your routing table in format: [[addr, port], id]]
 
-    Upon yourself receiving this message, you attempt to connect to each given address. Now you're connected to the network! But how do you process the incoming messages?
+    Upon receiving this message, your node attempts to connect to each given address. Now you're connected to the network! But how do you process the incoming messages?
 
-7.  **Message Propagation**
+9.  **Message Propagation**
 
     A message is initially broadcast with the `broadcast` flag. The broadcasting node, as well as all receivers, store this message's ID and timestamp in their waterfall queue. The reciving nodes then re-broadcast this message to each of their peers, but changing the flag to `waterfall`.
 
@@ -216,11 +227,11 @@ Current build status:
 
     ![Figure one](./figure_one.png)
 
-8.  **Renegotiating a Connection**
+10. **Renegotiating a Connection**
 
-    It may be that at some point a message fails to decompress on your end. If this occurs, you have an easy solution, you can send a `renegotiate` message. This flag is used to indicate that a message should never be presented to the user, and is only used for connection management. At this time there are two possible operations.
+    It may be that at some point a message fails to decompress on your end. If this occurs, you have an easy solution, your node can send a `renegotiate` message. This flag is used to indicate that a message should never be presented to the user, and is only used for connection management. At this time there are two possible operations.
 
-    The `compression` subflag will allow you to renegotiate your compression methods. A message using this subflag should be constructed like so:
+    The `compression` subflag will allow your node to renegotiate your compression methods. A message using this subflag should be constructed like so:
 
         renegotiate
         [your id]
@@ -229,9 +240,9 @@ Current build status:
         compression
         [json-ized list of desired compression methods, in order of preference]
 
-    Your peer will respond with the same message, excluding any methods they do not support. If this list is different than the one you sent, you reply, trimming the list of methods _you_ do not support. This process is repeated until you agree upon a list.
+    Your peer will respond with the same message, excluding any methods they do not support. If this list is different than the one you sent, you reply, trimming the list of methods *your node* does not support. This process is repeated until the two agree upon a list.
 
-    You may also send a `resend` subflag, which requests your peer to resend the previous `whisper` or `broadcast`. This is structured like so:
+    Your node may also send a `resend` subflag, which requests your peer to resend the previous `whisper` or `broadcast`. This is structured like so:
 
         renegotiate
         [your id]
@@ -239,11 +250,11 @@ Current build status:
         [timestamp]
         resend
 
-9.  **Peer Requests**
+11. **Peer Requests**
 
     If you want to privately reply to a message where you are not directly connected to a sender, the following method can be used:
 
-    First, you broadcast a message to the network containing the `request` subflag. This is constructed as follows:
+    First, your node broadcasts a message to the network containing the `request` subflag. This is constructed as follows:
 
         broadcast
         [your id]
@@ -253,7 +264,7 @@ Current build status:
         [a unique, base_58 id you assign]
         [the id of the desired peer]
 
-    Then you place this in a dictionary so you can watch when this is responded to. A peer who gets this will reply:
+    Then your node places this in a dictionary so your node can watch for when this is responded to. A peer who gets this will reply:
 
         broadcast
         [their id]
@@ -263,9 +274,9 @@ Current build status:
         [the id you assigned]
         [address of desired peer in format: [[addr, port], id] ]
 
-    When this is received, you remove the request from your dictionary, make a connection to the given address, and send the message.
+    When this is received, your node removes the request from your dictionary, makes a connection to the given address, and sends the message.
 
-    Another use of this mechanism is to request a copy of your peers' routing tables. To do this, you may send a message structured like so:
+    Another use of this mechanism is to request a copy of your peers' routing tables. To do this, your node may send a message structured like so:
 
         whisper
         [your id]
@@ -276,13 +287,13 @@ Current build status:
 
     A node who receives this will respond exactly as they do after a successful handshake. Note that while it is technically valid to send this request as a `broadcast`, it is generally discouraged.
 
-10.  **Potential Flaws**
+12.  **Potential Flaws**
 
     The network has a few immediately obvious shortcomings.
 
     First, the maximum message size is 4,294,967,299 bytes (including compression and headers). It could well be that in the future there will be more data to send in a single message. But equally so, a present-day attacker could use this to halt essentially every connection on the network. A short-term solution would be to have a soft-defined limit, but as has been shown in other protocols, this can calcify over time and do damage.
 
-    Second, in a worst case scenario, every node will receive a given message n-1 times, and each message will generate n^2 total broadcasts, where n is the number of connected nodes. In most larger cases this will not happen, as a given node will not be connected to everyone else. But in smaller networks this will be common, and in well-connected networks this could slow things down. This calls for optimization, and will need to be explored. For instance, not propagating to a peer you receive a message from reduces the number of total broadcasts to (n-1)^2\. Limiting your number of connections can bring this down to min(max_conns, n-1) * (n-1).
+    Second, in a worst case scenario, every node will receive a given message n-1 times, and each message will generate n<sup>2</sup> total broadcasts, where n is the number of connected nodes. In most larger cases this will not happen, as a given node will not be connected to everyone else. But in smaller networks this will be common, and in well-connected networks this could slow things down. This calls for optimization, and will need to be explored. For instance, not propagating to a peer you receive a message from reduces the number of total broadcasts to (n-1)<sup>2</sup>. Limiting your number of connections can bring this down to min(max_conns, n-1) * (n-1).
 
     Thrid, there is quite a lot of extra data being sent. Using the default parameters, if you want to send a 4 character message it will be expanded to 175 characters. That's ~44x larger. If you want these differences to be negligble, you need to send messages on the order of 512 characters. Then there is only an increase of ~34% (0% with decent compression). This can be improved by reducing the size of the various IDs being sent, or making the packet headers shorter. Both of these have disadvantages, however.
 
@@ -304,4 +315,4 @@ Current build status:
         bz2       533  (107.0%)
         gzip      471  (94.6%)
 
-    Because the reference implementation supports all of these (except for lzma in python2), this means that the overhead will drop away after ~500 characters. Communications with other implementations may be slower than this, however.
+    Because the reference implementation supports all of these (excepting environment variations), this means that the overhead will drop away after ~500 characters. Communications with other implementations may be slower than this, however.
