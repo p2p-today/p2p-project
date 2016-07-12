@@ -13,7 +13,7 @@ version = '.'.join([protocol_version, node_policy_version])
 class flags():
     """A namespace to hold protocol-defined flags"""
     # Reserved list of bytes
-    reserved = [struct.pack('!B', x) for x in range(0x0e)]
+    reserved = set([struct.pack('!B', x) for x in range(0x0e)])
 
     # main flags
     broadcast   = b'\x00'  # also sub-flag

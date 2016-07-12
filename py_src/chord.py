@@ -25,8 +25,22 @@ def distance(a, b):
     else:
         return limit + b - a
 
-def most_common(lst):
+class awaiting_value(object):
+    def __init__(self, value=-1):
+        self.value = value
+        self.callback = False
+
+    def callback_method(self, method, key):
+        self.callback.send(flags.whisper, flags.response, method, key, self.value)
+
+def most_common(tmp):
     """Returns the most common element in a list"""
+    lst = []
+    for item in tmp:
+        if isinstance(item, awaiting_value):
+            lst.append(item.value)
+        else:
+            lst.append(item)
     return max(set(lst), key=lst.count)
 
 class chord_connection(base_connection):
@@ -123,8 +137,10 @@ class chord_daemon(base_daemon):
 class chord_socket(base_socket):
     def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
         super(chord_socket, self).__init__(addr, port, prot, out_addr, debug_level)
+        self.id = to_base_58(from_base_58(self.id) % limit)
         self.data = dict(((method, {}) for method in hashes))
         self.daemon = chord_daemon(addr, port, self)
+        self.requests = {}
         self.register_handler(self.__handle_handshake)
         self.register_handler(self.__handle_peers)
         self.register_handler(self.__handle_response)
@@ -218,13 +234,11 @@ class chord_socket(base_socket):
         packets = msg.packets
         if packets[0] == flags.response:
             self.__print__("Response received for request id %s" % packets[1], level=1)
-            if self.requests.get(packets[1]):
-                addr = json.loads(packets[2].decode())
-                if addr:
-                    msg = self.requests.get(packets[1])
-                    self.requests.pop(packets[1])
-                    self.connect(addr[0][0], addr[0][1], addr[1])
-                    self.routing_table[addr[1]].send(*msg)
+            if self.requests.get((packets[1], packets[2])):
+                value = self.requests.get((packets[1], packets[2]))
+                value.value = packets[3]
+                if value.callback:
+                    value.callback_method(packets[1], packets[2])
             return True
 
     def __handle_request(self, msg, handler):
@@ -234,6 +248,8 @@ class chord_socket(base_socket):
                 handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
             elif self.routing_table.get(packets[2]):
                 handler.send(flags.broadcast, flags.response, packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2].decode()]))
+            elif packets[2] in hashes:
+                self.__lookup(packets[2], packets[3], id=handler.id)
             return True
 
     def __handle_store(self, msg, handler):
@@ -268,15 +284,26 @@ class chord_socket(base_socket):
                      json.dumps(self.out_addr), json_compressions)
         self.awaiting_ids.append(handler)
 
-    def __lookup(self, method, key):
-        raise NotImplementedError
+    def __lookup(self, method, key, handler=None):
+        node = self.__findFinger__(key)
+        if node is self:
+            return awaiting_value(self.data[method][key])
+        else:
+            node.send(flags.whisper, flags.request, method, to_base_58(key))
+            ret = awaiting_value()
+            if handler:
+                ret.callback = handler
+            self.requests.update({(method, to_base_58(key)): ret})
+            return ret
 
     def lookup(self, key):
         if not isinstance(key, bytes):
             key = str(key).encode()
         keys = [int(hashlib.new(algo, key).hexdigest(), 16) % limit for algo in hashes]
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]  # TODO: see if these work with generators
-        common = most_common(vals)
+        common = -1
+        while common == -1:
+            common = most_common(vals)
         if common is not None and vals.count(common) > len(hashes) // 2:
             return common
         raise KeyError("This key does not have an agreed-upon value", vals)
@@ -286,7 +313,7 @@ class chord_socket(base_socket):
 
     def __store(self, method, key, value):
         node = self.__findFinger__(key)
-        if node == self:
+        if node is self:
             self.data[method].update({key: value})
         else:
             node.send(flags.whisper, flags.store, method, to_base_58(key), value)
