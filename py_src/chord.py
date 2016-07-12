@@ -16,14 +16,7 @@ def distance(a, b):
     """This is a clockwise ring distance function.
     It depends on a globally defined k, the key size.
     The largest possible node id is 2**k (or limit)."""
-    a = a % limit
-    b = b % limit
-    if a == b:
-        return 0
-    elif a < b:
-        return b - a
-    else:
-        return limit + b - a
+    return (b - a) % limit
 
 class awaiting_value(object):
     def __init__(self, value=-1):

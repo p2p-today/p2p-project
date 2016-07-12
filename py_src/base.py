@@ -71,6 +71,8 @@ def to_base_58(i):  # returns bytes
     while i:
         string = base_58[i % 58] + string
         i = i // 58
+    if not string:
+        string = base_58[0]
     return string.encode()
 
 
