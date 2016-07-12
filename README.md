@@ -295,24 +295,24 @@ Current build status:
 
     Second, in a worst case scenario, every node will receive a given message n-1 times, and each message will generate n<sup>2</sup> total broadcasts, where n is the number of connected nodes. In most larger cases this will not happen, as a given node will not be connected to everyone else. But in smaller networks this will be common, and in well-connected networks this could slow things down. This calls for optimization, and will need to be explored. For instance, not propagating to a peer you receive a message from reduces the number of total broadcasts to (n-1)<sup>2</sup>. Limiting your number of connections can bring this down to min(max_conns, n-1) * (n-1).
 
-    Thrid, there is quite a lot of extra data being sent. Using the default parameters, if you want to send a 4 character message it will be expanded to 175 characters. That's ~44x larger. If you want these differences to be negligble, you need to send messages on the order of 512 characters. Then there is only an increase of ~34% (0% with decent compression). This can be improved by reducing the size of the various IDs being sent, or making the packet headers shorter. Both of these have disadvantages, however.
+    Thrid, there is quite a lot of extra data being sent. Using the default parameters, if you want to send a 4 character message it will be expanded to 159 characters. That's ~42x larger. If you want these differences to be negligble, you need to send messages on the order of 512 characters. Then there is only an increase of ~34% (0% with decent compression). This can be improved by reducing the size of the various IDs being sent, or making the packet headers shorter. Both of these have disadvantages, however.
 
-    Results using opportunistic compression look roughly as follows (last updated in 0.2.95):
+    Results using opportunistic compression look roughly as follows (last updated in 0.4.231):
 
     For 4 characters…
 
         original  4
-        plaintext 175  (4375%)
-        lzma      228  (5700%)
-        bz2       192  (4800%)
-        gzip      163  (4075%)
+        plaintext 167  (4175%)
+        lzma      220  (5500%)
+        bz2       189  (4725%)
+        gzip      156  (3900%)
 
-    For 498 characters…
+    For 512 characters…
 
-        original  498
-        plaintext 669  (134.3%)
-        lzma      552  (110.8%)
-        bz2       533  (107.0%)
-        gzip      471  (94.6%)
+        original  512
+        plaintext 677  (132.2%)
+        lzma      568  (110.9%)
+        bz2       555  (108.4%)
+        gzip      487  (95.1%)
 
     Because the reference implementation supports all of these (excepting environment variations), this means that the overhead will drop away after ~500 characters. Communications with other implementations may be slower than this, however.

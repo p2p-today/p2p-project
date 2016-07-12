@@ -5,32 +5,35 @@ import hashlib, inspect, json, select, socket, struct, sys, time, threading, \
         traceback, uuid, warnings
 from collections import namedtuple, deque
 
-protocol_version = "0.3"
-node_policy_version = "213"
+protocol_version = "0.4"
+node_policy_version = "231"
 
 version = '.'.join([protocol_version, node_policy_version])
 
 class flags():
     """A namespace to hold protocol-defined flags"""
+    # Reserved list of bytes
+    reserved = [struct.pack('!B', x) for x in range(0x0e)]
+
     # main flags
-    broadcast   = b'broadcast'  # also sub-flag
-    waterfall   = b'waterfall'
-    whisper     = b'whisper'    # also sub-flag
-    renegotiate = b'renegotiate'
+    broadcast   = b'\x00'  # also sub-flag
+    waterfall   = b'\x01'
+    whisper     = b'\x02'  # also sub-flag
+    renegotiate = b'\x03'
 
     # sub-flags
-    handshake   = b'handshake'
-    request     = b'request'
-    store       = b'store'
-    response    = b'response'
-    resend      = b'resend'
-    peers       = b'peers'
-    compression = b'compression'
+    compression = b'\x04'
+    handshake   = b'\x05'
+    peers       = b'\x06'
+    request     = b'\x07'
+    resend      = b'\x08'
+    response    = b'\x09'
+    store       = b'\x0a'
 
     # compression methods
-    gzip = b'gzip'
-    bz2  = b'bz2'
-    lzma = b'lzma'
+    gzip = b'\x0b'
+    bz2  = b'\x0c'
+    lzma = b'\x0d'
 
 user_salt    = str(uuid.uuid4()).encode()
 compression = []  # This should be in order of preference, with None being implied as last

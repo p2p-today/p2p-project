@@ -69,7 +69,7 @@ flags
 ~~~~~
 
 This class is used as a namespace to store the various protocol defined
-flags.
+flags. ``reserved`` contains a list of all its values.
 
 -  ``broadcast``
 -  ``bz2``
@@ -83,6 +83,7 @@ flags.
 -  ``response``
 -  ``renegotiate``
 -  ``request``
+-  ``store``
 -  ``whisper``
 
 pathfinding\_message
