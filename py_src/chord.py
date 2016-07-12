@@ -5,7 +5,7 @@ from .base import flags, compression, to_base_58, from_base_58, getUTC, \
                 base_daemon, base_socket, pathfinding_message, json_compressions
 
 default_protocol = protocol('chord', "Plaintext")  # SSL")
-k = 10  # 160  # SHA-1 namespace
+k = 4  # 160  # SHA-1 namespace
 limit = 2**k
 hashes = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512']
 
@@ -129,6 +129,8 @@ class chord_socket(base_socket):
         self.register_handler(self.__handle_peers)
         self.register_handler(self.__handle_response)
         self.register_handler(self.__handle_request)
+        self.next = None
+        self.prev = None
 
     @property
     def addr(self):
@@ -146,12 +148,16 @@ class chord_socket(base_socket):
                 current=self.routing_table.get(x, self)
         return current
 
-    def __get_fingers(self, id):
+    def __get_fingers(self):
         """Returns a finger table for your peer"""
         peer_list = []
         for x in xrange(k):
-            finger = self.__findFinger__(id + 2**x)
-            peer_list.append((finger.addr, x, finger.id))
+            finger = self.routing_table.get(k, self)
+            peer_list.append((finger.addr, finger.id))
+        if self.next:
+            peer_list.append((self.next.addr, self.next.id))
+        if self.prev:
+            peer_list.append((self.prev.addr, self.prev.id))
         return peer_list
 
     def update_fingers(self):
@@ -181,18 +187,28 @@ class chord_socket(base_socket):
             handler.compression = json.loads(packets[4].decode())
             handler.compression = [algo.encode() for algo in handler.compression]
             self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
-            handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers(handler.id_10)))
+            handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
+            if not self.next or distance(self.id_10, self.next.id_10) > distance(self.id_10, handler.id_10):
+                self.next = handler
+            if not self.prev or distance(self.prev.id_10, self.id_10) > distance(handler.id_10, self.id_10):
+                self.prev = handler
             return True
 
     def __handle_peers(self, msg, handler):
         packets = msg.packets
         if packets[0] == flags.peers:
             new_peers = json.loads(packets[1].decode())
-            for addr, index, key in new_peers:
-                goal = self.id_10 + 2**index
-                self.__print__("%s : %s" % (distance(self.__findFinger__(goal).id_10, goal),
-                                            distance(from_base_58(key), goal)), level=5)
-                if distance(self.__findFinger__(goal).id_10, goal) > distance(from_base_58(key), goal):
+            for addr, key in new_peers:
+                key = from_base_58(key)
+                for index in xrange(k):
+                    goal = self.id_10 + 2**index
+                    self.__print__("%s : %s" % (distance(self.__findFinger__(goal).id_10, goal),
+                                                distance(key, goal)), level=5)
+                    if distance(self.__findFinger__(goal).id_10, goal) > distance(key, goal):
+                        self.connect(*addr)
+                if not self.next or distance(self.id_10, self.next.id_10) > distance(self.id_10, key):
+                    self.connect(*addr)
+                if not self.prev or distance(self.prev.id_10, self.id_10) > distance(key, self.id_10):
                     self.connect(*addr)
             return True
 
