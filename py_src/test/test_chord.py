@@ -62,6 +62,7 @@ def routing_validation(iters, start_port, encryption, k=4):
         assertion_list = map(len, [node.routing_table for node in nodes])
         for node in nodes:
             node.daemon.alive = False
+            node.debug_level = 0
         del nodes[:]
         del nodes
         assert min(assertion_list) >= 1
