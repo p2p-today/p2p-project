@@ -39,7 +39,7 @@ def test_size_rejection_SSL(iters=3):
 def routing_validation(iters, start_port, encryption, k=4):
     for i in xrange(iters):
         nodes = [chord.chord_socket('localhost', 
-                                    start_port + j + (k+2) * i,
+                                    start_port + j + (2**k) * i,
                                     k=k, 
                                     prot=chord.protocol('chord', encryption),
                                     debug_level=5)
@@ -60,7 +60,7 @@ def routing_validation(iters, start_port, encryption, k=4):
         del nodes
 
 def test_routing_Plaintext(iters=1):
-    routing_validation(iters, 6400, 'Plaintext', k=3)
+    routing_validation(iters, 6400, 'Plaintext', k=2)
 
 def test_routing_SSL(iters=1):
-    routing_validation(iters, 6500, 'SSL', k=3)
+    routing_validation(iters, 6500, 'SSL', k=2)
