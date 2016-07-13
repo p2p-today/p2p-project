@@ -1,59 +1,36 @@
 from __future__ import print_function
-import hashlib, inspect, json, random, select, socket, struct, sys, traceback
-from .base import flags, compression, to_base_58, from_base_58, getUTC, \
-                intersect, protocol, get_socket, base_connection, message, \
-                base_daemon, base_socket, pathfinding_message, json_compressions
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
+import hashlib
+import json
+import select
+import socket
+import struct
+import sys
+import time
+import traceback
+import warnings
+
+from .base import (flags, compression, to_base_58, from_base_58, protocol,
+                base_connection, message, base_daemon, base_socket,
+                pathfinding_message, json_compressions)
+from .utils import (getUTC, get_socket, intersect, file_dict,
+                    awaiting_value, most_common)
 
 default_protocol = protocol('chord', "Plaintext")  # SSL")
-k = 4  # 160  # SHA-1 namespace
-limit = 2**k
 hashes = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512']
 
 if sys.version_info >= (3,):
     xrange = range
 
-def distance(a, b):
+def distance(a, b, limit):
     """This is a clockwise ring distance function.
     It depends on a globally defined k, the key size.
-    The largest possible node id is 2**k (or limit)."""
+    The largest possible node id is 2**k (or self.limit)."""
     return (b - a) % limit
 
-class awaiting_value(object):
-    def __init__(self, value=-1):
-        self.value = value
-        self.callback = False
-
-    def callback_method(self, method, key):
-        self.callback.send(flags.whisper, flags.response, method, key, self.value)
-
-def most_common(tmp):
-    """Returns the most common element in a list"""
-    lst = []
-    for item in tmp:
-        if isinstance(item, awaiting_value):
-            lst.append(item.value)
-        else:
-            lst.append(item)
-    return max(set(lst), key=lst.count)
-
 class chord_connection(base_connection):
-    def send(self, msg_type, *args, **kargs):
-        """Sends a message through its connection. The first argument is message type. All after that are content packets"""
-        # This section handles waterfall-specific flags
-        id = kargs.get('id', self.server.id)  # Latter is returned if key not found
-        time = kargs.get('time', getUTC())
-        # Begin real method
-        msg = pathfinding_message(self.protocol, msg_type, id, list(args), self.compression)
-        if msg_type in [flags.whisper, flags.broadcast]:
-            self.last_sent = [msg_type] + list(args)
-        self.__print__("Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)
-        if msg.compression_used: self.__print__("Compressing with %s" % msg.compression_used, level=4)
-        try:
-            self.sock.send(msg.string)
-        except (IOError, socket.error) as e:
-            self.server.daemon.exceptions.append((e, traceback.format_exc()))
-            self.server.disconnect(self)
-
     def found_terminator(self):
         try:
             msg = super(chord_connection, self).found_terminator()
@@ -98,7 +75,8 @@ class chord_daemon(base_daemon):
             conn, addr = self.sock.accept()
             self.__print__('Incoming connection from %s' % repr(addr), level=1)
             handler = chord_connection(conn, self.server)
-            handler.send(flags.whisper, flags.handshake, self.server.id, self.protocol.id, \
+            handler.send(flags.whisper, flags.handshake, self.server.id, \
+                            self.protocol.id + to_base_58(self.server.k), \
                             json.dumps(self.server.out_addr), json_compressions)
             handler.sock.settimeout(1)
             self.server.awaiting_ids.append(handler)
@@ -128,10 +106,13 @@ class chord_daemon(base_daemon):
             self.server.disconnect(handler)
 
 class chord_socket(base_socket):
-    def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
+    def __init__(self, addr, port, k=6, prot=default_protocol, out_addr=None, debug_level=0):
         super(chord_socket, self).__init__(addr, port, prot, out_addr, debug_level)
-        self.id = to_base_58(from_base_58(self.id) % limit)
-        self.data = dict(((method, {}) for method in hashes))
+        self.k = k  # 160  # SHA-1 namespace
+        self.limit = 2**k
+        self.id_10 = from_base_58(self.id) % self.limit
+        self.id = to_base_58(self.id_10)
+        self.data = dict(((method, file_dict()) for method in hashes))
         self.daemon = chord_daemon(addr, port, self)
         self.requests = {}
         self.register_handler(self.__handle_handshake)
@@ -141,28 +122,25 @@ class chord_socket(base_socket):
         self.register_handler(self.__handle_store)
         self.next = self
         self.prev = self
+        warnings.warn("This node supports %s unique values and requires at least %s other nodes" % (min(self.limit, 2**160), self.k), RuntimeWarning, stacklevel=2)
 
     @property
     def addr(self):
         return self.out_addr
-    
-    @property
-    def id_10(self):
-        return from_base_58(self.id)
 
     def __findFinger__(self, key):
         current=self
-        for x in xrange(k):
-            if distance(current.id_10, key) > \
-               distance(self.routing_table.get(x, self).id_10, key):
+        for x in xrange(self.k):
+            if distance(current.id_10, key, self.limit) > \
+               distance(self.routing_table.get(x, self).id_10, key, self.limit):
                 current=self.routing_table.get(x, self)
         return current
 
     def __get_fingers(self):
         """Returns a finger table for your peer"""
         peer_list = []
-        for x in xrange(k):
-            finger = self.routing_table.get(k)
+        for x in xrange(self.k):
+            finger = self.routing_table.get(x)
             if finger:
                 peer_list.append((finger.addr, finger.id))
         if self.next is not self:
@@ -174,9 +152,10 @@ class chord_socket(base_socket):
     def update_fingers(self):
         for handler in list(self.routing_table.values()) + self.awaiting_ids:
             if handler.id:
-                for x in xrange(k):
+                for x in xrange(self.k):
                     goal = self.id_10 + 2**x
-                    if distance(self.__findFinger__(goal).id_10, goal) > distance(handler.id_10, goal):
+                    if distance(self.__findFinger__(goal).id_10, goal, self.limit) \
+                            > distance(handler.id_10, goal, self.limit):
                         former = self.__findFinger__(goal)
                         self.routing_table[x] = handler
                         if former not in self.routing_table.values():
@@ -190,7 +169,7 @@ class chord_socket(base_socket):
     def __handle_handshake(self, msg, handler):
         packets = msg.packets
         if packets[0] == flags.handshake:
-            if packets[2] != self.protocol.id:
+            if packets[2] != self.protocol.id + to_base_58(self.k):
                 self.disconnect(handler)
                 return True
             handler.id = packets[1]
@@ -199,9 +178,11 @@ class chord_socket(base_socket):
             handler.compression = [algo.encode() for algo in handler.compression]
             self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
             handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
-            if distance(self.id_10, self.next.id_10-1) > distance(self.id_10, handler.id_10):
+            if distance(self.id_10, self.next.id_10-1, self.limit) \
+                > distance(self.id_10, handler.id_10, self.limit):
                 self.next = handler
-            if distance(self.prev.id_10+1, self.id_10) > distance(handler.id_10, self.id_10):
+            if distance(self.prev.id_10+1, self.id_10, self.limit) \
+                > distance(handler.id_10, self.id_10, self.limit):
                 self.prev = handler
             return True
 
@@ -211,15 +192,18 @@ class chord_socket(base_socket):
             new_peers = json.loads(packets[1].decode())
             for addr, key in new_peers:
                 key = from_base_58(key)
-                for index in xrange(k):
+                for index in xrange(self.k):
                     goal = self.id_10 + 2**index
-                    self.__print__("%s : %s" % (distance(self.__findFinger__(goal).id_10, goal),
-                                                distance(key, goal)), level=5)
-                    if distance(self.__findFinger__(goal).id_10, goal) > distance(key, goal):
+                    self.__print__("%s : %s" % (distance(self.__findFinger__(goal).id_10, goal, self.limit),
+                                                distance(key, goal, self.limit)), level=5)
+                    if distance(self.__findFinger__(goal).id_10, goal, self.limit) \
+                            > distance(key, goal, self.limit):
                         self.connect(*addr)
-                if distance(self.id_10, self.next.id_10) > distance(self.id_10, key):
+                if distance(self.id_10, self.next.id_10, self.limit) \
+                    > distance(self.id_10, key, self.limit):
                     self.connect(*addr)
-                if distance(self.prev.id_10, self.id_10) > distance(key, self.id_10):
+                if distance(self.prev.id_10, self.id_10, self.limit) \
+                    > distance(key, self.id_10, self.limit):
                     self.connect(*addr)
             return True
 
@@ -258,7 +242,7 @@ class chord_socket(base_socket):
         ret = dict(((method, {}) for method in hashes))
         for method in self.data:
             for key in self.data[method]:
-                if key >= start % limit and (not end or key < end % limit):
+                if key >= start % self.limit and (not end or key < end % self.limit):
                     print(method, key, self.data)
                     ret[method].update({key: self.data[method][key]})
         return ret
@@ -273,7 +257,8 @@ class chord_socket(base_socket):
         conn.settimeout(1)
         conn.connect((addr, port))
         handler = chord_connection(conn, self, outgoing=True)
-        handler.send(flags.whisper, flags.handshake, self.id, self.protocol.id, \
+        handler.send(flags.whisper, flags.handshake, self.id, \
+                     self.protocol.id + to_base_58(self.k), \
                      json.dumps(self.out_addr), json_compressions)
         self.awaiting_ids.append(handler)
 
@@ -292,10 +277,11 @@ class chord_socket(base_socket):
     def lookup(self, key):
         if not isinstance(key, bytes):
             key = str(key).encode()
-        keys = [int(hashlib.new(algo, key).hexdigest(), 16) % limit for algo in hashes]
-        vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]  # TODO: see if these work with generators
-        common = -1
+        keys = [int(hashlib.new(algo, key).hexdigest(), 16) % self.limit for algo in hashes]
+        vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
+        common = most_common(vals)
         while common == -1:
+            time.sleep(0.01)
             common = most_common(vals)
         if common is not None and vals.count(common) > len(hashes) // 2:
             return common
@@ -316,7 +302,7 @@ class chord_socket(base_socket):
             value = update_dict[key]
             if not isinstance(key, bytes):
                 key = str(key).encode()
-            keys = [int(hashlib.new(algo, key).hexdigest(), 16) % limit for algo in hashes]
+            keys = [int(hashlib.new(algo, key).hexdigest(), 16) % self.limit for algo in hashes]
             for method, x in zip(hashes, keys):
                 self.__store(method, x, value)
 
