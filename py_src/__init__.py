@@ -28,11 +28,26 @@ Submodules:
     * test:        Unit tests for this library
 """
 
+from .base import protocol, version
 from .mesh import mesh_socket
 # from .chord import chord_socket
-from .base import version as __version__
-from .base import protocol
+# from .kademlia import kademlia_socket
 
+# dht_socket = kademlia_socket
+
+__version__ = version
 version_info = tuple(map(int, __version__.split(".")))
 
-__all__ = ["mesh", "chord", "base", "ssl_wrapper"]
+def bootstrap(socket_type, proto, addr, port, *args, **kargs):
+    raise NotImplementedError
+    # global seed
+    # seed = dht_socket(addr, port, out_addr = kargs.get('out_addr'))
+    # seed.connect(standard_starting_conn)
+    # time.sleep(1)
+    # conn_list = json.loads(seed.get(proto.id))
+    # ret = socket_type(addr, port, *args, prot=proto, **kargs)
+    # for addr, port in conn_list:
+    #     ret.connect(addr, port)
+    # return ret
+
+__all__ = ["mesh", "chord", "kademlia", "base", "ssl_wrapper"]

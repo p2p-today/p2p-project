@@ -1,9 +1,21 @@
 from __future__ import print_function
-import inspect, json, random, select, socket, struct, sys, traceback
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
+import inspect
+import json
+import random
+import select
+import socket
+import struct
+import sys
+import traceback
+
 from collections import deque
-from .base import flags, compression, to_base_58, from_base_58, getUTC, \
-                intersect, protocol, get_socket, base_connection, message, \
-                base_daemon, base_socket, pathfinding_message, json_compressions
+from .base import (flags, compression, to_base_58, from_base_58,
+                protocol, base_connection, message, base_daemon,
+                base_socket, pathfinding_message, json_compressions)
+from .utils import getUTC, get_socket, intersect
 
 max_outgoing = 4
 default_protocol = protocol('mesh', "Plaintext")  # SSL")
@@ -11,22 +23,9 @@ default_protocol = protocol('mesh', "Plaintext")  # SSL")
 class mesh_connection(base_connection):
     def send(self, msg_type, *args, **kargs):
         """Sends a message through its connection. The first argument is message type. All after that are content packets"""
-        # This section handles waterfall-specific flags
-        id = kargs.get('id', self.server.id)  # Latter is returned if key not found
-        time = kargs.get('time', getUTC())
-        # Begin real method
-        msg = pathfinding_message(self.protocol, msg_type, id, list(args), self.compression)
-        if (msg.id, msg.time) not in self.server.waterfalls:
+        msg = super(mesh_connection, self).send(msg_type, *args, **kargs)
+        if msg and (msg.id, msg.time) not in self.server.waterfalls:
             self.server.waterfalls.appendleft((msg.id, msg.time))
-        if msg_type in [flags.whisper, flags.broadcast]:
-            self.last_sent = [msg_type] + list(args)
-        self.__print__("Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)
-        if msg.compression_used: self.__print__("Compressing with %s" % msg.compression_used, level=4)
-        try:
-            self.sock.send(msg.string)
-        except (IOError, socket.error) as e:
-            self.server.daemon.exceptions.append((e, traceback.format_exc()))
-            self.server.disconnect(self)
 
     def found_terminator(self):
         """Processes received messages"""

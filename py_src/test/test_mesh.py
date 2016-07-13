@@ -1,4 +1,10 @@
-import socket, sys, time
+from __future__ import print_function
+from __future__ import absolute_import
+
+import socket
+import sys
+import time
+
 from .. import mesh
 from ..base import flags
 

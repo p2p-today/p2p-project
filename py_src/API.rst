@@ -6,14 +6,10 @@ Public API
 Constants
 ---------
 
--  ``__version__``: A string containing the major, minor, and patch
-   release number.
+-  ``__version__``: A string containing the major, minor, and patch release number.
 -  ``version_info``: A ``tuple`` version of the above
--  ``protocol_version``: A string containing the major and minor release
-   number. This refers to the underlying protocol
--  ``node_policy_version``: A string containing the build number
-   associated with this version. This refers to the node and its
-   policies.
+-  ``protocol_version``: A string containing the major and minor release number. This refers to the underlying protocol
+-  ``node_policy_version``: A string containing the build number associated with this version. This refers to the node and its policies.
 
 Classes
 -------
@@ -24,43 +20,89 @@ Classes
 File-wise API
 =============
 
+utils.py
+========
+
+This is a set of utility functions/classes which are not related to the core protocol.
+
+Methods
+-------
+
+-  ``intersect(*args)``: Returns a ``list`` containing the common elements of each provided iterable
+-  ``getUTC()``: Returns the current unix time in UTC (type: ``int``)
+-  ``get_lan_ip()``: Returns either your current local IP, or ``"127.0.0.1"``
+-  ``get_socket(protocol, serverside)``: Shortcut method to generate an appropriate socket object
+-  ``most_common(lst)``: Returns the most common element in a list. If this list contains ``awaiting_values``, it will read its ``value``
+
+Classes
+-------
+
+awaiting\_value
+~~~~~~~~~~~~~~~
+
+Constructor
+^^^^^^^^^^^
+
+``awaiting_value(value=-1)``:
+
+- ``value``: The starting value of the object. Defaults to ``-1``
+
+Methods
+^^^^^^^
+
+- ``callback_method(method, key)``: Sends the provided key and value, along with this object's value, to the `base_connection <#base_connection>`_ stored in ``callback``
+
+Variables
+^^^^^^^^^
+
+- ``value``: This objects value
+- ``callback``: Either ``False``, which indicates ``callback_method`` should not be called, or an instance of `base_connection <#base_connection>`_ to reply to
+
+file\_dict
+~~~~~~~~~~
+
+This object is a dictionary emulator which stores its contents on disk. It will write these files to a directory inside ``tempfile.gettempdir()``. To change the default storage location, change ``tempfile.tempdir``. You may need to change this in ``utils``, which would be ``py2p.utils.tempfile.tempdir``. A large restriction is that the keys and values must be json serializable. Pickling is not an option here, as this is meant to store data from untrusted sources.
+
+Constructor
+^^^^^^^^^^^
+
+``file_dict(start=None)``
+
+-  ``start``: A dictionary-like object to initialize this with
+
+Methods
+^^^^^^^
+
+- ``__setitem__(self, key, value)``: Sets an item in the dictionary. Key and value must be json serializable.
+- ``update(self, d)``: For each (key, item) in a given dictionary, sets an item in this dictionary. Key and value must be json serializable.
+- ``__getitem__(self, key)``: Returns the value of a key, or throws ``KeyError`` if the key is not used
+- ``get(self, key, ret=None)``: Returns the value of a key, or ret if the key is not used
+- ``__iter__(self)``: Returns a generator which iterates over the dictionary's keys
+- ``values(self)``: Returns a generator which iterates over the dictionary's values
+
 base.py
 =======
 
-This is used mostly for inheriting common functions with
-`mesh.py <#meshpy>`__ and the planned `chord.py <#chordpy>`__
+This is used mostly for inheriting common functions with `mesh.py <#meshpy>`__ and the planned `chord.py <#chordpy>`__
 
 Constants
 ---------
 
--  ``version``: A string containing the major, minor, and patch release
-   number. This version refers to the underlying protocol.
--  ``protocol_version``: A string containing the major and minor release
-   number. This refers to the underlying protocol
--  ``node_policy_version``: A string containing the build number
-   associated with this version. This refers to the node and its
-   policies.
--  ``user_salt``: A ``uuid4`` which is generated uniquely in each
-   running instance
--  ``compression``: A ``list`` of the compression methods your instance
-   supports
--  ``default_protocol``: The default `protocol <#protocol>`__
-   definition. This uses an empty string as the subnet and
-   ``SSL`` encryption, as supplied by `ssl\_wrapper.py <#ssl_wrapperpy>`__ (in
-   alpha releases this will use ``Plaintext``)
--  ``base_58``: The characterspace of base\_58, ordered from least to
-   greatest value
+-  ``version``: A string containing the major, minor, and patch release number. This version refers to the underlying protocol.
+-  ``protocol_version``: A string containing the major and minor release number. This refers to the underlying protocol
+-  ``node_policy_version``: A string containing the build number associated with this version. This refers to the node and its policies.
+-  ``user_salt``: A ``uuid4`` which is generated uniquely in each running instance
+-  ``compression``: A ``list`` of the compression methods your instance supports
+-  ``default_protocol``: The default `protocol <#protocol>`__ definition. This uses an empty string as the subnet and ``SSL`` encryption, as supplied by `ssl\_wrapper.py <#ssl_wrapperpy>`__ (in alpha releases this will use ``Plaintext``)
+-  ``base_58``: The characterspace of base\_58, ordered from least to greatest value
 
 Methods
 -------
 
 -  ``to_base_58(i)``: Takes an ``int`` (or ``long``) and returns its corresponding base\_58 string (type: ``bytes``)
 -  ``from_base_58(string)``: Takes a base\_58 string (or ``bytes``) and returns its corresponding integer (type: ``int``, ``long``)
--  ``getUTC()``: Returns the current unix time in UTC (type: ``int``)
 -  ``compress(msg, method)``: Shortcut method for compression (type: ``bytes``)
 -  ``decompress(msg, method)``: Shortcut method for decompression (type: ``bytes``)
--  ``get_lan_ip()``: Returns either your current local IP, or ``"127.0.0.1"``
--  ``get_socket(protocol, serverside)``: Shortcut method to generate an appropriate socket object
 
 Classes
 -------
@@ -68,8 +110,7 @@ Classes
 flags
 ~~~~~
 
-This class is used as a namespace to store the various protocol defined
-flags. ``reserved`` contains a list of all its values.
+This class is used as a namespace to store the various protocol defined flags. ``reserved`` contains a list of all its values.
 
 -  ``broadcast``
 -  ``bz2``
@@ -89,9 +130,7 @@ flags. ``reserved`` contains a list of all its values.
 pathfinding\_message
 ~~~~~~~~~~~~~~~~~~~~
 
-This class is used internally to deal with packet parsing from a socket
-level. If you find yourself calling this as a user, something's gone
-wrong.
+This class is used internally to deal with packet parsing from a socket level. If you find yourself calling this as a user, something's gone wrong.
 
 Constructor
 ^^^^^^^^^^^
@@ -115,9 +154,7 @@ Constants
 -  ``sender``: The sender id of this message
 -  ``time``: An ``int`` of the message's timestamp
 -  ``compression``: The ``list`` of compression methods this message may be under
--  ``compression_fail``: A debug property which is triggered if you give
-   compression methods, but the message fed from ``feed_string`` is
-   actually in plaintext
+-  ``compression_fail``: A debug property which is triggered if you give compression methods, but the message fed from ``feed_string`` is actually in plaintext
 
 Properties
 ^^^^^^^^^^
@@ -139,41 +176,24 @@ Methods
 Class Methods
 ^^^^^^^^^^^^^
 
--  ``feed_string(ptorocol, string, sizeless=False, compressions=None)``:
-   Given a `protocol <#protocol>`__, a string or ``bytes``, process
-   this into a ``pathfinding_message``. If compressions are enabled, you
-   must provide a ``list`` of possible methods. If the size header is
-   not included, you must specify this with ``sizeless=True``. Possible
-   errors:
+-  ``feed_string(ptorocol, string, sizeless=False, compressions=None)``: Given a `protocol <#protocol>`__, a string or ``bytes``, process this into a ``pathfinding_message``. If compressions are enabled, you must provide a ``list`` of possible methods. If the size header is not included, you must specify this with ``sizeless=True``. Possible errors:
 
    -  ``AttributeError``: Fed a non-string, non-\ ``bytes`` argument
    -  ``AssertionError``: Initial size header is incorrect
-   -  ``Exception``: Unrecognized compression method fed in
-      ``compressions``
-   -  ``struct.error``: Packet headers are incorrect OR unrecognized
-      compression
+   -  ``Exception``: Unrecognized compression method fed in ``compressions``
+   -  ``struct.error``: Packet headers are incorrect OR unrecognized compression
    -  ``IndexError``: See ``struct.error``
 
--  ``sanitize_string(string, sizeless=False)``: Given an ``str`` or
-   ``bytes``, returns a ``bytes`` object with no size header. Possible
-   errors:
+-  ``sanitize_string(string, sizeless=False)``: Given an ``str`` or ``bytes``, returns a ``bytes`` object with no size header. Possible errors:
 
    -  ``AttributeError``: Fed a non-string, non-\ ``bytes`` argument
    -  ``AssertionError``: Initial size header is incorrect
 
--  ``decompress_string(string, compressions=None)``: Given a ``bytes``
-   object and list of possible compression methods, returns a
-   decompressed version and a ``bool`` indicating if decompression
-   failed. If decompression occurs, this will always return ``bytes``.
-   If not, it will return whatever you pass in. Decompression failure is
-   defined as it being unable to decompress despite a list of possible
-   methods being provided. Possible errors:
+-  ``decompress_string(string, compressions=None)``: Given a ``bytes`` object and list of possible compression methods, returns a decompressed version and a ``bool`` indicating if decompression failed. If decompression occurs, this will always return ``bytes``. If not, it will return whatever you pass in. Decompression failure is defined as it being unable to decompress despite a list of possible methods being provided. Possible errors:
 
-   -  ``Exception``: Unrecognized compression method fed in
-      ``compressions``
+   -  ``Exception``: Unrecognized compression method fed in ``compressions``
 
--  ``process_string(string)``: Given a ``bytes``, return a ``list`` of
-   its contained packets. Possible errors:
+-  ``process_string(string)``: Given a ``bytes``, return a ``list`` of its contained packets. Possible errors:
 
    -  ``IndexError``: Packet headers are incorrect OR not fed plaintext
    -  ``struct.error``: See ``IndexError`` OR fed non-\ ``bytes`` object
@@ -181,53 +201,40 @@ Class Methods
 message
 ~~~~~~~
 
-This class is returned to the user when a non-automated message is
-received. It contains sufficient information to parse a message or reply
-to it.
+This class is returned to the user when a non-automated message is received. It contains sufficient information to parse a message or reply to it.
 
 Constructor
 ^^^^^^^^^^^
 
 ``message(msg, server)``
 
--  ``msg``: This contains the
-   `pathfinding_message <#pathfinding_message>`__ you received
--  ``server``: The `base_socket <#base_socket>`__ which received the
-   message
+-  ``msg``: This contains the `pathfinding_message <#pathfinding_message>`__ you received
+-  ``server``: The `base_socket <#base_socket>`__ which received the message
 
 Constants
 ^^^^^^^^^
 
--  ``msg``: This contains the
-   `pathfinding_message <#pathfinding_message>`__ you received
--  ``server``: The `base_socket <#base_socket>`__ which received the
-   message
+-  ``msg``: This contains the `pathfinding_message <#pathfinding_message>`__ you received
+-  ``server``: The `base_socket <#base_socket>`__ which received the message
 
 Properties
 ^^^^^^^^^^
 
 -  ``time``: The UTC Unix time at which the message was sent
 -  ``sender``: The original sender's ID
--  ``protocol``: The `protocol <#protocol>`__ you received this
-   under
--  ``packets``: Returns a ``list`` of the packets received, with the
-   first item being the subflag
+-  ``protocol``: The `protocol <#protocol>`__ you received this under
+-  ``packets``: Returns a ``list`` of the packets received, with the first item being the subflag
 -  ``id``: Returns the SHA384-based message id
 
 Methods
 ^^^^^^^
 
--  ``reply(*args)``: Sends a `whisper <#flags>`__ to the original
-   sender with the arguments being each packet after that. If you are
-   not connected, it uses the `request/response <#flags>`__
-   mechanism to try making a connection
+-  ``reply(*args)``: Sends a `whisper <#flags>`__ to the original sender with the arguments being each packet after that. If you are not connected, it uses the `request/response <#flags>`__ mechanism to try making a connection
 
 protocol
 ~~~~~~~~
 
-This class inherits most of its methods from a ``namedtuple``. This
-means that each of the properties in the constructor can be accessed by
-name or index. Mostly you'll be doing this by name.
+This class inherits most of its methods from a ``namedtuple``. This means that each of the properties in the constructor can be accessed by name or index. Mostly you'll be doing this by name.
 
 Constructor
 ^^^^^^^^^^^
@@ -237,8 +244,7 @@ Constructor
 Constants
 ^^^^^^^^^
 
--  ``subnet``: A flag to allow people with the same package version to
-   operate different networks
+-  ``subnet``: A flag to allow people with the same package version to operate different networks
 -  ``encryption``: Defines the encryption standard used on the socket
 
 Properties
@@ -253,11 +259,9 @@ Variables
 ^^^^^^^^^
 
 -  ``debug_level``: The verbosity of the socket with debug prints
--  ``routing_table``: The current ``dict`` of peers in format
-   ``{id: connection}``
+-  ``routing_table``: The current ``dict`` of peers in format ``{id: connection}``
 -  ``awaiting_ids``: A ``list`` of connections awaiting a handshake
--  ``queue``: A ``deque`` of recently received
-   `message <#message>`__\ s
+-  ``queue``: A ``deque`` of recently received `message <#message>`__\ s
 -  ``daemon``: This node's `base_daemon <#base_daemon>`__ object
 
 Properties
@@ -265,18 +269,13 @@ Properties
 
 -  ``outgoing``: A ``list`` of ids for outgoing connections
 -  ``incoming``: A ``list`` of ids for incoming connections
--  ``status``: Returns ``"Nominal"`` or
-   ``base_socket.daemon.exceptions`` if there are ``Exceptions``
-   collected
+-  ``status``: Returns ``"Nominal"`` or ``base_socket.daemon.exceptions`` if there are ``Exceptions`` collected
 
 Methods
 ^^^^^^^
 
--  ``recv(quantity=1)``: Receive `message <#message>`__\ s; If
-   ``quantity != 1``, returns a ``list`` of
-   `message <#message>`__\ s, otherwise returns one
--  ``__print__(*args, level=None)``: Prints debug information if
-   ``level >= debug_level``
+-  ``recv(quantity=1)``: Receive `message <#message>`__\ s; If ``quantity != 1``, returns a ``list`` of `message <#message>`__\ s, otherwise returns one
+-  ``__print__(*args, level=None)``: Prints debug information if ``level >= debug_level``
 
 base\_daemon
 ~~~~~~~~~~~~
@@ -295,20 +294,16 @@ Variables
 ^^^^^^^^^
 
 -  ``protocol``: This daemon's `protocol <#protocol>`__ object
--  ``server``: A pointer to this daemon's
-   `base_socket <#base_socket>`__
+-  ``server``: A pointer to this daemon's `base_socket <#base_socket>`__
 -  ``sock``: This daemon's ``socket`` object
--  ``alive``: A checker to shutdown the daemon. If ``False``, its thread
-   will stop running eventually.
--  ``exceptions``: A ``list`` of unhandled ``Exception``\ s raised in
-   ``mainloop``
+-  ``alive``: A checker to shutdown the daemon. If ``False``, its thread will stop running eventually.
+-  ``exceptions``: A ``list`` of unhandled ``Exception``\ s raised in ``mainloop``
 -  ``daemon``: A ``Thread`` which runs through ``mainloop``
 
 Methods
 ^^^^^^^
 
--  ``__print__(*args, level=None)``: Prints debug information if
-   ``level >= server.debug_level``
+-  ``__print__(*args, level=None)``: Prints debug information if ``level >= server.debug_level``
 
 base\_connection
 ~~~~~~~~~~~~~~~~
@@ -327,38 +322,30 @@ Variables
 ^^^^^^^^^
 
 -  ``sock``: This connection's ``socket`` object
--  ``server``: A pointer to this connection's
-   `base_socket <#base_socket>`__ object
+-  ``server``: A pointer to this connection's `base_socket <#base_socket>`__ object
 -  ``protocol``: This connection's `protocol <#protocol>`__ object
--  ``outgoing``: A ``bool`` that states whether this connection is
-   outgoing
+-  ``outgoing``: A ``bool`` that states whether this connection is outgoing
 -  ``buffer``: A ``list`` of recently received characters
 -  ``id``: This node's SHA384-based id
 -  ``time``: The time at which this node last received data
 -  ``addr``: This node's outward-facing address
--  ``compression``: A ``list`` of this node's supported compression
-   methods
--  ``last_sent``: A copy of the most recently sent ``whisper`` or
-   ``broadcast``
+-  ``compression``: A ``list`` of this node's supported compression methods
+-  ``last_sent``: A copy of the most recently sent ``whisper`` or ``broadcast``
 -  ``expected``: The number of bytes expected in the next message
--  ``active``: A ``bool`` which says whether the next message is a size
-   header, or a message (``True`` if message)
+-  ``active``: A ``bool`` which says whether the next message is a size header, or a message (``True`` if message)
 
 Methods
 ^^^^^^^
 
 -  ``fileno()``: Returns ``sock``'s file number
 -  ``collect_incoming_data(data)``: Adds new data to the buffer
--  ``find_terminator()``: Determines if a message has been fully
-   received (name is a relic of when this had an ``end_of_tx`` flag)
--  ``__print__(*args, level=None)``: Prints debug information if
-   ``level >= server.debug_level``
+-  ``find_terminator()``: Determines if a message has been fully received (name is a relic of when this had an ``end_of_tx`` flag)
+-  ``__print__(*args, level=None)``: Prints debug information if ``level >= server.debug_level``
 
 mesh.py
 =======
 
-Note: This inherits a *lot* from `base.py <#basepy>`__, and imported
-values will *not* be listed here, for brevity's sake.
+Note: This inherits a *lot* from `base.py <#basepy>`__, and imported values will *not* be listed here, for brevity's sake.
 
 Constants
 ---------
@@ -373,13 +360,9 @@ Classes
 mesh\_socket
 ~~~~~~~~~~~~
 
-This peer-to-peer socket is the main purpose behind this library. It
-maintains a connection to a mesh network. Details on how it works
-specifically are outlined `here <../README.md>`__, but the basics are
-outlined below.
+This peer-to-peer socket is the main purpose behind this library. It maintains a connection to a mesh network. Details on how it works specifically are outlined `here <../README.md>`__, but the basics are outlined below.
 
-It also inherits all the attributes of
-`base_socket <#base_socket>`__, though they are also outlined here
+It also inherits all the attributes of `base_socket <#base_socket>`__, though they are also outlined here
 
 Constructor
 ^^^^^^^^^^^
@@ -436,8 +419,7 @@ Methods
 mesh\_daemon
 ~~~~~~~~~~~~
 
-This inherits all the attributes of `base_daemon <#base_daemon>`__,
-though they are also outlined here
+This inherits all the attributes of `base_daemon <#base_daemon>`__, though they are also outlined here
 
 Constructor
 ^^^^^^^^^^^
@@ -453,22 +435,16 @@ Variables
 ^^^^^^^^^
 
 -  ``protocol``: This daemon's `protocol <#protocol>`__ object
--  ``server``: A pointer to this daemon's
-   `mesh_socket <#mesh_socket>`__
+-  ``server``: A pointer to this daemon's `mesh_socket <#mesh_socket>`__
 -  ``sock``: This daemon's ``socket`` object
--  ``alive``: A checker to shutdown the daemon. If ``False``, its thread
-   will stop running eventually.
--  ``exceptions``: A ``list`` of unhandled ``Exception``\ s raised in
-   ``mainloop``
+-  ``alive``: A checker to shutdown the daemon. If ``False``, its thread will stop running eventually.
+-  ``exceptions``: A ``list`` of unhandled ``Exception``\ s raised in ``mainloop``
 -  ``daemon``: A ``Thread`` which runs through ``mainloop``
 
 Methods
 ^^^^^^^
 
--  ``mainloop()``: The method through which ``daemon`` parses. This runs
-   as long as ``alive`` is ``True``, and alternately calls the
-   ``collect_incoming_data`` methods of
-   `mesh_connection <#mesh_connection>`__\ s and ``handle_accept``.
+-  ``mainloop()``: The method through which ``daemon`` parses. This runs as long as ``alive`` is ``True``, and alternately calls the ``collect_incoming_data`` methods of `mesh_connection <#mesh_connection>`__\ s and ``handle_accept``.
 -  ``process_data()``: The portion of ``mainloop`` which handles received data
 -  ``handle_accept()``: Deals with incoming connections
 -  ``kill_old_nodes(handler)``: If a node hasn't completed their message within 60 seconds, disconnects it
@@ -477,9 +453,7 @@ Methods
 mesh\_connection
 ~~~~~~~~~~~~~~~~
 
-This inherits all the attributes of
-`base_connection <#base_connection>`__, though they are also
-outlined here
+This inherits all the attributes of `base_connection <#base_connection>`__, though they are also outlined here
 
 Constructor
 ^^^^^^^^^^^
@@ -495,41 +469,27 @@ Variables
 ^^^^^^^^^
 
 -  ``sock``: This connection's ``socket`` object
--  ``server``: A pointer to this connection's
-   `mesh_socket <#mesh_socket>`__ object
+-  ``server``: A pointer to this connection's `mesh_socket <#mesh_socket>`__ object
 -  ``protocol``: This connection's `protocol <#protocol>`__ object
--  ``outgoing``: A ``bool`` that states whether this connection is
-   outgoing
+-  ``outgoing``: A ``bool`` that states whether this connection is outgoing
 -  ``buffer``: A ``list`` of recently received characters
 -  ``id``: This node's SHA384-based id
 -  ``time``: The time at which this node last received data
 -  ``addr``: This node's outward-facing address
--  ``compression``: A ``list`` of this node's supported compression
-   methods
--  ``last_sent``: A copy of the most recently sent
-   `whisper <#flags>`__ or `broadcast <#flags>`__
+-  ``compression``: A ``list`` of this node's supported compression methods
+-  ``last_sent``: A copy of the most recently sent `whisper <#flags>`__ or `broadcast <#flags>`__
 -  ``expected``: The number of bytes expected in the next message
--  ``active``: A ``bool`` which says whether the next message is a size
-   header, or a message (``True`` if message)
+-  ``active``: A ``bool`` which says whether the next message is a size header, or a message (``True`` if message)
 
 Methods
 ^^^^^^^
 
 -  ``fileno()``: Returns ``sock``'s file number
 -  ``collect_incoming_data(data)``: Adds new data to the buffer
--  ``find_terminator()``: Determines if a message has been fully
-   received (name is a relic of when this had an ``end_of_tx`` flag)
--  ``found_terminator()``: Deals with any data received when
-   ``find_terminator`` returns ``True``
--  ``send(msg_type, *args, id=server.id, time=base.getUTC())``: Sends a
-   message via ``sock``
--  ``__print__(*args, level=None)``: Prints debug information if
-   ``level >= server.debug_level``
-
-net.py
-======
-
-Deprecated. Scheduled to be removed in the next release.
+-  ``find_terminator()``: Determines if a message has been fully received (name is a relic of when this had an ``end_of_tx`` flag)
+-  ``found_terminator()``: Deals with any data received when ``find_terminator`` returns ``True``
+-  ``send(msg_type, *args, id=server.id, time=base.getUTC())``: Sends a message via ``sock``
+-  ``__print__(*args, level=None)``: Prints debug information if ``level >= server.debug_level``
 
 ssl\_wrapper.py
 ===============
@@ -537,11 +497,11 @@ ssl\_wrapper.py
 Variables
 ---------
 
--  ``cleanup_files``: Only present in python2; A list of files to clean up using the ``atexit`` module. Because of this setup, sudden crashes of Python will not clean up keys or certs.
+-  ``cleanup_files``: Only present in ``python2``; A list of files to clean up using the ``atexit`` module. Because of this setup, sudden crashes of Python will not clean up keys or certs.
 
 Methods
 -------
 
 -  ``generate_self_signed_cert(cert_file, key_file)``: Given two file-like objects, generate an SSL certificate and key file
 -  ``get_socket(server_side)``: Returns an ``ssl.SSLSocket`` for use in other parts of this library
--  ``cleanup()``: Only present in python2; Calls ``os.remove`` on all files in ``cleanup_files``.
+-  ``cleanup()``: Only present in ``python2``; Calls ``os.remove`` on all files in ``cleanup_files``.

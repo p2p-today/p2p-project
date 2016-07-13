@@ -1,4 +1,10 @@
-import os, socket, ssl, sys, tempfile
+from __future__ import with_statement
+
+import os
+import socket
+import ssl
+import sys
+import tempfile
 
 try:
     from OpenSSL import crypto

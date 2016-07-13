@@ -1,9 +1,21 @@
 """A library to store common functions and protocol definitions"""
 
 from __future__ import print_function
-import hashlib, inspect, json, select, socket, struct, sys, time, threading, \
-        traceback, uuid, warnings
-from collections import namedtuple, deque
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
+import hashlib
+import inspect
+import json
+import socket
+import struct
+import sys
+import threading
+import traceback
+import uuid
+
+from collections import namedtuple
+from .utils import getUTC, intersect, get_lan_ip, get_socket
 
 protocol_version = "0.4"
 node_policy_version = "231"
@@ -12,28 +24,30 @@ version = '.'.join([protocol_version, node_policy_version])
 
 class flags():
     """A namespace to hold protocol-defined flags"""
-    # Reserved list of bytes
-    reserved = set([struct.pack('!B', x) for x in range(0x0e)])
+    # Reserved set of bytes
+    reserved = set([struct.pack('!B', x) for x in range(0x10)])
 
     # main flags
     broadcast   = b'\x00'  # also sub-flag
     waterfall   = b'\x01'
     whisper     = b'\x02'  # also sub-flag
     renegotiate = b'\x03'
+    ping        = b'\x04'  # Unused, but reserved
+    pong        = b'\x05'  # Unused, but reserved
 
     # sub-flags
-    compression = b'\x04'
-    handshake   = b'\x05'
-    peers       = b'\x06'
-    request     = b'\x07'
-    resend      = b'\x08'
-    response    = b'\x09'
-    store       = b'\x0a'
+    compression = b'\x06'
+    handshake   = b'\x07'
+    peers       = b'\x08'
+    request     = b'\x09'
+    resend      = b'\x0A'
+    response    = b'\x0B'
+    store       = b'\x0C'
 
     # compression methods
-    gzip = b'\x0b'
-    bz2  = b'\x0c'
-    lzma = b'\x0d'
+    gzip = b'\x0D'
+    bz2  = b'\x0E'
+    lzma = b'\x0F'
 
 user_salt    = str(uuid.uuid4()).encode()
 compression = []  # This should be in order of preference, with None being implied as last
@@ -86,12 +100,6 @@ def from_base_58(string):  # returns int (or long)
     return decimal
 
 
-def getUTC():  # returns int
-    """Returns the current unix time in UTC"""
-    import calendar, time
-    return calendar.timegm(time.gmtime())
-
-
 def compress(msg, method):  # takes bytes, returns bytes
     """Shortcut method for compression"""
     if method == flags.gzip:
@@ -116,31 +124,6 @@ def decompress(msg, method):  # takes bytes, returns bytes
         raise Exception('Unknown decompression method')
 
 
-def intersect(*args):  # returns list
-    """Returns the ordered intersection of all given iterables, where the order is defined by the first iterable"""
-    if not all(args):
-        return []
-    intersection = args[0]
-    for l in args[1:]:
-        intersection = [item for item in intersection if item in l]
-    return intersection
-
-
-def get_lan_ip():
-    """Retrieves the LAN ip. Expanded from http://stackoverflow.com/a/28950776"""
-    import socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        # doesn't even have to be reachable
-        s.connect(('8.8.8.8', 23))
-        IP = s.getsockname()[0]
-    except:
-        IP = '127.0.0.1'
-    finally:
-        s.shutdown(socket.SHUT_RDWR)
-        return IP
-
-
 class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
     """Defines service variables so that you can reject connections looking for a different service"""
     @property
@@ -149,16 +132,6 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
         return to_base_58(int(h.hexdigest(), 16))
 
 default_protocol = protocol('', "Plaintext")  # PKCS1_v1.5")
-
-
-def get_socket(protocol, serverside=False):
-    if protocol.encryption == "Plaintext":
-        return socket.socket()
-    elif protocol.encryption == "SSL":
-        from . import ssl_wrapper
-        return ssl_wrapper.get_socket(serverside)
-    else:  # pragma: no cover
-        raise ValueError("Unkown encryption method")
 
 
 class base_connection(object):
@@ -176,6 +149,24 @@ class base_connection(object):
         self.expected = 4
         self.active = False
 
+    def send(self, msg_type, *args, **kargs):
+        """Sends a message through its connection. The first argument is message type. All after that are content packets"""
+        # This section handles waterfall-specific flags
+        id = kargs.get('id', self.server.id)  # Latter is returned if key not found
+        time = kargs.get('time', getUTC())
+        # Begin real method
+        msg = pathfinding_message(self.protocol, msg_type, id, list(args), self.compression)
+        if msg_type in [flags.whisper, flags.broadcast]:
+            self.last_sent = [msg_type] + list(args)
+        self.__print__("Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)
+        if msg.compression_used: self.__print__("Compressing with %s" % msg.compression_used, level=4)
+        try:
+            self.sock.send(msg.string)
+            return msg
+        except (IOError, socket.error) as e:  # pragma: no cover
+            self.server.daemon.exceptions.append((e, traceback.format_exc()))
+            self.server.disconnect(self)
+
     @property
     def protocol(self):
         return self.server.protocol
@@ -183,7 +174,6 @@ class base_connection(object):
     def collect_incoming_data(self, data):
         """Collects incoming data"""
         if not bool(data):
-            self.__print__(data, time.time(), level=5)
             try:
                 self.sock.shutdown(socket.SHUT_RDWR)
             except:
@@ -297,7 +287,7 @@ class base_socket(object):
             """
             args = inspect.signature(method)
             if len(args.parameters) != (3 if args.parameters.get('self') else 2):
-                raise ValueError("This method must contain exactly two arguments")
+                raise ValueError("This method must contain exactly two arguments (or three if first is self)")
             self.__handlers.append(method)
 
     else:
@@ -311,7 +301,7 @@ class base_socket(object):
             """
             args = inspect.getargspec(method)
             if args[1:] != (None, None, None) or len(args[0]) != (3 if args[0][0] == 'self' else 2):
-                raise ValueError("This method must contain exactly two arguments")
+                raise ValueError("This method must contain exactly two arguments (or three if first is self)")
             self.__handlers.append(method)
 
     def handle_msg(self, msg, conn):
