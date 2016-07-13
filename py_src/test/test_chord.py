@@ -59,9 +59,10 @@ def routing_validation(iters, start_port, encryption, k=4):
         for node in nodes:
             print(node.status)
         print("----------------------Test ended----------------------")
-        assert min(map(len, [node.routing_table for node in nodes])) >= 1
+        assertion_list = map(len, [node.routing_table for node in nodes])
         del nodes[:]
         del nodes
+        assert min(assertion_list) >= 1
 
 def test_routing_Plaintext(iters=1):
     routing_validation(iters, 6400, 'Plaintext', k=2)
