@@ -38,15 +38,13 @@ def test_size_rejection_SSL(iters=3):
 
 def routing_validation(iters, start_port, encryption, k=4):
     for i in xrange(iters):
+        print("----------------------Test start----------------------")
         nodes = [chord.chord_socket('localhost', 
                                     start_port + j + (2**k) * i,
                                     k=k, 
                                     prot=chord.protocol('chord', encryption),
                                     debug_level=5)
                     for j in xrange(2**k)]
-        for j in xrange(2**k):
-            nodes[j].connect(*nodes[(j+1) % (2**k)].out_addr)
-            time.sleep(1)
         ids = []
         for node in nodes:
             while node.id_10 in ids:
@@ -54,7 +52,13 @@ def routing_validation(iters, start_port, encryption, k=4):
                 node.id = chord.to_base_58(node.id_10)
             ids.append(node.id_10)
             print(node.id_10)
+        print("----------------------Test event----------------------")
+        for j in xrange(2**k):
+            nodes[j].connect(*nodes[(j+1) % (2**k)].out_addr)
+            time.sleep(1)
+        for node in nodes:
             print(node.status)
+        print("----------------------Test ended----------------------")
         assert min(map(len, [node.routing_table for node in nodes])) >= 1
         del nodes[:]
         del nodes
