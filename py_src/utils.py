@@ -2,8 +2,8 @@ from __future__ import print_function
 from __future__ import with_statement
 
 import calendar
-import json
 import os
+import pickle
 import shutil
 import socket
 import tempfile
@@ -81,8 +81,9 @@ class file_dict(object):
         shutil.rmtree(self.__dir)
 
     def __setitem__(self, key, value):
-        with open(os.path.join(self.__dir, json.dumps(key)), "w") as f:
-            json.dump(value, f) 
+        f = open(os.path.join(self.__dir, pickle.dumps(key)), "w")
+        pickle.dump(value, f)
+        f.close()
 
     def update(self, d):
         for key in d:
@@ -90,8 +91,10 @@ class file_dict(object):
 
     def __getitem__(self, key):
         try:
-            with open(os.path.join(self.__dir, json.dumps(key)), "r") as f:
-                return json.load(f)
+            f = open(os.path.join(self.__dir, pickle.dumps(key)), "r")
+            ret = pickle.load(f)
+            f.close()
+            return ret
         except:
             raise KeyError(key) 
 
@@ -102,7 +105,7 @@ class file_dict(object):
             return ret
 
     def __iter__(self):
-        return (json.loads(key) for key in os.listdir(self.__dir))
+        return (pickle.loads(key) for key in os.listdir(self.__dir))
 
     def values(self):
         return (self.__getitem__(key) for key in self.__iter__())

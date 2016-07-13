@@ -121,7 +121,7 @@ class chord_socket(base_socket):
         self.register_handler(self.__handle_store)
         self.next = self
         self.prev = self
-        warnings.warn("This node supports %s unique values and requires at least %s other nodes" % (min(self.limit, 2**160), self.k), RuntimeWarning, stacklevel=2)
+        warnings.warn("This node supports %s unique values and requires a theoretical minimum of %s other nodes" % (min(self.limit, 2**160), self.k + 1), RuntimeWarning, stacklevel=2)
 
     @property
     def addr(self):
@@ -141,11 +141,11 @@ class chord_socket(base_socket):
         for x in xrange(self.k):
             finger = self.routing_table.get(x)
             if finger:
-                peer_list.append((finger.addr, finger.id))
+                peer_list.append((finger.addr, finger.id.decode()))
         if self.next is not self:
-            peer_list.append((self.next.addr, self.next.id))
+            peer_list.append((self.next.addr, self.next.id.decode()))
         if self.prev is not self:
-            peer_list.append((self.prev.addr, self.prev.id))
+            peer_list.append((self.prev.addr, self.prev.id.decode()))
         return peer_list
 
     def update_fingers(self):
