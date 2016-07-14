@@ -54,7 +54,7 @@ class chord_connection(base_connection):
 
 class chord_daemon(base_daemon): 
     def mainloop(self):
-        while self.alive:
+        while self.main_thread.is_alive() and self.alive:
             conns = list(self.server.routing_table.values()) + self.server.awaiting_ids
             if conns:
                 for handler in select.select(conns, [], [], 0.01)[0]:
@@ -114,6 +114,7 @@ class chord_socket(base_socket):
         self.data = dict(((method, file_dict()) for method in hashes))
         self.daemon = chord_daemon(addr, port, self)
         self.requests = {}
+        self.predecessors = []
         self.register_handler(self.__handle_handshake)
         self.register_handler(self.__handle_peers)
         self.register_handler(self.__handle_response)
@@ -138,27 +139,27 @@ class chord_socket(base_socket):
     def __get_fingers(self):
         """Returns a finger table for your peer"""
         peer_list = []
-        for x in xrange(self.k):
-            finger = self.routing_table.get(x)
-            if finger:
-                peer_list.append((finger.addr, finger.id.decode()))
+        peer_list = list(set(((tuple(node.addr), node.id.decode()) for node in list(self.routing_table.values()) + self.awaiting_ids if node.addr)))
         if self.next is not self:
             peer_list.append((self.next.addr, self.next.id.decode()))
         if self.prev is not self:
             peer_list.append((self.prev.addr, self.prev.id.decode()))
         return peer_list
 
+    def set_fingers(self, handler):
+        for x in xrange(self.k):
+            goal = self.id_10 + 2**x
+            if distance(self.__findFinger__(goal).id_10, goal, self.limit) \
+                > distance(handler.id_10, goal, self.limit):
+                former = self.__findFinger__(goal)
+                self.routing_table[x] = handler
+                if former not in self.routing_table.values():
+                    self.disconnect(former)
+
     def update_fingers(self):
-        for handler in list(self.routing_table.values()) + self.awaiting_ids:
+        for handler in list(self.routing_table.values()) + self.awaiting_ids + self.predecessors:
             if handler.id:
-                for x in xrange(self.k):
-                    goal = self.id_10 + 2**x
-                    if distance(self.__findFinger__(goal).id_10, goal, self.limit) \
-                            > distance(handler.id_10, goal, self.limit):
-                        former = self.__findFinger__(goal)
-                        self.routing_table[x] = handler
-                        if former not in self.routing_table.values():
-                            self.disconnect(former)
+                self.set_fingers(handler)
 
     def handle_msg(self, msg, conn):
         """Decides how to handle various message types, allowing some to be handled automatically"""
@@ -176,6 +177,8 @@ class chord_socket(base_socket):
             handler.compression = json.loads(packets[4].decode())
             handler.compression = [algo.encode() for algo in handler.compression]
             self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
+            self.set_fingers(handler)
+            handler.send(flags.whisper, flags.notify, '1' if handler in self.routing_table.values() else '0')
             handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
             if distance(self.id_10, self.next.id_10-1, self.limit) \
                 > distance(self.id_10, handler.id_10, self.limit):
@@ -184,6 +187,19 @@ class chord_socket(base_socket):
                 > distance(handler.id_10, self.id_10, self.limit):
                 self.prev = handler
             return True
+
+    def __handle_notify(self, msg, handler):
+        packets = msg.packets
+        if packets[0] == flags.notify:
+            if packets[1] == b'1':
+                self.predecessors.append(handler)
+                if handler in self.awaiting_ids:
+                    self.awaiting_ids.remove(handler)
+                return True
+            elif packets[1] == b'0':
+                if handler not in self.routing_table.values():
+                    self.disconnect(handler)
+                    return True
 
     def __handle_peers(self, msg, handler):
         packets = msg.packets
@@ -320,6 +336,8 @@ class chord_socket(base_socket):
             for key in list(self.routing_table.keys()):
                 if self.routing_table[key] is handler:
                     self.routing_table.pop(key)
+        elif handler in self.predecessors:
+            self.predecessors.remove(handler)
         try:
             handler.sock.shutdown(socket.SHUT_RDWR)
         except:

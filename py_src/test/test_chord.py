@@ -6,6 +6,7 @@ import sys
 import time
 
 from .. import chord
+from .test_mesh import close_all_nodes
 
 if sys.version_info[0] > 2:
     xrange = range
@@ -22,7 +23,7 @@ def protocol_rejection_validation(iters, start_port, encryption, k=4, name='test
         assert len(f.routing_table) == len(f.awaiting_ids) == len(g.routing_table) == len(g.awaiting_ids) == 0
         print(f.status)
         print(g.status)
-        del f, g
+        close_all_nodes([f, g])
 
 def test_protocol_rejection_Plaintext(iters=3):
     protocol_rejection_validation(iters, 6000, 'Plaintext', name='test2')
@@ -43,7 +44,7 @@ def routing_validation(iters, start_port, encryption, k=4):
                                     start_port + j + (2**k) * i,
                                     k=k, 
                                     prot=chord.protocol('chord', encryption),
-                                    debug_level=5)
+                                    debug_level=4)
                     for j in xrange(2**k)]
         ids = []
         for node in nodes:
@@ -55,20 +56,16 @@ def routing_validation(iters, start_port, encryption, k=4):
         print("----------------------Test event----------------------")
         for j in xrange(2**k):
             nodes[j].connect(*nodes[(j+1) % (2**k)].out_addr)
-            time.sleep(1)
+            time.sleep(4)
         for node in nodes:
             print(node.status)
         print("----------------------Test ended----------------------")
-        assertion_list = map(len, [node.routing_table for node in nodes])
-        for node in nodes:
-            node.daemon.alive = False
-            node.debug_level = 0
-        del nodes[:]
-        del nodes
+        assertion_list = list(map(len, [node.routing_table for node in nodes]))
+        close_all_nodes(nodes)
         assert min(assertion_list) >= 1
 
-def test_routing_Plaintext(iters=1):
+def test_routing_Plaintext(iters=3):
     routing_validation(iters, 6400, 'Plaintext', k=2)
 
-def test_routing_SSL(iters=1):
-    routing_validation(iters, 6500, 'SSL', k=2)
+# def test_routing_SSL(iters=1):
+#     routing_validation(iters, 6500, 'SSL', k=2)

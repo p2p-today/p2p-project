@@ -21,10 +21,12 @@ node_policy_version = "231"
 
 version = '.'.join([protocol_version, node_policy_version])
 
+plock = threading.Lock()
+
 class flags():
     """A namespace to hold protocol-defined flags"""
     # Reserved set of bytes
-    reserved = set([struct.pack('!B', x) for x in range(0x10)])
+    reserved = set([struct.pack('!B', x) for x in range(0x13)])
 
     # main flags
     broadcast   = b'\x00'  # also sub-flag
@@ -37,16 +39,17 @@ class flags():
     # sub-flags
     compression = b'\x06'
     handshake   = b'\x07'
-    peers       = b'\x08'
-    request     = b'\x09'
-    resend      = b'\x0A'
-    response    = b'\x0B'
-    store       = b'\x0C'
+    notify      = b'\x08'
+    peers       = b'\x09'
+    request     = b'\x0A'
+    resend      = b'\x0B'
+    response    = b'\x0C'
+    store       = b'\x0D'
 
     # compression methods
-    gzip = b'\x0D'
-    bz2  = b'\x0E'
-    lzma = b'\x0F'
+    gzip = b'\x10'
+    bz2  = b'\x11'
+    lzma = b'\x12'
 
 user_salt    = str(uuid.uuid4()).encode()
 compression = []  # This should be in order of preference, with None being implied as last
@@ -232,8 +235,8 @@ class base_daemon(object):
         self.sock.settimeout(0.1)
         self.exceptions = []
         self.alive = True
+        self.main_thread = threading.current_thread()
         self.daemon = threading.Thread(target=self.mainloop)
-        self.daemon.daemon = True
         self.daemon.start()
 
     @property
@@ -274,6 +277,23 @@ class base_socket(object):
         h = hashlib.sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
         self.__handlers = []
+        self.__closed = False
+
+    def close(self):
+        if self.__closed:
+            raise RuntimeError("Already closed")
+        else:
+            self.daemon.alive = False
+            self.daemon.daemon.join()
+            self.debug_level = 0
+            try:
+                self.daemon.sock.shutdown(socket.SHUT_RDWR)
+            except:
+                pass
+            conns = list(self.routing_table.values()) + self.awaiting_ids
+            for conn in conns:
+                self.disconnect(conn)
+            self.__closed = True
 
     if sys.version_info >= (3, ):
         def register_handler(self, method):
@@ -319,12 +339,12 @@ class base_socket(object):
     def __print__(self, *args, **kargs):
         """Private method to print if level is <= self.__debug_level"""
         if kargs.get('level') <= self.debug_level:
-            print(self.out_addr[1], *args)
+            with plock:
+                print(self.out_addr[1], *args)
 
     def __del__(self):
-        handlers = list(self.routing_table.values()) + self.awaiting_ids
-        for handler in handlers:
-            self.disconnect(handler)
+        if not self.__closed:
+            self.close()
 
 
 class pathfinding_message(object):

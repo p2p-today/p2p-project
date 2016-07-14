@@ -11,6 +11,10 @@ from ..base import flags
 if sys.version_info[0] > 2:
     xrange = range
 
+def close_all_nodes(nodes):
+    for node in nodes:
+        node.close()
+
 def propagation_validation(iters, start_port, num_nodes, encryption):
     for i in xrange(iters):
         print("----------------------Test start----------------------")
@@ -31,7 +35,7 @@ def propagation_validation(iters, start_port, num_nodes, encryption):
             assert b"hello" == node.recv().packets[1]
             # Failure is either no message received: AttributeError
             #                   message doesn't match: AssertionError
-        del nodes[:]
+        close_all_nodes(nodes)
 
 def test_propagation_Plaintext(iters=3):
     propagation_validation(iters, 5100, 3, 'Plaintext')
@@ -49,7 +53,7 @@ def protocol_rejection_validation(iters, start_port, encryption):
         time.sleep(1)
         print("----------------------Test ended----------------------")
         assert len(f.routing_table) == len(f.awaiting_ids) == len(g.routing_table) == len(g.awaiting_ids) == 0
-        del f, g
+        close_all_nodes([f, g])
 
 def test_protocol_rejection_Plaintext(iters=3):
     protocol_rejection_validation(iters, 5300, 'Plaintext')
@@ -78,7 +82,7 @@ def handler_registry_validation(iters, start_port, encryption):
         print("----------------------Test ended----------------------")
         assert not f.recv()
         assert g.recv()
-        del f, g
+        close_all_nodes([f, g])
 
 def test_hanlder_registry_Plaintext(iters=3):
     handler_registry_validation(iters, 5500, 'Plaintext')
@@ -119,7 +123,7 @@ def test_hanlder_registry_SSL(iters=3):
 #             print("f.status: %s\n" % repr(f.status))
 #             print("g.status: %s\n" % repr(g.status))
 #             print("h.status: %s\n" % repr(h.status))
-#         del f, g, h
+#         close_all_nodes([f, g, h])
 
 # def test_disconnect_recovery_Plaintext(iters=1):
 #     connection_recovery_validation(iters, 5500, 'Plaintext', 'disconnect')

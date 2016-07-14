@@ -58,7 +58,7 @@ class mesh_connection(base_connection):
 class mesh_daemon(base_daemon):
     def mainloop(self):
         """Daemon thread which handles all incoming data and connections"""
-        while self.alive:
+        while self.main_thread.is_alive() and self.alive:
             conns = list(self.server.routing_table.values()) + self.server.awaiting_ids
             if conns:
                 for handler in select.select(conns, [], [], 0.01)[0]:
