@@ -290,7 +290,7 @@ class chord_socket(base_socket):
             return ret
 
     def lookup(self, key):
-        if not isinstance(key, bytes):
+        if not isinstance(key, (bytes, bytearray)):
             key = str(key).encode()
         keys = [int(hashlib.new(algo, key).hexdigest(), 16) % self.limit for algo in hashes]
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
@@ -315,7 +315,7 @@ class chord_socket(base_socket):
     def update(self, update_dict):
         for key in update_dict:
             value = update_dict[key]
-            if not isinstance(key, bytes):
+            if not isinstance(key, (bytes, bytearray)):
                 key = str(key).encode()
             keys = [int(hashlib.new(algo, key).hexdigest(), 16) % self.limit for algo in hashes]
             for method, x in zip(hashes, keys):

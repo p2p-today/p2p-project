@@ -23,33 +23,42 @@ version = '.'.join([protocol_version, node_policy_version])
 
 plock = threading.Lock()
 
+class brepr(bytearray):
+    """This class is used so that it prints the description, rather than the value"""
+    def __init__(self, value, rep=None):
+        super(brepr, self).__init__(value)
+        self.__rep = (rep or value)
+        
+    def __repr__(self):
+        return self.__rep
+
 class flags():
     """A namespace to hold protocol-defined flags"""
     # Reserved set of bytes
     reserved = set([struct.pack('!B', x) for x in range(0x13)])
 
     # main flags
-    broadcast   = b'\x00'  # also sub-flag
-    waterfall   = b'\x01'
-    whisper     = b'\x02'  # also sub-flag
-    renegotiate = b'\x03'
-    ping        = b'\x04'  # Unused, but reserved
-    pong        = b'\x05'  # Unused, but reserved
+    broadcast   = brepr(b'\x00', rep='broadcast')   # also sub-flag
+    waterfall   = brepr(b'\x01', rep='waterfall')
+    whisper     = brepr(b'\x02', rep='whsiper')     # also sub-flag
+    renegotiate = brepr(b'\x03', rep='renegotiate')
+    ping        = brepr(b'\x04', rep='ping')        # Unused, but reserved
+    pong        = brepr(b'\x05', rep='pong')        # Unused, but reserved
 
     # sub-flags
-    compression = b'\x06'
-    handshake   = b'\x07'
-    notify      = b'\x08'
-    peers       = b'\x09'
-    request     = b'\x0A'
-    resend      = b'\x0B'
-    response    = b'\x0C'
-    store       = b'\x0D'
+    compression = brepr(b'\x06', rep='compression')
+    handshake   = brepr(b'\x07', rep='handshake')
+    notify      = brepr(b'\x08', rep='notify')
+    peers       = brepr(b'\x09', rep='peers')
+    request     = brepr(b'\x0A', rep='request')
+    resend      = brepr(b'\x0B', rep='resend')
+    response    = brepr(b'\x0C', rep='response')
+    store       = brepr(b'\x0D', rep='store')
 
     # compression methods
-    gzip = b'\x10'
-    bz2  = b'\x11'
-    lzma = b'\x12'
+    gzip = brepr(b'\x10', rep='gzip')
+    bz2  = brepr(b'\x11', rep='bz2')
+    lzma = brepr(b'\x12', rep='lzma')
 
 user_salt    = str(uuid.uuid4()).encode()
 compression = []  # This should be in order of preference, with None being implied as last
@@ -95,7 +104,7 @@ def to_base_58(i):  # returns bytes
 def from_base_58(string):  # returns int (or long)
     """Takes a base_58 string and returns its corresponding integer"""
     decimal = 0
-    if isinstance(string, bytes):
+    if isinstance(string, (bytes, bytearray)):
         string = string.decode()
     for char in string:
         decimal = decimal * 58 + base_58.index(char)
@@ -375,7 +384,7 @@ class pathfinding_message(object):
         Possible errors:
             AttributeError: Fed a non-string, non-bytes argument
             AssertionError: Initial size header is incorrect"""
-        if not isinstance(string, bytes):
+        if not isinstance(string, (bytes, bytearray)):
             string = string.encode()
         if not sizeless:
             assert struct.unpack('!L', string[:4])[0] == len(string[4:]), \
@@ -434,7 +443,7 @@ class pathfinding_message(object):
     def payload(self):
         """Returns a list containing the message payload encoded as bytes"""
         for i, val in enumerate(self.__payload):
-            if not isinstance(val, bytes):
+            if not isinstance(val, (bytes, bytearray)):
                 self.__payload[i] = val.encode()
         return self.__payload
 
@@ -453,7 +462,7 @@ class pathfinding_message(object):
     @property
     def id(self):
         """Returns the message id"""
-        payload_string = b''.join(self.payload)
+        payload_string = b''.join((bytes(pac) for pac in self.payload))
         payload_hash = hashlib.sha384(payload_string + self.time_58)
         return to_base_58(int(payload_hash.hexdigest(), 16))
 
@@ -462,7 +471,7 @@ class pathfinding_message(object):
         """Returns the full list of packets in this message encoded as bytes, excluding the header"""
         meta = [self.msg_type, self.sender, self.id, self.time_58]
         for i, val in enumerate(meta):
-            if not isinstance(val, bytes):
+            if not isinstance(val, (bytes, bytearray)):
                 meta[i] = val.encode()
         return meta + self.payload
 
@@ -472,7 +481,7 @@ class pathfinding_message(object):
         packets = self.packets
         header = struct.pack("!" + str(len(packets)) + "L", 
                                     *[len(x) for x in packets])
-        string = header + b''.join(packets)
+        string = header + b''.join((bytes(pac) for pac in packets))
         if self.compression_used:
             string = compress(string, self.compression_used)
         return string
