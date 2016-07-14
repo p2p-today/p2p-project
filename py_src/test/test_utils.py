@@ -70,6 +70,5 @@ def test_file_dict(iters=1000):
         test_key = os.urandom(random.randint(0,17))
         test_val = os.urandom(random.randint(0,17))
         d[test_key] = test_val
-        assert test_key in d
-        assert test_val in d.values()
         assert d[test_key] == test_val
+        assert test_val in d.values()
