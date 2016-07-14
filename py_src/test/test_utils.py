@@ -14,7 +14,7 @@ if sys.version_info[0] > 2:
 
 def test_intersect(iters=200):
     max_val = 2**12 - 1
-    for i in xrange(iters):
+    for _ in xrange(iters):
         pair1 = sorted([random.randint(0, max_val), random.randint(0, max_val)])
         pair2 = sorted([random.randint(0, max_val), random.randint(0, max_val)])
         cross1 = [pair1[0], pair2[0]]
@@ -63,3 +63,13 @@ def lan_ip_validation_windows():
         output = subprocess.Popen(['test.bat'], stdout=subprocess.PIPE).communicate()[0]
     assert utils.get_lan_ip().encode() in output
     os.remove('test.bat')
+
+def test_file_dict(iters=1000):
+    d = utils.file_dict()
+    for _ in xrange(iters):
+        test_key = os.urandom(random.randint(0,17))
+        test_val = os.urandom(random.randint(0,17))
+        d[test_key] = test_val
+        assert test_key in d
+        assert test_val in d.values()
+        assert d[test_key] == test_val

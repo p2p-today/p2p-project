@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import with_statement
 
+import base64
 import calendar
 import os
 import pickle
@@ -73,15 +74,28 @@ def most_common(tmp):
 
 class file_dict(object):
     def __init__(self, start=None):
-        self.__dir = tempfile.mkdtemp()
+        self.__dir = tempfile.mkdtemp().encode()
         if start:
             self.update(start)
 
     def __del__(self):
         shutil.rmtree(self.__dir)
 
+    def __construct_name(self, key):
+        dump = pickle.dumps(key)
+        name = base64.urlsafe_b64encode(dump)
+        path = os.path.join(self.__dir, name)
+        return path
+
+    def __deconstruct_name(self, key):
+        _, name = os.path.split(key)
+        decoded = base64.urlsafe_b64decode(name)
+        load = pickle.loads(decoded)
+        return load
+
     def __setitem__(self, key, value):
-        f = open(os.path.join(self.__dir, pickle.dumps(key)), "w")
+        name = self.__construct_name(key)
+        f = open(name, "wb")
         pickle.dump(value, f)
         f.close()
 
@@ -91,7 +105,8 @@ class file_dict(object):
 
     def __getitem__(self, key):
         try:
-            f = open(os.path.join(self.__dir, pickle.dumps(key)), "r")
+            name = self.__construct_name(key)
+            f = open(name, "rb")
             ret = pickle.load(f)
             f.close()
             return ret
@@ -105,7 +120,7 @@ class file_dict(object):
             return ret
 
     def __iter__(self):
-        return (pickle.loads(key) for key in os.listdir(self.__dir))
+        return (self.__deconstruct_name(key) for key in os.listdir(self.__dir))
 
     def values(self):
         return (self.__getitem__(key) for key in self.__iter__())
