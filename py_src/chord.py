@@ -122,7 +122,7 @@ class chord_socket(base_socket):
         self.register_handler(self.__handle_store)
         self.next = self
         self.prev = self
-        warnings.warn("This node supports %s unique values and requires a theoretical minimum of %s other nodes" % (min(self.limit, 2**160), self.k + 1), RuntimeWarning, stacklevel=2)
+        warnings.warn("This network configuration supports %s total nodes and requires a theoretical minimum of %s nodes" % (min(self.limit, 2**160), self.k + 1), RuntimeWarning, stacklevel=2)
 
     @property
     def addr(self):
@@ -292,7 +292,7 @@ class chord_socket(base_socket):
     def lookup(self, key):
         if not isinstance(key, (bytes, bytearray)):
             key = str(key).encode()
-        keys = [int(hashlib.new(algo, key).hexdigest(), 16) % self.limit for algo in hashes]
+        keys = [int(hashlib.new(algo, key).hexdigest(), 16) for algo in hashes]
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
         common = most_common(vals)
         while common == -1:
@@ -317,7 +317,7 @@ class chord_socket(base_socket):
             value = update_dict[key]
             if not isinstance(key, (bytes, bytearray)):
                 key = str(key).encode()
-            keys = [int(hashlib.new(algo, key).hexdigest(), 16) % self.limit for algo in hashes]
+            keys = [int(hashlib.new(algo, key).hexdigest(), 16) for algo in hashes]
             for method, x in zip(hashes, keys):
                 self.__store(method, x, value)
 
