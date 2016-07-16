@@ -4,12 +4,13 @@ from __future__ import absolute_import
 import datetime
 import os
 import random
+import subprocess
 import sys
 import time
 
 from .. import utils
 
-if sys.version_info[0] > 2:
+if sys.version_info >= (3, ):
     xrange = range
 
 def test_intersect(iters=200):
@@ -41,7 +42,6 @@ def test_lan_ip():
         raise Exception("Unrecognized patform; don't know what command to test against")
 
 def lan_ip_validation_linux():
-    import subprocess
     # command pulled from http://stackoverflow.com/a/13322549
     command = """ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'"""
     if sys.version_info >= (2, 7):
@@ -51,7 +51,6 @@ def lan_ip_validation_linux():
     assert utils.get_lan_ip() in output
 
 def lan_ip_validation_windows():
-    import subprocess
     # command pulled from http://stackoverflow.com/a/17634009
     command = """for /f "delims=[] tokens=2" %%a in ('ping %computername% -4 -n 1 ^| findstr "["') do (echo %%a)"""
     test_file = open('test.bat', 'w')
@@ -64,7 +63,7 @@ def lan_ip_validation_windows():
     assert utils.get_lan_ip().encode() in output
     os.remove('test.bat')
 
-def test_file_dict(iters=1000):
+def test_file_dict(iters=500):
     d = utils.file_dict()
     for _ in xrange(iters):
         test_key = os.urandom(random.randint(0,17))

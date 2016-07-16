@@ -8,7 +8,7 @@ import time
 from .. import mesh
 from ..base import flags
 
-if sys.version_info[0] > 2:
+if sys.version_info >= (3, ):
     xrange = range
 
 def close_all_nodes(nodes):

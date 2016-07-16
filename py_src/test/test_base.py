@@ -11,16 +11,16 @@ import uuid
 from functools import partial
 from .. import base
 
-if sys.version_info[0] > 2:
+if sys.version_info >= (3, ):
     xrange = range
 
 def try_identity(in_func, out_func, data_gen, iters):
-    for i in xrange(iters):
+    for _ in xrange(iters):
         test = data_gen()
         assert test == out_func(in_func(test))
 
 def gen_random_list(item_size, list_size):
-    return [os.urandom(item_size) for i in xrange(list_size)]
+    return [os.urandom(item_size) for _ in xrange(list_size)]
 
 def test_base_58(iters=1000):
     max_val = 2**32 - 1
@@ -35,7 +35,7 @@ def test_compression(iters=100):
         try_identity(compress, decompress, data_gen, iters)
 
 def test_compression_exceptions(iters=100):
-    for i in xrange(iters):
+    for _ in xrange(iters):
         test = os.urandom(36)
         try:
             base.compress(test, os.urandom(4))
@@ -52,7 +52,7 @@ def test_compression_exceptions(iters=100):
 
 def test_pathfinding_message(iters=500):
     max_val = 2**8
-    for i in xrange(iters):
+    for _ in xrange(iters):
         length = random.randint(0, max_val)
         array = gen_random_list(36, length)
         pathfinding_message_constructor_validation(array)
@@ -94,7 +94,7 @@ def pathfinding_message_exceptions_validiation(array):
             raise Exception("Erroneously parses compressed message as plaintext %s" % string)
 
 def test_protocol(iters=200):
-    for i in range(iters):
+    for _ in range(iters):
         sub = str(uuid.uuid4())
         enc = str(uuid.uuid4())
         test = base.protocol(sub, enc)
@@ -104,7 +104,7 @@ def test_protocol(iters=200):
         assert int(p_hash.hexdigest(), 16) == base.from_base_58(test.id)
 
 def test_message_sans_network(iters=1000):
-    for i in range(iters):
+    for _ in range(iters):
         sub = str(uuid.uuid4())
         enc = str(uuid.uuid4())
         sen = str(uuid.uuid4())

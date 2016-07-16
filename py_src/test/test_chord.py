@@ -8,7 +8,7 @@ import time
 from .. import chord
 from .test_mesh import close_all_nodes
 
-if sys.version_info[0] > 2:
+if sys.version_info >= (3, ):
     xrange = range
 
 def protocol_rejection_validation(iters, start_port, encryption, k=4, name='test'):

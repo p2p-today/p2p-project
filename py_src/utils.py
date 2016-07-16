@@ -4,12 +4,15 @@ from __future__ import with_statement
 import base64
 import calendar
 import os
-import pickle
 import shutil
 import socket
 import tempfile
 import time
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 def intersect(*args):  # returns list
     """Returns the ordered intersection of all given iterables, where the order is defined by the first iterable"""
@@ -74,7 +77,7 @@ def most_common(tmp):
 
 class file_dict(object):
     def __init__(self, start=None):
-        self.__dir = tempfile.mkdtemp().encode()
+        self.__dir = tempfile.mkdtemp(suffix='.py2p').encode()
         if start:
             self.update(start)
 
