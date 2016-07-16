@@ -4,6 +4,7 @@ import os
 import sys
 
 try:
+    import setuptools
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
