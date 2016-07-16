@@ -23,7 +23,8 @@ classifiers.extend([
                ('Programming Language :: Python :: %s' % x) for x in
                 '2 3 2.6 2.7 3.3 3.4 3.5'.split()])
 
-with open(os.path.join('py_src', 'README.rst'), 'r') as fd:
+loc = os.path.dirname(os.path.realpath(__file__))
+with open(os.path.join(loc, 'py_src', 'README.rst'), 'r') as fd:
     long_description = fd.read()
 
 def has_environment_marker_support():

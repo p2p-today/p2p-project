@@ -58,6 +58,8 @@ test: off
 
 build_script:
   - "%RUN% -m pytest -vv --cov=./py_src/ ./py_src/"
+  - "%RUN% setup.py sdist"
+  - "%PIP% install --no-index --find-links=.\\dist\\ py2p"
 
 on_success:
   - "%COV% combine"

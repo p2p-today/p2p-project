@@ -1,0 +1,7 @@
+include LICENSE
+include CONTRIBUTING.md
+include setup.py
+include .coveragerc
+include py_src/*.rst
+
+exclude MANIFEST.in
