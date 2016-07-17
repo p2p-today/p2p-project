@@ -276,9 +276,9 @@ class chord_socket(base_socket):
         return handler
 
     def __send_handshake__(self, handler):
-        self.prev.send(flags.whisper, flags.handshake, self.id, \
-                       self.protocol.id + to_base_58(self.k), \
-                       json.dumps(self.out_addr), json_compressions)
+        handler.send(flags.whisper, flags.handshake, self.id, \
+                     self.protocol.id + to_base_58(self.k), \
+                     json.dumps(self.out_addr), json_compressions)
 
     def __connect(self, addr, port):
         """Private API method for connecting and handshaking"""
