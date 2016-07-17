@@ -74,9 +74,6 @@ class chord_daemon(base_daemon):
             conn, addr = self.sock.accept()
             self.__print__('Incoming connection from %s' % repr(addr), level=1)
             handler = chord_connection(conn, self.server)
-            handler.send(flags.whisper, flags.handshake, self.server.id, \
-                            self.protocol.id + to_base_58(self.server.k), \
-                            json.dumps(self.server.out_addr), json_compressions)
             handler.sock.settimeout(1)
             self.server.awaiting_ids.append(handler)
         except exceptions:
@@ -172,20 +169,22 @@ class chord_socket(base_socket):
             if packets[2] != self.protocol.id + to_base_58(self.k):
                 self.disconnect(handler)
                 return True
-            handler.id = packets[1]
-            handler.addr = json.loads(packets[3].decode())
-            handler.compression = json.loads(packets[4].decode())
-            handler.compression = [algo.encode() for algo in handler.compression]
-            self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
-            self.set_fingers(handler)
-            handler.send(flags.whisper, flags.notify, '1' if handler in self.routing_table.values() else '0')
-            handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
-            if distance(self.id_10, self.next.id_10-1, self.limit) \
-                > distance(self.id_10, handler.id_10, self.limit):
-                self.next = handler
-            if distance(self.prev.id_10+1, self.id_10, self.limit) \
-                > distance(handler.id_10, self.id_10, self.limit):
-                self.prev = handler
+            if not handler.id:
+                handler.id = packets[1]
+                self.__send_handshake__(handler)
+                handler.addr = json.loads(packets[3].decode())
+                handler.compression = json.loads(packets[4].decode())
+                handler.compression = [algo.encode() for algo in handler.compression]
+                self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
+                self.set_fingers(handler)
+                handler.send(flags.whisper, flags.notify, '1' if handler in self.routing_table.values() else '0')
+                handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
+                if distance(self.id_10, self.next.id_10-1, self.limit) \
+                    > distance(self.id_10, handler.id_10, self.limit):
+                    self.next = handler
+                if distance(self.prev.id_10+1, self.id_10, self.limit) \
+                    > distance(handler.id_10, self.id_10, self.limit):
+                    self.prev = handler
             return True
 
     def __handle_notify(self, msg, handler):
@@ -213,13 +212,13 @@ class chord_socket(base_socket):
                                                 distance(key, goal, self.limit)), level=5)
                     if distance(self.__findFinger__(goal).id_10, goal, self.limit) \
                             > distance(key, goal, self.limit):
-                        self.connect(*addr)
+                        self.__connect(*addr)
                 if distance(self.id_10, self.next.id_10, self.limit) \
                     > distance(self.id_10, key, self.limit):
-                    self.connect(*addr)
+                    self.__connect(*addr)
                 if distance(self.prev.id_10, self.id_10, self.limit) \
                     > distance(key, self.id_10, self.limit):
-                    self.connect(*addr)
+                    self.__connect(*addr)
             return True
 
     def __handle_response(self, msg, handler):
@@ -263,7 +262,7 @@ class chord_socket(base_socket):
         return ret
 
     def connect(self, addr, port):
-        """Connects to a specified node. Specifying ID will immediately add to routing table. Blocking"""
+        """Connects to a specified node. Blocking"""
         self.__print__("Attempting connection to %s:%s" % (addr, port), level=1)
         if socket.getaddrinfo(addr, port)[0] == socket.getaddrinfo(*self.out_addr)[0]:
             self.__print__("Connection already established", level=1)
@@ -272,10 +271,21 @@ class chord_socket(base_socket):
         conn.settimeout(1)
         conn.connect((addr, port))
         handler = chord_connection(conn, self, outgoing=True)
-        handler.send(flags.whisper, flags.handshake, self.id, \
-                     self.protocol.id + to_base_58(self.k), \
-                     json.dumps(self.out_addr), json_compressions)
         self.awaiting_ids.append(handler)
+        return handler
+
+    def __send_handshake__(self, handler):
+        self.prev.send(flags.whisper, flags.handshake, self.id, \
+                       self.protocol.id + to_base_58(self.k), \
+                       json.dumps(self.out_addr), json_compressions)
+
+    def __connect(self, addr, port):
+        """Private API method for connecting and handshaking"""
+        handler = self.connect(addr, port)
+        self.__send_handshake__(handler)
+
+    def join(self):
+        self.__send_handshake__(self.prev)
 
     def __lookup(self, method, key, handler=None):
         node = self.__findFinger__(key)
