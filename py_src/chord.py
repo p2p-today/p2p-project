@@ -285,11 +285,15 @@ class chord_socket(base_socket):
         self.__send_handshake__(handler)
 
     def join(self):
-        self.__send_handshake__(self.prev)
+        handler = random.choice(self.awaiting_ids)
+        self.__send_handshake__(handler)
 
     def __lookup(self, method, key, handler=None):
-        node = self.__findFinger__(key)
-        if node is self:
+        if self.routing_table:
+            node = self.__findFinger__(key)
+        else:
+            node = random.choice(self.awaiting_ids)
+        if node in (self, None):
             return awaiting_value(self.data[method][key])
         else:
             node.send(flags.whisper, flags.request, method, to_base_58(key))

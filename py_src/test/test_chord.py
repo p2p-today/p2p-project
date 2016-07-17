@@ -18,6 +18,7 @@ def protocol_rejection_validation(iters, start_port, encryption, k=4, name='test
         g = chord.chord_socket('localhost', start_port + i*2 + 1, k=k, prot=chord.protocol(name, encryption), debug_level=5)
         print("----------------------Test event----------------------")
         g.connect('localhost', start_port + i*2)
+        g.join()
         time.sleep(1)
         print("----------------------Test ended----------------------")
         assert len(f.routing_table) == len(f.awaiting_ids) == len(g.routing_table) == len(g.awaiting_ids) == 0
