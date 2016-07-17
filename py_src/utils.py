@@ -113,7 +113,7 @@ class file_dict(object):
             ret = pickle.load(f)
             f.close()
             return ret
-        except:
+        except:  # pragma: no cover
             raise KeyError(key) 
 
     def get(self, key, ret=None):

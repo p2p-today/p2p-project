@@ -64,10 +64,11 @@ def lan_ip_validation_windows():
     os.remove('test.bat')
 
 def test_file_dict(iters=500):
-    d = utils.file_dict()
+    d = utils.file_dict({'a': 'b'})
+    assert d.get('c') == None
     for _ in xrange(iters):
         test_key = os.urandom(random.randint(0,17))
         test_val = os.urandom(random.randint(0,17))
         d[test_key] = test_val
-        assert d[test_key] == test_val
+        assert d.get(test_key) == test_val
         assert test_val in d.values()
