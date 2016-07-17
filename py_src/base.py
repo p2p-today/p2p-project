@@ -1,7 +1,8 @@
 """A library to store common functions and protocol definitions"""
 
-from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import with_statement
 
 import hashlib
 import inspect
@@ -17,7 +18,7 @@ from collections import namedtuple
 from .utils import getUTC, intersect, get_lan_ip, get_socket
 
 protocol_version = "0.4"
-node_policy_version = "231"
+node_policy_version = "255"
 
 version = '.'.join([protocol_version, node_policy_version])
 
@@ -35,32 +36,51 @@ class brepr(bytearray):
 class flags():
     """A namespace to hold protocol-defined flags"""
     # Reserved set of bytes
-    reserved = set([struct.pack('!B', x) for x in range(0x13)])
+    reserved = set([struct.pack('!B', x) for x in range(0x20)])
 
     # main flags
     broadcast   = brepr(b'\x00', rep='broadcast')   # also sub-flag
     waterfall   = brepr(b'\x01', rep='waterfall')
-    whisper     = brepr(b'\x02', rep='whsiper')     # also sub-flag
+    whisper     = brepr(b'\x02', rep='whisper')     # also sub-flag
     renegotiate = brepr(b'\x03', rep='renegotiate')
     ping        = brepr(b'\x04', rep='ping')        # Unused, but reserved
     pong        = brepr(b'\x05', rep='pong')        # Unused, but reserved
 
     # sub-flags
-    compression = brepr(b'\x06', rep='compression')
-    handshake   = brepr(b'\x07', rep='handshake')
-    notify      = brepr(b'\x08', rep='notify')
-    peers       = brepr(b'\x09', rep='peers')
-    request     = brepr(b'\x0A', rep='request')
-    resend      = brepr(b'\x0B', rep='resend')
-    response    = brepr(b'\x0C', rep='response')
-    store       = brepr(b'\x0D', rep='store')
+    # broadcast = brepr(b'\x00', rep='broadcast')
+    compression = brepr(b'\x01', rep='compression')
+    # whisper   = brepr(b'\x02', rep='whisper')
+    handshake   = brepr(b'\x03', rep='handshake')
+    # ping      = brepr(b'\x04', rep='ping')
+    # pong      = brepr(b'\x05', rep='pong')
+    notify      = brepr(b'\x06', rep='notify')
+    peers       = brepr(b'\x07', rep='peers')
+    request     = brepr(b'\x08', rep='request')
+    resend      = brepr(b'\x09', rep='resend')
+    response    = brepr(b'\x0A', rep='response')
+    store       = brepr(b'\x0B', rep='store')
 
-    # compression methods
-    gzip = brepr(b'\x10', rep='gzip')
-    bz2  = brepr(b'\x11', rep='bz2')
+    # implemented compression methods
+    bz2  = brepr(b'\x10', rep='bz2')
+    gzip = brepr(b'\x11', rep='gzip')
     lzma = brepr(b'\x12', rep='lzma')
 
-user_salt    = str(uuid.uuid4()).encode()
+    # non-implemented compression methods (based on list from compressjs):
+    bwtc     = brepr(b'\x13', rep='bwtc')
+    context1 = brepr(b'\x14', rep='context1')
+    defsum   = brepr(b'\x15', rep='defsum')
+    dmc      = brepr(b'\x16', rep='dmc')
+    fenwick  = brepr(b'\x17', rep='fenwick')
+    huffman  = brepr(b'\x18', rep='huffman')
+    lzjb     = brepr(b'\x19', rep='lzjb')
+    lzjbr    = brepr(b'\x1A', rep='lzjbr')
+    lzp3     = brepr(b'\x1B', rep='lzp3')
+    mtf      = brepr(b'\x1C', rep='mtf')
+    ppmd     = brepr(b'\x1D', rep='ppmd')
+    simple   = brepr(b'\x1E', rep='simple')
+
+
+user_salt   = str(uuid.uuid4()).encode()
 compression = []  # This should be in order of preference, with None being implied as last
 
 # Compression testing section
@@ -68,24 +88,22 @@ compression = []  # This should be in order of preference, with None being impli
 try:
     import zlib
     compression.append(flags.gzip)
-except:  # pragma: no cover
+except ImportError:  # pragma: no cover
     pass
 
 try:
     import bz2
     compression.append(flags.bz2)
-except:  # pragma: no cover
+except ImportError:  # pragma: no cover
     pass
 
 try:
     import lzma
     compression.append(flags.lzma)
-except:  # pragma: no cover
+except ImportError:  # pragma: no cover
     pass
 
 json_compressions = json.dumps([method.decode() for method in compression])
-
-# Utility method/class section; feel free to mostly ignore
 
 base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
@@ -143,6 +161,151 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
         return to_base_58(int(h.hexdigest(), 16))
 
 default_protocol = protocol('', "Plaintext")  # PKCS1_v1.5")
+
+
+class pathfinding_message(object):
+    """An object used to build and parse protocol-defined message structures"""
+    @classmethod
+    def sanitize_string(cls, string, sizeless=False):
+        """Removes the size header for further processing. Also checks if the header is valid.
+        Possible errors:
+            AttributeError: Fed a non-string, non-bytes argument
+            AssertionError: Initial size header is incorrect"""
+        if not isinstance(string, (bytes, bytearray)):
+            string = string.encode()
+        if not sizeless:
+            assert struct.unpack('!L', string[:4])[0] == len(string[4:]), \
+                "Must assert struct.unpack('!L', string[:4])[0] == len(string[4:])"
+            string = string[4:]
+        return string
+
+    @classmethod
+    def decompress_string(cls, string, compressions=None):
+        """Returns a tuple containing the decompressed bytes and a boolean as to whether decompression failed or not
+        Possible errors:
+            Exception:  Unrecognized compression method fed in compressions"""
+        compression_fail = False
+        for method in intersect(compressions, compression):  # second is module scope compression
+            try:
+                string = decompress(string, method)
+                compression_fail = False
+                break
+            except:
+                compression_fail = True
+                continue
+        return (string, compression_fail)
+
+    @classmethod
+    def process_string(cls, string):
+        """Given a sanitized, plaintext string, returns a list of its packets
+        Possible errors:
+            struct.error:   Packet headers are incorrect OR not fed plaintext
+            IndexError:     See struct.error"""
+        processed, expected = 0, len(string)
+        pack_lens, packets = [], []
+        while processed != expected:
+            pack_lens.extend(struct.unpack("!L", string[processed:processed+4]))
+            processed += 4
+            expected -= pack_lens[-1]
+        # Then reconstruct the packets
+        for index, length in enumerate(pack_lens):
+            start = processed + sum(pack_lens[:index])
+            end = start + length
+            packets.append(string[start:end])
+        return packets
+
+    @classmethod
+    def feed_string(cls, protocol, string, sizeless=False, compressions=None):
+        """Constructs a pathfinding_message from a string or bytes object.
+        Possible errors:
+            AttributeError: Fed a non-string, non-bytes argument
+            AssertionError: Initial size header is incorrect
+            Exception:      Unrecognized compression method fed in compressions
+            struct.error:   Packet headers are incorrect OR unrecognized compression
+            IndexError:     See struct.error"""
+        # First section checks size header
+        string = cls.sanitize_string(string, sizeless)
+        # Then we attempt to decompress
+        string, compression_fail = cls.decompress_string(string, compressions)
+        # After this, we process the packet size headers
+        packets = cls.process_string(string)
+        msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
+        msg.time = from_base_58(packets[3])
+        msg.compression_fail = compression_fail
+        return msg
+
+    def __init__(self, protocol, msg_type, sender, payload, compression=None):
+        self.protocol = protocol
+        self.msg_type = msg_type
+        self.sender = sender
+        self.__payload = payload
+        self.time = getUTC()
+        if compression:
+            self.compression = compression
+        else:
+            self.compression = []
+        self.compression_fail = False
+
+    @property
+    def payload(self):
+        """Returns a list containing the message payload encoded as bytes"""
+        for i, val in enumerate(self.__payload):
+            if not isinstance(val, (bytes, bytearray)):
+                self.__payload[i] = val.encode()
+        return self.__payload
+
+    @property
+    def compression_used(self):
+        """Returns the compression method this message is using"""
+        for method in intersect(compression, self.compression):
+            return method
+        return None
+
+    @property
+    def time_58(self):
+        """Returns the messages timestamp in base_58"""
+        return to_base_58(self.time)
+
+    @property
+    def id(self):
+        """Returns the message id"""
+        payload_string = b''.join((bytes(pac) for pac in self.payload))
+        payload_hash = hashlib.sha384(payload_string + self.time_58)
+        return to_base_58(int(payload_hash.hexdigest(), 16))
+
+    @property
+    def packets(self):
+        """Returns the full list of packets in this message encoded as bytes, excluding the header"""
+        meta = [self.msg_type, self.sender, self.id, self.time_58]
+        for i, val in enumerate(meta):
+            if not isinstance(val, (bytes, bytearray)):
+                meta[i] = val.encode()
+        return meta + self.payload
+
+    @property
+    def __non_len_string(self):
+        """Returns a bytes object containing the entire message, excepting the total length header"""
+        packets = self.packets
+        header = struct.pack("!" + str(len(packets)) + "L", 
+                                    *[len(x) for x in packets])
+        string = header + b''.join((bytes(pac) for pac in packets))
+        if self.compression_used:
+            string = compress(string, self.compression_used)
+        return string
+    
+    @property
+    def string(self):
+        """Returns a string representation of the message"""
+        string = self.__non_len_string
+        return struct.pack("!L", len(string)) + string
+
+    def __len__(self):
+        return len(self.__non_len_string)
+
+    @property
+    def len(self):
+        """Return the struct-encoded length header"""
+        return struct.pack("!L", self.__len__())
 
 
 class base_connection(object):
@@ -354,151 +517,6 @@ class base_socket(object):
     def __del__(self):
         if not self.__closed:
             self.close()
-
-
-class pathfinding_message(object):
-    """An object used to build and parse protocol-defined message structures"""
-    @classmethod
-    def feed_string(cls, protocol, string, sizeless=False, compressions=None):
-        """Constructs a pathfinding_message from a string or bytes object.
-        Possible errors:
-            AttributeError: Fed a non-string, non-bytes argument
-            AssertionError: Initial size header is incorrect
-            Exception:      Unrecognized compression method fed in compressions
-            struct.error:   Packet headers are incorrect OR unrecognized compression
-            IndexError:     See struct.error"""
-        # First section checks size header
-        string = cls.sanitize_string(string, sizeless)
-        # Then we attempt to decompress
-        string, compression_fail = cls.decompress_string(string, compressions)
-        # After this, we process the packet size headers
-        packets = cls.process_string(string)
-        msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
-        msg.time = from_base_58(packets[3])
-        msg.compression_fail = compression_fail
-        return msg
-
-    @classmethod
-    def sanitize_string(cls, string, sizeless=False):
-        """Removes the size header for further processing. Also checks if the header is valid.
-        Possible errors:
-            AttributeError: Fed a non-string, non-bytes argument
-            AssertionError: Initial size header is incorrect"""
-        if not isinstance(string, (bytes, bytearray)):
-            string = string.encode()
-        if not sizeless:
-            assert struct.unpack('!L', string[:4])[0] == len(string[4:]), \
-                "Must assert struct.unpack('!L', string[:4])[0] == len(string[4:])"
-            string = string[4:]
-        return string
-
-    @classmethod
-    def decompress_string(cls, string, compressions=None):
-        """Returns a tuple containing the decompressed bytes and a boolean as to whether decompression failed or not
-        Possible errors:
-            Exception:  Unrecognized compression method fed in compressions"""
-        compression_fail = False
-        for method in intersect(compressions, compression):  # second is module scope compression
-            try:
-                string = decompress(string, method)
-                compression_fail = False
-                break
-            except:
-                compression_fail = True
-                continue
-        return (string, compression_fail)
-
-    @classmethod
-    def process_string(cls, string):
-        """Given a sanitized, plaintext string, returns a list of its packets
-        Possible errors:
-            struct.error:   Packet headers are incorrect OR not fed plaintext
-            IndexError:     See struct.error"""
-        processed, expected = 0, len(string)
-        pack_lens, packets = [], []
-        while processed != expected:
-            pack_lens.extend(struct.unpack("!L", string[processed:processed+4]))
-            processed += 4
-            expected -= pack_lens[-1]
-        # Then reconstruct the packets
-        for index, length in enumerate(pack_lens):
-            start = processed + sum(pack_lens[:index])
-            end = start + length
-            packets.append(string[start:end])
-        return packets
-
-    def __init__(self, protocol, msg_type, sender, payload, compression=None):
-        self.protocol = protocol
-        self.msg_type = msg_type
-        self.sender = sender
-        self.__payload = payload
-        self.time = getUTC()
-        if compression:
-            self.compression = compression
-        else:
-            self.compression = []
-        self.compression_fail = False
-
-    @property
-    def payload(self):
-        """Returns a list containing the message payload encoded as bytes"""
-        for i, val in enumerate(self.__payload):
-            if not isinstance(val, (bytes, bytearray)):
-                self.__payload[i] = val.encode()
-        return self.__payload
-
-    @property
-    def compression_used(self):
-        """Returns the compression method this message is using"""
-        for method in intersect(compression, self.compression):
-            return method
-        return None
-
-    @property
-    def time_58(self):
-        """Returns the messages timestamp in base_58"""
-        return to_base_58(self.time)
-
-    @property
-    def id(self):
-        """Returns the message id"""
-        payload_string = b''.join((bytes(pac) for pac in self.payload))
-        payload_hash = hashlib.sha384(payload_string + self.time_58)
-        return to_base_58(int(payload_hash.hexdigest(), 16))
-
-    @property
-    def packets(self):
-        """Returns the full list of packets in this message encoded as bytes, excluding the header"""
-        meta = [self.msg_type, self.sender, self.id, self.time_58]
-        for i, val in enumerate(meta):
-            if not isinstance(val, (bytes, bytearray)):
-                meta[i] = val.encode()
-        return meta + self.payload
-
-    @property
-    def __non_len_string(self):
-        """Returns a bytes object containing the entire message, excepting the total length header"""
-        packets = self.packets
-        header = struct.pack("!" + str(len(packets)) + "L", 
-                                    *[len(x) for x in packets])
-        string = header + b''.join((bytes(pac) for pac in packets))
-        if self.compression_used:
-            string = compress(string, self.compression_used)
-        return string
-    
-    @property
-    def string(self):
-        """Returns a string representation of the message"""
-        string = self.__non_len_string
-        return struct.pack("!L", len(string)) + string
-
-    def __len__(self):
-        return len(self.__non_len_string)
-
-    @property
-    def len(self):
-        """Return the struct-encoded length header"""
-        return struct.pack("!L", self.__len__())
 
 
 class message(object):
