@@ -59,6 +59,7 @@ class flags():
     resend      = brepr(b'\x09', rep='resend')
     response    = brepr(b'\x0A', rep='response')
     store       = brepr(b'\x0B', rep='store')
+    retrieve    = brepr(b'\x0C', rep='retrieve')
 
     # implemented compression methods
     bz2  = brepr(b'\x10', rep='bz2')

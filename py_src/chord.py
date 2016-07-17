@@ -238,11 +238,24 @@ class chord_socket(base_socket):
         if packets[0] == flags.request:
             if packets[1] == b'*':
                 handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
-            elif self.routing_table.get(packets[2]):
-                handler.send(flags.broadcast, flags.response, packets[1], json.dumps([self.routing_table.get(packets[2]).addr, packets[2].decode()]))
-            elif packets[2] in hashes:
-                self.__lookup(packets[2], packets[3], id=handler.id)
+            else:
+                goal = from_base_58(packets[1])
+                node = self.__findFinger__(goal)
+                if node is not self:
+                    node.send(flags.whisper, flags.request, packets[1], msg.id)
+                    ret = awaiting_value()
+                    ret.callback = handler
+                    self.requests.update({(packets[1], msg.id): ret})
+                else:
+                    handler.send(flags.whisper, flags.response, packets[1], packets[2], self.id)
             return True
+
+    def __handle_retrieve(self, msg, handler):
+        packets = msg.packets
+        if packets[0] == flags.retrieve:
+            if packets[2] in hashes:
+                self.__lookup(packets[2], packets[3], id=handler.id)
+                return True
 
     def __handle_store(self, msg, handler):
         packets = msg.packets
@@ -297,7 +310,7 @@ class chord_socket(base_socket):
         if node in (self, None):
             return awaiting_value(self.data[method][key])
         else:
-            node.send(flags.whisper, flags.request, method, to_base_58(key))
+            node.send(flags.whisper, flags.retrieve, method, to_base_58(key))
             ret = awaiting_value()
             if handler:
                 ret.callback = handler
