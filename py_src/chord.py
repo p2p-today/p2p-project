@@ -117,6 +117,7 @@ class chord_socket(base_socket):
         self.register_handler(self.__handle_peers)
         self.register_handler(self.__handle_response)
         self.register_handler(self.__handle_request)
+        self.register_handler(self.__handle_retrieve)
         self.register_handler(self.__handle_store)
         self.next = self
         self.prev = self
@@ -178,7 +179,6 @@ class chord_socket(base_socket):
                 handler.compression = [algo.encode() for algo in handler.compression]
                 self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
                 self.set_fingers(handler)
-                handler.send(flags.whisper, flags.notify, '1' if handler in self.routing_table.values() else '0')
                 handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
                 if distance(self.id_10, self.next.id_10-1, self.limit) \
                     > distance(self.id_10, handler.id_10, self.limit):
@@ -187,19 +187,6 @@ class chord_socket(base_socket):
                     > distance(handler.id_10, self.id_10, self.limit):
                     self.prev = handler
             return True
-
-    def __handle_notify(self, msg, handler):
-        packets = msg.packets
-        if packets[0] == flags.notify:
-            if packets[1] == b'1':
-                self.predecessors.append(handler)
-                if handler in self.awaiting_ids:
-                    self.awaiting_ids.remove(handler)
-                return True
-            elif packets[1] == b'0':
-                if handler not in self.routing_table.values():
-                    self.disconnect(handler)
-                    return True
 
     def __handle_peers(self, msg, handler):
         packets = msg.packets
@@ -247,14 +234,16 @@ class chord_socket(base_socket):
                     ret.callback = handler
                     self.requests.update({(packets[1], msg.id): ret})
                 else:
-                    handler.send(flags.whisper, flags.response, packets[1], packets[2], self.id)
+                    handler.send(flags.whisper, flags.response, packets[1], packets[2], self.out_addr)
             return True
 
     def __handle_retrieve(self, msg, handler):
         packets = msg.packets
         if packets[0] == flags.retrieve:
-            if packets[2] in hashes:
-                self.__lookup(packets[2], packets[3], id=handler.id)
+            if packets[1] in hashes:
+                val = self.__lookup(packets[1], from_base_58(packets[2]), handler)
+                if val.value:
+                    handler.send(flags.whisper, flags.response, packets[1], val.value)
                 return True
 
     def __handle_store(self, msg, handler):
@@ -296,7 +285,8 @@ class chord_socket(base_socket):
     def __connect(self, addr, port):
         """Private API method for connecting and handshaking"""
         handler = self.connect(addr, port)
-        self.__send_handshake__(handler)
+        if handler:
+            self.__send_handshake__(handler)
 
     def join(self):
         handler = random.choice(self.awaiting_ids)
@@ -324,7 +314,8 @@ class chord_socket(base_socket):
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
         common = most_common(vals)
         while common == -1:
-            time.sleep(0.01)
+            time.sleep(1)
+            print('loop')
             common = most_common(vals)
         if common is not None and vals.count(common) > len(hashes) // 2:
             return common

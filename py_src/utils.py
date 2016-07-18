@@ -63,6 +63,9 @@ class awaiting_value(object):
     def callback_method(self, method, key):
         self.callback.send(flags.whisper, flags.response, method, key, self.value)
 
+    def __repr__(self):
+        return repr(value)
+
 
 def most_common(tmp):
     """Returns the most common element in a list"""

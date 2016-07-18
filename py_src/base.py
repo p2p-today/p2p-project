@@ -334,7 +334,7 @@ class base_connection(object):
         if msg_type in [flags.whisper, flags.broadcast]:
             self.last_sent = [msg_type] + list(args)
         self.__print__("Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)
-        if msg.compression_used: self.__print__("Compressing with %s" % msg.compression_used, level=4)
+        if msg.compression_used: self.__print__("Compressing with %s" % repr(msg.compression_used), level=4)
         try:
             self.sock.send(msg.string)
             return msg
