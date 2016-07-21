@@ -4,6 +4,7 @@
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
     <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
     <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
@@ -27,346 +28,80 @@
     <div id="content-wrapper">
       <div class="inner clearfix">
         <section id="main-content">
-          <p>Documentation for individual implementations can be found in their respective folders.</p>
+          <p>This repo contains tools for peer to peer networking, designed to be easy to implement across languages.</p>
 
-<p>Current build status:</p>
+<h2>
+<a id="current-build-status" class="anchor" href="#current-build-status" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Current build status:</h2>
 
 <p><a href="https://app.shippable.com/projects/5750887b2a8192902e225466"><img src="https://img.shields.io/shippable/5750887b2a8192902e225466/master.svg?maxAge=3600&amp;label=Linux" alt="Shippable Status for gappleto97/p2p-project"></a> <a href="https://travis-ci.org/gappleto97/p2p-project"> <img src="https://img.shields.io/travis/gappleto97/p2p-project/master.svg?maxAge=3600&amp;label=OSX" alt="Travis-CI Status for gappleto97/p2p-project"></a> <a href="https://ci.appveyor.com/project/gappleto97/p2p-project"> <img src="https://img.shields.io/appveyor/ci/gappleto97/p2p-project/master.svg?maxAge=3600&amp;label=Windows" alt="Appveyor Status for gappleto97/p2p-project"></a> <a href="https://codeclimate.com/github/gappleto97/p2p-project"> <img src="https://img.shields.io/codeclimate/github/gappleto97/p2p-project.svg?maxAge=3600" alt="Code Climate Score"></a> <a href="https://codecov.io/gh/gappleto97/p2p-project"> <img src="https://img.shields.io/codecov/c/github/gappleto97/p2p-project/master.svg?maxAge=3600" alt="Codecov Status for gappleto97/p2p-project"></a></p>
 
-<p><a href="https://waffle.io/gappleto97/p2p-project"><img src="https://img.shields.io/waffle/label/gappleto97/p2p-project/backlog.svg?maxAge=3600&amp;label=backlog" alt="Issues in Progress"></a> <a href="https://waffle.io/gappleto97/p2p-project"> <img src="https://img.shields.io/waffle/label/gappleto97/p2p-project/queued.svg?maxAge=3600&amp;labal=queued" alt="Issues in Progress"></a> <a href="https://waffle.io/gappleto97/p2p-project"> <img src="https://img.shields.io/waffle/label/gappleto97/p2p-project/in%20progress.svg?maxAge=3600" alt="Issues in Progress"></a> <a href="https://waffle.io/gappleto97/p2p-project"> <img src="https://img.shields.io/waffle/label/gappleto97/p2p-project/in%20review.svg?maxAge=3600&amp;label=in%20review" alt="Issues in Progress"></a></p>
-
-<h1>
-<a id="mass-broadcast-protocol" class="anchor" href="#mass-broadcast-protocol" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Mass Broadcast Protocol</h1>
-
-<ol>
-<li>
-<p><strong>Abstract</strong></p>
-
-<p>This project is meant to be a simple, portable peer-to-peer network. Part of its simplicity is that it will utilize no pathfinding or addressing structure outside of those provided by TCP/IP. This means that any message is either a direct transmission or a mass broadcast. This also makes it much simpler to translate the reference implementation into another language.</p>
-
-<p>It also is meant to be as modular as possible. If one wishes to operate on a different protocol or subnet, it takes one change to make this happen. If one wishes to use an encrypted communications channel, this is also relatively easy, so long as it inherits normal socket functions. If one wishes to compress information, this takes little change. If not, simply don't broadcast support.</p>
-
-<p>This proposal is meant to formally outline the structure of such a network and its various nodes, as well as communicate this approach's disadvantages. To define the protocol, we will walk through the basic construction of a node.</p>
-</li>
-<li>
-<p><strong>Packet Structure</strong></p>
-
-<p>The first step to any of this is being able to understand messages sent through the network. To do this, you need to build a parser. Each message can be considered to have three segments: a header, metadata, and payload. The header is used to figure out the size of a message, as well as how to divide up its various packets. The metadata is used to assist routing functions. And the payload is what the user on the other end receives.</p>
-
-<p>A more formal definitions would look like:</p>
-
-<pre><code>Size of message    - 4 (big-endian) bytes defining the size of the message
-------------------------All below may be compressed------------------------
-Size of packet 0   - 4 bytes defining the plaintext size of packet 0
-Size of packet 1   - 4 bytes defining the plaintext size of packet 1
-...
-Size of packet n-1 - 4 bytes defining the plaintext size of packet n-1
-Size of packet n   - 4 bytes defining the plaintext size of packet n
----------------------------------End Header--------------------------------
-Pathfinding header - [broadcast, waterfall, whisper, renegotiate]
-Sender ID          - A base_58 SHA384-based ID for the sender
-Message ID         - A base_58 SHA384-based ID for the message packets
-Timestamp          - A base_58 unix UTC timestamp of initial broadcast
-Payload packets
-  Payload header   - [broadcast, whisper, handshake, peers, request, response]
-  Payload contents
-</code></pre>
-
-<p>To understand this, let's work from the bottom up. When a user wants to construct a message, they feed a list of packets. For this example, let's say it's <code>['broadcast', 'test message']</code>. When this list is fed into a node, it adds the metadata section, and the list becomes:</p>
-
-<p><code>['broadcast', '6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V', '72tG7phqoAnoeWRKtWoSmseurpCtYg2wHih1y5ZX1AmUvihcH7CPZHThtm9LGvKtj7', '3EfSDb', 'broadcast', 'test message']</code>.</p>
-
-<p>The pathfinding header alerts nodes to how they should treat the message. If it is <code>broadcast</code> or <code>waterfall</code> they are to forward this message to their peers. If it is <code>whisper</code> they are not to do so. <code>renegotiate</code> is exclusivley uesd for connection management.</p>
-
-<p>The sender ID is used to identify a user in your routing table. So if you go to reply to a message, it looks up this ID in your routing table. As will be discussed below, there are methods you can specifically request a user ID to connect to.</p>
-
-<p>The message ID is used to filter out messages that you have seen before. If you wanted you could also use this as a checksum.</p>
-
-<p>One thing to notice is that the sender ID, message ID and timestamp are all in a strange encoding. This is base_58, borrowed from Bitcoin. It's a way to encode numbers that allows for sufficient density while still maintaining some human readability. This will get defined formally later in the paper.</p>
-
-<p>All of this still leaves out the header. Constructing this goes as follows:</p>
-
-<p>For each packet, compute its length and pack this into four bytes. So a message of length 6 would look like <code>'\x00\x00\x00\x06'</code>. Take the resulting string and prepend it to your packets. In this example, you would end up with: <code>'\x00\x00\x00\t\x00\x00\x00B\x00\x00\x00B\x00\x00\x00\x06\x00\x00\x00\t\x00\x00\x00\x0cbroadcast6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V7iSCRDcHZwYtxGbTCz1rwDbUkt7YrbAh2VdS4A75hRuM6xan2gjmZqiVjLkMqiHE3Q3EfSDbbroadcasttest message'</code>.</p>
-
-<p>After running this message through whatever compression algorith you've negotiated with your peer, compute its size, and pack it into four bytes: <code>'\x00\x00\x00\xc0'</code>. This results in a final message of:</p>
-
-<p><code>'\x00\x00\x00\xc0\x00\x00\x00\t\x00\x00\x00B\x00\x00\x00B\x00\x00\x00\x06\x00\x00\x00\t\x00\x00\x00\x0cbroadcast6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V7iSCRDcHZwYtxGbTCz1rwDbUkt7YrbAh2VdS4A75hRuM6xan2gjmZqiVjLkMqiHE3Q3EfSDbbroadcasttest message'</code></p>
-</li>
-<li>
-<p><strong>Parsing a Message</strong></p>
-
-<p>Let's keep with our example above. How do we parse the resulting string?</p>
-
-<p>First, check the first four bytes. Because we don't know how much data to receive through our socket, we always first check for a four byte header. Then we toss it aside and collect that much information. If we know the message will be compressed, now is when it gets decompressed.</p>
-
-<p>Next, we need to split up the packets. To do that, we take each four bytes and sum their values until the number of remaining bytes equals that sum. If it does not, we throw an error. An example script would look like:</p>
-
-<div class="highlight highlight-source-python"><pre><span class="pl-k">def</span> <span class="pl-en">get_packets</span>(<span class="pl-smi">string</span>):
-    processed <span class="pl-k">=</span> <span class="pl-c1">0</span>
-    expected <span class="pl-k">=</span> <span class="pl-c1">len</span>(string)
-    pack_lens <span class="pl-k">=</span> []
-    packets <span class="pl-k">=</span> []
-    <span class="pl-c"># First find each packet's length</span>
-    <span class="pl-k">while</span> processed <span class="pl-k">!=</span> expected:
-        length <span class="pl-k">=</span> struct.unpack(<span class="pl-s"><span class="pl-pds">"</span>!L<span class="pl-pds">"</span></span>, string[processed:processed<span class="pl-k">+</span><span class="pl-c1">4</span>])[<span class="pl-c1">0</span>]
-        processed <span class="pl-k">+=</span> <span class="pl-c1">4</span>
-        expected <span class="pl-k">-=</span> length
-        pack_lens.append(length)
-    <span class="pl-c"># Then reconstruct the packets</span>
-    <span class="pl-k">for</span> index, length <span class="pl-k">in</span> <span class="pl-c1">enumerate</span>(pack_lens):
-        start <span class="pl-k">=</span> processed <span class="pl-k">+</span> <span class="pl-c1">sum</span>(pack_lens[:index])
-        end <span class="pl-k">=</span> start <span class="pl-k">+</span> length
-        packets.append(string[start:end])
-    <span class="pl-k">return</span> packets</pre></div>
-
-<p>From the above script we get back <code>['broadcast', '6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V', '72tG7phqoAnoeWRKtWoSmseurpCtYg2wHih1y5ZX1AmUvihcH7CPZHThtm9LGvKtj7', '3EfSDb', 'broadcast', 'test message']</code></p>
-
-<p>A node will use the entirety of this list to decide what to do with it. In this case, it would forward it to its peers, then present to the user the payload: <code>['broadcast', 'test message']</code>.</p>
-
-<p>Now that we know how to construct a message, my examples will no longer include the headers. They will include the metadata and payload only.</p>
-</li>
-<li>
-<p><strong>IDs and Encoding</strong></p>
-
-<p>Knowing the overall message structure is great, but it's not very useful if you can't construct the metadata. To do this, there are three parts.</p>
-
-<ul>
-<li>
-<p><em>base_58</em></p>
-
-<p>This encoding is taken from Bitcoin. If you've ever seen a Bitcoin address, you've seen base_58 encoding in action. The goal behind it is to provide data compression without compromising its human readability. Base_58, for the purposes of this protocol, is defined by the following python methods.</p>
-
-<div class="highlight highlight-source-python"><pre>base_58 <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">'</span>123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz<span class="pl-pds">'</span></span>
-
-<span class="pl-k">def</span> <span class="pl-en">to_base_58</span>(<span class="pl-smi">i</span>):
-    string <span class="pl-k">=</span> <span class="pl-s"><span class="pl-pds">"</span><span class="pl-pds">"</span></span>
-    <span class="pl-k">while</span> i:
-        string <span class="pl-k">=</span> base_58[i <span class="pl-k">%</span> <span class="pl-c1">58</span>] <span class="pl-k">+</span> string
-        i <span class="pl-k">=</span> i <span class="pl-k">//</span> <span class="pl-c1">58</span>    <span class="pl-c"># Floor division is needed to prevent floats</span>
-    <span class="pl-k">return</span> string.encode()
-
-<span class="pl-k">def</span> <span class="pl-en">from_base_58</span>(<span class="pl-smi">string</span>):
-    <span class="pl-k">if</span> <span class="pl-c1">isinstance</span>(string, <span class="pl-c1">bytes</span>):
-        string <span class="pl-k">=</span> string.decode()
-    decimal <span class="pl-k">=</span> <span class="pl-c1">0</span>
-    <span class="pl-k">for</span> char <span class="pl-k">in</span> string:
-        decimal <span class="pl-k">=</span> decimal <span class="pl-k">*</span> <span class="pl-c1">58</span> <span class="pl-k">+</span> base_58.index(char)
-    <span class="pl-k">return</span> decimal</pre></div>
-</li>
-<li>
-<p><em>Node IDs</em></p>
-
-<p>A node ID is taken from a SHA-384 hash of three other elements. First, your outward facing address. Second, the ID of your subnet. Third, a 'user salt' generated on startup. This hash is then converted into base_58.</p>
-
-<p>That 'subnet ID' we mentioned will be explored in more detail later on, but for now consider it a constant.</p>
-</li>
-<li>
-<p><em>Message IDs</em></p>
-
-<p>A message ID is also a SHA-384 hash. In this case, it is on a message's payload and its timestamp.</p>
-
-<p>To get the hash, first join each packet together in order. Append to this the message's timestamp in base_58. The ID you will use is the hash of this string, encoded into base_58.</p>
-</li>
-</ul>
-</li>
-<li>
-<p><strong>Node Construction</strong></p>
-
-<p>Now you're ready to parse the messages on the network, but you can't yet connect. There are important elements you need to store in order to interact with it correctly.</p>
-
-<ol>
-<li> A daemon thread which receives messages and incoming connections</li>
-<li> A routing table of peers with the IDs and corresponding connection objects</li>
-<li> A "waterfall queue" of recently received message IDs and timestamps</li>
-<li> A user-interactable queue of recently received messages</li>
-<li> A "protocol", which contains:
-
-<ol>
-<li> A sub-net flag</li>
-<li> An encryption method (or "Plaintext")</li>
-<li> A way to obtain a SHA256-based ID of this</li>
-</ol>
-</li>
-</ol>
-
-<p>That last element is the 'subnet ID' we referred to in section 4. This object is used to weed out undesired connections. If someone has the wrong protocol object, then your node will reject them from connecting. A rough definition would be as follows:</p>
-
-<div class="highlight highlight-source-python"><pre><span class="pl-k">class</span> <span class="pl-en">protocol</span>(<span class="pl-e">namedtuple</span>(<span class="pl-s"><span class="pl-pds">"</span>protocol<span class="pl-pds">"</span></span>, [<span class="pl-s"><span class="pl-pds">'</span>subnet<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>encryption<span class="pl-pds">'</span></span>])):
-    <span class="pl-en">@</span><span class="pl-c1">property</span>
-    <span class="pl-k">def</span> <span class="pl-c1">id</span>(<span class="pl-smi"><span class="pl-smi">self</span></span>):
-        info <span class="pl-k">=</span> [<span class="pl-c1">str</span>(x) <span class="pl-k">for</span> x <span class="pl-k">in</span> <span class="pl-v">self</span>] <span class="pl-k">+</span> [protocol_version]
-        h <span class="pl-k">=</span> hashlib.sha256(<span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>.join(info).encode())
-        <span class="pl-k">return</span> to_base_58(<span class="pl-c1">int</span>(h.hexdigest(), <span class="pl-c1">16</span>))</pre></div>
-
-<p>Or more explicitly in javascript:</p>
-
-<div class="highlight highlight-source-js"><pre><span class="pl-k">class</span> <span class="pl-en">protocol</span> {
-    <span class="pl-en">constructor</span>(<span class="pl-smi">subnet</span>, <span class="pl-smi">encryption</span>) {
-        <span class="pl-v">this</span>.<span class="pl-smi">subnet</span> <span class="pl-k">=</span> subnet;
-        <span class="pl-v">this</span>.<span class="pl-smi">encryption</span> <span class="pl-k">=</span> encryption;
-    }
-
-    get <span class="pl-en">id</span>() {
-        <span class="pl-k">var</span> info <span class="pl-k">=</span> [<span class="pl-v">this</span>.<span class="pl-smi">subnet</span>, <span class="pl-v">this</span>.<span class="pl-smi">encryption</span>, protocol_version];
-        <span class="pl-k">var</span> hash <span class="pl-k">=</span> <span class="pl-en">SHA256</span>(<span class="pl-smi">info</span>.<span class="pl-c1">join</span>(<span class="pl-s"><span class="pl-pds">'</span><span class="pl-pds">'</span></span>));
-        <span class="pl-k">return</span> <span class="pl-en">to_base_58</span>(<span class="pl-en">BigInt</span>(hash, <span class="pl-c1">16</span>));
-    }
-}</pre></div>
-</li>
-<li>
-<p><strong>Connecting to the Network</strong></p>
-
-<p>This is where the protocol object becomes important.</p>
-
-<p>When you connect to a node, each of you will send a message in the following format:</p>
-
-<pre><code>whisper
-[your id]
-[message id]
-[timestamp]
-handshake
-[your id]
-[your protocol id]
-[your outward-facing address]
-[json-ized list of supported compression methods, in order of preference]
-</code></pre>
-
-<p>When you receive the corresponding message, the first thing you do is compare their protocol ID against your own. If they do not match, you shut down the connection.</p>
-
-<p>If they do match, you add them to your routing table (<code>{ID: connection}</code>), and make a note of their outward facing address and supported compression methods. Then you send a standard response:</p>
-
-<pre><code>whisper
-[your id]
-[message id]
-[timestamp]
-peers
-[json-ized copy of your routing table in format: [[addr, port], id]]
-</code></pre>
-
-<p>Upon yourself receiving this message, you attempt to connect to each given address. Now you're connected to the network! But how do you process the incoming messages?</p>
-</li>
-<li>
-<p><strong>Message Propagation</strong></p>
-
-<p>A message is initially broadcast with the <code>broadcast</code> flag. The broadcasting node, as well as all receivers, store this message's ID and timestamp in their waterfall queue. The reciving nodes then re-broadcast this message to each of their peers, but changing the flag to <code>waterfall</code>.</p>
-
-<p>A node which receives these waterfall packets goes through the following steps:</p>
-
-<ol>
-<li> If the message ID is not in the node's waterfall queue, continue and add it to the waterfall queue</li>
-<li> Perform cleanup on the waterfall queue
-
-<ol>
-<li> Remove all possible duplicates (sending may be done in multiple threads, which may result in duplicate copies)</li>
-<li> Remove all IDs with a timestamp more than 1 minute ago</li>
-</ol>
-</li>
-<li> Re-broadcast this message to all peers (optionally excluding the one you received it from)</li>
-</ol>
-
-<p><img src="./figure_one.png" alt="Figure one"></p>
-</li>
-<li>
-<p><strong>Renegotiating a Connection</strong></p>
-
-<p>It may be that at some point a message fails to decompress on your end. If this occurs, you have an easy solution, you can send a <code>renegotiate</code> message. This flag is used to indicate that a message should never be presented to the user, and is only used for connection management. At this time there are two possible operations.</p>
-
-<p>The <code>compression</code> subflag will allow you to renegotiate your compression methods. A message using this subflag should be constructed like so:</p>
-
-<pre><code>renegotiate
-[your id]
-[message id]
-[timestamp]
-compression
-[json-ized list of desired compression methods, in order of preference]
-</code></pre>
-
-<p>Your peer will respond with the same message, excluding any methods they do not support. If this list is different than the one you sent, you reply, trimming the list of methods <em>you</em> do not support. This process is repeated until you agree upon a list.</p>
-
-<p>You may also send a <code>resend</code> subflag, which requests your peer to resend the previous <code>whisper</code> or <code>broadcast</code>. This is structured like so:</p>
-
-<pre><code>renegotiate
-[your id]
-[message id]
-[timestamp]
-resend
-</code></pre>
-</li>
-<li>
-<p><strong>Peer Requests</strong></p>
-
-<p>If you want to privately reply to a message where you are not directly connected to a sender, the following method can be used:</p>
-
-<p>First, you broadcast a message to the network containing the <code>request</code> subflag. This is constructed as follows:</p>
-
-<pre><code>broadcast
-[your id]
-[message id]
-[timestamp]
-request
-[a unique, base_58 id you assign]
-[the id of the desired peer]
-</code></pre>
-
-<p>Then you place this in a dictionary so you can watch when this is responded to. A peer who gets this will reply:</p>
-
-<pre><code>broadcast
-[their id]
-[message id]
-[timestamp]
-response
-[the id you assigned]
-[address of desired peer in format: [[addr, port], id] ]
-</code></pre>
-
-<p>When this is received, you remove the request from your dictionary, make a connection to the given address, and send the message.</p>
-
-<p>Another use of this mechanism is to request a copy of your peers' routing tables. To do this, you may send a message structured like so:</p>
-
-<pre><code>whisper
-[your id]
-[message id]
-[timestamp]
-request
-*
-</code></pre>
-
-<p>A node who receives this will respond exactly as they do after a successful handshake. Note that while it is technically valid to send this request as a <code>broadcast</code>, it is generally discouraged.</p>
-</li>
-<li>
-<p><strong>Potential Flaws</strong></p>
-
-<p>The network has a few immediately obvious shortcomings.</p>
-
-<p>First, the maximum message size is 4,294,967,299 bytes (including compression and headers). It could well be that in the future there will be more data to send in a single message. But equally so, a present-day attacker could use this to halt essentially every connection on the network. A short-term solution would be to have a soft-defined limit, but as has been shown in other protocols, this can calcify over time and do damage.</p>
-
-<p>Second, in a worst case scenario, every node will receive a given message n-1 times, and each message will generate n^2 total broadcasts, where n is the number of connected nodes. In most larger cases this will not happen, as a given node will not be connected to everyone else. But in smaller networks this will be common, and in well-connected networks this could slow things down. This calls for optimization, and will need to be explored. For instance, not propagating to a peer you receive a message from reduces the number of total broadcasts to (n-1)^2. Limiting your number of connections can bring this down to min(max_conns, n-1) * (n-1).</p>
-
-<p>Thrid, there is quite a lot of extra data being sent. Using the default parameters, if you want to send a 4 character message it will be expanded to 175 characters. That's ~44x larger. If you want these differences to be negligble, you need to send messages on the order of 512 characters. Then there is only an increase of ~34% (0% with decent compression). This can be improved by reducing the size of the various IDs being sent, or making the packet headers shorter. Both of these have disadvantages, however.</p>
-
-<p>Results using opportunistic compression look roughly as follows (last updated in 0.2.95):</p>
-
-<p>For 4 characters…</p>
-
-<pre><code>original  4
-plaintext 175  (4375%)
-lzma      228  (5700%)
-bz2       192  (4800%)
-gzip      163  (4075%)
-</code></pre>
-
-<p>For 498 characters…</p>
-
-<pre><code>original  498
-plaintext 669  (134.3%)
-lzma      552  (110.8%)
-bz2       533  (107.0%)
-gzip      471  (94.6%)
-</code></pre>
-
-<p>Because the reference implementation supports all of these (except for lzma in python2), this means that the overhead will drop away after ~500 characters. Communications with other implementations may be slower than this, however.</p>
-</li>
-</ol>
+<p><a href="https://waffle.io/gappleto97/p2p-project"> <img src="https://img.shields.io/waffle/label/gappleto97/p2p-project/queued.svg?maxAge=3600&amp;labal=queued" alt="Issues in Progress"></a> <a href="https://waffle.io/gappleto97/p2p-project"> <img src="https://img.shields.io/waffle/label/gappleto97/p2p-project/in%20progress.svg?maxAge=3600" alt="Issues in Progress"></a> <a href="https://waffle.io/gappleto97/p2p-project"> <img src="https://img.shields.io/waffle/label/gappleto97/p2p-project/in%20review.svg?maxAge=3600&amp;label=in%20review" alt="Issues in Progress"></a></p>
+
+<h2>
+<a id="development-status" class="anchor" href="#development-status" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Development Status:</h2>
+
+<h3>
+<a id="python" class="anchor" href="#python" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Python</h3>
+
+<h4>
+<a id="protocol-parser" class="anchor" href="#protocol-parser" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Protocol Parser</h4>
+
+<div>
+  <div>
+    100% Complete
+  </div>
+</div>
+
+<h4>
+<a id="mesh-network" class="anchor" href="#mesh-network" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Mesh Network</h4>
+
+<div>
+  <div>
+    100% Complete
+  </div>
+</div>
+
+<h4>
+<a id="chord-dht" class="anchor" href="#chord-dht" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Chord DHT</h4>
+
+<div>
+  <div>
+    40% Complete
+  </div>
+</div>
+
+<h4>
+<a id="kademlia-dht" class="anchor" href="#kademlia-dht" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Kademlia DHT</h4>
+
+<div>
+  <div>
+    0% Complete
+  </div>
+</div>
+
+<h3>
+<a id="javascript" class="anchor" href="#javascript" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Javascript</h3>
+
+<h4>
+<a id="protocol-parser-1" class="anchor" href="#protocol-parser-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Protocol Parser</h4>
+
+<div>
+  <div>
+    100% Complete
+  </div>
+</div>
+
+<h3>
+<a id="golang" class="anchor" href="#golang" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Golang</h3>
+
+<h4>
+<a id="protocol-parser-2" class="anchor" href="#protocol-parser-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Protocol Parser</h4>
+
+<div>
+  <div>
+    100% Complete
+  </div>
+</div>
         </section>
 
         <aside id="sidebar">
