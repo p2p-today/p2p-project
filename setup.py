@@ -3,7 +3,7 @@ from __future__ import with_statement
 import os
 import sys
 
-__USE_C__ = '--using-c' in sys.argv[-1]
+__USE_C__ = '--using-c' in sys.argv
 if __USE_C__:
     sys.argv.remove('--using-c')
 
