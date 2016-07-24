@@ -3,11 +3,13 @@ from __future__ import with_statement
 import os
 import sys
 
+__USE_C__ = sys.argv[-1] != '--universal'
+
 try:
     import setuptools
-    from setuptools import setup
+    from setuptools import setup, Extension
 except ImportError:
-    from distutils.core import setup
+    from distutils.core import setup, Extension
 
 from py_src import __version__
 
@@ -52,6 +54,15 @@ def main():
         pass
     else:
         pass
+    if __USE_C__:
+        ext_modules = [Extension('py2p.cbase',
+                                #include_dirs = [r'C:\OpenSSL-Win64\include'],
+                                sources=[os.path.join(loc, 'cp_src', 'base_wrapper.cpp'),
+                                         os.path.join(loc, 'cp_src', 'base.cpp'),
+                                         os.path.join(loc, 'cp_src', 'sha', 'sha384.cpp'),
+                                         os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp')])]
+    else:
+        ext_modules = []
 
     setup(name='py2p',
           description='A python library for peer-to-peer networking',
@@ -63,6 +74,7 @@ def main():
           license='LGPLv3',
           packages=['py2p', 'py2p.test'],
           package_dir={'py2p': 'py_src'},
+          ext_modules=ext_modules,
           classifiers=classifiers,
           install_requires=install_requires,
           extras_require=extras_require

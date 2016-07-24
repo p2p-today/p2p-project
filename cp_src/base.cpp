@@ -67,13 +67,13 @@ unsigned long unpack_ulong(string str)  {
     return val;
 }
 
-string pack_ulong(unsigned long i)  {
-    string arr = "\x00\x00\x00\x00";
-    for (int c = 3; i && (c >= 0); c--)    {
-        arr[c] = (unsigned char)(i % 256);
-        i /= 256;
-    }
-    return arr;
+string pack_ulong(uint32_t i)  {
+    unsigned char arr[4];
+    arr[0] = i >> 24 & 0xff;
+    arr[1] = i >> 16 & 0xff;
+    arr[2] = i >> 8 & 0xff;
+    arr[3] = i & 0xff;
+    return string(arr, arr+4);
 }
 
 pathfinding_message::pathfinding_message(string type, string sen, vector<string> load) {
@@ -140,65 +140,17 @@ string pathfinding_message::id()    {
         str.append(payload[i]);
     str.append(time_58());
 
-#if 0
-    unsigned char digest[SHA384_DIGEST_LENGTH];
+    string digest = sha384(str);
+    return digest;
+    // size_t ret_size = 70;
+    // char ret[ret_size];
+    // b58enc(ret, &ret_size, digest.c_str(), digest.length());
+    // printf("%s\n", digest.c_str());
+    // printf("%s\n", ret);
 
-    SHA384((unsigned char*)&str, str.length(), (unsigned char*)&digest);   
-    char mdString[SHA384_DIGEST_LENGTH*2+1];
-    for(int i = 0; i < SHA384_DIGEST_LENGTH; i++)
-         sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
-    printf("SHA384 digest: %s\n", mdString);
-    return string(digest);
-#else
-    Py_Initialize();
-    PyObject *hashlib = PyImport_ImportModule("hashlib");
-    PyObject *sha384 = PyDict_GetItemString(PyModule_GetDict(hashlib), "sha384");
-    Py_INCREF(sha384);
-    #if PY_MAJOR_VERSION < 3
-        PyObject *arglist = Py_BuildValue("(s)", str);
-    #else
-        PyObject *arglist = Py_BuildValue("(y)", str);
-    #endif
-    PyObject *hashobj = PyObject_CallObject(sha384, arglist);
-    Py_XDECREF(arglist);
-    Py_XDECREF(sha384);
-    PyObject *digest = PyObject_CallMethod(hashobj, (char*)"digest", (char*)"");
-    Py_XDECREF(hashobj);
-    if (PyBytes_Check(digest)) {
-        Py_ssize_t sz = PyBytes_Size(digest);
-        string ret = string(PyBytes_AsString(digest), sz);
-        Py_XDECREF(digest);
-        return to_base_58(ret, sz);
-    }
-    else if (PyUnicode_Check(digest)) 
-    {
-    #if PY_MAJOR_VERSION < 3
-            PyObject *tmp = PyUnicode_AsUTF8String(digest);
-            Py_ssize_t sz = PyBytes_Size(tmp);
-            string ret = string(PyBytes_AsString(tmp), sz);
-            Py_XDECREF(tmp);
-            Py_XDECREF(digest);
-            return to_base_58(ret, sz);
-        }
-    #else
-            Py_ssize_t sz = 0;
-            string ret = string(PyUnicode_AsUTF8AndSize(digest, &sz), sz);
-            Py_XDECREF(digest);
-            return to_base_58(ret, sz);
-    }
-        else if (PyObject_CheckBuffer(digest))   {
-            PyObject *tmp = PyBytes_FromObject(digest);
-            Py_ssize_t sz = PyBytes_Size(tmp);
-            string ret = string(PyBytes_AsString(tmp), sz);
-            Py_XDECREF(tmp);
-            Py_XDECREF(digest);
-            return to_base_58(ret, sz);
-        }
-    #endif
-#endif
-
-    // return to_base_58(mdString);
-    return "DEFAULT_ID";
+    // string ret_string = string(ret);
+    // printf("%s\n", ret_string.c_str());
+    // return ret_string;
 }
 
 vector<string> pathfinding_message::packets()   {
@@ -217,7 +169,7 @@ string pathfinding_message::base_string()   {
     string base = "";
     vector<string> packs = packets();
     for (unsigned long i = 0; i < packs.size(); i++)    {
-        header += pack_ulong(packs[i].size());
+        header += pack_ulong((uint32_t)packs[i].size());
         base += packs[i];
     }
     return header + base;
@@ -225,7 +177,11 @@ string pathfinding_message::base_string()   {
 
 string pathfinding_message::str()    {
     string base = base_string();
-    return pack_ulong(base.length()) + base;
+    string header = pack_ulong((uint32_t)base.length());
+    for (int i = 0; i < header.length(); i++)
+        printf("%i ", header[i]);
+    printf("%s\n", (header + base).c_str());
+    return header + base;
 }
 
 unsigned long long pathfinding_message::length()    {

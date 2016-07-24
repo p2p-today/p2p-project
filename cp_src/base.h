@@ -1,18 +1,14 @@
 #ifndef BASE
 #define BASE 0
 
-#include <openssl/sha.h>
-
-#if 1 //def OPENSSL_NO_SHA512
-#include <Python.h>
-#endif
-
 #include <string>
 #include <iostream>
 #include <cstdlib>
 #include <vector>
 #include <time.h>
 #include <stdio.h>
+#include <stdint.h>
+#include "sha/sha384.h"
 
 using namespace std;
 
@@ -22,7 +18,7 @@ string divide_by_58(string digest, int &remainder);
 string to_base_58(string digest, unsigned long sz);
 unsigned long long from_base_58(string str);
 unsigned long unpack_ulong(string str);
-string pack_ulong(unsigned long i);
+string pack_ulong(uint32_t i);
 string sanitize_string(string str, bool sizeless);
 string decompress_string(string str, vector<string> compressions);
 vector<string> process_string(string str);

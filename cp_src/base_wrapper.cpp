@@ -133,6 +133,14 @@ static PyObject *packets(pmessage_wrapper *self)    {
     return pylist_from_vector_string(self->msg->packets());
 }
 
+static PyObject *str(pmessage_wrapper *self)    {
+    if (self->msg == NULL)  {
+        PyErr_SetString(PyExc_AttributeError, "msg");
+        return NULL;
+    }
+    return PyBytes_FromString(self->msg->str().c_str());
+}
+
 static PyMemberDef pmessage_wrapper_members[] = {
     {NULL}  /* Sentinel */
 };
@@ -144,6 +152,9 @@ static PyMethodDef pmessage_wrapper_methods[] = {
     },
     {"packets", (PyCFunction)packets, METH_NOARGS,
         "Return the packets of this message"
+    },
+    {"string", (PyCFunction)str, METH_NOARGS,
+        "Return the string of this message"
     },
     {NULL}  /* Sentinel */
 };
