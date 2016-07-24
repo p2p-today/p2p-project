@@ -21,12 +21,14 @@ classifiers = ['Development Status :: 3 - Alpha',
                'Operating System :: OS Independent',
                'Topic :: Communications',
                'Topic :: Internet',
+               'Programming Language :: C++',
                'Programming Language :: JavaScript',
+               'Programming Language :: Other',
                'Programming Language :: Python']
 
-classifiers.extend([
+classifiers.extend((
                ('Programming Language :: Python :: %s' % x) for x in
-                '2 3 2.6 2.7 3.3 3.4 3.5'.split()])
+                '2 3 2.6 2.7 3.3 3.4 3.5'.split()))
 
 loc = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(loc, 'py_src', 'README.rst'), 'r') as fd:
@@ -56,15 +58,17 @@ def main():
         pass
     else:
         pass
+
+    ext_modules = []
+
     if __USE_C__:
-        ext_modules = [Extension('py2p.cbase',
-                                #include_dirs = [r'C:\OpenSSL-Win64\include'],
-                                sources=[os.path.join(loc, 'cp_src', 'base_wrapper.cpp'),
-                                         os.path.join(loc, 'cp_src', 'base.cpp'),
-                                         os.path.join(loc, 'cp_src', 'sha', 'sha384.cpp'),
-                                         os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp')])]
-    else:
-        ext_modules = []
+        ext_modules.append(
+            Extension(
+                'py2p.cbase',
+                sources=[os.path.join(loc, 'cp_src', 'base_wrapper.cpp'),
+                         os.path.join(loc, 'cp_src', 'base.cpp'),
+                         os.path.join(loc, 'cp_src', 'sha', 'sha384.cpp'),
+                         os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp')])
 
     setup(name='py2p',
           description='A python library for peer-to-peer networking',

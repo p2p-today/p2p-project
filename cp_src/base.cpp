@@ -23,7 +23,7 @@ string to_base_58(unsigned long long i) {
 
 string divide_by_58(string digest, int &remainder) {
     string answer = string("");
-    for (int i = 0; i < digest.length(); i++)    {
+    for (unsigned int i = 0; i < digest.length(); i++)    {
         unsigned char b = digest[i];
         //cout << "b = " << b << endl; // prints working character
         int c = remainder * 256 + b;
@@ -43,7 +43,7 @@ string to_base_58(string digest, unsigned long sz)   {
     string answer = "";
     int chr = 0;
     while (digest.length()) {
-        printf("%s\n", digest);
+        printf("%s\n", digest.c_str());
         digest = divide_by_58(digest, chr);
         answer += base_58[chr];
     }
@@ -178,7 +178,7 @@ string pathfinding_message::base_string()   {
 string pathfinding_message::str()    {
     string base = base_string();
     string header = pack_ulong((uint32_t)base.length());
-    for (int i = 0; i < header.length(); i++)
+    for (unsigned int i = 0; i < header.length(); i++)
         printf("%i ", header[i]);
     printf("%s\n", (header + base).c_str());
     return header + base;

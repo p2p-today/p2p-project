@@ -15,28 +15,28 @@ vector<string> vector_string_from_pylist(PyObject *incoming)    {
     if (PyList_Check(incoming)) {
         for(Py_ssize_t i = 0; i < PyList_Size(incoming); i++) {
             PyObject *value = PyList_GetItem(incoming, i);
-                if (PyBytes_Check(value))
-                    out.push_back(string(PyBytes_AsString(value)));
-                else if (PyUnicode_Check(value))
+            if (PyBytes_Check(value))
+                out.push_back(string(PyBytes_AsString(value)));
+            else if (PyUnicode_Check(value))    {
 #if PY_MAJOR_VERSION < 3
-                {
-                    PyObject *tmp = PyUnicode_AsUTF8String(value);
-                    out.push_back(string(PyBytes_AsString(tmp)));
-                    Py_XDECREF(tmp);
-                }
+                PyObject *tmp = PyUnicode_AsUTF8String(value);
+                out.push_back(string(PyBytes_AsString(tmp)));
+                Py_XDECREF(tmp);
+            }
 #else
-                    out.push_back(string(PyUnicode_AsUTF8(value)));
-                else if (PyObject_CheckBuffer(value))   {
-                    PyObject *tmp = PyBytes_FromObject(value);
-                    out.push_back(string(PyBytes_AsString(tmp)));
-                    Py_XDECREF(tmp);
-                }
+                out.push_back(string(PyUnicode_AsUTF8(value)));
+            }
+            else if (PyObject_CheckBuffer(value))   {
+                PyObject *tmp = PyBytes_FromObject(value);
+                out.push_back(string(PyBytes_AsString(tmp)));
+                Py_XDECREF(tmp);
+            }
 #endif
-                else    {
-                    PyErr_SetObject(PyExc_TypeError, value);
-                    vector<string> err;
-                    return err;
-                }
+            else    {
+                PyErr_SetObject(PyExc_TypeError, value);
+                vector<string> err;
+                return err;
+            }
         }
     }
     return out;
@@ -46,12 +46,22 @@ PyObject *pylist_from_vector_string(vector<string> lst) {
     PyObject *listObj = PyList_New( lst.size() );
     if (!listObj) throw logic_error("Unable to allocate memory for Python list");
     for (unsigned int i = 0; i < lst.size(); i++) {
-        PyObject *str = PyBytes_FromString(lst[i].c_str());
-        if (!str) {
-            Py_DECREF(listObj);
-            throw logic_error("Unable to allocate memory for Python list");
+        string cp_str = lst[i];
+        unsigned char* c_str = (unsigned char*)cp_str.c_str();
+        Py_buffer buffer;
+        int res = PyBuffer_FillInfo(&buffer, 0, c_str, (Py_ssize_t)cp_str.length(), true, PyBUF_CONTIG_RO);
+        if (res == -1) {
+            PyErr_Print();
+            exit(EXIT_FAILURE);
         }
-        PyList_SET_ITEM(listObj, i, str);
+        PyObject *memview = PyMemoryView_FromBuffer(&buffer);
+#if PY_MAJOR_VERSION >= 3
+        PyObject *ret = PyBytes_FromObject(memview);
+#else
+        PyObject *ret = PyObject_CallMethod(memview, "tobytes", "");
+#endif
+        Py_XDECREF(memview);
+        PyList_SET_ITEM(listObj, i, ret);
     }
     return listObj;    
 }
