@@ -236,23 +236,27 @@ class pathfinding_message(object):
         return msg
 
     def __init__(self, protocol, msg_type, sender, payload, compression=None):
+
+        def sanitize_packet(packet):
+            if not isinstance(packet, (bytes, bytearray)):
+                return packet.encode()
+            return packet
+
         self.protocol = protocol
-        self.msg_type = msg_type
-        self.sender = sender
-        self.__payload = payload
+        self.msg_type = sanitize_packet(msg_type)
+        self.sender = sanitize_packet(sender)
+        self.__payload = [sanitize_packet(packet) for packet in payload]
         self.time = getUTC()
+        self.compression_fail = False
+
         if compression:
             self.compression = compression
         else:
             self.compression = []
-        self.compression_fail = False
 
     @property
     def payload(self):
         """Returns a list containing the message payload encoded as bytes"""
-        for i, val in enumerate(self.__payload):
-            if not isinstance(val, (bytes, bytearray)):
-                self.__payload[i] = val.encode()
         return self.__payload
 
     @property
@@ -277,11 +281,7 @@ class pathfinding_message(object):
     @property
     def packets(self):
         """Returns the full list of packets in this message encoded as bytes, excluding the header"""
-        meta = [self.msg_type, self.sender, self.id, self.time_58]
-        for i, val in enumerate(meta):
-            if not isinstance(val, (bytes, bytearray)):
-                meta[i] = val.encode()
-        return meta + self.payload
+        return [self.msg_type, self.sender, self.id, self.time_58] + self.payload
 
     @property
     def __non_len_string(self):

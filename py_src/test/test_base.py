@@ -114,7 +114,7 @@ def test_message_sans_network(iters=1000):
         test = base.message(base_msg, None)
         assert test.packets == pac
         assert test.msg == base_msg
-        assert test.sender == sen
+        assert test.sender == sen.encode()
         assert test.protocol == prot
         assert test.id == base_msg.id
         assert test.time == base_msg.time == base.from_base_58(test.time_58) == base.from_base_58(base_msg.time_58)
