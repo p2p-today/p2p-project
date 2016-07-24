@@ -3,10 +3,8 @@
 #include "bytesobject.h"
 #include <stdexcept>
 #include "structmember.h"
-#define using_python 0
 #include "base.h"
 #include <string>
-
 
 using namespace std;
 
@@ -48,8 +46,8 @@ PyObject *pylist_from_vector_string(vector<string> lst) {
         Py_buffer buffer;
         int res = PyBuffer_FillInfo(&buffer, 0, c_str, (Py_ssize_t)cp_str.length(), true, PyBUF_CONTIG_RO);
         if (res == -1) {
-            PyErr_Print();
-            exit(EXIT_FAILURE);
+            PyErr_SetString(PyExc_RuntimeError, "Could not reconvert item back to python object");
+            return NULL;
         }
         PyObject *memview = PyMemoryView_FromBuffer(&buffer);
 #if PY_MAJOR_VERSION >= 3

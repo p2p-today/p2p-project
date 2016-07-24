@@ -14,7 +14,7 @@ string to_base_58(unsigned long long i) {
     string str = "";
     while (i)   {
         str = base_58[i % 58] + str;
-        i = i / 58;
+        i /= 58;
     }
     if (str == "")
         str = base_58[0];
@@ -58,8 +58,8 @@ unsigned long long from_base_58(string str) {
     return ret;
 }
 
-unsigned long unpack_ulong(string str)  {
-    unsigned long val = 0;
+unsigned long long unpack_value(string str)  {
+    unsigned long long val = 0;
     for (unsigned int i = 0; i < str.length(); i++)    {
         val *= 256;
         val += (unsigned char)str[i];
@@ -67,13 +67,11 @@ unsigned long unpack_ulong(string str)  {
     return val;
 }
 
-string pack_ulong(uint32_t i)  {
-    unsigned char arr[4];
-    arr[0] = i >> 24 & 0xff;
-    arr[1] = i >> 16 & 0xff;
-    arr[2] = i >> 8 & 0xff;
-    arr[3] = i & 0xff;
-    return string(arr, arr+4);
+string pack_value(size_t len, unsigned long long i) {
+    unsigned char arr[len];
+    for (size_t j = 0; j < len; j++)
+        arr[len - j - 1] = i >> (8*j) & 0xff;
+    return string(arr, arr+len);
 }
 
 pathfinding_message::pathfinding_message(string type, string sen, vector<string> load) {
@@ -99,7 +97,7 @@ vector<string> process_string(string str)   {
     vector<unsigned long> pack_lens;
     vector<string> packets;
     while (processed != expected)   {
-        pack_lens.push_back(unpack_ulong(str.substr(processed, 4)));
+        pack_lens.push_back(unpack_value(str.substr(processed, 4)));
         processed += 4;
         expected -= pack_lens[-1];
     }
@@ -142,15 +140,6 @@ string pathfinding_message::id()    {
 
     string digest = sha384(str);
     return digest;
-    // size_t ret_size = 70;
-    // char ret[ret_size];
-    // b58enc(ret, &ret_size, digest.c_str(), digest.length());
-    // printf("%s\n", digest.c_str());
-    // printf("%s\n", ret);
-
-    // string ret_string = string(ret);
-    // printf("%s\n", ret_string.c_str());
-    // return ret_string;
 }
 
 vector<string> pathfinding_message::packets()   {
@@ -169,7 +158,7 @@ string pathfinding_message::base_string()   {
     string base = "";
     vector<string> packs = packets();
     for (unsigned long i = 0; i < packs.size(); i++)    {
-        header += pack_ulong((uint32_t)packs[i].size());
+        header += pack_value(4, (unsigned long long)packs[i].size());
         base += packs[i];
     }
     return header + base;
@@ -177,10 +166,8 @@ string pathfinding_message::base_string()   {
 
 string pathfinding_message::str()    {
     string base = base_string();
-    string header = pack_ulong((uint32_t)base.length());
-    for (unsigned int i = 0; i < header.length(); i++)
-        printf("%i ", header[i]);
-    printf("%s\n", (header + base).c_str());
+    string header = pack_value(4, (unsigned long long)base.length());
+    //string header = pack_ulong((uint32_t)base.length());
     return header + base;
 }
 
@@ -189,5 +176,5 @@ unsigned long long pathfinding_message::length()    {
 }
 
 string pathfinding_message::header()    {
-    return pack_ulong(length());
+    return pack_value(4, (unsigned long long)length());
 }
