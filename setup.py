@@ -68,7 +68,7 @@ def main():
                 sources=[os.path.join(loc, 'cp_src', 'base_wrapper.cpp'),
                          os.path.join(loc, 'cp_src', 'base.cpp'),
                          os.path.join(loc, 'cp_src', 'sha', 'sha384.cpp'),
-                         os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp')])
+                         os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp')]))
 
     setup(name='py2p',
           description='A python library for peer-to-peer networking',

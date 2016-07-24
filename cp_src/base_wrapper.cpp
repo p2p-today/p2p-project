@@ -18,14 +18,11 @@ vector<string> vector_string_from_pylist(PyObject *incoming)    {
             if (PyBytes_Check(value))
                 out.push_back(string(PyBytes_AsString(value)));
             else if (PyUnicode_Check(value))    {
-#if PY_MAJOR_VERSION < 3
-                PyObject *tmp = PyUnicode_AsUTF8String(value);
+                PyObject *tmp = PyUnicode_AsEncodedString(value, "raw_unicode_escape", "strict");
                 out.push_back(string(PyBytes_AsString(tmp)));
                 Py_XDECREF(tmp);
             }
-#else
-                out.push_back(string(PyUnicode_AsUTF8(value)));
-            }
+#if PY_MAJOR_VERSION >= 3
             else if (PyObject_CheckBuffer(value))   {
                 PyObject *tmp = PyBytes_FromObject(value);
                 out.push_back(string(PyBytes_AsString(tmp)));
