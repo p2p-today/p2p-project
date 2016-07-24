@@ -138,7 +138,23 @@ static PyObject *str(pmessage_wrapper *self)    {
         PyErr_SetString(PyExc_AttributeError, "msg");
         return NULL;
     }
-    return PyBytes_FromString(self->msg->str().c_str());
+    string cp_str = self->msg->str();
+    unsigned char* c_str = (unsigned char*)cp_str.c_str();
+    Py_buffer buffer;
+    int res = PyBuffer_FillInfo(&buffer, 0, c_str, (Py_ssize_t)cp_str.length(), true, PyBUF_CONTIG_RO);
+    if (res == -1) {
+        PyErr_Print();
+        exit(EXIT_FAILURE);
+    }
+    PyObject* memview = PyMemoryView_FromBuffer(&buffer);
+#if PY_MAJOR_VERSION >= 3
+    PyObject* ret = PyBytes_FromObject(memview);
+#else
+    PyObject *ret = PyObject_CallMethod(memview, "tobytes", "");
+#endif
+    Py_XDECREF(memview);
+    return ret;
+    //return PyBytes_FromString(self->msg->str().c_str());
 }
 
 static PyMemberDef pmessage_wrapper_members[] = {

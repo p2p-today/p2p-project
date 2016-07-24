@@ -3,7 +3,9 @@ from __future__ import with_statement
 import os
 import sys
 
-__USE_C__ = sys.argv[-1] != '--universal'
+__USE_C__ = '--using-c' in sys.argv[-1]
+if __USE_C__:
+    sys.argv.remove('--using-c')
 
 try:
     import setuptools
