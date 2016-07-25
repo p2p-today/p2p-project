@@ -336,9 +336,9 @@ static PyMethodDef BaseMethods[] = {
     #if PY_MINOR_VERSION >= 5
             wchar_t *program = Py_DecodeLocale(argv[0], NULL);
     #else
-            size_t size = strlen(text) + 1;
+            size_t size = strlen(argv[0]) + 1;
             wchar_t* program = new wchar_t[size];
-            mbstowcs(program, text, size);
+            mbstowcs(program, argv[0], size);
     #endif
 
             if (program == NULL) {
