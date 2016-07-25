@@ -21,34 +21,65 @@ string to_base_58(unsigned long long i) {
     return str;
 }
 
-string divide_by_58(string digest, int &remainder) {
-    string answer = string("");
-    for (unsigned int i = 0; i < digest.length(); i++)    {
-        unsigned char b = digest[i];
-        //cout << "b = " << b << endl; // prints working character
-        int c = remainder * 256 + b;
-        //cout << "c = " << c << endl; // prints currently divided number
-        int d = c / 58;
-        //cout << "d = " <<d << endl; // prints divided number over twelve
+string divide_by_58(string b, int &remainder)    {
+    string answer = "";
+    for (size_t i = 0; i < b.length(); i++) {
+        unsigned char chr = b.c_str()[i];
+        unsigned char c = remainder * 256 + chr;
+        unsigned char d = c / 58;
         remainder = c % 58;
-        //cout <<"remainder = "<< remainder << endl; // prints remainder
-        if (answer != "" || d != 0) {
-            answer += (char)d;
-        }
+        answer.append(1, d);
+    }
+    for (size_t i = 0; i < b.length(); i++)
+        printf("%i, ", (unsigned char)b[i]);
+    printf("-> ");
+    for (size_t i = 0; i < answer.length(); i++)
+        printf("%i, ", (unsigned char)answer[i]);
+    printf("\n");
+    return answer;
+}
+
+string to_base_58(string b)   {
+    string answer = "";
+    int remainder = 0;
+    while (b.length() != 0) {
+        printf("loop\n");
+        b = divide_by_58(b, remainder);
+        printf("remainder=%i\n", remainder);
+        if (b.length() != 0 || remainder != 0)
+            answer.insert(0, 1, base_58[remainder]);
     }
     return answer;
 }
 
-string to_base_58(string digest, unsigned long sz)   {
-    string answer = "";
-    int chr = 0;
-    while (digest.length()) {
-        printf("%s\n", digest.c_str());
-        digest = divide_by_58(digest, chr);
-        answer += base_58[chr];
-    }
-    return answer;
-}
+// string divide_by_58(string digest, int &remainder) {
+//     string answer = string("");
+//     for (unsigned int i = 0; i < digest.length(); i++)    {
+//         unsigned char b = digest[i];
+//         //cout << "b = " << b << endl; // prints working character
+//         int c = remainder * 256 + b;
+//         //cout << "c = " << c << endl; // prints currently divided number
+//         int d = c / 58;
+//         //cout << "d = " <<d << endl; // prints divided number over twelve
+//         remainder = c % 58;
+//         //cout <<"remainder = "<< remainder << endl; // prints remainder
+//         if (answer != "" || d != 0) {
+//             answer += (char)d;
+//         }
+//     }
+//     return answer;
+// }
+
+// string to_base_58(string digest, unsigned long sz)   {
+//     string answer = "";
+//     int chr = 0;
+//     while (digest.length()) {
+//         printf("%s\n", digest.c_str());
+//         digest = divide_by_58(digest, chr);
+//         answer += base_58[chr];
+//     }
+//     return answer;
+// }
 
 unsigned long long from_base_58(string str) {
     unsigned long long ret = 0;
@@ -138,8 +169,17 @@ string pathfinding_message::id()    {
         str.append(payload[i]);
     str.append(time_58());
 
+    // unsigned char digest[SHA384::DIGEST_SIZE];
+    // memset(digest,0,SHA384::DIGEST_SIZE);
+    // SHA384 ctx = SHA384();
+    // ctx.init();
+    // ctx.update((unsigned char*)str.c_str(), str.length());
+    // ctx.final(digest);
+
     string digest = sha384(str);
-    return digest;
+
+    BaseConverter convert = BaseConverter("0123456789abcdef", base_58.c_str());
+    return convert.Convert(digest);
 }
 
 vector<string> pathfinding_message::packets()   {

@@ -8,6 +8,24 @@
 
 using namespace std;
 
+PyObject *pybytes_from_string(string str)   {
+    unsigned char* c_str = (unsigned char*)str.c_str();
+    Py_buffer buffer;
+    int res = PyBuffer_FillInfo(&buffer, 0, c_str, (Py_ssize_t)str.length(), true, PyBUF_CONTIG_RO);
+    if (res == -1) {
+        PyErr_SetString(PyExc_RuntimeError, "Could not reconvert item back to python object");
+        return NULL;
+    }
+    PyObject *memview = PyMemoryView_FromBuffer(&buffer);
+#if PY_MAJOR_VERSION >= 3
+    PyObject *ret = PyBytes_FromObject(memview);
+#else
+    PyObject *ret = PyObject_CallMethod(memview, "tobytes", "");
+#endif
+    Py_XDECREF(memview);
+    return ret;
+}
+
 vector<string> vector_string_from_pylist(PyObject *incoming)    {
     vector<string> out;
     if (PyList_Check(incoming)) {
@@ -41,22 +59,7 @@ PyObject *pylist_from_vector_string(vector<string> lst) {
     PyObject *listObj = PyList_New( lst.size() );
     if (!listObj) throw logic_error("Unable to allocate memory for Python list");
     for (unsigned int i = 0; i < lst.size(); i++) {
-        string cp_str = lst[i];
-        unsigned char* c_str = (unsigned char*)cp_str.c_str();
-        Py_buffer buffer;
-        int res = PyBuffer_FillInfo(&buffer, 0, c_str, (Py_ssize_t)cp_str.length(), true, PyBUF_CONTIG_RO);
-        if (res == -1) {
-            PyErr_SetString(PyExc_RuntimeError, "Could not reconvert item back to python object");
-            return NULL;
-        }
-        PyObject *memview = PyMemoryView_FromBuffer(&buffer);
-#if PY_MAJOR_VERSION >= 3
-        PyObject *ret = PyBytes_FromObject(memview);
-#else
-        PyObject *ret = PyObject_CallMethod(memview, "tobytes", "");
-#endif
-        Py_XDECREF(memview);
-        PyList_SET_ITEM(listObj, i, ret);
+        PyList_SET_ITEM(listObj, i, pybytes_from_string(lst[i]));
     }
     return listObj;    
 }
@@ -67,19 +70,9 @@ typedef struct {
     /* Type-specific fields go here. */
 } pmessage_wrapper;
 
-#if PY_MAJOR_VERSION >= 3
-
-    static void pmessage_wrapper_dealloc(pmessage_wrapper* self)  {
-        //Py_XDECREF(self->first);
-        Py_TYPE(self)->tp_free((PyObject*)self);
-    }
-#else
-
-    static void pmessage_wrapper_dealloc(pmessage_wrapper* self)  {
-        //Py_XDECREF(self->first);
-        self->ob_type->tp_free((PyObject*)self);
-    }
-#endif
+static void pmessage_wrapper_dealloc(pmessage_wrapper* self)  {
+    Py_TYPE(self)->tp_free((PyObject*)self);
+}
 
 static PyObject *pmessage_wrapper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)   {
     pmessage_wrapper *self;
@@ -127,7 +120,10 @@ static PyObject *payload(pmessage_wrapper *self)    {
         PyErr_SetString(PyExc_AttributeError, "msg");
         return NULL;
     }
-    return pylist_from_vector_string(self->msg->payload);
+    PyObject *ret = pylist_from_vector_string(self->msg->payload);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;
 }
 
 static PyObject *packets(pmessage_wrapper *self)    {
@@ -135,7 +131,10 @@ static PyObject *packets(pmessage_wrapper *self)    {
         PyErr_SetString(PyExc_AttributeError, "msg");
         return NULL;
     }
-    return pylist_from_vector_string(self->msg->packets());
+    PyObject *ret = pylist_from_vector_string(self->msg->packets());
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;
 }
 
 static PyObject *str(pmessage_wrapper *self)    {
@@ -144,22 +143,77 @@ static PyObject *str(pmessage_wrapper *self)    {
         return NULL;
     }
     string cp_str = self->msg->str();
-    unsigned char* c_str = (unsigned char*)cp_str.c_str();
-    Py_buffer buffer;
-    int res = PyBuffer_FillInfo(&buffer, 0, c_str, (Py_ssize_t)cp_str.length(), true, PyBUF_CONTIG_RO);
-    if (res == -1) {
-        PyErr_Print();
-        exit(EXIT_FAILURE);
-    }
-    PyObject* memview = PyMemoryView_FromBuffer(&buffer);
-#if PY_MAJOR_VERSION >= 3
-    PyObject* ret = PyBytes_FromObject(memview);
-#else
-    PyObject *ret = PyObject_CallMethod(memview, "tobytes", "");
-#endif
-    Py_XDECREF(memview);
+    PyObject *ret = pybytes_from_string(cp_str);
+    if (PyErr_Occurred())
+        return NULL;
     return ret;
-    //return PyBytes_FromString(self->msg->str().c_str());
+}
+
+static PyObject *sender(pmessage_wrapper *self)    {
+    if (self->msg == NULL)  {
+        PyErr_SetString(PyExc_AttributeError, "msg");
+        return NULL;
+    }
+    string cp_str = self->msg->sender;
+    PyObject *ret = pybytes_from_string(cp_str);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;
+}
+
+static PyObject *msg_type(pmessage_wrapper *self)    {
+    if (self->msg == NULL)  {
+        PyErr_SetString(PyExc_AttributeError, "msg");
+        return NULL;
+    }
+    string cp_str = self->msg->msg_type;
+    PyObject *ret = pybytes_from_string(cp_str);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;
+}
+
+static PyObject *id(pmessage_wrapper *self)    {
+    if (self->msg == NULL)  {
+        PyErr_SetString(PyExc_AttributeError, "msg");
+        return NULL;
+    }
+    string cp_str = self->msg->id();
+    PyObject *ret = pybytes_from_string(cp_str);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;
+}
+
+static PyObject *time_58(pmessage_wrapper *self)    {
+    if (self->msg == NULL)  {
+        PyErr_SetString(PyExc_AttributeError, "msg");
+        return NULL;
+    }
+    string cp_str = self->msg->time_58();
+    PyObject *ret = pybytes_from_string(cp_str);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;
+}
+
+static PyObject *timestamp(pmessage_wrapper *self)    {
+    if (self->msg == NULL)  {
+        PyErr_SetString(PyExc_AttributeError, "msg");
+        return NULL;
+    }
+    PyObject *ret = PyLong_FromUnsignedLong(self->msg->timestamp);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;
+}
+
+static unsigned long long __len__(pmessage_wrapper *self)    {
+    if (self->msg == NULL)  {
+        PyErr_SetString(PyExc_AttributeError, "msg");
+        return 0;
+    }
+    return self->msg->length();
 }
 
 static PyMemberDef pmessage_wrapper_members[] = {
@@ -177,7 +231,33 @@ static PyMethodDef pmessage_wrapper_methods[] = {
     {"string", (PyCFunction)str, METH_NOARGS,
         "Return the string of this message"
     },
+    {"sender", (PyCFunction)sender, METH_NOARGS,
+        "Return the sender ID of this message"
+    },
+    {"msg_type", (PyCFunction)msg_type, METH_NOARGS,
+        "Return the message type"
+    },
+    {"id", (PyCFunction)id, METH_NOARGS,
+        "Return the message type"
+    },
+    {"time", (PyCFunction)timestamp, METH_NOARGS,
+        "Return the message time"
+    },
+    {"time_58", (PyCFunction)time_58, METH_NOARGS,
+        "Return the message encoded in base_58"
+    },
     {NULL}  /* Sentinel */
+};
+
+static PySequenceMethods pmessage_as_sequence = {
+    (lenfunc)__len__, /*sq_length*/
+    0, /*sq_concat*/
+    0, /*sq_repeat*/
+    0, /*sq_item*/
+    0, /*sq_slice*/
+    0, /*sq_ass_item*/
+    0, /*sq_ass_slice*/
+    0  /*sq_contains*/
 };
 
 static PyTypeObject pmessage_wrapper_type = {
@@ -192,7 +272,7 @@ static PyTypeObject pmessage_wrapper_type = {
     0,                         /* tp_reserved */
     0,                         /* tp_repr */
     0,                         /* tp_as_number */
-    0,                         /* tp_as_sequence */
+    &pmessage_as_sequence,     /* tp_as_sequence */
     0,                         /* tp_as_mapping */
     0,                         /* tp_hash  */
     0,                         /* tp_call */

@@ -3,10 +3,6 @@ from __future__ import with_statement
 import os
 import sys
 
-__USE_C__ = '--using-c' in sys.argv
-if __USE_C__:
-    sys.argv.remove('--using-c')
-
 try:
     import setuptools
     from setuptools import setup, Extension
@@ -14,6 +10,15 @@ except ImportError:
     from distutils.core import setup, Extension
 
 from py_src import __version__
+
+# The following determines whether to build C binaries
+# The exception is made for bdist_wheel because it genuinely uses the --universal flag
+
+__USE_C__ = '--universal' not in sys.argv
+if not (__USE_C__ or 'bdist_wheel' in sys.argv):
+    sys.argv.remove('--universal')
+
+# This sets up the program's classifiers
 
 classifiers = ['Development Status :: 3 - Alpha',
                'Intended Audience :: Developers',
@@ -29,6 +34,8 @@ classifiers = ['Development Status :: 3 - Alpha',
 classifiers.extend((
                ('Programming Language :: Python :: %s' % x) for x in
                 '2 3 2.6 2.7 3.3 3.4 3.5'.split()))
+
+# And the long_description
 
 loc = os.path.dirname(os.path.realpath(__file__))
 with open(os.path.join(loc, 'py_src', 'README.rst'), 'r') as fd:
@@ -52,14 +59,13 @@ def has_environment_marker_support():
         return False
 
 def main():
+    ext_modules = []
     install_requires = []
     extras_require = {'SSL': ['cryptography']}
     if has_environment_marker_support():
         pass
     else:
         pass
-
-    ext_modules = []
 
     if __USE_C__:
         ext_modules.append(
@@ -68,7 +74,8 @@ def main():
                 sources=[os.path.join(loc, 'cp_src', 'base_wrapper.cpp'),
                          os.path.join(loc, 'cp_src', 'base.cpp'),
                          os.path.join(loc, 'cp_src', 'sha', 'sha384.cpp'),
-                         os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp')]))
+                         os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp'),
+                         os.path.join(loc, 'cp_src', 'base_converter', 'BaseConverter.cpp')]))
 
     setup(name='py2p',
           description='A python library for peer-to-peer networking',
