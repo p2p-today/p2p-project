@@ -16,13 +16,17 @@ PyObject *pybytes_from_string(string str)   {
         PyErr_SetString(PyExc_RuntimeError, "Could not reconvert item back to python object");
         return NULL;
     }
-    PyObject *memview = PyMemoryView_FromBuffer(&buffer);
 #if PY_MAJOR_VERSION >= 3
+    PyObject *memview = PyMemoryView_FromBuffer(&buffer);
     PyObject *ret = PyBytes_FromObject(memview);
-#else
-    PyObject *ret = PyObject_CallMethod(memview, "tobytes", "");
-#endif
     Py_XDECREF(memview);
+#elif PY_MINOR_VERSION >= 7
+    PyObject *memview = PyMemoryView_FromBuffer(&buffer);
+    PyObject *ret = PyObject_CallMethod(memview, "tobytes", "");
+    Py_XDECREF(memview);
+#else
+    PyObject *ret = PyString_Encode(&buffer, "raw_unicode_escape", "strict");
+#endif
     return ret;
 }
 
