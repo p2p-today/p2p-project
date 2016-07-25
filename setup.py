@@ -77,8 +77,7 @@ def main():
                          os.path.join(loc, 'cp_src', 'base.cpp'),
                          os.path.join(loc, 'cp_src', 'sha', 'sha384.cpp'),
                          os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp'),
-                         os.path.join(loc, 'cp_src', 'base_converter', 'BaseConverter.cpp'),
-                         os.path.join(loc, 'cp_src', 'base_converter', 'BaseConverter1.cpp')]))
+                         os.path.join(loc, 'cp_src', 'base_converter', 'BaseConverter.cpp')]))
 
     try:
         setup(name='py2p',
