@@ -7,7 +7,6 @@
 #include <vector>
 #include <time.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
 #include "sha/sha384.h"
 #include "base_converter/BaseConverter.h"
