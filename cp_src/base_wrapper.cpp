@@ -331,22 +331,44 @@ static PyMethodDef BaseMethods[] = {
         PyModule_AddObject(m, "pathfinding_message", (PyObject *)&pmessage_wrapper_type);
         return m;
     }
+    #if PY_MINOR_VERSION >= 5
 
-    int main(int argc, char *argv[])    {
-        wchar_t *program = Py_DecodeLocale(argv[0], NULL);
+        int main(int argc, char *argv[])    {
+            wchar_t *program = Py_DecodeLocale(argv[0], NULL);
 
-        if (program == NULL) {
-            fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
-            exit(1);
+            if (program == NULL) {
+                fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
+                exit(1);
+            }
+
+            PyImport_AppendInittab("cbase", PyInit_cbase);
+            Py_SetProgramName(program);
+            Py_Initialize();
+            PyImport_ImportModule("cbase");
+            PyMem_RawFree(program);
+            return 0;
         }
 
-        PyImport_AppendInittab("cbase", PyInit_cbase);
-        Py_SetProgramName(program);
-        Py_Initialize();
-        PyImport_ImportModule("cbase");
-        PyMem_RawFree(program);
-        return 0;
-    }
+    #else
+
+        int main(int argc, char *argv[])    {
+            /* Add a built-in module, before Py_Initialize */
+            PyImport_AppendInittab("cbase", PyInit_cbase);
+
+            /* Pass argv[0] to the Python interpreter */
+            Py_SetProgramName(argv[0]);
+
+            /* Initialize the Python interpreter.  Required. */
+            Py_Initialize();
+
+            /* Optionally import the module; alternatively,
+               import can be deferred until the embedded script
+               imports it. */
+            PyImport_ImportModule("cbase");
+            return 0;
+        }
+        
+    #endif
 
 #else
 
