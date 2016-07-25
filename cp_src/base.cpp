@@ -99,10 +99,10 @@ unsigned long long unpack_value(string str)  {
 }
 
 string pack_value(size_t len, unsigned long long i) {
-    unsigned char arr[len];
+    vector<unsigned char> arr(len);
     for (size_t j = 0; j < len; j++)
         arr[len - j - 1] = i >> (8*j) & 0xff;
-    return string(arr, arr+len);
+    return string(arr.begin(), arr.end());
 }
 
 pathfinding_message::pathfinding_message(string type, string sen, vector<string> load) {
