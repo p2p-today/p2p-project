@@ -77,23 +77,41 @@ def main():
                          os.path.join(loc, 'cp_src', 'base.cpp'),
                          os.path.join(loc, 'cp_src', 'sha', 'sha384.cpp'),
                          os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp'),
-                         os.path.join(loc, 'cp_src', 'base_converter', 'BaseConverter.cpp')]))
+                         os.path.join(loc, 'cp_src', 'base_converter', 'BaseConverter.cpp'),
+                         os.path.join(loc, 'cp_src', 'base_converter', 'BaseConverter1.cpp')]))
 
-    setup(name='py2p',
-          description='A python library for peer-to-peer networking',
-          long_description=long_description,
-          version=__version__,
-          author='Gabe Appleton',
-          author_email='gappleto97+development@gmail.com',
-          url='https://github.com/gappleto97/p2p-project',
-          license='LGPLv3',
-          packages=['py2p', 'py2p.test'],
-          package_dir={'py2p': 'py_src'},
-          ext_modules=ext_modules,
-          classifiers=classifiers,
-          install_requires=install_requires,
-          extras_require=extras_require
-    )
+    try:
+        setup(name='py2p',
+              description='A python library for peer-to-peer networking',
+              long_description=long_description,
+              version=__version__,
+              author='Gabe Appleton',
+              author_email='gappleto97+development@gmail.com',
+              url='https://github.com/gappleto97/p2p-project',
+              license='LGPLv3',
+              packages=['py2p', 'py2p.test'],
+              package_dir={'py2p': 'py_src'},
+              ext_modules=ext_modules,
+              classifiers=classifiers,
+              install_requires=install_requires,
+              extras_require=extras_require
+        )
+    except:
+        print("Not building C++ code due to errors")
+        setup(name='py2p',
+              description='A python library for peer-to-peer networking',
+              long_description=long_description,
+              version=__version__,
+              author='Gabe Appleton',
+              author_email='gappleto97+development@gmail.com',
+              url='https://github.com/gappleto97/p2p-project',
+              license='LGPLv3',
+              packages=['py2p', 'py2p.test'],
+              package_dir={'py2p': 'py_src'},
+              classifiers=classifiers,
+              install_requires=install_requires,
+              extras_require=extras_require
+        )        
 
 if __name__ == "__main__":
     main()
