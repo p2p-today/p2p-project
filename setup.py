@@ -11,11 +11,17 @@ except ImportError:
 
 from py_src import __version__
 
-# The following determines whether to build C binaries
+# Set up the long_description
+
+loc = os.path.dirname(os.path.realpath(__file__))
+with open(os.path.join(loc, 'py_src', 'README.rst'), 'r') as fd:
+    long_description = fd.read()
+
+# Determine whether to build C binaries
 # The exception is made for bdist_wheel because it genuinely uses the --universal flag
 
-__USE_C__ = '--universal' not in sys.argv
-if not (__USE_C__ or 'bdist_wheel' in sys.argv):
+__USE_C__ = '--universal' not in sys.argv and os.path.isfile(os.path.join(loc, 'cp_src', 'base.cpp'))
+if '--universal' in sys.argv and 'bdist_wheel' not in sys.argv:
     sys.argv.remove('--universal')
 
 # This sets up the program's classifiers
@@ -35,11 +41,7 @@ classifiers.extend((
                ('Programming Language :: Python :: %s' % x) for x in
                 '2 3 2.6 2.7 3.3 3.4 3.5'.split()))
 
-# And the long_description
 
-loc = os.path.dirname(os.path.realpath(__file__))
-with open(os.path.join(loc, 'py_src', 'README.rst'), 'r') as fd:
-    long_description = fd.read()
 
 def has_environment_marker_support():
     """
