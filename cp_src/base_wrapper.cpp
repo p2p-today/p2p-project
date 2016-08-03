@@ -314,7 +314,7 @@ static PyMethodDef BaseMethods[] = {
     static struct PyModuleDef basemodule = {
        PyModuleDef_HEAD_INIT,
        "cbase",  /* name of module */
-       NULL,    /* module documentation, may be NULL */
+       "A C++ implementation of select features from the py2p.base module",/* module documentation, may be NULL */
        -1,      /* size of per-interpreter state of the module,
                    or -1 if the module keeps state in global variables. */
        BaseMethods

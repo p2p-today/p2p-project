@@ -1,0 +1,5 @@
+./docs/py2p/.build/*
+./docs/py2p/.static/*
+./docs/py2p/.templates/*
+./docs/py2p/py2p/*
+**.pyc

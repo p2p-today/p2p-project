@@ -89,7 +89,7 @@ def main():
               url='https://github.com/gappleto97/p2p-project',
               license='LGPLv3',
               packages=['py2p', 'py2p.test'],
-              package_dir={'py2p': 'py_src'},
+              package_dir={'py2p': os.path.join(loc, 'py_src')},
               ext_modules=ext_modules,
               classifiers=classifiers,
               install_requires=install_requires,

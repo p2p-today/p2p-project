@@ -51,3 +51,9 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     # return ret
 
 __all__ = ["mesh", "chord", "kademlia", "base", "ssl_wrapper"]
+
+try:
+    import cbase
+    __all__.append("cbase")
+except ImportError:
+    pass

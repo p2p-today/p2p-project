@@ -59,7 +59,7 @@ def test_pathfinding_message(iters=500):
         pathfinding_message_exceptions_validiation(array)
 
 def pathfinding_message_constructor_validation(array):
-    msg = base.pathfinding_message(base.default_protocol, base.flags.broadcast, 'TEST SENDER', array)
+    msg = base.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
     assert array == msg.payload
     assert msg.packets == [base.flags.broadcast, 'TEST SENDER'.encode(), msg.id, msg.time_58] + array
     for method in base.compression:
@@ -67,27 +67,27 @@ def pathfinding_message_constructor_validation(array):
         string = base.compress(msg.string[4:], method)
         string = struct.pack('!L', len(string)) + string
         msg.compression = [method]
-        comp = base.pathfinding_message.feed_string(base.default_protocol, string, False, [method])
+        comp = base.pathfinding_message.feed_string(string, False, [method])
         assert msg.string == string == comp.string
 
 def pathfinding_message_exceptions_validiation(array):
-    msg = base.pathfinding_message(base.default_protocol, base.flags.broadcast, 'TEST SENDER', array)
+    msg = base.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
     for method in base.compression:
         msg.compression = [method]
         try:
-            base.pathfinding_message.feed_string(base.default_protocol, msg.string, True, [method])
+            base.pathfinding_message.feed_string(msg.string, True, [method])
         except:
             pass
         else:  # pragma: no cover
             raise Exception("Erroneously parses sized message with sizeless: %s" % string)
         try:
-            base.pathfinding_message.feed_string(base.default_protocol, msg.string[4:], False, [method])
+            base.pathfinding_message.feed_string(msg.string[4:], False, [method])
         except:
             pass
         else:  # pragma: no cover
             raise Exception("Erroneously parses sizeless message with size %s" % string)
         try:
-            base.pathfinding_message.feed_string(base.default_protocol, msg.string)
+            base.pathfinding_message.feed_string(msg.string)
         except:
             pass
         else:  # pragma: no cover
@@ -105,17 +105,13 @@ def test_protocol(iters=200):
 
 def test_message_sans_network(iters=1000):
     for _ in range(iters):
-        sub = str(uuid.uuid4())
-        enc = str(uuid.uuid4())
         sen = str(uuid.uuid4())
         pac = gen_random_list(36, 10)
-        prot = base.protocol(sub, enc)
-        base_msg = base.pathfinding_message(prot, base.flags.broadcast, sen, pac)
+        base_msg = base.pathfinding_message(base.flags.broadcast, sen, pac)
         test = base.message(base_msg, None)
         assert test.packets == pac
         assert test.msg == base_msg
         assert test.sender == sen.encode()
-        assert test.protocol == prot
         assert test.id == base_msg.id
         assert test.time == base_msg.time == base.from_base_58(test.time_58) == base.from_base_58(base_msg.time_58)
         assert sen in repr(test)

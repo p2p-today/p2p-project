@@ -25,8 +25,14 @@ version = '.'.join([protocol_version, node_policy_version])
 plock = threading.Lock()
 
 class brepr(bytearray):
-    """This class is used so that it prints the description, rather than the value"""
+    """An extension of the bytearray object which prints a different value than it stores. This is mostly used for debugging purposes."""
     def __init__(self, value, rep=None):
+        """Initializes a brepr object
+
+        Args:
+            value: The value you want this bytearray to store
+            rep: The value you want this bytearray to print
+        """
         super(brepr, self).__init__(value)
         self.__rep = (rep or value)
         
@@ -36,7 +42,8 @@ class brepr(bytearray):
 class flags():
     """A namespace to hold protocol-defined flags"""
     # Reserved set of bytes
-    reserved = set([struct.pack('!B', x) for x in range(0x20)])
+    reserved = [struct.pack('!B', x) for x in range(0x20)]
+    del x
 
     # main flags
     broadcast   = brepr(b'\x00', rep='broadcast')   # also sub-flag
@@ -109,8 +116,18 @@ json_compressions = json.dumps([method.decode() for method in compression])
 base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
 
-def to_base_58(i):  # returns bytes
-    """Takes an integer and returns its corresponding base_58 string"""
+def to_base_58(i):
+    """Takes an integer and returns its corresponding base_58 string
+
+    Args:
+        i: The integral value you wish to encode
+
+    Returns:
+        A bytes object which contains the base_58 string
+
+    Raises:
+        TypeError: If you feed a non-integral value
+    """
     string = ""
     while i:
         string = base_58[i % 58] + string
@@ -120,8 +137,15 @@ def to_base_58(i):  # returns bytes
     return string.encode()
 
 
-def from_base_58(string):  # returns int (or long)
-    """Takes a base_58 string and returns its corresponding integer"""
+def from_base_58(string):
+    """Takes a base_58 string and returns its corresponding integer
+
+    Args:
+        string: The base_58 value you wish to decode (string, bytes, or bytearray)
+
+    Returns:
+        Returns integral value which corresponds to the fed string
+    """
     decimal = 0
     if isinstance(string, (bytes, bytearray)):
         string = string.decode()
@@ -130,8 +154,19 @@ def from_base_58(string):  # returns int (or long)
     return decimal
 
 
-def compress(msg, method):  # takes bytes, returns bytes
-    """Shortcut method for compression"""
+def compress(msg, method):
+    """Shortcut method for compression
+
+    Args:
+        msg:    The message you wish to compress, the type required is defined by the requested method
+        method: The compression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.bz2, base.flags.lzma
+
+    Returns:
+        Defined by the compression method, but typically the bytes of the compressed message
+    
+    Warning:
+        The types fed are dependent on which compression method you use. Best to assume most values are bytes or bytearray
+    """
     if method == flags.gzip:
         return zlib.compress(msg)
     elif method == flags.bz2:
@@ -142,8 +177,19 @@ def compress(msg, method):  # takes bytes, returns bytes
         raise Exception('Unknown compression method')
 
 
-def decompress(msg, method):  # takes bytes, returns bytes
-    """Shortcut method for decompression"""
+def decompress(msg, method):
+    """Shortcut method for decompression
+
+    Args:
+        msg:    The message you wish to decompress, the type required is defined by the requested method
+        method: The decompression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.bz2, base.flags.lzma
+
+    Returns:
+        Defined by the decompression method, but typically the bytes of the compressed message
+    
+    Warning:
+        The types fed are dependent on which decompression method you use. Best to assume most values are bytes or bytearray
+    """
     if method == flags.gzip:
         return zlib.decompress(msg, zlib.MAX_WBITS | 32)
     elif method == flags.bz2:
@@ -158,6 +204,7 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
     """Defines service variables so that you can reject connections looking for a different service"""
     @property
     def id(self):
+        """The SHA-256-based ID of the protocol"""
         h = hashlib.sha256(''.join([str(x) for x in self] + [protocol_version]).encode())
         return to_base_58(int(h.hexdigest(), 16))
 
@@ -169,9 +216,18 @@ class pathfinding_message(object):
     @classmethod
     def sanitize_string(cls, string, sizeless=False):
         """Removes the size header for further processing. Also checks if the header is valid.
-        Possible errors:
-            AttributeError: Fed a non-string, non-bytes argument
-            AssertionError: Initial size header is incorrect"""
+        
+        Args:
+            string:     The string you wish to sanitize
+            sizeless:   Whether this string contains a size header (default: it does)
+
+        Returns: 
+            The fed string without the size header
+
+        Raises:
+           AttributeError: Fed a non-string, non-bytes argument
+           AssertionError: Initial size header is incorrect
+        """
         if not isinstance(string, (bytes, bytearray)):
             string = string.encode()
         if not sizeless:
@@ -183,8 +239,20 @@ class pathfinding_message(object):
     @classmethod
     def decompress_string(cls, string, compressions=None):
         """Returns a tuple containing the decompressed bytes and a boolean as to whether decompression failed or not
-        Possible errors:
-            Exception:  Unrecognized compression method fed in compressions"""
+        
+        Args:
+            string:         The possibly-compressed message you wish to parse
+            compressions:   A list of the standard compression methods this message may be under (defualt: [])
+
+        Returns: 
+            A decompressed version of the message
+
+        Raises:
+           Exception:  Unrecognized compression method fed in compressions
+        
+        Warning:
+            Do not feed it with the size header, it will throw errors
+        """
         compression_fail = False
         for method in intersect(compressions, compression):  # second is module scope compression
             try:
@@ -199,9 +267,20 @@ class pathfinding_message(object):
     @classmethod
     def process_string(cls, string):
         """Given a sanitized, plaintext string, returns a list of its packets
-        Possible errors:
-            struct.error:   Packet headers are incorrect OR not fed plaintext
-            IndexError:     See struct.error"""
+        
+        Args:
+            string: The message you wish to parse
+
+        Returns:
+            A list containing the message's packets
+
+        Raises:
+           struct.error:   Packet headers are incorrect OR not fed plaintext
+           IndexError:     See struct.error
+
+        Warning:
+            Do not feed a message with the size header. Do not feed a compressed message.
+        """
         processed, expected = 0, len(string)
         pack_lens, packets = [], []
         while processed != expected:
@@ -216,33 +295,42 @@ class pathfinding_message(object):
         return packets
 
     @classmethod
-    def feed_string(cls, protocol, string, sizeless=False, compressions=None):
+    def feed_string(cls, string, sizeless=False, compressions=None):
         """Constructs a pathfinding_message from a string or bytes object.
-        Possible errors:
-            AttributeError: Fed a non-string, non-bytes argument
-            AssertionError: Initial size header is incorrect
-            Exception:      Unrecognized compression method fed in compressions
-            struct.error:   Packet headers are incorrect OR unrecognized compression
-            IndexError:     See struct.error"""
+        
+        Args:
+            string:         The string you wish to parse
+            sizeless:       A boolean which describes whether this string has its size header (default: it does)
+            compressions:   A list containing the standardized compression methods this message might be under (default: [])
+
+        Returns:
+            A base.pathfinding_message from the given string
+
+        Raises:
+           AttributeError: Fed a non-string, non-bytes argument
+           AssertionError: Initial size header is incorrect
+           Exception:      Unrecognized compression method fed in compressions
+           struct.error:   Packet headers are incorrect OR unrecognized compression
+           IndexError:     See struct.error
+        """
         # First section checks size header
         string = cls.sanitize_string(string, sizeless)
         # Then we attempt to decompress
         string, compression_fail = cls.decompress_string(string, compressions)
         # After this, we process the packet size headers
         packets = cls.process_string(string)
-        msg = cls(protocol, packets[0], packets[1], packets[4:], compression=compressions)
+        msg = cls(packets[0], packets[1], packets[4:], compression=compressions)
         msg.time = from_base_58(packets[3])
         msg.compression_fail = compression_fail
         return msg
 
-    def __init__(self, protocol, msg_type, sender, payload, compression=None):
+    def __init__(self, msg_type, sender, payload, compression=None):
 
         def sanitize_packet(packet):
             if not isinstance(packet, (bytes, bytearray)):
                 return packet.encode()
             return packet
 
-        self.protocol = protocol
         self.msg_type = sanitize_packet(msg_type)
         self.sender = sanitize_packet(sender)
         self.__payload = [sanitize_packet(packet) for packet in payload]
@@ -330,7 +418,7 @@ class base_connection(object):
         id = kargs.get('id', self.server.id)  # Latter is returned if key not found
         time = kargs.get('time', getUTC())
         # Begin real method
-        msg = pathfinding_message(self.protocol, msg_type, id, list(args), self.compression)
+        msg = pathfinding_message(msg_type, id, list(args), self.compression)
         if msg_type in [flags.whisper, flags.broadcast]:
             self.last_sent = [msg_type] + list(args)
         self.__print__("Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)
@@ -372,7 +460,7 @@ class base_connection(object):
         self.expected = 4
         self.buffer = []
         self.active = False
-        msg = pathfinding_message.feed_string(self.protocol, raw_msg, False, self.compression)
+        msg = pathfinding_message.feed_string(raw_msg, False, self.compression)
         return msg
 
     def handle_renegotiate(self, packets):
@@ -391,6 +479,7 @@ class base_connection(object):
                 return True
 
     def fileno(self):
+        """Mirror for the fileno() method of the connection's underlying socket"""
         return self.sock.fileno()
 
     def __print__(self, *args, **kargs):
@@ -436,6 +525,20 @@ class base_daemon(object):
 class base_socket(object):
     """The base class for a peer-to-peer socket"""
     def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
+        """Initializes a peer to peer socket
+
+        Args:
+            addr:           The address you wish to bind to (ie: "192.168.1.1")
+            port:           The port you wish to bind to (ie: 44565)
+            prot:           The protocol you wish to operate over, defined by a base.protocol object
+            out_addr:       Your outward facing address. Only needed if you're connecting 
+                over the internet. If you use '0.0.0.0' for the addr argument, this will
+                automatically be set to your LAN address.
+            debug_level:    The verbosity you want this socket to use when printing event data
+
+        Raises:
+            socket.error:   The address you wanted could not be bound, or is otherwise used
+        """
         self.protocol = prot
         self.debug_level = debug_level
         self.routing_table = {}     # In format {ID: handler}
@@ -453,6 +556,11 @@ class base_socket(object):
         self.__closed = False
 
     def close(self):
+        """If the socket is not closed, close the socket
+
+        Raises:
+            RuntimeError:   The socket was already closed
+        """
         if self.__closed:
             raise RuntimeError("Already closed")
         else:
@@ -470,12 +578,17 @@ class base_socket(object):
 
     if sys.version_info >= (3, ):
         def register_handler(self, method):
-            """Register a handler for incoming method. Should be roughly of the form:
-            def handler(msg, handler):
-                packets = msg.packets
-                if packets[0] == expected_value:
-                    action()
-                    return True
+            """Register a handler for incoming method. 
+
+            Args:
+                method: A function with two given arguments. Its signature
+                    should be of the form handler(msg, handler), where msg is
+                    a base.message object, and handler is a base.base_connection
+                    object. It should return True if it performed an action, to
+                    reduce the number of handlers checked.
+
+            Raises:
+                ValueError: If the method signature doesn't parse correctly
             """
             args = inspect.signature(method)
             if len(args.parameters) != (3 if args.parameters.get('self') else 2):
@@ -484,12 +597,17 @@ class base_socket(object):
 
     else:
         def register_handler(self, method):
-            """Register a handler for incoming method. Should be roughly of the form:
-            def handler(msg, handler):
-                packets = msg.packets
-                if packets[0] == expected_value:
-                    action()
-                    return True
+            """Register a handler for incoming method. 
+
+            Args:
+                method: A function with two given arguments. Its signature
+                    should be of the form handler(msg, handler), where msg is
+                    a base.message object, and handler is a base.base_connection
+                    object. It should return True if it performed an action, to
+                    reduce the number of handlers checked.
+
+            Raises:
+                ValueError: If the method signature doesn't parse correctly
             """
             args = inspect.getargspec(method)
             if args[1:] != (None, None, None) or len(args[0]) != (3 if args[0][0] == 'self' else 2):
@@ -497,7 +615,15 @@ class base_socket(object):
             self.__handlers.append(method)
 
     def handle_msg(self, msg, conn):
-        """Decides how to handle various message types, allowing some to be handled automatically"""
+        """Decides how to handle various message types, allowing some to be handled automatically
+
+        Args:
+            msg:    A base.message object
+            conn:   A base.base_connection object
+
+        Returns:
+            True if an action was taken, None if not.
+        """
         for handler in self.__handlers:
             self.__print__("Checking handler: %s" % handler.__name__, level=4)
             if handler(msg, conn):
@@ -506,11 +632,19 @@ class base_socket(object):
 
     @property
     def status(self):
-        """Returns "Nominal" if all is going well, or a list of unexpected (Excpetion, traceback) tuples if not"""
+        """The status of the socket.
+
+        Returns:
+            "Nominal" if all is going well, or a list of unexpected (Excpetion, traceback) tuples if not"""
         return self.daemon.exceptions or "Nominal"
 
     def __print__(self, *args, **kargs):
-        """Private method to print if level is <= self.__debug_level"""
+        """Private method to print if level is <= self.__debug_level
+
+        Args:
+            *args:      The arguments you wish to feed to print()
+            **kargs:    A container for the keyword argument level, which defines
+                the debug_level threshold below which this should not print"""
         if kargs.get('level') <= self.debug_level:
             with plock:
                 print(self.out_addr[1], *args)
@@ -542,11 +676,6 @@ class message(object):
     def sender(self):
         """The ID of this message's sender"""
         return self.msg.sender
-
-    @property
-    def protocol(self):
-        """The protocol this message was sent under"""
-        return self.msg.protocol
     
     @property
     def id(self):
@@ -570,7 +699,13 @@ class message(object):
             return string + repr(self.sender) + ")"
 
     def reply(self, *args):
-        """Replies to the sender if you're directly connected. Tries to make a connection otherwise"""
+        """Replies to the sender if you're directly connected. Tries to make a connection otherwise
+
+        Args:
+            *args: Each argument given is a packet you wish to send. This is
+                prefixed with base.flags.whisper, so the other end will receive 
+                [base.flags.whisper, *args]
+        """
         if self.server.routing_table.get(self.sender):
             self.server.routing_table.get(self.sender).send(flags.whisper, flags.whisper, *args)
         else:
