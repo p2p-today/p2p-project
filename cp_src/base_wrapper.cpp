@@ -1,6 +1,6 @@
 #include "stdlib.h"
-#include "Python.h"
-#include "bytesobject.h"
+#include <Python.h>
+#include <bytesobject.h>
 #include <stdexcept>
 #include "structmember.h"
 #include "base.h"
@@ -117,6 +117,38 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
     self->msg = tmp;
 
     return 0;
+}
+
+static pmessage_wrapper *feed_string(PyTypeObject *type, PyObject *args, PyObject *kwds)    {
+    const char *str=NULL, *sender=NULL;
+    int str_size = 0, sizeless = 0;
+    PyObject *compressions=NULL;
+
+    static char *kwlist[] = {(char*)"string", (char*)"sizeless", (char*)"compressions", NULL};
+
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "s#|pO!", kwlist, 
+                                      &str, &str_size, &sizeless, &PyList_Type, &compressions))
+        return NULL;
+
+    string str_string = string(str, str_size);
+    pmessage_wrapper *ret = (pmessage_wrapper *)type->tp_alloc(type, 0);
+
+    if (ret != NULL)    {
+        delete ret->msg;
+        if (sizeless && compressions)
+            ret->msg = pathfinding_message::feed_string(str_string, sizeless, vector_string_from_pylist(compressions));
+        else if (compressions)
+            ret->msg = pathfinding_message::feed_string(str_string, vector_string_from_pylist(compressions));
+        else if (sizeless)
+            ret->msg = pathfinding_message::feed_string(str_string, sizeless);
+        else
+            ret->msg = pathfinding_message::feed_string(str_string.substr(4));
+    }
+
+    if (PyErr_Occurred())
+        return NULL;
+
+    return ret;
 }
 
 static PyObject *payload(pmessage_wrapper *self)    {
@@ -242,7 +274,7 @@ static PyMethodDef pmessage_wrapper_methods[] = {
         "Return the message type"
     },
     {"id", (PyCFunction)id, METH_NOARGS,
-        "Return the message type"
+        "Return the message ID"
     },
     {"time", (PyCFunction)timestamp, METH_NOARGS,
         "Return the message time"
@@ -250,6 +282,8 @@ static PyMethodDef pmessage_wrapper_methods[] = {
     {"time_58", (PyCFunction)time_58, METH_NOARGS,
         "Return the message encoded in base_58"
     },
+    {"feed_string", (PyCFunction)feed_string, METH_CLASS | METH_KEYWORDS | METH_VARARGS, 
+        "Returns the pathfinding_message which corresponds to a serialized string"},
     {NULL}  /* Sentinel */
 };
 
@@ -309,6 +343,56 @@ static PyMethodDef BaseMethods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 
+static PyMethodDef FlagsMethods[] = {
+    {NULL, NULL, 0, NULL}        /* Sentinel */
+};
+
+void addFlags(PyObject* flags_wrapper)  {
+    //Main flags
+    PyModule_AddObject(flags_wrapper, "broadcast",   pybytes_from_string(string((size_t) 1, flags::broadcast)));
+    PyModule_AddObject(flags_wrapper, "waterfall",   pybytes_from_string(string((size_t) 1, flags::waterfall)));
+    PyModule_AddObject(flags_wrapper, "whisper",     pybytes_from_string(string((size_t) 1, flags::whisper)));
+    PyModule_AddObject(flags_wrapper, "renegotiate", pybytes_from_string(string((size_t) 1, flags::renegotiate)));
+    PyModule_AddObject(flags_wrapper, "ping",        pybytes_from_string(string((size_t) 1, flags::ping)));
+    PyModule_AddObject(flags_wrapper, "pong",        pybytes_from_string(string((size_t) 1, flags::pong)));
+
+
+    //Sub-flags
+    /*PyModule_AddObject(flags_wrapper, "broadcast",   pybytes_from_string(string((size_t) 1, flags::broadcast)));*/
+    PyModule_AddObject(flags_wrapper, "compression", pybytes_from_string(string((size_t) 1, flags::compression)));
+    /*PyModule_AddObject(flags_wrapper, "whisper",     pybytes_from_string(string((size_t) 1, flags::whisper)));*/
+    PyModule_AddObject(flags_wrapper, "handshake",   pybytes_from_string(string((size_t) 1, flags::handshake)));
+    /*PyModule_AddObject(flags_wrapper, "ping",        pybytes_from_string(string((size_t) 1, flags::ping)));*/
+    /*PyModule_AddObject(flags_wrapper, "pong",        pybytes_from_string(string((size_t) 1, flags::pong)));*/
+    PyModule_AddObject(flags_wrapper, "notify",      pybytes_from_string(string((size_t) 1, flags::notify)));
+    PyModule_AddObject(flags_wrapper, "peers",       pybytes_from_string(string((size_t) 1, flags::peers)));
+    PyModule_AddObject(flags_wrapper, "request",     pybytes_from_string(string((size_t) 1, flags::request)));
+    PyModule_AddObject(flags_wrapper, "resend",      pybytes_from_string(string((size_t) 1, flags::resend)));
+    PyModule_AddObject(flags_wrapper, "response",    pybytes_from_string(string((size_t) 1, flags::response)));
+    PyModule_AddObject(flags_wrapper, "store",       pybytes_from_string(string((size_t) 1, flags::store)));
+    PyModule_AddObject(flags_wrapper, "retrieve",    pybytes_from_string(string((size_t) 1, flags::retrieve)));
+
+    //Implemented compression methods
+    PyModule_AddObject(flags_wrapper, "gzip", pybytes_from_string(string((size_t) 1, flags::gzip)));
+    PyModule_AddObject(flags_wrapper, "zlib", pybytes_from_string(string((size_t) 1, flags::zlib)));
+
+    //non-implemented compression methods (based on list from compressjs):
+    PyModule_AddObject(flags_wrapper, "bwtc",     pybytes_from_string(string((size_t) 1, flags::bwtc)));
+    PyModule_AddObject(flags_wrapper, "bz2",      pybytes_from_string(string((size_t) 1, flags::bz2)));
+    PyModule_AddObject(flags_wrapper, "context1", pybytes_from_string(string((size_t) 1, flags::context1)));
+    PyModule_AddObject(flags_wrapper, "defsum",   pybytes_from_string(string((size_t) 1, flags::defsum)));
+    PyModule_AddObject(flags_wrapper, "dmc",      pybytes_from_string(string((size_t) 1, flags::dmc)));
+    PyModule_AddObject(flags_wrapper, "fenwick",  pybytes_from_string(string((size_t) 1, flags::fenwick)));
+    PyModule_AddObject(flags_wrapper, "huffman",  pybytes_from_string(string((size_t) 1, flags::huffman)));
+    PyModule_AddObject(flags_wrapper, "lzjb",     pybytes_from_string(string((size_t) 1, flags::lzjb)));
+    PyModule_AddObject(flags_wrapper, "lzjbr",    pybytes_from_string(string((size_t) 1, flags::lzjbr)));
+    PyModule_AddObject(flags_wrapper, "lzma",     pybytes_from_string(string((size_t) 1, flags::lzma)));
+    PyModule_AddObject(flags_wrapper, "lzp3",     pybytes_from_string(string((size_t) 1, flags::lzp3)));
+    PyModule_AddObject(flags_wrapper, "mtf",      pybytes_from_string(string((size_t) 1, flags::mtf)));
+    PyModule_AddObject(flags_wrapper, "ppmd",     pybytes_from_string(string((size_t) 1, flags::ppmd)));
+    PyModule_AddObject(flags_wrapper, "simple",   pybytes_from_string(string((size_t) 1, flags::simple)));
+}
+
 #if PY_MAJOR_VERSION >= 3
 
     static struct PyModuleDef basemodule = {
@@ -320,20 +404,39 @@ static PyMethodDef BaseMethods[] = {
        BaseMethods
     };
 
+    static struct PyModuleDef flagsmodule = {
+       PyModuleDef_HEAD_INIT,
+       "flags",  /* name of module */
+       "Storage container for protocol level flags",/* module documentation, may be NULL */
+       -1,      /* size of per-interpreter state of the module,
+                   or -1 if the module keeps state in global variables. */
+       FlagsMethods
+    };
+
     PyMODINIT_FUNC PyInit_cbase()    {
-        PyObject* m;
+        PyObject *cbase, *flags_wrapper;
 
         pmessage_wrapper_type.tp_new = PyType_GenericNew;
         if (PyType_Ready(&pmessage_wrapper_type) < 0)
             return NULL;
 
-        m = PyModule_Create(&basemodule);
-        if (m == NULL)
+        cbase = PyModule_Create(&basemodule);
+        if (cbase == NULL)
+            return NULL;
+
+        flags_wrapper = PyModule_Create(&flagsmodule);
+        if (flags_wrapper == NULL)
             return NULL;
 
         Py_INCREF(&pmessage_wrapper_type);
-        PyModule_AddObject(m, "pathfinding_message", (PyObject *)&pmessage_wrapper_type);
-        return m;
+        PyModule_AddObject(cbase, "pathfinding_message", (PyObject *)&pmessage_wrapper_type);
+
+        addFlags(flags_wrapper);
+
+        PyObject *cbase_dict = PyModule_GetDict(cbase);
+        PyDict_SetItemString(cbase_dict, "flags", flags_wrapper);
+
+        return cbase;
     }
 
         int main(int argc, char *argv[])    {
@@ -369,17 +472,24 @@ static PyMethodDef BaseMethods[] = {
         #define PyMODINIT_FUNC void
     #endif
     PyMODINIT_FUNC initcbase()  {
-        PyObject* m;
+        PyObject *cbase, *flags_wrapper;
 
         pmessage_wrapper_type.tp_new = PyType_GenericNew;
         if (PyType_Ready(&pmessage_wrapper_type) < 0)
             return;
 
-        m = Py_InitModule3("cbase", BaseMethods,
+        cbase = Py_InitModule3("cbase", BaseMethods,
                            "C++ implementation of some base functions");
+        flags_wrapper = Py_InitModule3("flags", FlagsMethods,
+                           "Storage container for protocol level flags");
 
         Py_INCREF(&pmessage_wrapper_type);
-        PyModule_AddObject(m, "pathfinding_message", (PyObject *)&pmessage_wrapper_type);
+        PyModule_AddObject(cbase, "pathfinding_message", (PyObject *)&pmessage_wrapper_type);
+
+        addFlags(flags_wrapper);
+
+        PyObject *cbase_dict = PyModule_GetDict(cbase);
+        PyDict_SetItemString(cbase_dict, "flags", flags_wrapper);
     }
 
     int main(int argc, char *argv[])    {

@@ -1,5 +1,7 @@
-#ifndef BASE
-#define BASE 0
+#ifndef PROTOCOL_MAJOR_VERSION
+#define PROTOCOL_MAJOR_VERSION 0
+#define PROTOCOL_MINOR_VERSION 4
+#define NODE_VERSION 255
 
 #include <string>
 #include <iostream>
@@ -12,6 +14,54 @@
 #include "base_converter/BaseConverter.h"
 
 using namespace std;
+
+typedef basic_string<unsigned char> ustring;
+
+const ustring res_ustring = ustring((const unsigned char*)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F");
+
+namespace flags {
+    static const unsigned char broadcast   =  0x00,  // also sub-flag
+    waterfall   =  0x01,
+    whisper     =  0x02,  // also sub-flag
+    renegotiate =  0x03,
+    ping        =  0x04,  // Unused, but reserved
+    pong        =  0x05,  // Unused, but reserved
+
+    // sub-flags
+    //broadcast  =  0x00,
+    compression=  0x01,
+    //whisper    =  0x02,
+    handshake  =  0x03,
+    //*ping       =*/  0x04,
+    //*pong       =*/  0x05,
+    notify     =  0x06,
+    peers      =  0x07,
+    request    =  0x08,
+    resend     =  0x09,
+    response   =  0x0A,
+    store      =  0x0B,
+    retrieve   =  0x0C,
+
+    // implemented compression methods
+    gzip    =  0x11,
+    zlib    =  0x1F,
+
+    // non-implemented compression methods (based on list from compressjs):
+    bwtc    =  0x13,
+    bz2     =  0x10,
+    context1=  0x14,
+    defsum  =  0x15,
+    dmc     =  0x16,
+    fenwick =  0x17,
+    huffman =  0x18,
+    lzjb    =  0x19,
+    lzjbr   =  0x1A,
+    lzma    =  0x12,
+    lzp3    =  0x1B,
+    mtf     =  0x1C,
+    ppmd    =  0x1D,
+    simple  =  0x1E;
+}
 
 unsigned long getUTC();
 string to_base_58(unsigned long long i);
@@ -29,27 +79,27 @@ class pathfinding_message   {
         pathfinding_message(string msg_type, string sender, vector<string> payload);
         pathfinding_message(string msg_type, string sender, vector<string> payload, vector<string> compressions);
 
-        static pathfinding_message feed_string(string msg)   {
+        static pathfinding_message *feed_string(string msg)   {
             vector<string> packets = process_string(msg);
-            pathfinding_message pm = pathfinding_message(
+            pathfinding_message *pm = new pathfinding_message(
                 packets[0],
                 packets[1], 
                 vector<string>(packets.begin() + 4, packets.end()));
-            pm.timestamp = from_base_58(packets[3]);
+            pm->timestamp = from_base_58(packets[3]);
             return pm;
         }
 
-        static pathfinding_message feed_string(string msg, bool sizeless)  {
+        static pathfinding_message *feed_string(string msg, bool sizeless)  {
             return pathfinding_message::feed_string(
                 sanitize_string(msg, sizeless));
         }
 
-        static pathfinding_message feed_string(string msg, vector<string> compressions)    {
+        static pathfinding_message *feed_string(string msg, vector<string> compressions)    {
             return pathfinding_message::feed_string(
                 decompress_string(msg, compressions));
         };
 
-        static pathfinding_message feed_string(string msg, bool sizeless, vector<string> compressions) {
+        static pathfinding_message *feed_string(string msg, bool sizeless, vector<string> compressions) {
             return pathfinding_message::feed_string(
                 sanitize_string(msg, sizeless),
             compressions);

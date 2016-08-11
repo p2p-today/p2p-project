@@ -30,12 +30,6 @@ string divide_by_58(string b, int &remainder)    {
         remainder = c % 58;
         answer.append(1, d);
     }
-    for (size_t i = 0; i < b.length(); i++)
-        printf("%i, ", (unsigned char)b[i]);
-    printf("-> ");
-    for (size_t i = 0; i < answer.length(); i++)
-        printf("%i, ", (unsigned char)answer[i]);
-    printf("\n");
     return answer;
 }
 
@@ -43,9 +37,7 @@ string to_base_58(string b)   {
     string answer = "";
     int remainder = 0;
     while (b.length() != 0) {
-        printf("loop\n");
         b = divide_by_58(b, remainder);
-        printf("remainder=%i\n", remainder);
         if (b.length() != 0 || remainder != 0)
             answer.insert(0, 1, base_58[remainder]);
     }
@@ -84,7 +76,7 @@ string to_base_58(string b)   {
 unsigned long long from_base_58(string str) {
     unsigned long long ret = 0;
     for (unsigned int i = 0; i < str.length(); i++)    {
-        ret = ret * 58 + base_58.find(str[i]); 
+        ret = ret * (unsigned long long) 58 + (unsigned long long) base_58.find(str[i]);
     }
     return ret;
 }
@@ -128,13 +120,14 @@ vector<string> process_string(string str)   {
     vector<unsigned long> pack_lens;
     vector<string> packets;
     while (processed != expected)   {
-        pack_lens.push_back(unpack_value(str.substr(processed, 4)));
+        unsigned long tmp = unpack_value(str.substr(processed, 4));
+        pack_lens.push_back(tmp);
         processed += 4;
-        expected -= pack_lens[-1];
+        expected -= pack_lens.back();
     }
     // Then reconstruct the packets
     for (unsigned long i = 0; i < pack_lens.size(); i++)    {
-        packets.push_back(str.substr(processed, processed + pack_lens[i]));
+        packets.push_back(str.substr(processed, pack_lens[i]));
         processed += pack_lens[i];
     }
     return packets;
