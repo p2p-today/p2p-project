@@ -9,3 +9,4 @@ Base Module (C++ Implementation)
 	.. autoclass:: pathfinding_message
 		:members:
 		:undoc-members:
+		:special-members: __init__, __iter__

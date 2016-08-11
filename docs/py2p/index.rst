@@ -13,6 +13,7 @@ Contents:
 	tutorial
 	base
 	cbase
+	utils
 	mesh
 	chord
 	kademlia

@@ -5,14 +5,15 @@ Base Module
 .. automodule:: py2p.base 
 	:members:
 	:exclude-members: flags
-	:special-members: __init__
+	:special-members: __init__, __iter__
 	:undoc-members:
 
 	.. autoclass:: flags
+		:exclude-members: x
 		
 		.. autoattribute:: reserved
 
-		Main flags:
+		**Main flags:**
 
 		- .. autoattribute:: flags.broadcast
 			:annotation:
@@ -27,7 +28,7 @@ Base Module
 		- .. autoattribute:: pong
 			:annotation:
 
-		Sub-flags:
+		**Sub-flags:**
 
 		- .. autoattribute:: broadcast
 			:annotation:
@@ -56,7 +57,7 @@ Base Module
 		- .. autoattribute:: retrieve
 			:annotation:
 
-		Python-implemented compression methods:
+		**Python-implemented compression methods:**
 
 		- .. autoattribute:: bz2
 			:annotation:
@@ -65,7 +66,7 @@ Base Module
 		- .. autoattribute:: lzma
 			:annotation:
 
-		Other implementation's and/or planned compression methods:
+		**Other implementations' and/or planned compression methods:**
 
 		- .. autoattribute:: bwtc
 			:annotation:
