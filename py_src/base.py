@@ -43,7 +43,6 @@ class flags():
     """A namespace to hold protocol-defined flags"""
     # Reserved set of bytes
     reserved = [struct.pack('!B', x) for x in range(0x20)]
-    del x
 
     # main flags
     broadcast   = brepr(b'\x00', rep='broadcast')   # also sub-flag
@@ -72,6 +71,7 @@ class flags():
     bz2  = brepr(b'\x10', rep='bz2')
     gzip = brepr(b'\x11', rep='gzip')
     lzma = brepr(b'\x12', rep='lzma')
+    zlib = brepr(b'\x1F', rep='zlib')
 
     # non-implemented compression methods (based on list from compressjs):
     bwtc     = brepr(b'\x13', rep='bwtc')
@@ -201,20 +201,26 @@ def decompress(msg, method):
 
 
 class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
-    """Defines service variables so that you can reject connections looking for a different service"""
+    """Defines service variables so that you can reject connections looking for a different service
+
+    Attributes:
+        subnet:     The subnet flag this protocol uses
+        encryption: The encryption method this protocol uses
+        id:         The SHA-256 based ID of this protocol
+    """
     @property
     def id(self):
         """The SHA-256-based ID of the protocol"""
         h = hashlib.sha256(''.join([str(x) for x in self] + [protocol_version]).encode())
         return to_base_58(int(h.hexdigest(), 16))
 
-default_protocol = protocol('', "Plaintext")  # PKCS1_v1.5")
+default_protocol = protocol('', "Plaintext")  # SSL")
 
 
 class pathfinding_message(object):
     """An object used to build and parse protocol-defined message structures"""
     @classmethod
-    def sanitize_string(cls, string, sizeless=False):
+    def __sanitize_string(cls, string, sizeless=False):
         """Removes the size header for further processing. Also checks if the header is valid.
         
         Args:
@@ -237,7 +243,7 @@ class pathfinding_message(object):
         return string
 
     @classmethod
-    def decompress_string(cls, string, compressions=None):
+    def __decompress_string(cls, string, compressions=None):
         """Returns a tuple containing the decompressed bytes and a boolean as to whether decompression failed or not
         
         Args:
@@ -265,7 +271,7 @@ class pathfinding_message(object):
         return (string, compression_fail)
 
     @classmethod
-    def process_string(cls, string):
+    def __process_string(cls, string):
         """Given a sanitized, plaintext string, returns a list of its packets
         
         Args:
@@ -314,21 +320,32 @@ class pathfinding_message(object):
            IndexError:     See struct.error
         """
         # First section checks size header
-        string = cls.sanitize_string(string, sizeless)
+        string = cls.__sanitize_string(string, sizeless)
         # Then we attempt to decompress
-        string, compression_fail = cls.decompress_string(string, compressions)
+        string, compression_fail = cls.__decompress_string(string, compressions)
         # After this, we process the packet size headers
-        packets = cls.process_string(string)
+        packets = cls.__process_string(string)
         msg = cls(packets[0], packets[1], packets[4:], compression=compressions)
         msg.time = from_base_58(packets[3])
         msg.compression_fail = compression_fail
         return msg
 
     def __init__(self, msg_type, sender, payload, compression=None):
+        """Initializes a pathfinding_message instance
+
+        Args:
+            msg_type:       A bytes-like header for the message you wish to send
+            sender:         A bytes-like sender ID the message is using
+            payload:        A list of bytes-like objects containing the payload of the message
+            compression:    A list of the compression methods this message may use (default: [])
+
+        Raises:
+            TypeError:  If you feed an object which cannot convert to bytes
+        """
 
         def sanitize_packet(packet):
             if not isinstance(packet, (bytes, bytearray)):
-                return packet.encode()
+                return packet.encode('raw_unicode_escape')
             return packet
 
         self.msg_type = sanitize_packet(msg_type)
@@ -413,10 +430,21 @@ class base_connection(object):
         self.active = False
 
     def send(self, msg_type, *args, **kargs):
-        """Sends a message through its connection. The first argument is message type. All after that are content packets"""
+        """Sends a message through its connection. 
+
+        Args:
+            msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object
+            *args:      A list of bytes-like objects, which correspond to the packets to send to you
+            **kargs:    There are two available keywords:
+            id:         The ID this message should appear to be sent from (default: your ID)
+            time:       The time this message should appear to be sent from (default: now in UTC)
+        
+        Returns:
+            the pathfinding_message object you just sent, or None if the sending was unsuccessful
+        """
         # This section handles waterfall-specific flags
         id = kargs.get('id', self.server.id)  # Latter is returned if key not found
-        time = kargs.get('time', getUTC())
+        time = kargs.get('time') or getUTC()
         # Begin real method
         msg = pathfinding_message(msg_type, id, list(args), self.compression)
         if msg_type in [flags.whisper, flags.broadcast]:
@@ -435,7 +463,14 @@ class base_connection(object):
         return self.server.protocol
 
     def collect_incoming_data(self, data):
-        """Collects incoming data"""
+        """Collects incoming data
+
+        Args:
+            data:   The most recently received byte
+
+        Returns:
+            True if the data collection was successful, False if the connection was closed
+        """
         if not bool(data):
             try:
                 self.sock.shutdown(socket.SHUT_RDWR)
@@ -464,6 +499,19 @@ class base_connection(object):
         return msg
 
     def handle_renegotiate(self, packets):
+        """The handler for connection renegotiations
+
+        This is to deal with connection maintenence. For instance, it could 
+        be that a compression method fails to decode on the other end, and a 
+        node will need to renegotiate which methods it is using. Hence the 
+        name of the flag associated with it, "renegotiate".
+
+        Args:
+            packets:    A list containing the packets received in this message
+
+        Returns:
+            True if an action was taken, None if not
+        """
         if packets[0] == flags.renegotiate:
             if packets[4] == flags.compression:
                 encoded_methods = [algo.encode() for algo in json.loads(packets[5].decode())]
@@ -483,7 +531,14 @@ class base_connection(object):
         return self.sock.fileno()
 
     def __print__(self, *args, **kargs):
-        """Private method to print if level is <= self.server.debug_level"""
+        """Private method to print if level is <= self.server.debug_level
+
+        Args:
+            *args:      Each argument you wish to feed to the print method
+            **kargs:    One keyword is used here: level, which defines the
+                lowest value of self.server.debug_level at which the message
+                will be printed
+        """
         self.server.__print__(*args, **kargs)
 
 
@@ -518,7 +573,14 @@ class base_daemon(object):
             pass
 
     def __print__(self, *args, **kargs):
-        """Private method to print if level is <= self.server.debug_level"""
+        """Private method to print if level is <= self.server.debug_level
+
+        Args:
+            *args:      Each argument you wish to feed to the print method
+            **kargs:    One keyword is used here: level, which defines the
+                lowest value of self.server.debug_level at which the message
+                will be printed
+        """
         self.server.__print__(*args, **kargs)
 
 
@@ -639,13 +701,15 @@ class base_socket(object):
         return self.daemon.exceptions or "Nominal"
 
     def __print__(self, *args, **kargs):
-        """Private method to print if level is <= self.__debug_level
+        """Private method to print if level is <= self.debug_level
 
         Args:
-            *args:      The arguments you wish to feed to print()
-            **kargs:    A container for the keyword argument level, which defines
-                the debug_level threshold below which this should not print"""
-        if kargs.get('level') <= self.debug_level:
+            *args:      Each argument you wish to feed to the print method
+            **kargs:    One keyword is used here: level, which defines the
+                lowest value of self.debug_level at which the message will
+                be printed
+        """
+        if kargs.get('level', 0) <= self.debug_level:
             with plock:
                 print(self.out_addr[1], *args)
 
@@ -657,6 +721,15 @@ class base_socket(object):
 class message(object):
     """An object which gets returned to a user, containing all necessary information to parse and reply to a message"""
     def __init__(self, msg, server):
+        """Initializes a message object
+
+        Args:
+            msg:    A pathfinding_message object
+            server: A base_socket object
+
+        Raises:
+            TypeError:  If msg is not a pathfinding_message
+        """
         if not isinstance(msg, pathfinding_message):  # pragma: no cover
             raise TypeError("message must be passed a pathfinding_message")
         self.msg = msg
