@@ -1,7 +1,8 @@
-#ifndef PROTOCOL_MAJOR_VERSION
-#define PROTOCOL_MAJOR_VERSION 0
-#define PROTOCOL_MINOR_VERSION 4
-#define NODE_VERSION 255
+#ifndef CP2P_PROTOCOL_MAJOR_VERSION
+#define CP2P_PROTOCOL_MAJOR_VERSION 0
+#define CP2P_PROTOCOL_MINOR_VERSION 4
+#define CP2P_NODE_VERSION 255
+#define CP2P_VERSION "0.4.255"
 
 #include <string>
 #include <iostream>
@@ -10,6 +11,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
+#include "sha/sha256.h"
 #include "sha/sha384.h"
 #include "base_converter/BaseConverter.h"
 
@@ -17,9 +19,9 @@ using namespace std;
 
 typedef basic_string<unsigned char> ustring;
 
-const ustring res_ustring = ustring((const unsigned char*)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F");
-
 namespace flags {
+    const ustring res_ustring = ustring((const unsigned char*)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F");
+
     static const unsigned char broadcast   =  0x00,  // also sub-flag
     waterfall   =  0x01,
     whisper     =  0x02,  // also sub-flag
@@ -73,6 +75,14 @@ string pack_value(size_t len, unsigned long long i);
 string sanitize_string(string str, bool sizeless);
 string decompress_string(string str, vector<string> compressions);
 vector<string> process_string(string str);
+
+class protocol  {
+    public:
+        protocol(string subnet, string encryption);
+        ~protocol();
+        string id();
+        string subnet, encryption;
+};
 
 class pathfinding_message   {
     public:

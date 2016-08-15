@@ -97,6 +97,23 @@ string pack_value(size_t len, unsigned long long i) {
     return string(arr.begin(), arr.end());
 }
 
+protocol::protocol(string sub, string enc)  {
+    subnet = sub;
+    encryption = enc;
+}
+
+protocol::~protocol()   {}
+
+string protocol::id()  {
+    char buffer[5];
+    size_t buff_size = sprintf(buffer, "%llu.%llu", (unsigned long long)CP2P_PROTOCOL_MAJOR_VERSION, (unsigned long long)CP2P_PROTOCOL_MINOR_VERSION);
+    string info = string(buffer, buff_size);
+    string digest = sha256(subnet + encryption + info);
+
+    BaseConverter convert = BaseConverter("0123456789abcdef", base_58.c_str());
+    return convert.Convert(digest);
+}
+
 pathfinding_message::pathfinding_message(string type, string sen, vector<string> load) {
     msg_type = type;
     sender = sen;
