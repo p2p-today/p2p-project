@@ -12,7 +12,7 @@ using namespace std;
 
 typedef struct {
     PyObject_HEAD
-    pathfinding_message *msg;
+    pathfinding_message msg;
     /* Type-specific fields go here. */
 } pmessage_wrapper;
 
@@ -24,8 +24,6 @@ static PyObject *pmessage_wrapper_new(PyTypeObject *type, PyObject *args, PyObje
     pmessage_wrapper *self;
 
     self = (pmessage_wrapper *)type->tp_alloc(type, 0);
-    if (self != NULL)
-        self->msg = NULL;
 
     return (PyObject *)self;
 }
@@ -34,7 +32,6 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
     const char *msg_type=NULL, *sender=NULL;
     int type_size = 0, sender_size = 0;
     PyObject *payload=NULL, *compression=NULL;
-    pathfinding_message *tmp;
 
     static char *kwlist[] = {(char*)"msg_type", (char*)"sender", (char*)"payload", (char*)"compressions", NULL};
 
@@ -50,13 +47,11 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
         vector<string> comp = vector_string_from_pylist(compression);
         if (PyErr_Occurred())
             return -1;
-        tmp = new pathfinding_message(string(msg_type, type_size), string(sender, sender_size), load, comp);
+        self->msg = pathfinding_message(string(msg_type, type_size), string(sender, sender_size), load, comp);
     }
     else    {
-        tmp = new pathfinding_message(string(msg_type, type_size), string(sender, sender_size), load);
+        self->msg = pathfinding_message(string(msg_type, type_size), string(sender, sender_size), load);
     }
-    delete self->msg;
-    self->msg = tmp;
 
     return 0;
 }
@@ -76,7 +71,6 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
     pmessage_wrapper *ret = (pmessage_wrapper *)type->tp_alloc(type, 0);
 
     if (ret != NULL)    {
-        delete ret->msg;
         if (sizeless && compressions)
             ret->msg = pathfinding_message::feed_string(str_string, sizeless, vector_string_from_pylist(compressions));
         else if (compressions)
@@ -94,33 +88,21 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
 }
 
 static PyObject *pmessage_payload(pmessage_wrapper *self)    {
-    if (self->msg == NULL)  {
-        PyErr_SetString(PyExc_AttributeError, "msg");
-        return NULL;
-    }
-    PyObject *ret = pylist_from_vector_string(self->msg->payload);
+    PyObject *ret = pylist_from_vector_string(self->msg.payload);
     if (PyErr_Occurred())
         return NULL;
     return ret;
 }
 
 static PyObject *pmessage_packets(pmessage_wrapper *self)    {
-    if (self->msg == NULL)  {
-        PyErr_SetString(PyExc_AttributeError, "msg");
-        return NULL;
-    }
-    PyObject *ret = pylist_from_vector_string(self->msg->packets());
+    PyObject *ret = pylist_from_vector_string(self->msg.packets());
     if (PyErr_Occurred())
         return NULL;
     return ret;
 }
 
 static PyObject *pmessage_str(pmessage_wrapper *self)    {
-    if (self->msg == NULL)  {
-        PyErr_SetString(PyExc_AttributeError, "msg");
-        return NULL;
-    }
-    string cp_str = self->msg->str();
+    string cp_str = self->msg.str();
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -128,11 +110,7 @@ static PyObject *pmessage_str(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_sender(pmessage_wrapper *self)    {
-    if (self->msg == NULL)  {
-        PyErr_SetString(PyExc_AttributeError, "msg");
-        return NULL;
-    }
-    string cp_str = self->msg->sender;
+    string cp_str = self->msg.sender;
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -140,11 +118,7 @@ static PyObject *pmessage_sender(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_msg_type(pmessage_wrapper *self)    {
-    if (self->msg == NULL)  {
-        PyErr_SetString(PyExc_AttributeError, "msg");
-        return NULL;
-    }
-    string cp_str = self->msg->msg_type;
+    string cp_str = self->msg.msg_type;
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -152,11 +126,7 @@ static PyObject *pmessage_msg_type(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_id(pmessage_wrapper *self)    {
-    if (self->msg == NULL)  {
-        PyErr_SetString(PyExc_AttributeError, "msg");
-        return NULL;
-    }
-    string cp_str = self->msg->id();
+    string cp_str = self->msg.id();
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -164,11 +134,7 @@ static PyObject *pmessage_id(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_timestamp_58(pmessage_wrapper *self)    {
-    if (self->msg == NULL)  {
-        PyErr_SetString(PyExc_AttributeError, "msg");
-        return NULL;
-    }
-    string cp_str = self->msg->time_58();
+    string cp_str = self->msg.time_58();
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -176,54 +142,50 @@ static PyObject *pmessage_timestamp_58(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_timestamp(pmessage_wrapper *self)    {
-    if (self->msg == NULL)  {
-        PyErr_SetString(PyExc_AttributeError, "msg");
-        return NULL;
-    }
-    PyObject *ret = PyLong_FromUnsignedLong(self->msg->timestamp);
+    PyObject *ret = PyLong_FromUnsignedLong(self->msg.timestamp);
     if (PyErr_Occurred())
         return NULL;
     return ret;
 }
 
 static unsigned long long pmessage__len__(pmessage_wrapper *self)    {
-    if (self->msg == NULL)  {
-        PyErr_SetString(PyExc_AttributeError, "msg");
-        return 0;
-    }
-    return self->msg->length();
+    return self->msg.length();
 }
 
 static PyMemberDef pmessage_wrapper_members[] = {
     {NULL}  /* Sentinel */
 };
 
-
-static PyMethodDef pmessage_wrapper_methods[] = {
-    {"payload", (PyCFunction)pmessage_payload, METH_NOARGS,
+static PyGetSetDef pmessage_wrapper_getsets[] = {
+    {"payload", (getter)pmessage_payload, NULL,
         "Return the payload of this message"
     },
-    {"packets", (PyCFunction)pmessage_packets, METH_NOARGS,
+    {"packets", (getter)pmessage_packets, NULL,
         "Return the packets of this message"
     },
-    {"string", (PyCFunction)pmessage_str, METH_NOARGS,
+    {"string", (getter)pmessage_str, NULL,
         "Return the string of this message"
     },
-    {"sender", (PyCFunction)pmessage_sender, METH_NOARGS,
+    {"sender", (getter)pmessage_sender, NULL,
         "Return the sender ID of this message"
     },
-    {"msg_type", (PyCFunction)pmessage_msg_type, METH_NOARGS,
+    {"msg_type", (getter)pmessage_msg_type, NULL,
         "Return the message type"
     },
-    {"id", (PyCFunction)pmessage_id, METH_NOARGS,
-        "Return the message ID"
-    },
-    {"time", (PyCFunction)pmessage_timestamp, METH_NOARGS,
+    {"time", (getter)pmessage_timestamp, NULL,
         "Return the message time"
     },
-    {"time_58", (PyCFunction)pmessage_timestamp_58, METH_NOARGS,
+    {"time_58", (getter)pmessage_timestamp_58, NULL,
         "Return the message encoded in base_58"
     },
+    {"id", (getter)pmessage_id, NULL,
+        "Return the message ID"
+    },
+    {NULL}  /* Sentinel */
+};
+
+
+static PyMethodDef pmessage_wrapper_methods[] = {
     {"feed_string", (PyCFunction)pmessage_feed_string, METH_CLASS | METH_KEYWORDS | METH_VARARGS, 
         "Constructs a pathfinding_message from a string or bytes object.\n\
 \n\
@@ -288,7 +250,7 @@ static PyTypeObject pmessage_wrapper_type = {
     0,                         /* tp_iternext */
     pmessage_wrapper_methods,  /* tp_methods */
     pmessage_wrapper_members,  /* tp_members */
-    0,                         /* tp_getset */
+    pmessage_wrapper_getsets,  /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */

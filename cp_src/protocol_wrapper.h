@@ -64,8 +64,8 @@ static PyMemberDef protocol_wrapper_members[] = {
     {NULL}  /* Sentinel */
 };
 
-static PyMethodDef protocol_wrapper_methods[] = {
-    {"id", (PyCFunction)protocol_id, METH_NOARGS,
+static PyGetSetDef protocol_wrapper_getsets[] = {
+    {"id", (getter)protocol_id, NULL,
         "Return the message ID"
     },
     {NULL}  /* Sentinel */
@@ -99,9 +99,9 @@ static PyTypeObject protocol_wrapper_type = {
     0,                         /* tp_weaklistoffset */
     0,                         /* tp_iter */
     0,                         /* tp_iternext */
-    protocol_wrapper_methods,  /* tp_methods */
+    0,                         /* tp_methods */
     protocol_wrapper_members,  /* tp_members */
-    0,                         /* tp_getset */
+    protocol_wrapper_getsets,  /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */

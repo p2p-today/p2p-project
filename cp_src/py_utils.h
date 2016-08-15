@@ -37,11 +37,6 @@ static vector<string> vector_string_from_pylist(PyObject *incoming)    {
             PyObject *value = PyList_GetItem(incoming, i);
             if (PyBytes_Check(value))
                 out.push_back(string(PyBytes_AsString(value)));
-            else if (PyUnicode_Check(value))    {
-                PyObject *tmp = PyUnicode_AsEncodedString(value, (char*)"raw_unicode_escape", (char*)"strict");
-                out.push_back(string(PyBytes_AsString(tmp)));
-                Py_XDECREF(tmp);
-            }
 #if PY_MAJOR_VERSION >= 3
             else if (PyObject_CheckBuffer(value))   {
                 PyObject *tmp = PyBytes_FromObject(value);
@@ -49,6 +44,11 @@ static vector<string> vector_string_from_pylist(PyObject *incoming)    {
                 Py_XDECREF(tmp);
             }
 #endif
+            else if (PyUnicode_Check(value))    {
+                PyObject *tmp = PyUnicode_AsEncodedString(value, (char*)"raw_unicode_escape", (char*)"strict");
+                out.push_back(string(PyBytes_AsString(tmp)));
+                Py_XDECREF(tmp);
+            }
             else    {
                 PyErr_SetObject(PyExc_TypeError, value);
                 vector<string> err;
