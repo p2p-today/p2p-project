@@ -15,7 +15,15 @@ static PyMethodDef FlagsMethods[] = {
 };
 
 static void addConstants(PyObject *cbase, PyObject *flags_wrapper)  {
+    vector<string> compression;
+    PyModule_AddObject(cbase, "compression", pylist_from_vector_string(compression));
     //PyModule_AddObject(cbase, "version", pybytes_from_string(string(CP2P_VERSION)));
+    
+    // Add reserved flags
+    vector<string> reserved_set;
+    for (unsigned int i = 0; i < flags::reserved.size(); i++)
+        reserved_set.push_back(string((size_t)1, flags::reserved[i]));
+    PyModule_AddObject(flags_wrapper, "reserved",   pylist_from_vector_string(reserved_set));
 
     // Main flags
     PyModule_AddObject(flags_wrapper, "broadcast",   pybytes_from_string(string((size_t) 1, flags::broadcast)));

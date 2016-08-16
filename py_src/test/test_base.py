@@ -50,54 +50,55 @@ def test_compression_exceptions(iters=100):
         else:  # pragma: no cover
             raise Exception("Unknown compression method should raise error")
 
-def test_pathfinding_message(iters=500):
+def test_pathfinding_message(iters=500, impl=base):
     max_val = 2**8
     for _ in xrange(iters):
         length = random.randint(0, max_val)
         array = gen_random_list(36, length)
-        pathfinding_message_constructor_validation(array)
-        pathfinding_message_exceptions_validiation(array)
+        pathfinding_message_constructor_validation(array, impl)
+        pathfinding_message_exceptions_validiation(array, impl)
 
-def pathfinding_message_constructor_validation(array):
-    msg = base.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
+def pathfinding_message_constructor_validation(array, impl):
+    msg = impl.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
     assert array == msg.payload
     assert msg.packets == [base.flags.broadcast, 'TEST SENDER'.encode(), msg.id, msg.time_58] + array
-    for method in base.compression:
+    for method in impl.compression:
         msg.compression = []
         string = base.compress(msg.string[4:], method)
         string = struct.pack('!L', len(string)) + string
         msg.compression = [method]
-        comp = base.pathfinding_message.feed_string(string, False, [method])
-        assert msg.string == string == comp.string
+        comp1 = impl.pathfinding_message.feed_string(string, False, [method])
+        comp2 = base.pathfinding_message.feed_string(string, False, [method])
+        assert msg.string == string == comp1.string == comp2.string
 
-def pathfinding_message_exceptions_validiation(array):
-    msg = base.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
+def pathfinding_message_exceptions_validiation(array, impl):
+    msg = impl.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
     for method in base.compression:
         msg.compression = [method]
         try:
-            base.pathfinding_message.feed_string(msg.string, True, [method])
+            impl.pathfinding_message.feed_string(msg.string, True, [method])
         except:
             pass
         else:  # pragma: no cover
             raise Exception("Erroneously parses sized message with sizeless: %s" % string)
         try:
-            base.pathfinding_message.feed_string(msg.string[4:], False, [method])
+            impl.pathfinding_message.feed_string(msg.string[4:], False, [method])
         except:
             pass
         else:  # pragma: no cover
             raise Exception("Erroneously parses sizeless message with size %s" % string)
         try:
-            base.pathfinding_message.feed_string(msg.string)
+            impl.pathfinding_message.feed_string(msg.string)
         except:
             pass
         else:  # pragma: no cover
             raise Exception("Erroneously parses compressed message as plaintext %s" % string)
 
-def test_protocol(iters=200):
+def test_protocol(iters=200, impl=base):
     for _ in range(iters):
         sub = str(uuid.uuid4())
         enc = str(uuid.uuid4())
-        test = base.protocol(sub, enc)
+        test = impl.protocol(sub, enc)
         assert test.subnet == test[0] == sub
         assert test.encryption == test[1] == enc
         p_hash = hashlib.sha256(''.join([sub, enc, base.protocol_version]).encode())

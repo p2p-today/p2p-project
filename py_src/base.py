@@ -71,21 +71,21 @@ class flags():
     bz2  = brepr(b'\x10', rep='bz2')
     gzip = brepr(b'\x11', rep='gzip')
     lzma = brepr(b'\x12', rep='lzma')
-    zlib = brepr(b'\x1F', rep='zlib')
+    zlib = brepr(b'\x13', rep='zlib')
 
     # non-implemented compression methods (based on list from compressjs):
-    bwtc     = brepr(b'\x13', rep='bwtc')
-    context1 = brepr(b'\x14', rep='context1')
-    defsum   = brepr(b'\x15', rep='defsum')
-    dmc      = brepr(b'\x16', rep='dmc')
-    fenwick  = brepr(b'\x17', rep='fenwick')
-    huffman  = brepr(b'\x18', rep='huffman')
-    lzjb     = brepr(b'\x19', rep='lzjb')
-    lzjbr    = brepr(b'\x1A', rep='lzjbr')
-    lzp3     = brepr(b'\x1B', rep='lzp3')
-    mtf      = brepr(b'\x1C', rep='mtf')
-    ppmd     = brepr(b'\x1D', rep='ppmd')
-    simple   = brepr(b'\x1E', rep='simple')
+    bwtc     = brepr(b'\x14', rep='bwtc')
+    context1 = brepr(b'\x15', rep='context1')
+    defsum   = brepr(b'\x16', rep='defsum')
+    dmc      = brepr(b'\x17', rep='dmc')
+    fenwick  = brepr(b'\x18', rep='fenwick')
+    huffman  = brepr(b'\x19', rep='huffman')
+    lzjb     = brepr(b'\x1A', rep='lzjb')
+    lzjbr    = brepr(b'\x1B', rep='lzjbr')
+    lzp3     = brepr(b'\x1C', rep='lzp3')
+    mtf      = brepr(b'\x1D', rep='mtf')
+    ppmd     = brepr(b'\x1E', rep='ppmd')
+    simple   = brepr(b'\x1F', rep='simple')
 
 
 user_salt   = str(uuid.uuid4()).encode()
@@ -95,7 +95,7 @@ compression = []  # This should be in order of preference, with None being impli
 
 try:
     import zlib
-    compression.append(flags.gzip)
+    compression.extend((flags.zlib, flags.gzip))
 except ImportError:  # pragma: no cover
     pass
 
@@ -112,6 +112,89 @@ except ImportError:  # pragma: no cover
     pass
 
 json_compressions = json.dumps([method.decode() for method in compression])
+
+
+if sys.version_info < (3, ):
+    def pack_value(l, i):
+        """For value i, pack it into bytes of size length
+
+        Args:
+            length: A positive, integral value describing how long to make the packed array
+            i:      A positive, integral value to pack into said array
+
+        Returns:
+            A bytes object containing the given value
+
+        Raises:
+            ValueError: If length is not large enough to contain the value provided
+        """
+        ret = b""
+        for x in range(l):
+            ret = chr(i & 0xFF) + ret
+            i = i >> 8
+            if i == 0:
+                break
+        if i:
+            raise ValueError("Value not allocatable in size given")
+        return ("\x00" * (l - len(ret))) + ret
+
+    def unpack_value(string):
+        """For a string, return the packed value inside of it
+
+        Args:
+            string: A string or bytes-like object
+
+        Returns:
+            An integral value interpreted from this, as if it were a big-endian, unsigned integral
+        """
+        val = 0
+        for char in string:
+            val = val << 8
+            val += ord(char)
+        return val
+
+else:
+    def pack_value(l, i):
+        """For value i, pack it into bytes of size length
+
+        Args:
+            length: A positive, integral value describing how long to make the packed array
+            i:      A positive, integral value to pack into said array
+
+        Returns:
+            A bytes object containing the given value
+
+        Raises:
+            ValueError: If length is not large enough to contain the value provided
+        """
+        ret = b""
+        for x in range(l):
+            ret = bytes([i & 0xFF]) + ret
+            i = i >> 8
+            if i == 0:
+                break
+        if i:
+            raise ValueError("Value not allocatable in size given")
+        return ("\x00" * (l - len(ret))) + ret
+
+    def unpack_value(string):
+        """For a string, return the packed value inside of it
+
+        Args:
+            string: A string or bytes-like object
+
+        Returns:
+            An integral value interpreted from this, as if it were a big-endian, unsigned integral
+        """
+        val = 0
+        if not isinstance(string, (bytes, bytearray)):
+            string = bytes(string, 'raw_unicode_escape')
+        val = 0
+        for char in string:
+            val = val << 8
+            val += char
+        return val
+
 
 base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
@@ -168,7 +251,11 @@ def compress(msg, method):
         The types fed are dependent on which compression method you use. Best to assume most values are bytes or bytearray
     """
     if method == flags.gzip:
-        return zlib.compress(msg)
+        compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 31)
+        return compressor.compress(msg) + compressor.flush()
+    elif method == flags.zlib:
+        compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 15)
+        return compressor.compress(msg) + compressor.flush()
     elif method == flags.bz2:
         return bz2.compress(msg)
     elif method == flags.lzma:
@@ -190,7 +277,7 @@ def decompress(msg, method):
     Warning:
         The types fed are dependent on which decompression method you use. Best to assume most values are bytes or bytearray
     """
-    if method == flags.gzip:
+    if method in (flags.gzip, flags.zlib):
         return zlib.decompress(msg, zlib.MAX_WBITS | 32)
     elif method == flags.bz2:
         return bz2.decompress(msg)
@@ -237,8 +324,8 @@ class pathfinding_message(object):
         if not isinstance(string, (bytes, bytearray)):
             string = string.encode()
         if not sizeless:
-            assert struct.unpack('!L', string[:4])[0] == len(string[4:]), \
-                "Must assert struct.unpack('!L', string[:4])[0] == len(string[4:])"
+            assert unpack_value(string[:4]) == len(string[4:]), \
+                "Must assert base.unpack_value(string[:4]) == len(string[4:])"
             string = string[4:]
         return string
 
@@ -392,9 +479,8 @@ class pathfinding_message(object):
     def __non_len_string(self):
         """Returns a bytes object containing the entire message, excepting the total length header"""
         packets = self.packets
-        header = struct.pack("!" + str(len(packets)) + "L", 
-                                    *[len(x) for x in packets])
-        string = header + b''.join((bytes(pac) for pac in packets))
+        header = [pack_value(4, len(x)) for x in packets]
+        string = b''.join((bytes(pac) for pac in header + packets))
         if self.compression_used:
             string = compress(string, self.compression_used)
         return string
@@ -403,7 +489,7 @@ class pathfinding_message(object):
     def string(self):
         """Returns a string representation of the message"""
         string = self.__non_len_string
-        return struct.pack("!L", len(string)) + string
+        return pack_value(4, len(string)) + string
 
     def __len__(self):
         return len(self.__non_len_string)
@@ -411,7 +497,7 @@ class pathfinding_message(object):
     @property
     def len(self):
         """Return the struct-encoded length header"""
-        return struct.pack("!L", self.__len__())
+        return pack_value(4, self.__len__())
 
 
 class base_connection(object):
@@ -726,12 +812,7 @@ class message(object):
         Args:
             msg:    A pathfinding_message object
             server: A base_socket object
-
-        Raises:
-            TypeError:  If msg is not a pathfinding_message
         """
-        if not isinstance(msg, pathfinding_message):  # pragma: no cover
-            raise TypeError("message must be passed a pathfinding_message")
         self.msg = msg
         self.server = server
 

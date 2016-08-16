@@ -20,7 +20,8 @@ using namespace std;
 typedef basic_string<unsigned char> ustring;
 
 namespace flags {
-    const ustring res_ustring = ustring((const unsigned char*)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F");
+    static const unsigned char *reserved_cstr = (unsigned char*)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F";
+    static const vector<unsigned char> reserved(reserved_cstr, reserved_cstr + 0x20);
 
     static const unsigned char broadcast   =  0x00,  // also sub-flag
     waterfall   =  0x01,
@@ -46,23 +47,23 @@ namespace flags {
 
     // implemented compression methods
     gzip    =  0x11,
-    zlib    =  0x1F,
+    zlib    =  0x13,
 
     // non-implemented compression methods (based on list from compressjs):
-    bwtc    =  0x13,
+    bwtc    =  0x14,
     bz2     =  0x10,
-    context1=  0x14,
-    defsum  =  0x15,
-    dmc     =  0x16,
-    fenwick =  0x17,
-    huffman =  0x18,
-    lzjb    =  0x19,
-    lzjbr   =  0x1A,
+    context1=  0x15,
+    defsum  =  0x16,
+    dmc     =  0x17,
+    fenwick =  0x18,
+    huffman =  0x19,
+    lzjb    =  0x1A,
+    lzjbr   =  0x1B,
     lzma    =  0x12,
-    lzp3    =  0x1B,
-    mtf     =  0x1C,
-    ppmd    =  0x1D,
-    simple  =  0x1E;
+    lzp3    =  0x1C,
+    mtf     =  0x1D,
+    ppmd    =  0x1E,
+    simple  =  0x1F;
 }
 
 unsigned long getUTC();

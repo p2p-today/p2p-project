@@ -222,7 +222,7 @@ static PySequenceMethods pmessage_as_sequence = {
 
 static PyTypeObject pmessage_wrapper_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "cbase.pathfinding_message",/* tp_name */
+    "pathfinding_message",/* tp_name */
     sizeof(pmessage_wrapper),  /* tp_basicsize */
     0,                         /* tp_itemsize */
     (destructor)pmessage_wrapper_dealloc,/* tp_dealloc */

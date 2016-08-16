@@ -84,16 +84,20 @@ unsigned long long from_base_58(string str) {
 unsigned long long unpack_value(string str)  {
     unsigned long long val = 0;
     for (unsigned int i = 0; i < str.length(); i++)    {
-        val *= 256;
+        val = val << 8;
         val += (unsigned char)str[i];
     }
     return val;
 }
 
 string pack_value(size_t len, unsigned long long i) {
-    vector<unsigned char> arr(len);
-    for (size_t j = 0; j < len; j++)
-        arr[len - j - 1] = i >> (8*j) & 0xff;
+    vector<unsigned char> arr((size_t)len, 0);
+    for (size_t j = 0; j < len; j++)    {
+        arr[len - j - 1] = i & 0xff;
+        i = i >> 8;
+        if (i == 0)
+            break;
+    }
     return string(arr.begin(), arr.end());
 }
 
