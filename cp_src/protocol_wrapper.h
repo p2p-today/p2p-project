@@ -71,6 +71,26 @@ static PyGetSetDef protocol_wrapper_getsets[] = {
     {NULL}  /* Sentinel */
 };
 
+static PyObject *protocol_getitem(protocol_wrapper *self, Py_ssize_t index)  {
+    if (index == 0)
+        return Py_BuildValue("s#", self->subnet, self->prot.subnet.length());
+    else if (index == 1)
+        return Py_BuildValue("s#", self->encryption, self->prot.encryption.length());
+    
+    PyErr_SetString(PyExc_IndexError, "Please put a 0 or 1");
+    return NULL;
+}
+
+static PySequenceMethods protocol_wrapper_sequence = {
+    0,                  /* __len__ */
+    0,                  /* __add__ */
+    0,                  /* __mul__ */
+    (ssizeargfunc)protocol_getitem,/* __getitem__ */
+    0,                  /* __getslice__ */
+    0,                  /* __setitem__ */
+    0                   /* __setslice__ */
+};
+
 static PyTypeObject protocol_wrapper_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "protocol",                /* tp_name */
@@ -83,7 +103,7 @@ static PyTypeObject protocol_wrapper_type = {
     0,                         /* tp_reserved */
     0,                         /* tp_repr */
     0,                         /* tp_as_number */
-    0,                         /* tp_as_sequence */
+    &protocol_wrapper_sequence,/* tp_as_sequence */
     0,                         /* tp_as_mapping */
     0,                         /* tp_hash  */
     0,                         /* tp_call */
