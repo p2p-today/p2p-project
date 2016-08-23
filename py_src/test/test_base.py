@@ -8,6 +8,8 @@ import struct
 import sys
 import uuid
 
+import pytest
+
 from functools import partial
 from .. import base
 
@@ -37,18 +39,11 @@ def test_compression(iters=100):
 def test_compression_exceptions(iters=100):
     for _ in xrange(iters):
         test = os.urandom(36)
-        try:
+        with pytest.raises(Exception):
             base.compress(test, os.urandom(4))
-        except:
-            pass
-        else:  # pragma: no cover
-            raise Exception("Unknown compression method should raise error")
-        try:
+
+        with pytest.raises(Exception):
             base.decompress(test, os.urandom(4))
-        except:
-            pass
-        else:  # pragma: no cover
-            raise Exception("Unknown compression method should raise error")
 
 def test_pathfinding_message(iters=500, impl=base):
     max_val = 2**8
@@ -73,7 +68,7 @@ def pathfinding_message_constructor_validation(array, impl):
 
 def pathfinding_message_exceptions_validiation(array, impl):
     msg = impl.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
-    for method in base.compression:
+    for method in impl.compression:
         msg.compression = [method]
         try:
             impl.pathfinding_message.feed_string(msg.string, True, [method])
