@@ -25,7 +25,7 @@ static PyObject *pybytes_from_string(string str)   {
     PyObject *ret = PyObject_CallMethod(memview, (char*)"tobytes", (char*)"");
     Py_XDECREF(memview);
 #else
-    PyObject *ret = PyString_Encode(c_str, (Py_ssize_t)str.length(), (char*)"raw_unicode_escape", (char*)"strict");
+    PyObject *ret = PyString_Encode((char*)c_str, (Py_ssize_t)str.length(), (char*)"raw_unicode_escape", (char*)"strict");
 #endif
     return ret;
 }

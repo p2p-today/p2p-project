@@ -93,10 +93,14 @@ def test_protocol(iters=200, impl=base):
     for _ in range(iters):
         sub = str(uuid.uuid4())
         enc = str(uuid.uuid4())
+        print("constructing")
         test = impl.protocol(sub, enc)
+        print("testing subnet equality")
         assert test.subnet == test[0] == sub
+        print("testing encryption equality")
         assert test.encryption == test[1] == enc
         p_hash = hashlib.sha256(''.join([sub, enc, base.protocol_version]).encode())
+        print("testing ID equality")
         assert int(p_hash.hexdigest(), 16) == base.from_base_58(test.id)
 
 def test_message_sans_network(iters=1000):
