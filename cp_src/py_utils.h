@@ -30,30 +30,72 @@ static PyObject *pybytes_from_string(string str)   {
     return ret;
 }
 
+static string string_from_pybytes(PyObject *bytes)  {
+    if (PyBytes_Check(bytes))   {
+        char *buff = NULL;
+        Py_ssize_t len = NULL;
+        PyBytes_AsStringAndSize(bytes, &buff, &len);
+        return string(buff, len);
+    }
+#if PY_MAJOR_VERSION >= 3
+    else if (PyObject_CheckBuffer(bytes))   {
+        PyObject *tmp = PyBytes_FromObject(bytes);
+        string ret = string_from_pybytes(tmp);
+        Py_XDECREF(tmp);
+        return ret;
+    }
+#else
+    else if (PyByteArray_Check(bytes))  {
+        char *buff = PyByteArray_AS_STRING(bytes);
+        Py_ssize_t len = PyByteArray_GET_SIZE(bytes);
+        return string(buff, len);
+    }
+#endif
+    else if (PyUnicode_Check(bytes))    {
+        PyObject *tmp = PyUnicode_AsEncodedString(bytes, (char*)"raw_unicode_escape", (char*)"strict");
+        string ret = string_from_pybytes(tmp);
+        Py_XDECREF(tmp);
+        return ret;
+    }
+    else    {
+        PyErr_SetObject(PyExc_TypeError, bytes);
+        return string();
+    }
+}
+
 static vector<string> vector_string_from_pylist(PyObject *incoming)    {
     vector<string> out;
     if (PyList_Check(incoming)) {
         for(Py_ssize_t i = 0; i < PyList_Size(incoming); i++) {
             PyObject *value = PyList_GetItem(incoming, i);
-            if (PyBytes_Check(value))
-                out.push_back(string(PyBytes_AsString(value)));
-#if PY_MAJOR_VERSION >= 3
-            else if (PyObject_CheckBuffer(value))   {
-                PyObject *tmp = PyBytes_FromObject(value);
-                out.push_back(string(PyBytes_AsString(tmp)));
-                Py_XDECREF(tmp);
+            out.push_back(string_from_pybytes(value));
+            if (PyErr_Occurred())
+                return out;
+        }
+    }
+    else if (PyTuple_Check(incoming)) {
+        for(Py_ssize_t i = 0; i < PyTuple_Size(incoming); i++) {
+            PyObject *value = PyTuple_GetItem(incoming, i);
+            out.push_back(string_from_pybytes(value));
+            if (PyErr_Occurred())
+                return out;
+        }
+    }
+    else {
+        PyObject *iter = PyObject_GetIter(incoming);
+        if (PyErr_Occurred())
+            PyErr_SetObject(PyExc_TypeError, incoming);
+        else    {
+            PyObject *item;
+            while ((item = PyIter_Next(iter)) != NULL)  {
+                out.push_back(string_from_pybytes(item));
+                Py_DECREF(item);
+                if (PyErr_Occurred())   {
+                    Py_DECREF(iter);
+                    return out;
+                }
             }
-#endif
-            else if (PyUnicode_Check(value))    {
-                PyObject *tmp = PyUnicode_AsEncodedString(value, (char*)"raw_unicode_escape", (char*)"strict");
-                out.push_back(string(PyBytes_AsString(tmp)));
-                Py_XDECREF(tmp);
-            }
-            else    {
-                PyErr_SetObject(PyExc_TypeError, value);
-                vector<string> err;
-                return err;
-            }
+            Py_DECREF(iter);
         }
     }
     return out;

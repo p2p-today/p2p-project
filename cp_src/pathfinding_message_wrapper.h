@@ -29,14 +29,22 @@ static PyObject *pmessage_wrapper_new(PyTypeObject *type, PyObject *args, PyObje
 }
 
 static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObject *kwds)  {
-    const char *msg_type=NULL, *sender=NULL;
-    int type_size = 0, sender_size = 0;
-    PyObject *payload=NULL, *compression=NULL;
+    string msg_type, sender;
+    PyObject *py_msg=NULL, *py_sender=NULL, *payload=NULL, *compression=NULL;
 
     static char *kwlist[] = {(char*)"msg_type", (char*)"sender", (char*)"payload", (char*)"compressions", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "s#s#O!|O!", kwlist, 
-                                      &msg_type, &type_size, &sender, &sender_size, &PyList_Type, &payload, &PyList_Type, &compression))
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "OOO|O", kwlist, 
+                                      &py_msg, &py_sender, 
+                                      &payload, &compression))
+        return -1;
+
+    msg_type = string_from_pybytes(py_msg);
+    if (PyErr_Occurred())
+        return -1;
+
+    sender = string_from_pybytes(py_sender);
+    if (PyErr_Occurred())
         return -1;
 
     vector<string> load = vector_string_from_pylist(payload);
@@ -47,38 +55,47 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
         vector<string> comp = vector_string_from_pylist(compression);
         if (PyErr_Occurred())
             return -1;
-        self->msg = pathfinding_message(string(msg_type, type_size), string(sender, sender_size), load, comp);
+        self->msg = pathfinding_message(msg_type, sender, load, comp);
     }
     else    {
-        self->msg = pathfinding_message(string(msg_type, type_size), string(sender, sender_size), load);
+        self->msg = pathfinding_message(msg_type, sender, load);
     }
 
     return 0;
 }
 
 static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args, PyObject *kwds)    {
-    const char *str=NULL;
-    int str_size = 0, sizeless = 0;
-    PyObject *compressions=NULL;
+    string str;
+    int sizeless = 0;
+    PyObject *py_compression=NULL, *py_str=NULL;
+    vector<string> compression;
 
     static char *kwlist[] = {(char*)"string", (char*)"sizeless", (char*)"compressions", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "s#|pO!", kwlist, 
-                                      &str, &str_size, &sizeless, &PyList_Type, &compressions))
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "O|pO", kwlist, 
+                                      &py_str, &sizeless, &py_compression))
         return NULL;
 
-    string str_string = string(str, str_size);
+    str = string_from_pybytes(py_str);
+    if (PyErr_Occurred())
+        return NULL;
+
     pmessage_wrapper *ret = (pmessage_wrapper *)type->tp_alloc(type, 0);
 
     if (ret != NULL)    {
-        if (sizeless && compressions)
-            ret->msg = pathfinding_message::feed_string(str_string, sizeless, vector_string_from_pylist(compressions));
-        else if (compressions)
-            ret->msg = pathfinding_message::feed_string(str_string, vector_string_from_pylist(compressions));
+        if (py_compression)
+            compression = vector_string_from_pylist(py_compression);
+        if (PyErr_Occurred())
+            return NULL;
+
+        if (sizeless && py_compression)
+            ret->msg = pathfinding_message::feed_string(str, sizeless, compression);
+        else if (py_compression)
+            ret->msg = pathfinding_message::feed_string(str, compression);
         else if (sizeless)
-            ret->msg = pathfinding_message::feed_string(str_string, sizeless);
+            ret->msg = pathfinding_message::feed_string(str, sizeless);
         else
-            ret->msg = pathfinding_message::feed_string(str_string.substr(4));
+            ret->msg = pathfinding_message::feed_string(str.substr(4));
     }
 
     if (PyErr_Occurred())
@@ -148,6 +165,38 @@ static PyObject *pmessage_timestamp(pmessage_wrapper *self)    {
     return ret;
 }
 
+static PyObject *pmessage_compression_used(pmessage_wrapper *self)  {
+    string cp_str = self->msg.compression_used();
+    if (cp_str == string(""))
+        Py_RETURN_NONE;
+
+    PyObject *ret = pybytes_from_string(cp_str);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;    
+}
+
+static PyObject *pmessage_compression_get(pmessage_wrapper *self)   {
+    PyObject *ret = pylist_from_vector_string(self->msg.compression);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;    
+}
+
+static int pmessage_compression_set(pmessage_wrapper *self, PyObject *value, void *closure) {
+    if (value == NULL)  {
+        PyErr_SetString(PyExc_AttributeError, "Cannot delete compression attribute");
+        return -1;
+    }
+
+    vector<string> new_compression = vector_string_from_pylist(value);
+    if (PyErr_Occurred())
+        return -1;
+
+    self->msg.compression = new_compression;
+    return 0;
+}
+
 static unsigned long long pmessage__len__(pmessage_wrapper *self)    {
     return self->msg.length();
 }
@@ -181,6 +230,10 @@ static PyGetSetDef pmessage_wrapper_getsets[] = {
     {"id", (getter)pmessage_id, NULL,
         "Return the message ID"
     },
+    {"compression_used", (getter)pmessage_compression_used, NULL,
+        "Return the compression method used, or None if there is none"},
+    {"compression", (getter)pmessage_compression_get, (setter)pmessage_compression_set,
+        "A list of the compression methods available for use"},
     {NULL}  /* Sentinel */
 };
 

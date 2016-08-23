@@ -169,7 +169,7 @@ pathfinding_message::~pathfinding_message()  {}
 string pathfinding_message::compression_used()  {
     if (compression.size())
         return compression[0];
-    return NULL;
+    return string("");
 }
 
 string pathfinding_message::time_58()   {

@@ -1,10 +1,14 @@
 #ifndef CP2P_PROTOCOL_MAJOR_VERSION
+#define CP2P__STR( ARG ) #ARG
+#define CP2P__STR__( ARG ) CP2P__STR(ARG)
+
 #define CP2P_PROTOCOL_MAJOR_VERSION 0
 #define CP2P_PROTOCOL_MINOR_VERSION 4
 #define CP2P_NODE_VERSION 255
-#define CP2P_VERSION "0.4.255"
+#define CP2P_VERSION CP2P__STR__(CP2P_PROTOCOL_MAJOR_VERSION) "." CP2P__STR__(CP2P_PROTOCOL_MINOR_VERSION) "." CP2P__STR__(CP2P_NODE_VERSION)
 
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <cstdlib>
 #include <vector>
@@ -20,10 +24,17 @@ using namespace std;
 typedef basic_string<unsigned char> ustring;
 
 namespace flags {
-    static const unsigned char *reserved_cstr = (unsigned char*)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F";
-    static const vector<unsigned char> reserved(reserved_cstr, reserved_cstr + 0x20);
+    static const unsigned char\
+    *reserved_cstr = (unsigned char*)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F",
+    *implemented_compressions_cstr = (unsigned char*)"";
 
-    static const unsigned char broadcast   =  0x00,  // also sub-flag
+
+    static const vector<unsigned char>\
+    reserved(reserved_cstr, reserved_cstr + 0x20),
+    implemented_compressions(implemented_compressions_cstr, implemented_compressions_cstr + 0);
+
+    static const unsigned char\
+    broadcast   =  0x00,  // also sub-flag
     waterfall   =  0x01,
     whisper     =  0x02,  // also sub-flag
     renegotiate =  0x03,
@@ -31,19 +42,19 @@ namespace flags {
     pong        =  0x05,  // Unused, but reserved
 
     // sub-flags
-    //broadcast  =  0x00,
-    compression=  0x01,
-    //whisper    =  0x02,
-    handshake  =  0x03,
-    //*ping       =*/  0x04,
-    //*pong       =*/  0x05,
-    notify     =  0x06,
-    peers      =  0x07,
-    request    =  0x08,
-    resend     =  0x09,
-    response   =  0x0A,
-    store      =  0x0B,
-    retrieve   =  0x0C,
+    //broadcast   =  0x00,
+    compression =  0x01,
+    //whisper     =  0x02,
+    handshake   =  0x03,
+    //ping        =  0x04,
+    //pong        =  0x05,
+    notify      =  0x06,
+    peers       =  0x07,
+    request     =  0x08,
+    resend      =  0x09,
+    response    =  0x0A,
+    store       =  0x0B,
+    retrieve    =  0x0C,
 
     // implemented compression methods
     gzip    =  0x11,
