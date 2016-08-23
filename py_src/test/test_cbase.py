@@ -41,11 +41,11 @@ try:
         #common compression methods
         assert (bf.zlib, bf.gzip) == (cf.zlib, cf.gzip)
 
-    def test_protocol():
-        test_base.test_protocol(impl=cbase)
-
     def test_pathfinding_message():
         test_base.test_pathfinding_message(impl=cbase)
+
+    def test_protocol():
+        test_base.test_protocol(impl=cbase)
 
 except ImportError:
     pass
