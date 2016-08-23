@@ -4,5 +4,7 @@ include README.md
 include setup.py
 include .coveragerc
 include py_src/*.rst
+include py_src/*.py
+include py_src/test/*.py
 
 exclude MANIFEST.in
