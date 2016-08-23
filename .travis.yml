@@ -57,6 +57,7 @@ script:
   - make cpython
   - cd build/lib.*
   - python -c "from py2p import test; test.test_cbase.test_protocol()"
+  - cd ../..
   - make cpytest
 after_success:
   - if [ $Cov == 'true'  ]; then python -m coverage combine; python -m coverage xml; codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml; fi
