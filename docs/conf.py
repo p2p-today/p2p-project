@@ -47,7 +47,7 @@ sys.path.append('.')
 
 loc = os.path.dirname(os.path.abspath(__file__))
 print("Building from file %s" % loc)
-bld = subprocess.call(['python', os.path.join(loc, '..', '..', 'setup.py'), 'build', '-b', '.py-build'])
+bld = subprocess.call(['python', os.path.join(loc, '..', 'setup.py'), 'build', '-b', '.py-build'])
 
 if os.path.isfile(os.path.join(loc, 'py2p', '__init__.py')):
     shutil.rmtree(os.path.join(loc, 'py2p'))

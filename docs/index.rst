@@ -9,16 +9,15 @@ Welcome to py2p's documentation!
 Contents:
 
 .. toctree::
-	intro
-	tutorial
-	base
-	cbase
-	utils
-	mesh
-	chord
-	kademlia
-
-
+    :maxdepth: 1
+    
+    intro
+    protocol
+    python
+    C++
+    Javascript
+    Golang
+    contributing
 
 Indices and tables
 ==================
@@ -26,4 +25,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

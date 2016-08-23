@@ -97,3 +97,8 @@ Base Module (C++ Implementation)
 		:members:
 		:undoc-members:
 		:special-members: __init__, __iter__
+
+	.. autoclass:: py2p.cbase.protocol
+		:members:
+		:undoc-members:
+		:special-members: __init__, __iter__
