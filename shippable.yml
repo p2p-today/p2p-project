@@ -23,7 +23,7 @@ build:
     - make cpython
     - cd build/lib.*
     - python -c "from py2p import test; test.test_cbase.test_protocol()"
-    # - make cpytest
+    - make cpytest
   on_success:
     - coverage combine
     - coverage xml
