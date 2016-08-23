@@ -175,7 +175,7 @@ else:
                 break
         if i:
             raise ValueError("Value not allocatable in size given")
-        return ("\x00" * (l - len(ret))) + ret
+        return (b"\x00" * (l - len(ret))) + ret
 
     def unpack_value(string):
         """For a string, return the packed value inside of it

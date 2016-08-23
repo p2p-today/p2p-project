@@ -21,6 +21,7 @@ if sys.version_info < (3, ):
     cleanup_files = []
 
     def cleanup():  # pragma: no cover
+        """Cleans SSL certificate and key files"""
         for f in cleanup_files:
             os.remove(f)
 
@@ -28,7 +29,12 @@ if sys.version_info < (3, ):
 
 
 def generate_self_signed_cert(cert_file, key_file):
-    """Given two file-like objects, generate an SSL key and certificate."""
+    """Given two file-like objects, generate an SSL key and certificate
+
+    Args:
+        cert_file:  The certificate file you wish to write to
+        key_file:   The key file you wish to write to
+    """
     one_day = datetime.timedelta(1, 0, 0)
     private_key = rsa.generate_private_key(
         public_exponent=65537,
@@ -64,6 +70,14 @@ def generate_self_signed_cert(cert_file, key_file):
 
 
 def get_socket(server_side):
+    """Returns a socket set up as server or client side
+
+    Args:
+        server_side:    Whether the socket should be server side or not
+
+    Returns:
+        An SSL socket object
+    """
     if server_side:
         names = (None, None)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".cert") as cert_file:
