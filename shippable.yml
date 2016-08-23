@@ -20,7 +20,7 @@ build:
     - if [ $(($RANDOM % 2)) == 0 ] || [ $SHIPPABLE_PYTHON_VERSION == pypy ] || [ $SHIPPABLE_PYTHON_VERSION == pypy3 ]; then pip install cryptography; else pip install PyOpenSSL; fi
     - py.test -vv --cov=./py_src/ ./py_src/
     - python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
-    - python setup.py build
+    - make cpytest
   on_success:
     - coverage combine
     - coverage xml
