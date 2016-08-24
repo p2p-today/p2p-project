@@ -24,6 +24,8 @@ __USE_C__ = '--universal' not in sys.argv and os.path.isfile(os.path.join(loc, '
 if '--universal' in sys.argv and 'bdist_wheel' not in sys.argv:
     sys.argv.remove('--universal')
 
+__DEBUG__ = [("CP2P_DEBUG_FLAG", "a")] if ('--debug' in sys.argv and __USE_C__) else []
+
 # This sets up the program's classifiers
 
 classifiers = ['Development Status :: 3 - Alpha',
@@ -77,7 +79,8 @@ def main():
                          os.path.join(loc, 'cp_src', 'base.cpp'),
                          os.path.join(loc, 'cp_src', 'sha', 'sha384.cpp'),
                          os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp'),
-                         os.path.join(loc, 'cp_src', 'base_converter', 'BaseConverter.cpp')]))
+                         os.path.join(loc, 'cp_src', 'base_converter', 'BaseConverter.cpp')],
+                define_macros=__DEBUG__))
 
     try:
         setup(name='py2p',

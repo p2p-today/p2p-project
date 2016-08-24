@@ -107,27 +107,27 @@ class pathfinding_message   {
         pathfinding_message(string msg_type, string sender, vector<string> payload);
         pathfinding_message(string msg_type, string sender, vector<string> payload, vector<string> compressions);
 
-        static pathfinding_message feed_string(string msg)   {
+        static pathfinding_message *feed_string(string msg)   {
             vector<string> packets = process_string(msg);
-            pathfinding_message pm = pathfinding_message(
+            pathfinding_message *pm = new pathfinding_message(
                 packets[0],
                 packets[1], 
                 vector<string>(packets.begin() + 4, packets.end()));
-            pm.timestamp = from_base_58(packets[3]);
+            pm->timestamp = from_base_58(packets[3]);
             return pm;
         }
 
-        static pathfinding_message feed_string(string msg, bool sizeless)  {
+        static pathfinding_message *feed_string(string msg, bool sizeless)  {
             return pathfinding_message::feed_string(
                 sanitize_string(msg, sizeless));
         }
 
-        static pathfinding_message feed_string(string msg, vector<string> compressions)    {
+        static pathfinding_message *feed_string(string msg, vector<string> compressions)    {
             return pathfinding_message::feed_string(
                 decompress_string(msg, compressions));
         };
 
-        static pathfinding_message feed_string(string msg, bool sizeless, vector<string> compressions) {
+        static pathfinding_message *feed_string(string msg, bool sizeless, vector<string> compressions) {
             return pathfinding_message::feed_string(
                 sanitize_string(msg, sizeless),
             compressions);
