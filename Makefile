@@ -88,7 +88,7 @@ ifeq ($(pypy), True)
 cpytest: LICENSE setup.py setup.cfg
 	$(MAKE) cpython
 	python $(py_test_deps)
-	python -m pytest -c ./setup.cfg --cov=build/$(pyunvlibdir) build/$(pylibdir)
+	python -m pytest -c ./setup.cfg --cov=build/$(pylibdir) build/$(pylibdir)
 endif
 
 cpy2test: LICENSE setup.py setup.cfg
