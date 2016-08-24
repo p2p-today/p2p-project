@@ -55,7 +55,7 @@ pypy: LICENSE setup.py
 	pypy $(py_deps)
 	pypy setup.py build --universal
 
-ifeq ($(pypy), True)
+ifeq ($(pypy), False)
 cpython: LICENSE setup.py
 	python $(py_deps)
 	python setup.py build
@@ -84,7 +84,7 @@ py3test: LICENSE setup.py setup.cfg
 	$(python3) $(py_test_deps)
 	$(python3) -m pytest -c ./setup.cfg build/$(pyunvlibdir)
 
-ifeq ($(pypy), True)
+ifeq ($(pypy), False)
 cpytest: LICENSE setup.py setup.cfg
 	$(MAKE) cpython
 	python $(py_test_deps)
