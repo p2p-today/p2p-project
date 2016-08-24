@@ -17,14 +17,13 @@ matrix:
 build:
   ci:
     - pip install pytest-coverage codecov
-    - if [ $(($RANDOM % 2)) == 0 ] || [ $SHIPPABLE_PYTHON_VERSION == pypy ] || [ $SHIPPABLE_PYTHON_VERSION == pypy3 ]; then pip install cryptography; else pip install PyOpenSSL; fi
+    - make cpython
     - py.test -vv --cov=./py_src/ ./py_src/
     - python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
-    - make cpython
-    - cd build/lib.*
-    - python -c "from py2p import test; test.test_cbase.test_protocol()"
-    - cd ../..
+    - mv .coverage .covvv
     - make cpytest
+    - mv .covvv .coverage.1
+    - mv .coverage .coverage.2
   on_success:
     - coverage combine
     - coverage xml

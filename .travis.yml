@@ -48,16 +48,14 @@ before_install:
   - source venv/bin/activate
 # Everything after this is user editable
 install: 
-  - if [ $Cov == 'true'  ]; then pip install pytest-coverage codecov; fi
-  - if [ $(($RANDOM % 2)) == 0 ] || [ $pyver == pypy ] || [ $pyver == pypy3 ]; then pip install cryptography; else pip install PyOpenSSL; fi
+  - make cpython
 script:
   - if [ $Cov == 'true'  ]; then py.test -vv --cov=./py_src/ ./py_src/; fi
   - if [ $Cov == 'false' ]; then py.test -vv; fi
   - python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
-  - python setup.py build --debug
-  - cd build/lib.*
-  - python -c "from py2p import test; test.test_cbase.test_protocol()"
-  - cd ../..
+  - mv .coverage .covvv
   - make cpytest
+  - mv .covvv .coverage.1
+  - mv .coverage .coverage.2
 after_success:
   - if [ $Cov == 'true'  ]; then python -m coverage combine; python -m coverage xml; codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml; fi

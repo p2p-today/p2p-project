@@ -72,17 +72,17 @@ py3test: LICENSE setup.py setup.cfg
 cpytest: LICENSE setup.py setup.cfg
 	$(MAKE) cpython
 	python $(py_test_deps)
-	python -m pytest -c ./setup.cfg build/$(pylibdir)
+	python -m pytest -c ./setup.cfg --cov=build/$(pyunvlibdir) build/$(pylibdir)
 
 cpy2test: LICENSE setup.py setup.cfg
 	$(MAKE) cpython2
 	$(python2) $(py_test_deps)
-	$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
+	$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
 
 cpy3test: LICENSE setup.py setup.cfg
 	$(MAKE) cpython3
 	$(python3) $(py_test_deps)
-	$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
+	$(python3) -m pytest -c ./setup.cfg --cov=build/$(py3libdir) build/$(py3libdir)
 
 html:
 	python $(docs_deps)
