@@ -3,10 +3,10 @@ matrix:
     - env: Cov='true' pyver=pypy pydist=homebrew
     - env: Cov='true' pyver=pypy3 pydist=homebrew
   include:
-    - language: generic
-      python: 2.6
-      os: osx
-      env: Cov='true' pyver=2.6 pydist=macports
+    # - language: generic
+    #   python: 2.6
+    #   os: osx
+    #   env: Cov='true' pyver=2.6 pydist=macports
     - language: generic
       python: 2.7
       os: osx

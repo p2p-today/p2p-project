@@ -1,10 +1,10 @@
 environment:
   matrix:
-    - PYTHON: "C:\\Python26"
-      PYTHON_VERSION: "2.6"
-      RUN: "%PYTHON%\\python"
-      PIP: "%PYTHON%\\Scripts\\pip"
-      COV: "%PYTHON%\\Scripts\\coverage"
+    # - PYTHON: "C:\\Python26"
+    #   PYTHON_VERSION: "2.6"
+    #   RUN: "%PYTHON%\\python"
+    #   PIP: "%PYTHON%\\Scripts\\pip"
+    #   COV: "%PYTHON%\\Scripts\\coverage"
 
     - PYTHON: "C:\\Python27"
       PYTHON_VERSION: "2.7"
@@ -57,10 +57,12 @@ install:
 test: off
 
 build_script:
-  - "%RUN% -m pytest -vv --cov=./py_src/ ./py_src/"
+  - "%RUN% -m pytest -c setup.cfg --cov=./py_src/ ./py_src/"
   - "%RUN% setup.py sdist --universal"
   - "%PIP% install --no-index --find-links=.\\dist\\ py2p"
   - "%RUN% setup.py build"
+  - "FOR /F %%v IN ('%RUN% -c \"import sys, sysconfig; print(\'{}.{}-{v[0]}.{v[1]}\'.format(\'lib\', sysconfig.get_platform(), v=sys.version_info))\"') DO SET BUILD_DIR=%%v"
+  - "%RUN% -m pytest -c setup.cfg build\\%BUILD_DIR%"
 
 on_success:
   - "%COV% combine"
