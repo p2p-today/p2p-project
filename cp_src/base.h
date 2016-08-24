@@ -7,6 +7,12 @@
 #define CP2P_NODE_VERSION 255
 #define CP2P_VERSION CP2P__STR__(CP2P_PROTOCOL_MAJOR_VERSION) "." CP2P__STR__(CP2P_PROTOCOL_MINOR_VERSION) "." CP2P__STR__(CP2P_NODE_VERSION)
 
+#ifdef CP2P_DEBUG_FLAG
+    #define CP2P_DEBUG(...) printf(__VA_ARGS__);
+#else
+    #define CP2P_DEBUG(...)
+#endif
+
 #include <string>
 #include <sstream>
 #include <iostream>

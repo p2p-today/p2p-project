@@ -102,8 +102,11 @@ string pack_value(size_t len, unsigned long long i) {
 }
 
 protocol::protocol(string sub, string enc)  {
+    CP2P_DEBUG("Defining subnet with length: %i\n", sub.length())
     subnet = sub;
+    CP2P_DEBUG("Defining encryption with length: %i\n", enc.length())
     encryption = enc;
+    CP2P_DEBUG("Done defining\n")
 }
 
 protocol::~protocol()   {}

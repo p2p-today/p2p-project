@@ -54,7 +54,7 @@ script:
   - if [ $Cov == 'true'  ]; then py.test -vv --cov=./py_src/ ./py_src/; fi
   - if [ $Cov == 'false' ]; then py.test -vv; fi
   - python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
-  - make cpython
+  - python setup.py build --debug
   - cd build/lib.*
   - python -c "from py2p import test; test.test_cbase.test_protocol()"
   - cd ../..

@@ -12,12 +12,13 @@ using namespace std;
 
 typedef struct {
     PyObject_HEAD
-    protocol prot;
+    protocol *prot;
     char *subnet;
     char *encryption;
 } protocol_wrapper;
 
 static void protocol_wrapper_dealloc(protocol_wrapper* self)    {
+    delete self->prot;
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -39,15 +40,24 @@ static int protocol_wrapper_init(protocol_wrapper *self, PyObject *args, PyObjec
                                       &sub, &sub_size, &enc, &enc_size))
         return -1;
 
-    self->prot = protocol(string(sub, sub_size), string(enc, enc_size));
-    self->subnet = (char*) self->prot.subnet.c_str();
-    self->encryption = (char*) self->prot.encryption.c_str();
+    CP2P_DEBUG("Building subnet flag\n")
+    string sub_str = string(sub, sub_size);
+
+    CP2P_DEBUG("Building encryption flag\n")
+    string enc_str = string(enc, enc_size);
+
+    CP2P_DEBUG("Building protocol\n")
+    self->prot = new protocol(sub_str, enc_str);
+    CP2P_DEBUG("Adding subnet shortcut\n")
+    self->subnet = (char*) self->prot->subnet.c_str();
+    CP2P_DEBUG("Adding encryption shortcut\n")
+    self->encryption = (char*) self->prot->encryption.c_str();
 
     return 0;
 }
 
 static PyObject *protocol_id(protocol_wrapper *self)    {
-    string cp_str = self->prot.id();
+    string cp_str = self->prot->id();
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -73,9 +83,9 @@ static PyGetSetDef protocol_wrapper_getsets[] = {
 
 static PyObject *protocol_getitem(protocol_wrapper *self, Py_ssize_t index)  {
     if (index == 0)
-        return Py_BuildValue("s#", self->subnet, self->prot.subnet.length());
+        return Py_BuildValue("s#", self->subnet, self->prot->subnet.length());
     else if (index == 1)
-        return Py_BuildValue("s#", self->encryption, self->prot.encryption.length());
+        return Py_BuildValue("s#", self->encryption, self->prot->encryption.length());
     
     PyErr_SetString(PyExc_IndexError, "Please put a 0 or 1");
     return NULL;
