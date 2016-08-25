@@ -50,6 +50,7 @@ before_install:
 install: 
   - make cpython
 script:
+  - pip install pytest-coverage codecov
   - if [ $Cov == 'true'  ]; then py.test -vv --cov=./py_src/ ./py_src/; fi
   - if [ $Cov == 'false' ]; then py.test -vv; fi
   - python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
