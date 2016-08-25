@@ -80,13 +80,13 @@ def handler_registry_validation(iters, start_port, encryption):
         g.send('test')
         time.sleep(1)
         print("----------------------1st  ended----------------------")
-        assert all(not f.recv(), g.recv())
+        assert all((not f.recv(), g.recv()))
         time.sleep(1)
         print("----------------------2nd  event----------------------")
         g.send('not test')
         time.sleep(1)
         print("----------------------2nd  ended----------------------")
-        assert all(f.recv(), not g.recv())
+        assert all((f.recv(), not g.recv()))
         close_all_nodes([f, g])
 
 def test_hanlder_registry_Plaintext(iters=3):

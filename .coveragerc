@@ -21,8 +21,6 @@ exclude_lines =
     if False:
     if __name__ == .__main__.:
 
-show_missing = True
-
 [paths]
 source =
     py_src/
