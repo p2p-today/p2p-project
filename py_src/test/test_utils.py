@@ -44,10 +44,7 @@ def test_lan_ip():
 def lan_ip_validation_linux():
     # command pulled from http://stackoverflow.com/a/13322549
     command = """ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'"""
-    if sys.version_info >= (2, 7):
-        output = subprocess.check_output(command, universal_newlines=True, shell=True)
-    else:  # fix taken from http://stackoverflow.com/a/4814985
-        output = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0]
+    output = subprocess.check_output(command, universal_newlines=True, shell=True)
     assert utils.get_lan_ip() in output
 
 def lan_ip_validation_windows():
@@ -56,10 +53,7 @@ def lan_ip_validation_windows():
     test_file = open('test.bat', 'w')
     test_file.write(command)
     test_file.close()
-    if sys.version_info >= (2, 7):
-        output = subprocess.check_output(['test.bat'])
-    else:  # fix taken from http://stackoverflow.com/a/4814985
-        output = subprocess.Popen(['test.bat'], stdout=subprocess.PIPE).communicate()[0]
+    output = subprocess.check_output(['test.bat'])
     assert utils.get_lan_ip().encode() in output
     os.remove('test.bat')
 

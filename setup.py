@@ -41,7 +41,7 @@ classifiers = ['Development Status :: 3 - Alpha',
 
 classifiers.extend((
                ('Programming Language :: Python :: %s' % x) for x in
-                '2 3 2.6 2.7 3.3 3.4 3.5'.split()))
+                '2 3 2.7 3.3 3.4 3.5'.split()))
 
 
 
