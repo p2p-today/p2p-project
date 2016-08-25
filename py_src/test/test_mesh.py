@@ -61,19 +61,25 @@ def test_protocol_rejection_Plaintext(iters=3):
 def test_protocol_rejection_SSL(iters=3):
     protocol_rejection_validation(iters, 5400, 'SSL')
 
-def handler_registry_validation(iters, start_port, encryption):
+def register_1(msg, handler):
+    packets = msg.packets
+    if packets[1] == b'test':
+        handler.send(flags.whisper, flags.whisper, b"success")
+        return True
+
+def register_2(msg, handler):
+    packets = msg.packets
+    if packets[1] == b'test':
+        msg.reply(b"success")
+        return True
+
+def handler_registry_validation(iters, start_port, encryption, reg):
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         f = mesh.mesh_socket('localhost', start_port + i*2, prot=mesh.protocol('', encryption), debug_level=5)
         g = mesh.mesh_socket('localhost', start_port + i*2 + 1, prot=mesh.protocol('', encryption), debug_level=5)
 
-        def register(msg, handler):
-            packets = msg.packets
-            if packets[1] == b'test':
-                handler.send(flags.whisper, flags.whisper, b"success")
-                return True
-
-        f.register_handler(register)
+        f.register_handler(reg)
         g.connect('localhost', start_port + i*2)
         time.sleep(1)
         print("----------------------1st  event----------------------")
@@ -90,10 +96,16 @@ def handler_registry_validation(iters, start_port, encryption):
         close_all_nodes([f, g])
 
 def test_hanlder_registry_Plaintext(iters=3):
-    handler_registry_validation(iters, 5500, 'Plaintext')
+    handler_registry_validation(iters, 5500, 'Plaintext', register_1)
 
 def test_hanlder_registry_SSL(iters=3):
-    handler_registry_validation(iters, 5600, 'SSL')
+    handler_registry_validation(iters, 5600, 'SSL', register_1)
+
+def test_reply_Plaintext(iters=3):
+    handler_registry_validation(iters, 5700, 'Plaintext', register_2)
+
+def test_reply_SSL(iters=3):
+    handler_registry_validation(iters, 5800, 'SSL', register_2)
 
 # def disconnect(node, method):
 #     if method == 'crash':
