@@ -33,7 +33,7 @@ static PyObject *pybytes_from_string(string str)   {
 static string string_from_pybytes(PyObject *bytes)  {
     if (PyBytes_Check(bytes))   {
         char *buff = NULL;
-        Py_ssize_t len = NULL;
+        Py_ssize_t len = 0;
         PyBytes_AsStringAndSize(bytes, &buff, &len);
         return string(buff, len);
     }

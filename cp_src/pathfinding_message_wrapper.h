@@ -212,34 +212,34 @@ static PyMemberDef pmessage_wrapper_members[] = {
 };
 
 static PyGetSetDef pmessage_wrapper_getsets[] = {
-    {"payload", (getter)pmessage_payload, NULL,
-        "Return the payload of this message"
+    {(char*)"payload", (getter)pmessage_payload, NULL,
+        (char*)"Return the payload of this message"
     },
-    {"packets", (getter)pmessage_packets, NULL,
-        "Return the packets of this message"
+    {(char*)"packets", (getter)pmessage_packets, NULL,
+        (char*)"Return the packets of this message"
     },
-    {"string", (getter)pmessage_str, NULL,
-        "Return the string of this message"
+    {(char*)"string", (getter)pmessage_str, NULL,
+        (char*)"Return the string of this message"
     },
-    {"sender", (getter)pmessage_sender, NULL,
-        "Return the sender ID of this message"
+    {(char*)"sender", (getter)pmessage_sender, NULL,
+        (char*)"Return the sender ID of this message"
     },
-    {"msg_type", (getter)pmessage_msg_type, NULL,
-        "Return the message type"
+    {(char*)"msg_type", (getter)pmessage_msg_type, NULL,
+        (char*)"Return the message type"
     },
-    {"time", (getter)pmessage_timestamp, NULL,
-        "Return the message time"
+    {(char*)"time", (getter)pmessage_timestamp, NULL,
+        (char*)"Return the message time"
     },
-    {"time_58", (getter)pmessage_timestamp_58, NULL,
-        "Return the message encoded in base_58"
+    {(char*)"time_58", (getter)pmessage_timestamp_58, NULL,
+        (char*)"Return the message encoded in base_58"
     },
-    {"id", (getter)pmessage_id, NULL,
-        "Return the message ID"
+    {(char*)"id", (getter)pmessage_id, NULL,
+        (char*)"Return the message ID"
     },
-    {"compression_used", (getter)pmessage_compression_used, NULL,
-        "Return the compression method used, or None if there is none"},
-    {"compression", (getter)pmessage_compression_get, (setter)pmessage_compression_set,
-        "A list of the compression methods available for use"},
+    {(char*)"compression_used", (getter)pmessage_compression_used, NULL,
+        (char*)"Return the compression method used, or None if there is none"},
+    {(char*)"compression", (getter)pmessage_compression_get, (setter)pmessage_compression_set,
+        (char*)"A list of the compression methods available for use"},
     {NULL}  /* Sentinel */
 };
 

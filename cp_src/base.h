@@ -84,10 +84,6 @@ namespace flags {
 }
 
 unsigned long getUTC();
-string to_base_58(unsigned long long i);
-string divide_by_58(string digest, int &remainder);
-string to_base_58(string digest, unsigned long sz);
-unsigned long long from_base_58(string str);
 unsigned long long unpack_value(string str);
 string pack_value(size_t len, unsigned long long i);
 string sanitize_string(string str, bool sizeless);
@@ -100,6 +96,10 @@ class protocol  {
         ~protocol();
         string id();
         string subnet, encryption;
+    private:
+        struct {
+            string id, subnet, encryption;
+        } cache;
 };
 
 class pathfinding_message   {
@@ -146,6 +146,12 @@ class pathfinding_message   {
         string str();
         unsigned long long length();
         string header();
+    private:
+        struct {
+            string msg_type, sender, id, base_string;
+            unsigned long timestamp;
+            vector<string> payload;
+        } cache;
 };
 
 #endif

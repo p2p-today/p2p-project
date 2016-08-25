@@ -75,30 +75,34 @@ static PyMemberDef protocol_wrapper_members[] = {
 };
 
 static PyGetSetDef protocol_wrapper_getsets[] = {
-    {"id", (getter)protocol_id, NULL,
-        "Return the message ID"
+    {(char*)"id", (getter)protocol_id, NULL,
+        (char*)"Return the message ID"
     },
     {NULL}  /* Sentinel */
 };
 
 static PyObject *protocol_getitem(protocol_wrapper *self, Py_ssize_t index)  {
-    if (index == 0)
+    if (index == 0 || index == -2)
         return Py_BuildValue("s#", self->subnet, self->prot->subnet.length());
-    else if (index == 1)
+    else if (index == 1 || index == -1)
         return Py_BuildValue("s#", self->encryption, self->prot->encryption.length());
     
-    PyErr_SetString(PyExc_IndexError, "Please put a 0 or 1");
+    PyErr_SetString(PyExc_IndexError, "tuple index out of range");
     return NULL;
 }
 
+static unsigned short protocol__len__(pmessage_wrapper *self)    {
+    return 2;
+}
+
 static PySequenceMethods protocol_wrapper_sequence = {
-    0,                  /* __len__ */
-    0,                  /* __add__ */
-    0,                  /* __mul__ */
-    (ssizeargfunc)protocol_getitem,/* __getitem__ */
-    0,                  /* __getslice__ */
-    0,                  /* __setitem__ */
-    0                   /* __setslice__ */
+    (lenfunc)protocol__len__,       /* __len__ */
+    0,                              /* __add__ */
+    0,                              /* __mul__ */
+    (ssizeargfunc)protocol_getitem, /* __getitem__ */
+    0,                              /* __getslice__ */
+    0,                              /* __setitem__ */
+    0                               /* __setslice__ */
 };
 
 static PyTypeObject protocol_wrapper_type = {

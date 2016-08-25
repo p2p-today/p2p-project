@@ -1,102 +1,115 @@
 // Arbitrary precision base conversion by Daniel Gehriger <gehriger@linkcad.com>
 // Permission for use was given here: http://archive.is/BFA8H#17%
+// This has been heavily modified since copying, and has been hardcoded for a specific case
 
 #include <string>
+#include <cmath>
 
-class BaseConverter
-{
-public:
-    std::string GetSourceBaseSet() const { return sourceBaseSet_; }
-    std::string GetTargetBaseSet() const { return targetBaseSet_; }
-    unsigned int GetSourceBase() const { return (unsigned int)sourceBaseSet_.length(); }
-    unsigned int GetTargetBase() const { return (unsigned int)targetBaseSet_.length(); }
+using namespace std;
 
-    /// <summary>
-    /// Constructor
-    /// </summary>
-    /// <param name="sourceBaseSet">Characters used for source base</param>
-    /// <param name="targetBaseSet">Characters used for target base</param>
-    BaseConverter(const std::string& sourceBaseSet, const std::string& targetBaseSet);
+const static string base_58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const static string ascii   = string((char *)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5a\x5b\x5c\x5d\x5e\x5f\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6a\x6b\x6c\x6d\x6e\x6f\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7a\x7b\x7c\x7d\x7e\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8\xf9\xfa\xfb\xfc\xfd\xfe\xff", 256);
 
-    /// <summary>
-    /// Get a base converter for decimal to binary numbers
-    /// </summary>
-    static const BaseConverter& DecimalToBinaryConverter();
+static string to_base_58(unsigned long long i) {
+    string str = "";
+    while (i)   {
+        str = base_58[i % 58] + str;
+        i /= 58;
+    }
+    if (str == "")
+        str = base_58[0];
+    return str;
+}
 
-    /// <summary>
-    /// Get a base converter for binary to decimal numbers
-    /// </summary>
-    static const BaseConverter& BinaryToDecimalConverter();
+static unsigned long long from_base_58(string str) {
+    unsigned long long ret = 0;
+    for (unsigned int i = 0; i < str.length(); i++)    {
+        ret = ret * (unsigned long long) 58 + (unsigned long long) base_58.find(str[i]);
+    }
+    return ret;
+}
 
-    /// <summary>
-    /// Get a base converter for decimal to binary numbers
-    /// </summary>
-    static const BaseConverter& DecimalToHexConverter();
+static string dec2base(unsigned int value)    {
+    string result = "\x00\x00\x00\x00";
+    size_t pos = 3;
+    do  {
+        result[pos] = ascii[value % 256];
+        pos--;
+        value /= 256;
+    } 
+    while (value > 0);
 
-    /// <summary>
-    /// Get a base converter for binary to decimal numbers
-    /// </summary>
-    static const BaseConverter& HexToDecimalConverter();
+    return result;
+}
 
-    /// <summary>
-    /// Convert a value in the source number base to the target number base.
-    /// </summary>
-    /// <param name="value">Value in source number base.</param>
-    /// <returns>Value in target number base.</returns>
-    std::string  Convert(std::string value) const;
+static unsigned int base2dec(const string& value) {
+    unsigned int result = 0;
+    for (size_t i = 0; i < value.length(); ++i) {
+        result *= 256;
+        unsigned int c = ascii.find(value[i]);
+        if (c == string::npos)
+            throw runtime_error("Invalid character");
 
+        result += c;
+    }
 
-    /// <summary>
-    /// Convert a value in the source number base to the target number base.
-    /// </summary>
-    /// <param name="value">Value in source number base.</param>
-    /// <param name="minDigits">Minimum number of digits for returned value.</param>
-    /// <returns>Value in target number base.</returns>
-    std::string Convert(const std::string& value, size_t minDigits) const;
+    return result;
+}
 
-    /// <summary>
-    /// Convert a decimal value to the target base.
-    /// </summary>
-    /// <param name="value">Decimal value.</param>
-    /// <returns>Result in target base.</returns>
-    std::string FromDecimal(unsigned int value) const;
+static unsigned int divide_58(string& x) {
+    size_t length = x.length();
+    size_t pos = 0;
+    char quotient[length] = {};
 
-    /// <summary>
-    /// Convert a decimal value to the target base.
-    /// </summary>
-    /// <param name="value">Decimal value.</param>
-    /// <param name="minDigits">Minimum number of digits for returned value.</param>
-    /// <returns>Result in target base.</returns>
-    std::string FromDecimal(unsigned int value, size_t minDigits) const;
+    for (size_t i = 0; i < length; ++i) {
+        size_t j = i + 1 + x.length() - length;
+        if (x.length() < j)
+            break;
 
-    /// <summary>
-    /// Convert value in source base to decimal.
-    /// </summary>
-    /// <param name="value">Value in source base.</param>
-    /// <returns>Decimal value.</returns>
-    unsigned int ToDecimal(std::string value) const;
+        unsigned int value = base2dec(x.substr(0, j));
 
-private:
-    /// <summary>
-    /// Divides x by y, and returns the quotient and remainder.
-    /// </summary>
-    /// <param name="baseDigits">Base digits for x and quotient.</param>
-    /// <param name="x">Numerator expressed in base digits; contains quotient, expressed in base digits, upon return.</param>
-    /// <param name="y">Denominator</param>
-    /// <returns>Remainder of x / y.</returns>
-    static unsigned int divide(const std::string& baseDigits, 
-                               std::string& x, 
-                               unsigned int y);
+        quotient[pos] = ascii[value / 58];
+        pos++;
+        x = dec2base(value % 58) + x.substr(j);
+    }
 
-    static unsigned int base2dec(const std::string& baseDigits,
-                                 const std::string& value);
+    // calculate remainder
+    unsigned int remainder = base2dec(x);
 
-    static std::string dec2base(const std::string& baseDigits, unsigned int value);
+    // remove leading "zeros" from quotient and store in 'x'
+    x.assign(quotient, pos);
+    size_t n = x.find_first_not_of(ascii[0]);
+    if (n != string::npos)
+        x = x.substr(n);
+    else
+        x.clear();
 
-private:
-    static const char*  binarySet_;
-    static const char*  decimalSet_;
-    static const char*  hexSet_;
-    std::string         sourceBaseSet_;
-    std::string         targetBaseSet_;
-};
+    return remainder;
+}
+
+static string ascii_to_base_58_(string input)    {
+    size_t res_size = ceil(input.length() * 1.4);
+    size_t pos = res_size - 1;
+    unsigned char result[res_size] = {};
+
+    do  {
+        unsigned int remainder = divide_58(input);
+        result[pos] = ascii[remainder];
+        pos--;
+    }
+    while (!input.empty() && !(input.length() == 1 && input[0] == ascii[0]));
+
+    return string(result + pos + 1, result + res_size - 1);
+}
+
+static string ascii_to_base_58(string input, size_t minDigits) {
+    string result = ascii_to_base_58_(input);
+    if (result.length() < minDigits)
+        return string(minDigits - result.length(), base_58[0]) + result;
+    else
+        return result;
+}
+
+static string ascii_to_base_58(string input)   {
+    return ascii_to_base_58(input, 1);
+}
