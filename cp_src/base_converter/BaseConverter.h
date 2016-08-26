@@ -83,7 +83,7 @@ static unsigned int divide_58(string& x)  {
 static string ascii_to_base_58_(string input)    {
     const size_t res_size = ceil(input.length() * 1.4);
     size_t pos = res_size;
-    unsigned char result[res_size] = {};
+    unsigned char *result = new unsigned char[res_size];
 
     do  {
         result[--pos] = base_58[divide_58(input)];
