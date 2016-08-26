@@ -11,9 +11,14 @@ import sys
 import traceback
 
 from collections import deque
+
+try:
+    from .cbase import protocol
+except:
+    from .base import protocol
 from .base import (flags, compression, to_base_58, from_base_58,
-                protocol, base_connection, message, base_daemon,
-                base_socket, pathfinding_message, json_compressions)
+                base_connection, message, base_daemon, base_socket,
+                pathfinding_message, json_compressions)
 from .utils import getUTC, get_socket, intersect
 
 max_outgoing = 4
@@ -60,12 +65,13 @@ class mesh_daemon(base_daemon):
         """Daemon thread which handles all incoming data and connections"""
         while self.main_thread.is_alive() and self.alive:
             conns = list(self.server.routing_table.values()) + self.server.awaiting_ids
-            if conns:
-                for handler in select.select(conns, [], [], 0.01)[0]:
+            for handler in select.select(conns + [self.sock], [], [], 0.01)[0]:
+                if handler == self.sock:
+                    self.handle_accept()
+                else:
                     self.process_data(handler)
-                for handler in conns:
-                    self.kill_old_nodes(handler)
-            self.handle_accept()
+            for handler in conns:
+                self.kill_old_nodes(handler)
 
     def handle_accept(self):
         """Handle an incoming connection"""
