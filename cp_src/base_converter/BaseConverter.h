@@ -22,7 +22,7 @@ static string to_base_58(unsigned long long i) {
     return str;
 }
 
-static unsigned long long from_base_58(string str) {
+static inline unsigned long long from_base_58(string str) {
     unsigned long long ret = 0;
     for (unsigned int i = 0; i < str.length(); i++)    {
         ret *= (unsigned long long) 58 + (unsigned long long) base_58.find(str[i]);
@@ -30,23 +30,22 @@ static unsigned long long from_base_58(string str) {
     return ret;
 }
 
-static string dec2base(unsigned int value)  {
+static inline string dec2base(unsigned int value)  {
     char result[4] = {};
     size_t pos = 4;
     do  {
         result[--pos] = (unsigned char)value % 256;
-        value /= 256;
+        value >>= 8;
     } 
-    while (value > 0);
+    while (value);
 
     return string(result + pos, result + 4);
 }
 
-static unsigned int base2dec(const string& value)  {
+static inline unsigned int base2dec(const char *value, const size_t len)  {
     unsigned int result = 0;
-    const size_t limit = value.length();
-    for (size_t i = 0; i < limit; ++i) {
-        result *= 256;
+    for (size_t i = 0; i < len; ++i) {
+        result <<= 8;
         result += (unsigned char)value[i];
     }
 
@@ -64,19 +63,20 @@ static unsigned int divide_58(string& x)  {
         if (x.length() < j)
             break;
 
-        const unsigned int value = base2dec(x.substr(0, j));
+        const unsigned int value = base2dec(x.c_str(), j);
 
         quotient[pos] = (unsigned char)(value / 58);
         if (pos != 0 || quotient[pos] != ascii[0])
             pos++;
-        x = dec2base(value % 58) + x.substr(j);
+        x.erase(0, j);
+        x.insert(0, dec2base(value % 58));
     }
 
     // calculate remainder
-    const unsigned int remainder = base2dec(x);
+    const unsigned int remainder = base2dec(x.c_str(), x.length());
 
     // remove leading "zeros" from quotient and store in 'x'
-    x = string(quotient, quotient + pos);
+    x.assign(quotient, quotient + pos);
 
     return remainder;
 }
@@ -96,10 +96,10 @@ static string ascii_to_base_58_(string input)    {
 
 static string ascii_to_base_58(string input, size_t minDigits) {
     string result = ascii_to_base_58_(input);
-    if (result.length() < minDigits)
-        return string(minDigits - result.length(), base_58[0]) + result;
-    else
-        return result;
+    if (result.length() < minDigits)    {
+        result.insert(0, base_58[0], minDigits - result.length());
+    }
+    return result;
 }
 
 static string ascii_to_base_58(string input)   {
