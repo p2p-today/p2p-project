@@ -57,6 +57,8 @@ def pathfinding_message_constructor_validation(array, impl):
     msg = impl.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
     assert array == msg.payload
     assert msg.packets == [base.flags.broadcast, 'TEST SENDER'.encode(), msg.id, msg.time_58] + array
+    p_hash = hashlib.sha384(b''.join(array + [msg.time_58]))
+    assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id
     for method in impl.compression:
         msg.compression = []
         string = base.compress(msg.string[4:], method)
@@ -101,7 +103,7 @@ def test_protocol(iters=200, impl=base):
         assert test.encryption == test[1] == enc
         p_hash = hashlib.sha256(''.join([sub, enc, base.protocol_version]).encode())
         print("testing ID equality")
-        assert int(p_hash.hexdigest(), 16) == base.from_base_58(test.id)
+        assert base.to_base_58(int(p_hash.hexdigest(), 16)) == test.id
 
 def test_message_sans_network(iters=1000):
     for _ in range(iters):

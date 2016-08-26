@@ -91,7 +91,7 @@ static PyObject *protocol_getitem(protocol_wrapper *self, Py_ssize_t index)  {
     return NULL;
 }
 
-static unsigned short protocol__len__(pmessage_wrapper *self)    {
+static unsigned short protocol__len__(protocol_wrapper *self)    {
     return 2;
 }
 

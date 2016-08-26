@@ -4,6 +4,7 @@
 
 #include <string>
 #include <cmath>
+#include <algorithm>
 
 using namespace std;
 
@@ -24,61 +25,56 @@ static string to_base_58(unsigned long long i) {
 static unsigned long long from_base_58(string str) {
     unsigned long long ret = 0;
     for (unsigned int i = 0; i < str.length(); i++)    {
-        ret = ret * (unsigned long long) 58 + (unsigned long long) base_58.find(str[i]);
+        ret *= (unsigned long long) 58 + (unsigned long long) base_58.find(str[i]);
     }
     return ret;
 }
 
-static string dec2base(unsigned int value)    {
-    string result = "\x00\x00\x00\x00";
-    size_t pos = 3;
+static string dec2base(unsigned int value)  {
+    char result[4] = {};
+    size_t pos = 4;
     do  {
-        result[pos] = ascii[value % 256];
-        pos--;
+        result[--pos] = ascii[value % 256];
         value /= 256;
     } 
     while (value > 0);
 
-    return result;
+    return string(result + pos, result + 4);
 }
 
-static unsigned int base2dec(const string& value) {
+static unsigned int base2dec(const string& value)  {
     unsigned int result = 0;
-    for (size_t i = 0; i < value.length(); ++i) {
+    const size_t limit = value.length();
+    for (size_t i = 0; i < limit; ++i) {
         result *= 256;
-        unsigned int c = ascii.find(value[i]);
-        if (c == string::npos)
-            throw runtime_error("Invalid character");
-
-        result += c;
+        result += (unsigned int)ascii.find(value[i]);
     }
 
     return result;
 }
 
-static unsigned int divide_58(string& x) {
-    size_t length = x.length();
+static unsigned int divide_58(string& x)  {
+    const size_t length = x.length();
     size_t pos = 0;
     char quotient[length] = {};
 
     for (size_t i = 0; i < length; ++i) {
-        size_t j = i + 1 + x.length() - length;
+        const size_t j = i + 1 + x.length() - length;
         if (x.length() < j)
             break;
 
-        unsigned int value = base2dec(x.substr(0, j));
+        const unsigned int value = base2dec(x.substr(0, j));
 
-        quotient[pos] = ascii[value / 58];
-        pos++;
+        quotient[pos++] = ascii[value / 58];
         x = dec2base(value % 58) + x.substr(j);
     }
 
     // calculate remainder
-    unsigned int remainder = base2dec(x);
+    const unsigned int remainder = base2dec(x);
 
     // remove leading "zeros" from quotient and store in 'x'
-    x.assign(quotient, pos);
-    size_t n = x.find_first_not_of(ascii[0]);
+    x.assign(quotient, quotient + pos);
+    const size_t n = x.find_first_not_of(ascii[0]);
     if (n != string::npos)
         x = x.substr(n);
     else
@@ -88,18 +84,16 @@ static unsigned int divide_58(string& x) {
 }
 
 static string ascii_to_base_58_(string input)    {
-    size_t res_size = ceil(input.length() * 1.4);
-    size_t pos = res_size - 1;
+    const size_t res_size = ceil(input.length() * 1.4);
+    size_t pos = res_size;
     unsigned char result[res_size] = {};
 
     do  {
-        unsigned int remainder = divide_58(input);
-        result[pos] = ascii[remainder];
-        pos--;
+        result[--pos] = base_58[divide_58(input)];
     }
     while (!input.empty() && !(input.length() == 1 && input[0] == ascii[0]));
 
-    return string(result + pos + 1, result + res_size - 1);
+    return string(result + pos, result + res_size);
 }
 
 static string ascii_to_base_58(string input, size_t minDigits) {
