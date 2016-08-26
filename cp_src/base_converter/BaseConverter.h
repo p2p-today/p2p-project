@@ -56,7 +56,8 @@ static unsigned int base2dec(const string& value)  {
 static unsigned int divide_58(string& x)  {
     const size_t length = x.length();
     size_t pos = 0;
-    char quotient[length] = {};
+    char quotient[length];
+    memset(quotient, 0, length * sizeof(char));
 
     for (size_t i = 0; i < length; ++i) {
         const size_t j = i + 1 + x.length() - length;
