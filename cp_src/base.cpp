@@ -144,7 +144,9 @@ string pathfinding_message::id()    {
 
     cache.payload = vector<string>(payload);
     cache.timestamp = timestamp;
-    cache.id = ascii_to_base_58(string((char*)digest, SHA384::DIGEST_SIZE));
+    cache.id = ascii_to_base_58_(string((char*)digest, SHA384::DIGEST_SIZE));
+
+    CP2P_DEBUG("%s\n", cache.id.c_str());
 
     return string(cache.id);    //for copy constructor
 }

@@ -34,7 +34,7 @@ static string dec2base(unsigned int value)  {
     char result[4] = {};
     size_t pos = 4;
     do  {
-        result[--pos] = ascii[value % 256];
+        result[--pos] = (unsigned char)value % 256;
         value /= 256;
     } 
     while (value > 0);
@@ -47,7 +47,7 @@ static unsigned int base2dec(const string& value)  {
     const size_t limit = value.length();
     for (size_t i = 0; i < limit; ++i) {
         result *= 256;
-        result += (unsigned int)ascii.find(value[i]);
+        result += (unsigned char)value[i];
     }
 
     return result;
@@ -65,7 +65,9 @@ static unsigned int divide_58(string& x)  {
 
         const unsigned int value = base2dec(x.substr(0, j));
 
-        quotient[pos++] = ascii[value / 58];
+        quotient[pos] = (unsigned char)(value / 58);
+        if (pos != 0 || quotient[pos] != ascii[0])
+            pos++;
         x = dec2base(value % 58) + x.substr(j);
     }
 
@@ -73,12 +75,7 @@ static unsigned int divide_58(string& x)  {
     const unsigned int remainder = base2dec(x);
 
     // remove leading "zeros" from quotient and store in 'x'
-    x.assign(quotient, quotient + pos);
-    const size_t n = x.find_first_not_of(ascii[0]);
-    if (n != string::npos)
-        x = x.substr(n);
-    else
-        x.clear();
+    x = string(quotient, quotient + pos);
 
     return remainder;
 }

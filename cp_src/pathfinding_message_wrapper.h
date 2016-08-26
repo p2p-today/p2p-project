@@ -150,6 +150,7 @@ static PyObject *pmessage_msg_type(pmessage_wrapper *self)    {
 
 static PyObject *pmessage_id(pmessage_wrapper *self)    {
     string cp_str = self->msg->id();
+    CP2P_DEBUG("I got the id\n");
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;

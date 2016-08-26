@@ -60,17 +60,27 @@ cpython: LICENSE setup.py
 ifeq ($(pypy), True)
 	@echo "Building python, rather than cpython, because this is unsupported on pypy"
 	python setup.py build --universal
+else ifeq ($(debug), true)
+	python setup.py build --debug
 else
 	python setup.py build
 endif
 
 cpython3: LICENSE setup.py
 	$(python3) $(py_deps)
+ifeq ($(debug), true)
+	$(python3) setup.py build --debug
+else
 	$(python3) setup.py build
+endif
 
 cpython2: LICENSE setup.py
 	$(python2) $(py_deps)
+ifeq ($(debug), true)
+	$(python2) setup.py build --debug
+else
 	$(python2) setup.py build
+endif
 
 pytest: LICENSE setup.py setup.cfg
 	$(MAKE) python
