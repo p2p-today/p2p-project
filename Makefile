@@ -31,7 +31,7 @@ endif
 pylibdir = $(shell python -c "import sys, sysconfig; print('{}.{}-{v[0]}.{v[1]}'.format('lib', sysconfig.get_platform(), v=sys.version_info))")
 py2libdir = $(shell $(python2) -c "import sys, sysconfig; print('{}.{}-{v[0]}.{v[1]}'.format('lib', sysconfig.get_platform(), v=sys.version_info))")
 py3libdir = $(shell $(python3) -c "import sys, sysconfig; print('{}.{}-{v[0]}.{v[1]}'.format('lib', sysconfig.get_platform(), v=sys.version_info))")
-ifeq ($(python2), python2)
+ifeq ($(python2), python)
 	pyunvlibdir = $(pylibdir)
 else
 	pyunvlibdir = lib
@@ -82,35 +82,62 @@ else
 	$(python2) setup.py build
 endif
 
-pytest: LICENSE setup.py setup.cfg
-	$(MAKE) python
+pytestdeps:
 	python $(py_test_deps)
+
+py2testdeps:
+	$(python2) $(py_test_deps)
+
+py3testdeps:
+	$(python3) $(py_test_deps)	
+
+pytest: LICENSE setup.py setup.cfg
+	$(MAKE) python pytestdeps
+ifeq ($(cov), true)
+	python -m pytest -c ./setup.cfg --cov=build/$(pyunvlibdir) build/$(pyunvlibdir)
+else
 	python -m pytest -c ./setup.cfg build/$(pyunvlibdir)
+endif
 
 py2test: LICENSE setup.py setup.cfg
-	$(MAKE) python2
-	$(python2) $(py_test_deps)
-	$(python2) -m pytest -c ./setup.cfg build/$(pyunvlibdir)
+	$(MAKE) python2 py2testdeps
+ifeq ($(cov), true)
+	$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
+else
+	$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
+endif
 
 py3test: LICENSE setup.py setup.cfg
-	$(MAKE) python3
-	$(python3) $(py_test_deps)
-	$(python3) -m pytest -c ./setup.cfg build/$(pyunvlibdir)
+	$(MAKE) python3 py3testdeps
+ifeq ($(cov), true)
+	$(python3) -m pytest -c ./setup.cfg --cov=build/$(py3libdir) build/$(py3libdir)
+else
+	$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
+endif
 
 cpytest: LICENSE setup.py setup.cfg
-	$(MAKE) cpython
-	python $(py_test_deps)
+	$(MAKE) cpython pytestdeps
+ifeq ($(cov), true)
 	python -m pytest -c ./setup.cfg --cov=build/$(pylibdir) build/$(pylibdir)
+else
+	python -m pytest -c ./setup.cfg build/$(pylibdir)
+endif
 
 cpy2test: LICENSE setup.py setup.cfg
-	$(MAKE) cpython2
-	$(python2) $(py_test_deps)
+	$(MAKE) cpython2 py2testdeps
+ifeq ($(cov), true)
 	$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
+else
+	$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
+endif
 
 cpy3test: LICENSE setup.py setup.cfg
-	$(MAKE) cpython3
-	$(python3) $(py_test_deps)
+	$(MAKE) cpython3 py3testdeps
+ifeq ($(cov), true)
 	$(python3) -m pytest -c ./setup.cfg --cov=build/$(py3libdir) build/$(py3libdir)
+else
+	$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
+endif
 
 html:
 	python $(docs_deps)
