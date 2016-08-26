@@ -130,7 +130,7 @@ string pathfinding_message::id()    {
     for (unsigned long i = 0; i < payload.size(); i++)
         expected += payload[i].length();
 
-    unsigned char info[expected];
+    unsigned char *info = new unsigned char[expected];
 
     for (unsigned long i = 0; i < payload.size(); i++)  {
         memcpy(info + done, payload[i].c_str(), payload[i].length());
