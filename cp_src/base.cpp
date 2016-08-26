@@ -1,4 +1,5 @@
 #include "base.h"
+#include <ctype.h>
 
 using namespace std;
 
@@ -39,7 +40,7 @@ protocol::protocol(string sub, string enc)  {
 protocol::~protocol()   {}
 
 string protocol::id()  {
-    if (cache.subnet == subnet && cache.encryption == encryption)
+    if (cache.subnet == subnet && cache.encryption == encryption && cache.id != "")
         return cache.id;
 
     char buffer[5];
@@ -118,8 +119,10 @@ string pathfinding_message::time_58()   {
 }
 
 string pathfinding_message::id()    {
-    if (cache.timestamp == timestamp && cache.payload == payload)
+    if (cache.timestamp == timestamp && cache.payload == payload && cache.id != "")   {
+        CP2P_DEBUG("Fetching cached ID\n")
         return string(cache.id); //for copy constructor
+    }
     
     string t58 = time_58();
     size_t done = 0, expected = t58.length();
@@ -146,6 +149,13 @@ string pathfinding_message::id()    {
     cache.timestamp = timestamp;
     cache.id = ascii_to_base_58_(string((char*)digest, SHA384::DIGEST_SIZE));
 
+#ifdef CP2P_DEBUG_FLAG
+    printf("ID for [\"");
+    for (size_t i = 0; i < expected; i++)   {
+        printf("\\x%02x", info[i]);
+    }
+    printf("\"]:\n");
+#endif
     CP2P_DEBUG("%s\n", cache.id.c_str());
 
     return string(cache.id);    //for copy constructor

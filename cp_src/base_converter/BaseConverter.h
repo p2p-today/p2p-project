@@ -22,7 +22,7 @@ static string to_base_58(unsigned long long i) {
     return str;
 }
 
-static inline unsigned long long from_base_58(string str) {
+static unsigned long long from_base_58(string str) {
     unsigned long long ret = 0;
     for (unsigned int i = 0; i < str.length(); i++)    {
         ret *= (unsigned long long) 58 + (unsigned long long) base_58.find(str[i]);
@@ -96,10 +96,10 @@ static string ascii_to_base_58_(string input)    {
 
 static string ascii_to_base_58(string input, size_t minDigits) {
     string result = ascii_to_base_58_(input);
-    if (result.length() < minDigits)    {
-        result.insert(0, base_58[0], minDigits - result.length());
-    }
-    return result;
+    if (result.length() < minDigits)
+        return string(minDigits - result.length(), base_58[0]) + result;
+    else
+        return result;
 }
 
 static string ascii_to_base_58(string input)   {
