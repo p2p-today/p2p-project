@@ -16,12 +16,12 @@ matrix:
 
 build:
   ci:
-    - pip install pytest-coverage codecov
-    - make cpython
+    - pip install codecov
+    - make cpython pytestdeps
     - py.test -vv --cov=./py_src/ ./py_src/
     - python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
     - mv .coverage .covvv
-    - make cpytest
+    - make cpytest cov=true
     - mv .covvv .coverage.1
     - mv .coverage .coverage.2
   on_success:
