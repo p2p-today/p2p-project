@@ -55,15 +55,17 @@ pypy: LICENSE setup.py
 	pypy $(py_deps)
 	pypy setup.py build --universal
 
+ifeq ($(pypy), True)
+cpython: python
+
+else
 cpython: LICENSE setup.py
 	python $(py_deps)
-ifeq ($(pypy), True)
-	@echo "Building python, rather than cpython, because this is unsupported on pypy"
-	python setup.py build --universal
-else ifeq ($(debug), true)
+ifeq ($(debug), true)
 	python setup.py build --debug
 else
 	python setup.py build
+endif
 endif
 
 cpython3: LICENSE setup.py
@@ -115,12 +117,17 @@ else
 	$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
 endif
 
+ifeq ($(pypy), True)
+cpytest; pytest
+
+else
 cpytest: LICENSE setup.py setup.cfg
 	$(MAKE) cpython pytestdeps
 ifeq ($(cov), true)
 	python -m pytest -c ./setup.cfg --cov=build/$(pylibdir) build/$(pylibdir)
 else
 	python -m pytest -c ./setup.cfg build/$(pylibdir)
+endif
 endif
 
 cpy2test: LICENSE setup.py setup.cfg

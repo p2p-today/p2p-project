@@ -52,7 +52,7 @@ static string string_from_pybytes(PyObject *bytes)  {
     }
 #endif
     else if (PyUnicode_Check(bytes))    {
-        PyObject *tmp = PyUnicode_AsEncodedString(bytes, (char*)"raw_unicode_escape", (char*)"strict");
+        PyObject *tmp = PyUnicode_AsEncodedString(bytes, (char*)"utf-8", (char*)"strict");
         string ret = string_from_pybytes(tmp);
         Py_XDECREF(tmp);
         return ret;

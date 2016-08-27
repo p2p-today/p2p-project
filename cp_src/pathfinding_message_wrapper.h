@@ -264,8 +264,13 @@ Raises:\n\
    struct.error:   Packet headers are incorrect OR unrecognized compression\n\
    IndexError:     See struct.error\n\
 \n\
+Note:\n\
+    If you feed a unicode object, it will be decoded using utf-8. All other objects are\n\
+    treated as raw_unicode_escape. If you desire a particular codec, encode it yourself\n\
+    before feeding it in.\n\
+\n\
 Warning:\n\
-   This part is a work in progress. Currently errors often cause segfaults, and the above Exceptions are not consistently raised."},
+   This part is a work in progress. Currently errors often cause segfaults, and the above Exceptions are not consistently raised.\n"},
     {NULL}  /* Sentinel */
 };
 

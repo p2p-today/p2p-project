@@ -54,9 +54,9 @@ def test_pathfinding_message(iters=500, impl=base):
         pathfinding_message_exceptions_validiation(array, impl)
 
 def pathfinding_message_constructor_validation(array, impl):
-    msg = impl.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
+    msg = impl.pathfinding_message(base.flags.broadcast, u'\xff', array)
     assert array == msg.payload
-    assert msg.packets == [base.flags.broadcast, 'TEST SENDER'.encode(), msg.id, msg.time_58] + array
+    assert msg.packets == [base.flags.broadcast, u'\xff'.encode('utf-8'), msg.id, msg.time_58] + array
     p_hash = hashlib.sha384(b''.join(array + [msg.time_58]))
     assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id
     for method in impl.compression:

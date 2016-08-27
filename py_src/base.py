@@ -18,7 +18,7 @@ from collections import namedtuple
 from .utils import getUTC, intersect, get_lan_ip, get_socket
 
 protocol_version = "0.4"
-node_policy_version = "255"
+node_policy_version = "319"
 
 version = '.'.join([protocol_version, node_policy_version])
 
@@ -428,10 +428,17 @@ class pathfinding_message(object):
 
         Raises:
             TypeError:  If you feed an object which cannot convert to bytes
+
+        Note:
+            If you feed a unicode object, it will be decoded using utf-8. All other objects are
+            treated as raw_unicode_escape. If you desire a particular codec, encode it yourself
+            before feeding it in.
         """
 
         def sanitize_packet(packet):
-            if not isinstance(packet, (bytes, bytearray)):
+            if isinstance(packet, type(u'')):
+                return packet.encode('utf-8')
+            elif not isinstance(packet, (bytes, bytearray)):
                 return packet.encode('raw_unicode_escape')
             return packet
 
