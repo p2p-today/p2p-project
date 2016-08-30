@@ -1,6 +1,10 @@
 Reconstruction
 ==============
 
+.. raw:: html
+
+    <link rel="stylesheet" href="../_static/code_wrap.css" type="text/css">
+
 Let's keep with our example from the previous section. How do we parse the resulting string?
 
 First, check the first four bytes. Because we don't know how much data to receive through our socket, we always first check for a four byte header. Then we can toss it aside and collect that much information. If we know the message will be compressed, this is when it gets decompressed.

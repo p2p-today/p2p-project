@@ -1,6 +1,10 @@
 Serialization
 =============
 
+.. raw:: html
+
+    <link rel="stylesheet" href="../_static/code_wrap.css" type="text/css">
+
 The first step to any of this is being able to understand messages sent
 through the network. To do this, you need to build a parser. Each
 message can be considered to have three segments: a header, metadata,

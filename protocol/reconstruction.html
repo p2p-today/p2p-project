@@ -142,7 +142,7 @@
             
   <div class="section" id="reconstruction">
 <h1>Reconstruction<a class="headerlink" href="#reconstruction" title="Permalink to this headline">¶</a></h1>
-<p>Let&#8217;s keep with our example from the previous section. How do we parse the resulting string?</p>
+<link rel="stylesheet" href="../_static/code_wrap.css" type="text/css"><p>Let&#8217;s keep with our example from the previous section. How do we parse the resulting string?</p>
 <p>First, check the first four bytes. Because we don&#8217;t know how much data to receive through our socket, we always first check for a four byte header. Then we can toss it aside and collect that much information. If we know the message will be compressed, this is when it gets decompressed.</p>
 <p>Next, we need to split up the packets. To do that, take each four bytes and sum their values until the number of remaining bytes equals that sum. If it does not, throw an error. An example script would look like:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_packets</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>

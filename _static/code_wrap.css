@@ -1,4 +1,4 @@
-p code  {
-     word-wrap: break-word !important;
-     white-space: pre-wrap !important;
- }
+.rst-content code {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
