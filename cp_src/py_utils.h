@@ -32,6 +32,7 @@ static PyObject *pybytes_from_string(string str)   {
 
 static string string_from_pybytes(PyObject *bytes)  {
     if (PyBytes_Check(bytes))   {
+        CP2P_DEBUG("Decoding as bytes\n")
         char *buff = NULL;
         Py_ssize_t len = 0;
         PyBytes_AsStringAndSize(bytes, &buff, &len);
@@ -39,6 +40,7 @@ static string string_from_pybytes(PyObject *bytes)  {
     }
 #if PY_MAJOR_VERSION >= 3
     else if (PyObject_CheckBuffer(bytes))   {
+        CP2P_DEBUG("Decoding as buffer\n")
         PyObject *tmp = PyBytes_FromObject(bytes);
         string ret = string_from_pybytes(tmp);
         Py_XDECREF(tmp);
@@ -46,12 +48,14 @@ static string string_from_pybytes(PyObject *bytes)  {
     }
 #else
     else if (PyByteArray_Check(bytes))  {
+        CP2P_DEBUG("Decoding as bytearray\n")
         char *buff = PyByteArray_AS_STRING(bytes);
         Py_ssize_t len = PyByteArray_GET_SIZE(bytes);
         return string(buff, len);
     }
 #endif
     else if (PyUnicode_Check(bytes))    {
+        CP2P_DEBUG("Decoding as unicode (incoming recursion)\n")
         PyObject *tmp = PyUnicode_AsEncodedString(bytes, (char*)"utf-8", (char*)"strict");
         string ret = string_from_pybytes(tmp);
         Py_XDECREF(tmp);
