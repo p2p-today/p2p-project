@@ -43,8 +43,6 @@ def distutils_dir_name(dname):
                     platform=sysconfig.get_platform(),
                     version=sys.version_info)
 
-sys.path.append('.')
-
 loc = os.path.dirname(os.path.abspath(__file__))
 print("Building from file %s" % loc)
 bld = subprocess.call(['python', os.path.join(loc, '..', 'setup.py'), 'build', '-b', '.py-build'])
@@ -53,6 +51,8 @@ if os.path.isfile(os.path.join(loc, 'py2p', '__init__.py')):
     shutil.rmtree(os.path.join(loc, 'py2p'))
 shutil.move(os.path.join(loc, '.py-build', distutils_dir_name('lib'), 'py2p'), os.path.join('py2p'))
 shutil.rmtree(os.path.join(loc, '.py-build'))
+
+sys.path.insert(0, loc)
 
 from .py2p import version_info
 
@@ -65,6 +65,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
+    'sphinx.ext.mathjax',
     'sphinxcontrib.napoleon',
 ]
 
@@ -156,16 +157,19 @@ todo_include_todos = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+#html_theme_options = {}
+html_context = {
+    'cssfiles': ['.static/code_wrap.css']
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
-# html_theme_path = []
+# html_theme_path = [os.path.join('.', 'sphinx_rtd_theme')]
 
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.

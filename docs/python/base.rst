@@ -65,6 +65,8 @@ Base Module
 			:annotation:
 		- .. autoattribute:: lzma
 			:annotation:
+		- .. autoattribute:: zlib
+			:annotation:
 
 		**Other implementations' and/or planned compression methods:**
 

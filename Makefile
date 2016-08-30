@@ -3,7 +3,7 @@
 pip = -m pip install
 py_deps = $(pip) cryptography
 py_test_deps = $(pip) pytest-coverage
-docs_deps = $(pip) sphinx sphinxcontrib-napoleon
+docs_deps = $(pip) sphinx sphinxcontrib-napoleon sphinx_rtd_theme
 
 ifeq ($(shell python -c 'import sys; print(int(hasattr(sys, "real_prefix")))'), 0) # check for virtualenv
 	py_deps += --user

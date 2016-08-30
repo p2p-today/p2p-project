@@ -55,7 +55,7 @@ Base Module (C++ Implementation)
 		- .. data:: retrieve
 			
 
-		**C++-implemented compression methods:**
+		**C++-planned compression methods:**
 			
 		- .. data:: gzip
 
