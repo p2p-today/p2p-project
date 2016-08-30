@@ -242,7 +242,7 @@ def compress(msg, method):
 
     Args:
         msg:    The message you wish to compress, the type required is defined by the requested method
-        method: The compression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.bz2, base.flags.lzma
+        method: The compression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.zlib, base.flags.bz2, base.flags.lzma
 
     Returns:
         Defined by the compression method, but typically the bytes of the compressed message
@@ -269,7 +269,7 @@ def decompress(msg, method):
 
     Args:
         msg:    The message you wish to decompress, the type required is defined by the requested method
-        method: The decompression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.bz2, base.flags.lzma
+        method: The decompression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.zlib, base.flags.bz2, base.flags.lzma
 
     Returns:
         Defined by the decompression method, but typically the bytes of the compressed message
@@ -415,6 +415,7 @@ class pathfinding_message(object):
         msg = cls(packets[0], packets[1], packets[4:], compression=compressions)
         msg.time = from_base_58(packets[3])
         msg.compression_fail = compression_fail
+        assert packets[2] == msg.id, "Checksum failed"
         return msg
 
     def __init__(self, msg_type, sender, payload, compression=None):

@@ -25,7 +25,8 @@ static string to_base_58(unsigned long long i) {
 static unsigned long long from_base_58(string str) {
     unsigned long long ret = 0;
     for (unsigned int i = 0; i < str.length(); i++)    {
-        ret *= (unsigned long long) 58 + (unsigned long long) base_58.find(str[i]);
+        ret *= (unsigned long long) 58;
+        ret += (unsigned long long) base_58.find(str[i]);
     }
     return ret;
 }
