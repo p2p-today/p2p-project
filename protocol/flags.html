@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Flag Definitions &mdash; py2p 0.4.319 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="py2p 0.4.319 documentation" href="../index.html"/>
+        <link rel="up" title="Protocol Specifications" href="../protocol.html"/>
+        <link rel="next" title="Potential Serialization Flaws" href="flaws.html"/>
+        <link rel="prev" title="IDs and Encoding" href="ids_and_encoding.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> py2p
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../protocol.html">Protocol Specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="goals.html">Protocol Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reconstruction.html">Reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ids_and_encoding.html">IDs and Encoding</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Flag Definitions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main-flags">Main Flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sub-flags">Sub-Flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#compression-flags">Compression Flags</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#all">All</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#python-implemented">Python Implemented</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#c-planned">C++ Planned</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#javascript-implemented">Javascript Implemented</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#reserved-flags">Reserved Flags</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flaws.html">Potential Serialization Flaws</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mesh.html">Mesh Protocol Definition</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../python.html">Python Implementation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">py2p</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../protocol.html">Protocol Specifications</a> &raquo;</li>
+      
+    <li>Flag Definitions</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/protocol/flags.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="flag-definitions">
+<h1>Flag Definitions<a class="headerlink" href="#flag-definitions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="main-flags">
+<h2>Main Flags<a class="headerlink" href="#main-flags" title="Permalink to this headline">¶</a></h2>
+<p>These flags will denote the primary purpose of a message.</p>
+<ul class="simple">
+<li>broadcast     = <code class="docutils literal"><span class="pre">&quot;\x00&quot;</span></code></li>
+<li>waterfall     = <code class="docutils literal"><span class="pre">&quot;\x01&quot;</span></code></li>
+<li>whisper       = <code class="docutils literal"><span class="pre">&quot;\x02&quot;</span></code></li>
+<li>renegotiate   = <code class="docutils literal"><span class="pre">&quot;\x03&quot;</span></code></li>
+<li>ping          = <code class="docutils literal"><span class="pre">&quot;\x04&quot;</span></code></li>
+<li>pong          = <code class="docutils literal"><span class="pre">&quot;\x05&quot;</span></code></li>
+</ul>
+</div>
+<div class="section" id="sub-flags">
+<h2>Sub-Flags<a class="headerlink" href="#sub-flags" title="Permalink to this headline">¶</a></h2>
+<p>These flags will denote the secondary purpose, or a more specific purpose, of a message.</p>
+<ul class="simple">
+<li>broadcast     = <code class="docutils literal"><span class="pre">&quot;\x00&quot;</span></code></li>
+<li>compression   = <code class="docutils literal"><span class="pre">&quot;\x01&quot;</span></code></li>
+<li>whisper       = <code class="docutils literal"><span class="pre">&quot;\x02&quot;</span></code></li>
+<li>handshake     = <code class="docutils literal"><span class="pre">&quot;\x03&quot;</span></code></li>
+<li>ping          = <code class="docutils literal"><span class="pre">&quot;\x04&quot;</span></code></li>
+<li>pong          = <code class="docutils literal"><span class="pre">&quot;\x05&quot;</span></code></li>
+<li>notify        = <code class="docutils literal"><span class="pre">&quot;\x06&quot;</span></code></li>
+<li>peers         = <code class="docutils literal"><span class="pre">&quot;\x07&quot;</span></code></li>
+<li>request       = <code class="docutils literal"><span class="pre">&quot;\x08&quot;</span></code></li>
+<li>resend        = <code class="docutils literal"><span class="pre">&quot;\x09&quot;</span></code></li>
+<li>response      = <code class="docutils literal"><span class="pre">&quot;\x0A&quot;</span></code></li>
+<li>store         = <code class="docutils literal"><span class="pre">&quot;\x0B&quot;</span></code></li>
+<li>retrieve      = <code class="docutils literal"><span class="pre">&quot;\x0C&quot;</span></code></li>
+</ul>
+</div>
+<div class="section" id="compression-flags">
+<h2>Compression Flags<a class="headerlink" href="#compression-flags" title="Permalink to this headline">¶</a></h2>
+<p>These flags will denote standard compression methods.</p>
+<div class="section" id="all">
+<h3>All<a class="headerlink" href="#all" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>bwtc      = <code class="docutils literal"><span class="pre">&quot;\x14&quot;</span></code></li>
+<li>bz2       = <code class="docutils literal"><span class="pre">&quot;\x10&quot;</span></code></li>
+<li>context1  = <code class="docutils literal"><span class="pre">&quot;\x15&quot;</span></code></li>
+<li>defsum    = <code class="docutils literal"><span class="pre">&quot;\x16&quot;</span></code></li>
+<li>dmc       = <code class="docutils literal"><span class="pre">&quot;\x17&quot;</span></code></li>
+<li>fenwick   = <code class="docutils literal"><span class="pre">&quot;\x18&quot;</span></code></li>
+<li>gzip      = <code class="docutils literal"><span class="pre">&quot;\x11&quot;</span></code></li>
+<li>huffman   = <code class="docutils literal"><span class="pre">&quot;\x19&quot;</span></code></li>
+<li>lzjb      = <code class="docutils literal"><span class="pre">&quot;\x1A&quot;</span></code></li>
+<li>lzjbr     = <code class="docutils literal"><span class="pre">&quot;\x1B&quot;</span></code></li>
+<li>lzma      = <code class="docutils literal"><span class="pre">&quot;\x12&quot;</span></code></li>
+<li>lzp3      = <code class="docutils literal"><span class="pre">&quot;\x1C&quot;</span></code></li>
+<li>mtf       = <code class="docutils literal"><span class="pre">&quot;\x1D&quot;</span></code></li>
+<li>ppmd      = <code class="docutils literal"><span class="pre">&quot;\x1E&quot;</span></code></li>
+<li>simple    = <code class="docutils literal"><span class="pre">&quot;\x1F&quot;</span></code></li>
+<li>zlib      = <code class="docutils literal"><span class="pre">&quot;\x13&quot;</span></code></li>
+</ul>
+</div>
+<div class="section" id="python-implemented">
+<h3>Python Implemented<a class="headerlink" href="#python-implemented" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>bz2</li>
+<li>gzip</li>
+<li>lzma</li>
+<li>zlib</li>
+</ul>
+</div>
+<div class="section" id="c-planned">
+<h3>C++ Planned<a class="headerlink" href="#c-planned" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>gzip</li>
+<li>zlib</li>
+</ul>
+</div>
+<div class="section" id="javascript-implemented">
+<h3>Javascript Implemented<a class="headerlink" href="#javascript-implemented" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>zlib</li>
+</ul>
+</div>
+</div>
+<div class="section" id="reserved-flags">
+<h2>Reserved Flags<a class="headerlink" href="#reserved-flags" title="Permalink to this headline">¶</a></h2>
+<p>These define the flags that other applications should <em>not</em> use, as they either are (or will be) used by the standard protocol.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="flaws.html" class="btn btn-neutral float-right" title="Potential Serialization Flaws" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="ids_and_encoding.html" class="btn btn-neutral" title="IDs and Encoding" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Gabe Appleton.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.4.319',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

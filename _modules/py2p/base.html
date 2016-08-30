@@ -1,0 +1,1070 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>py2p.base &mdash; py2p 0.4.319 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="py2p 0.4.319 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> py2p
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../protocol.html">Protocol Specifications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../python.html">Python Implementation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">py2p</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>py2p.base</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for py2p.base</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;A library to store common functions and protocol definitions&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">with_statement</span>
+
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="k">import</span> <span class="n">getUTC</span><span class="p">,</span> <span class="n">intersect</span><span class="p">,</span> <span class="n">get_lan_ip</span><span class="p">,</span> <span class="n">get_socket</span>
+
+<span class="n">protocol_version</span> <span class="o">=</span> <span class="s2">&quot;0.4&quot;</span>
+<span class="n">node_policy_version</span> <span class="o">=</span> <span class="s2">&quot;319&quot;</span>
+
+<span class="n">version</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">protocol_version</span><span class="p">,</span> <span class="n">node_policy_version</span><span class="p">])</span>
+
+<span class="n">plock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+<div class="viewcode-block" id="brepr"><a class="viewcode-back" href="../../python/base.html#py2p.base.brepr">[docs]</a><span class="k">class</span> <span class="nc">brepr</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An extension of the bytearray object which prints a different value than it stores. This is mostly used for debugging purposes.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="brepr.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.brepr.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a brepr object</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            value: The value you want this bytearray to store</span>
+<span class="sd">            rep: The value you want this bytearray to print</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">brepr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__rep</span> <span class="o">=</span> <span class="p">(</span><span class="n">rep</span> <span class="ow">or</span> <span class="n">value</span><span class="p">)</span></div>
+        
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__rep</span></div>
+
+<div class="viewcode-block" id="flags"><a class="viewcode-back" href="../../python/base.html#py2p.base.flags">[docs]</a><span class="k">class</span> <span class="nc">flags</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;A namespace to hold protocol-defined flags&quot;&quot;&quot;</span>
+    <span class="c1"># Reserved set of bytes</span>
+    <span class="n">reserved</span> <span class="o">=</span> <span class="p">[</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;!B&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mh">0x20</span><span class="p">)]</span>
+
+    <span class="c1"># main flags</span>
+    <span class="n">broadcast</span>   <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;broadcast&#39;</span><span class="p">)</span>   <span class="c1"># also sub-flag</span>
+    <span class="n">waterfall</span>   <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x01</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;waterfall&#39;</span><span class="p">)</span>
+    <span class="n">whisper</span>     <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x02</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;whisper&#39;</span><span class="p">)</span>     <span class="c1"># also sub-flag</span>
+    <span class="n">renegotiate</span> <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x03</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;renegotiate&#39;</span><span class="p">)</span>
+    <span class="n">ping</span>        <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x04</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;ping&#39;</span><span class="p">)</span>        <span class="c1"># Unused, but reserved</span>
+    <span class="n">pong</span>        <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x05</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;pong&#39;</span><span class="p">)</span>        <span class="c1"># Unused, but reserved</span>
+
+    <span class="c1"># sub-flags</span>
+    <span class="c1"># broadcast = brepr(b&#39;\x00&#39;, rep=&#39;broadcast&#39;)</span>
+    <span class="n">compression</span> <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x01</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;compression&#39;</span><span class="p">)</span>
+    <span class="c1"># whisper   = brepr(b&#39;\x02&#39;, rep=&#39;whisper&#39;)</span>
+    <span class="n">handshake</span>   <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x03</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;handshake&#39;</span><span class="p">)</span>
+    <span class="c1"># ping      = brepr(b&#39;\x04&#39;, rep=&#39;ping&#39;)</span>
+    <span class="c1"># pong      = brepr(b&#39;\x05&#39;, rep=&#39;pong&#39;)</span>
+    <span class="n">notify</span>      <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x06</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;notify&#39;</span><span class="p">)</span>
+    <span class="n">peers</span>       <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x07</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;peers&#39;</span><span class="p">)</span>
+    <span class="n">request</span>     <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x08</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;request&#39;</span><span class="p">)</span>
+    <span class="n">resend</span>      <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x09</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;resend&#39;</span><span class="p">)</span>
+    <span class="n">response</span>    <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x0A</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;response&#39;</span><span class="p">)</span>
+    <span class="n">store</span>       <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x0B</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">)</span>
+    <span class="n">retrieve</span>    <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x0C</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;retrieve&#39;</span><span class="p">)</span>
+
+    <span class="c1"># implemented compression methods</span>
+    <span class="n">bz2</span>  <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x10</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;bz2&#39;</span><span class="p">)</span>
+    <span class="n">gzip</span> <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x11</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;gzip&#39;</span><span class="p">)</span>
+    <span class="n">lzma</span> <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x12</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;lzma&#39;</span><span class="p">)</span>
+    <span class="n">zlib</span> <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x13</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;zlib&#39;</span><span class="p">)</span>
+
+    <span class="c1"># non-implemented compression methods (based on list from compressjs):</span>
+    <span class="n">bwtc</span>     <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x14</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;bwtc&#39;</span><span class="p">)</span>
+    <span class="n">context1</span> <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x15</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;context1&#39;</span><span class="p">)</span>
+    <span class="n">defsum</span>   <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x16</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;defsum&#39;</span><span class="p">)</span>
+    <span class="n">dmc</span>      <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x17</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;dmc&#39;</span><span class="p">)</span>
+    <span class="n">fenwick</span>  <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x18</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;fenwick&#39;</span><span class="p">)</span>
+    <span class="n">huffman</span>  <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x19</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;huffman&#39;</span><span class="p">)</span>
+    <span class="n">lzjb</span>     <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x1A</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;lzjb&#39;</span><span class="p">)</span>
+    <span class="n">lzjbr</span>    <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x1B</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;lzjbr&#39;</span><span class="p">)</span>
+    <span class="n">lzp3</span>     <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x1C</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;lzp3&#39;</span><span class="p">)</span>
+    <span class="n">mtf</span>      <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x1D</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;mtf&#39;</span><span class="p">)</span>
+    <span class="n">ppmd</span>     <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x1E</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;ppmd&#39;</span><span class="p">)</span>
+    <span class="n">simple</span>   <span class="o">=</span> <span class="n">brepr</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;</span><span class="se">\x1F</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">rep</span><span class="o">=</span><span class="s1">&#39;simple&#39;</span><span class="p">)</span></div>
+
+
+<span class="n">user_salt</span>   <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+<span class="n">compression</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># This should be in order of preference, with None being implied as last</span>
+
+<span class="c1"># Compression testing section</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">zlib</span>
+    <span class="n">compression</span><span class="o">.</span><span class="n">extend</span><span class="p">((</span><span class="n">flags</span><span class="o">.</span><span class="n">zlib</span><span class="p">,</span> <span class="n">flags</span><span class="o">.</span><span class="n">gzip</span><span class="p">))</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">pass</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">bz2</span>
+    <span class="n">compression</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flags</span><span class="o">.</span><span class="n">bz2</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">pass</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">lzma</span>
+    <span class="n">compression</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flags</span><span class="o">.</span><span class="n">lzma</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">pass</span>
+
+<span class="n">json_compressions</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="n">method</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">compression</span><span class="p">])</span>
+
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">):</span>
+    <span class="k">def</span> <span class="nf">pack_value</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For value i, pack it into bytes of size length</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            length: A positive, integral value describing how long to make the packed array</span>
+<span class="sd">            i:      A positive, integral value to pack into said array</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A bytes object containing the given value</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If length is not large enough to contain the value provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">b</span><span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="nb">chr</span><span class="p">(</span><span class="n">i</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">)</span> <span class="o">+</span> <span class="n">ret</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">i</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Value not allocatable in size given&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">l</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">)))</span> <span class="o">+</span> <span class="n">ret</span>
+
+    <span class="k">def</span> <span class="nf">unpack_value</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For a string, return the packed value inside of it</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            string: A string or bytes-like object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An integral value interpreted from this, as if it were a big-endian, unsigned integral</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">val</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span>
+            <span class="n">val</span> <span class="o">+=</span> <span class="nb">ord</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span>
+
+<span class="k">else</span><span class="p">:</span>
+<div class="viewcode-block" id="pack_value"><a class="viewcode-back" href="../../python/base.html#py2p.base.pack_value">[docs]</a>    <span class="k">def</span> <span class="nf">pack_value</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For value i, pack it into bytes of size length</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            length: A positive, integral value describing how long to make the packed array</span>
+<span class="sd">            i:      A positive, integral value to pack into said array</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A bytes object containing the given value</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If length is not large enough to contain the value provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">b</span><span class="s2">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">i</span> <span class="o">&amp;</span> <span class="mh">0xFF</span><span class="p">])</span> <span class="o">+</span> <span class="n">ret</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">i</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Value not allocatable in size given&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">b</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">l</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">ret</span><span class="p">)))</span> <span class="o">+</span> <span class="n">ret</span></div>
+
+<div class="viewcode-block" id="unpack_value"><a class="viewcode-back" href="../../python/base.html#py2p.base.unpack_value">[docs]</a>    <span class="k">def</span> <span class="nf">unpack_value</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;For a string, return the packed value inside of it</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            string: A string or bytes-like object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            An integral value interpreted from this, as if it were a big-endian, unsigned integral</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">)):</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="s1">&#39;raw_unicode_escape&#39;</span><span class="p">)</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">val</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span>
+            <span class="n">val</span> <span class="o">+=</span> <span class="n">char</span>
+        <span class="k">return</span> <span class="n">val</span></div>
+
+
+<span class="n">base_58</span> <span class="o">=</span> <span class="s1">&#39;123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz&#39;</span>
+
+
+<div class="viewcode-block" id="to_base_58"><a class="viewcode-back" href="../../python/base.html#py2p.base.to_base_58">[docs]</a><span class="k">def</span> <span class="nf">to_base_58</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Takes an integer and returns its corresponding base_58 string</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        i: The integral value you wish to encode</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A bytes object which contains the base_58 string</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        TypeError: If you feed a non-integral value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">string</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">while</span> <span class="n">i</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">base_58</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="mi">58</span><span class="p">]</span> <span class="o">+</span> <span class="n">string</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">//</span> <span class="mi">58</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">string</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">base_58</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">string</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="from_base_58"><a class="viewcode-back" href="../../python/base.html#py2p.base.from_base_58">[docs]</a><span class="k">def</span> <span class="nf">from_base_58</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Takes a base_58 string and returns its corresponding integer</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        string: The base_58 value you wish to decode (string, bytes, or bytearray)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Returns integral value which corresponds to the fed string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">decimal</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">)):</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+        <span class="n">decimal</span> <span class="o">=</span> <span class="n">decimal</span> <span class="o">*</span> <span class="mi">58</span> <span class="o">+</span> <span class="n">base_58</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">decimal</span></div>
+
+
+<div class="viewcode-block" id="compress"><a class="viewcode-back" href="../../python/base.html#py2p.base.compress">[docs]</a><span class="k">def</span> <span class="nf">compress</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Shortcut method for compression</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        msg:    The message you wish to compress, the type required is defined by the requested method</span>
+<span class="sd">        method: The compression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.zlib, base.flags.bz2, base.flags.lzma</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Defined by the compression method, but typically the bytes of the compressed message</span>
+<span class="sd">    </span>
+<span class="sd">    Warning:</span>
+<span class="sd">        The types fed are dependent on which compression method you use. Best to assume most values are bytes or bytearray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="n">flags</span><span class="o">.</span><span class="n">gzip</span><span class="p">:</span>
+        <span class="n">compressor</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compressobj</span><span class="p">(</span><span class="n">zlib</span><span class="o">.</span><span class="n">Z_DEFAULT_COMPRESSION</span><span class="p">,</span> <span class="n">zlib</span><span class="o">.</span><span class="n">DEFLATED</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">compressor</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="o">+</span> <span class="n">compressor</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="n">flags</span><span class="o">.</span><span class="n">zlib</span><span class="p">:</span>
+        <span class="n">compressor</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compressobj</span><span class="p">(</span><span class="n">zlib</span><span class="o">.</span><span class="n">Z_DEFAULT_COMPRESSION</span><span class="p">,</span> <span class="n">zlib</span><span class="o">.</span><span class="n">DEFLATED</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">compressor</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span> <span class="o">+</span> <span class="n">compressor</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="n">flags</span><span class="o">.</span><span class="n">bz2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">bz2</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="n">flags</span><span class="o">.</span><span class="n">lzma</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">lzma</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Unknown compression method&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="decompress"><a class="viewcode-back" href="../../python/base.html#py2p.base.decompress">[docs]</a><span class="k">def</span> <span class="nf">decompress</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Shortcut method for decompression</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        msg:    The message you wish to decompress, the type required is defined by the requested method</span>
+<span class="sd">        method: The decompression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.zlib, base.flags.bz2, base.flags.lzma</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Defined by the decompression method, but typically the bytes of the compressed message</span>
+<span class="sd">    </span>
+<span class="sd">    Warning:</span>
+<span class="sd">        The types fed are dependent on which decompression method you use. Best to assume most values are bytes or bytearray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">(</span><span class="n">flags</span><span class="o">.</span><span class="n">gzip</span><span class="p">,</span> <span class="n">flags</span><span class="o">.</span><span class="n">zlib</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">zlib</span><span class="o">.</span><span class="n">MAX_WBITS</span> <span class="o">|</span> <span class="mi">32</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="n">flags</span><span class="o">.</span><span class="n">bz2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">bz2</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="n">flags</span><span class="o">.</span><span class="n">lzma</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">lzma</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Unknown decompression method&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="protocol"><a class="viewcode-back" href="../../python/base.html#py2p.base.protocol">[docs]</a><span class="k">class</span> <span class="nc">protocol</span><span class="p">(</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;protocol&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;subnet&#39;</span><span class="p">,</span> <span class="s1">&#39;encryption&#39;</span><span class="p">])):</span>
+    <span class="sd">&quot;&quot;&quot;Defines service variables so that you can reject connections looking for a different service</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        subnet:     The subnet flag this protocol uses</span>
+<span class="sd">        encryption: The encryption method this protocol uses</span>
+<span class="sd">        id:         The SHA-256 based ID of this protocol</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The SHA-256-based ID of the protocol&quot;&quot;&quot;</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">protocol_version</span><span class="p">])</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">to_base_58</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(),</span> <span class="mi">16</span><span class="p">))</span></div>
+
+<span class="n">default_protocol</span> <span class="o">=</span> <span class="n">protocol</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s2">&quot;Plaintext&quot;</span><span class="p">)</span>  <span class="c1"># SSL&quot;)</span>
+
+
+<div class="viewcode-block" id="pathfinding_message"><a class="viewcode-back" href="../../python/base.html#py2p.base.pathfinding_message">[docs]</a><span class="k">class</span> <span class="nc">pathfinding_message</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An object used to build and parse protocol-defined message structures&quot;&quot;&quot;</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__sanitize_string</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">sizeless</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Removes the size header for further processing. Also checks if the header is valid.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            string:     The string you wish to sanitize</span>
+<span class="sd">            sizeless:   Whether this string contains a size header (default: it does)</span>
+
+<span class="sd">        Returns: </span>
+<span class="sd">            The fed string without the size header</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">           AttributeError: Fed a non-string, non-bytes argument</span>
+<span class="sd">           AssertionError: Initial size header is incorrect</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">)):</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sizeless</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">unpack_value</span><span class="p">(</span><span class="n">string</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">[</span><span class="mi">4</span><span class="p">:]),</span> \
+                <span class="s2">&quot;Must assert base.unpack_value(string[:4]) == len(string[4:])&quot;</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[</span><span class="mi">4</span><span class="p">:]</span>
+        <span class="k">return</span> <span class="n">string</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__decompress_string</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">compressions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a tuple containing the decompressed bytes and a boolean as to whether decompression failed or not</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            string:         The possibly-compressed message you wish to parse</span>
+<span class="sd">            compressions:   A list of the standard compression methods this message may be under (defualt: [])</span>
+
+<span class="sd">        Returns: </span>
+<span class="sd">            A decompressed version of the message</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">           Exception:  Unrecognized compression method fed in compressions</span>
+<span class="sd">        </span>
+<span class="sd">        Warning:</span>
+<span class="sd">            Do not feed it with the size header, it will throw errors</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">compression_fail</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">intersect</span><span class="p">(</span><span class="n">compressions</span><span class="p">,</span> <span class="n">compression</span><span class="p">):</span>  <span class="c1"># second is module scope compression</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">string</span> <span class="o">=</span> <span class="n">decompress</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">method</span><span class="p">)</span>
+                <span class="n">compression_fail</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">break</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">compression_fail</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">continue</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">compression_fail</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__process_string</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given a sanitized, plaintext string, returns a list of its packets</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            string: The message you wish to parse</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A list containing the message&#39;s packets</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">           struct.error:   Packet headers are incorrect OR not fed plaintext</span>
+<span class="sd">           IndexError:     See struct.error</span>
+
+<span class="sd">        Warning:</span>
+<span class="sd">            Do not feed a message with the size header. Do not feed a compressed message.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">processed</span><span class="p">,</span> <span class="n">expected</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+        <span class="n">pack_lens</span><span class="p">,</span> <span class="n">packets</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">processed</span> <span class="o">!=</span> <span class="n">expected</span><span class="p">:</span>
+            <span class="n">pack_lens</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!L&quot;</span><span class="p">,</span> <span class="n">string</span><span class="p">[</span><span class="n">processed</span><span class="p">:</span><span class="n">processed</span><span class="o">+</span><span class="mi">4</span><span class="p">]))</span>
+            <span class="n">processed</span> <span class="o">+=</span> <span class="mi">4</span>
+            <span class="n">expected</span> <span class="o">-=</span> <span class="n">pack_lens</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Then reconstruct the packets</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">length</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pack_lens</span><span class="p">):</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">processed</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">pack_lens</span><span class="p">[:</span><span class="n">index</span><span class="p">])</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">length</span>
+            <span class="n">packets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">string</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">packets</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="pathfinding_message.feed_string"><a class="viewcode-back" href="../../python/base.html#py2p.base.pathfinding_message.feed_string">[docs]</a>    <span class="k">def</span> <span class="nf">feed_string</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">sizeless</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compressions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Constructs a pathfinding_message from a string or bytes object.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            string:         The string you wish to parse</span>
+<span class="sd">            sizeless:       A boolean which describes whether this string has its size header (default: it does)</span>
+<span class="sd">            compressions:   A list containing the standardized compression methods this message might be under (default: [])</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A base.pathfinding_message from the given string</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">           AttributeError: Fed a non-string, non-bytes argument</span>
+<span class="sd">           AssertionError: Initial size header is incorrect</span>
+<span class="sd">           Exception:      Unrecognized compression method fed in compressions</span>
+<span class="sd">           struct.error:   Packet headers are incorrect OR unrecognized compression</span>
+<span class="sd">           IndexError:     See struct.error</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># First section checks size header</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__sanitize_string</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">sizeless</span><span class="p">)</span>
+        <span class="c1"># Then we attempt to decompress</span>
+        <span class="n">string</span><span class="p">,</span> <span class="n">compression_fail</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__decompress_string</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">compressions</span><span class="p">)</span>
+        <span class="c1"># After this, we process the packet size headers</span>
+        <span class="n">packets</span> <span class="o">=</span> <span class="n">cls</span><span class="o">.</span><span class="n">__process_string</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">cls</span><span class="p">(</span><span class="n">packets</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">packets</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">packets</span><span class="p">[</span><span class="mi">4</span><span class="p">:],</span> <span class="n">compression</span><span class="o">=</span><span class="n">compressions</span><span class="p">)</span>
+        <span class="n">msg</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">from_base_58</span><span class="p">(</span><span class="n">packets</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+        <span class="n">msg</span><span class="o">.</span><span class="n">compression_fail</span> <span class="o">=</span> <span class="n">compression_fail</span>
+        <span class="k">assert</span> <span class="n">packets</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">msg</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;Checksum failed&quot;</span>
+        <span class="k">return</span> <span class="n">msg</span></div>
+
+<div class="viewcode-block" id="pathfinding_message.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.pathfinding_message.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg_type</span><span class="p">,</span> <span class="n">sender</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a pathfinding_message instance</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            msg_type:       A bytes-like header for the message you wish to send</span>
+<span class="sd">            sender:         A bytes-like sender ID the message is using</span>
+<span class="sd">            payload:        A list of bytes-like objects containing the payload of the message</span>
+<span class="sd">            compression:    A list of the compression methods this message may use (default: [])</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            TypeError:  If you feed an object which cannot convert to bytes</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            If you feed a unicode object, it will be decoded using utf-8. All other objects are</span>
+<span class="sd">            treated as raw_unicode_escape. If you desire a particular codec, encode it yourself</span>
+<span class="sd">            before feeding it in.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">sanitize_packet</span><span class="p">(</span><span class="n">packet</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">packet</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="s1">u&#39;&#39;</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="n">packet</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">packet</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="n">packet</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;raw_unicode_escape&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">packet</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg_type</span> <span class="o">=</span> <span class="n">sanitize_packet</span><span class="p">(</span><span class="n">msg_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sender</span> <span class="o">=</span> <span class="n">sanitize_packet</span><span class="p">(</span><span class="n">sender</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__payload</span> <span class="o">=</span> <span class="p">[</span><span class="n">sanitize_packet</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="k">for</span> <span class="n">packet</span> <span class="ow">in</span> <span class="n">payload</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">getUTC</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compression_fail</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="k">if</span> <span class="n">compression</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="n">compression</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">payload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list containing the message payload encoded as bytes&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__payload</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">compression_used</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the compression method this message is using&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">intersect</span><span class="p">(</span><span class="n">compression</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">method</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">time_58</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the messages timestamp in base_58&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">to_base_58</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the message id&quot;&quot;&quot;</span>
+        <span class="n">payload_string</span> <span class="o">=</span> <span class="n">b</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="nb">bytes</span><span class="p">(</span><span class="n">pac</span><span class="p">)</span> <span class="k">for</span> <span class="n">pac</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">payload</span><span class="p">))</span>
+        <span class="n">payload_hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha384</span><span class="p">(</span><span class="n">payload_string</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_58</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">to_base_58</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">payload_hash</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(),</span> <span class="mi">16</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">packets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the full list of packets in this message encoded as bytes, excluding the header&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">msg_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_58</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">payload</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">__non_len_string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a bytes object containing the entire message, excepting the total length header&quot;&quot;&quot;</span>
+        <span class="n">packets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">packets</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="p">[</span><span class="n">pack_value</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">packets</span><span class="p">]</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">b</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="nb">bytes</span><span class="p">(</span><span class="n">pac</span><span class="p">)</span> <span class="k">for</span> <span class="n">pac</span> <span class="ow">in</span> <span class="n">header</span> <span class="o">+</span> <span class="n">packets</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_used</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">=</span> <span class="n">compress</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_used</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">string</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a string representation of the message&quot;&quot;&quot;</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__non_len_string</span>
+        <span class="k">return</span> <span class="n">pack_value</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">))</span> <span class="o">+</span> <span class="n">string</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__non_len_string</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the struct-encoded length header&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">pack_value</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__len__</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="base_connection"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection">[docs]</a><span class="k">class</span> <span class="nc">base_connection</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The base class for a connection&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="base_connection.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">server</span><span class="p">,</span> <span class="n">outgoing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">sock</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outgoing</span> <span class="o">=</span> <span class="n">outgoing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">getUTC</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_sent</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="base_connection.send"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.send">[docs]</a>    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg_type</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sends a message through its connection. </span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object</span>
+<span class="sd">            *args:      A list of bytes-like objects, which correspond to the packets to send to you</span>
+<span class="sd">            **kargs:    There are two available keywords:</span>
+<span class="sd">            id:         The ID this message should appear to be sent from (default: your ID)</span>
+<span class="sd">            time:       The time this message should appear to be sent from (default: now in UTC)</span>
+<span class="sd">        </span>
+<span class="sd">        Returns:</span>
+<span class="sd">            the pathfinding_message object you just sent, or None if the sending was unsuccessful</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># This section handles waterfall-specific flags</span>
+        <span class="nb">id</span> <span class="o">=</span> <span class="n">kargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>  <span class="c1"># Latter is returned if key not found</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">kargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">getUTC</span><span class="p">()</span>
+        <span class="c1"># Begin real method</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">pathfinding_message</span><span class="p">(</span><span class="n">msg_type</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">msg_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">flags</span><span class="o">.</span><span class="n">whisper</span><span class="p">,</span> <span class="n">flags</span><span class="o">.</span><span class="n">broadcast</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_sent</span> <span class="o">=</span> <span class="p">[</span><span class="n">msg_type</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__print__</span><span class="p">(</span><span class="s2">&quot;Sending </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">([</span><span class="n">msg</span><span class="o">.</span><span class="n">len</span><span class="p">]</span> <span class="o">+</span> <span class="n">msg</span><span class="o">.</span><span class="n">packets</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="n">level</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">compression_used</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">__print__</span><span class="p">(</span><span class="s2">&quot;Compressing with </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">compression_used</span><span class="p">),</span> <span class="n">level</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">string</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">msg</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">IOError</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">error</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">daemon</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">e</span><span class="p">,</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">protocol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">protocol</span>
+
+<div class="viewcode-block" id="base_connection.collect_incoming_data"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.collect_incoming_data">[docs]</a>    <span class="k">def</span> <span class="nf">collect_incoming_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Collects incoming data</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data:   The most recently received byte</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the data collection was successful, False if the connection was closed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SHUT_RDWR</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">getUTC</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_terminator</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__print__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_terminator</span><span class="p">(),</span> <span class="n">level</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expected</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;!L&quot;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">4</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="base_connection.find_terminator"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.find_terminator">[docs]</a>    <span class="k">def</span> <span class="nf">find_terminator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns whether the definied return sequences is found&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">))</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected</span></div>
+
+<div class="viewcode-block" id="base_connection.found_terminator"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.found_terminator">[docs]</a>    <span class="k">def</span> <span class="nf">found_terminator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Processes received messages&quot;&quot;&quot;</span>
+        <span class="n">raw_msg</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">pathfinding_message</span><span class="o">.</span><span class="n">feed_string</span><span class="p">(</span><span class="n">raw_msg</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">msg</span></div>
+
+<div class="viewcode-block" id="base_connection.handle_renegotiate"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.handle_renegotiate">[docs]</a>    <span class="k">def</span> <span class="nf">handle_renegotiate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">packets</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The handler for connection renegotiations</span>
+
+<span class="sd">        This is to deal with connection maintenence. For instance, it could </span>
+<span class="sd">        be that a compression method fails to decode on the other end, and a </span>
+<span class="sd">        node will need to renegotiate which methods it is using. Hence the </span>
+<span class="sd">        name of the flag associated with it, &quot;renegotiate&quot;.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            packets:    A list containing the packets received in this message</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if an action was taken, None if not</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">packets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">flags</span><span class="o">.</span><span class="n">renegotiate</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">packets</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">flags</span><span class="o">.</span><span class="n">compression</span><span class="p">:</span>
+                <span class="n">encoded_methods</span> <span class="o">=</span> <span class="p">[</span><span class="n">algo</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span> <span class="k">for</span> <span class="n">algo</span> <span class="ow">in</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">packets</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">())]</span>
+                <span class="n">respond</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">!=</span> <span class="n">encoded_methods</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="n">encoded_methods</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__print__</span><span class="p">(</span><span class="s2">&quot;Compression methods changed to: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compression</span><span class="p">),</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">respond</span><span class="p">:</span>
+                    <span class="n">decoded_methods</span> <span class="o">=</span> <span class="p">[</span><span class="n">algo</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> <span class="k">for</span> <span class="n">algo</span> <span class="ow">in</span> <span class="n">intersect</span><span class="p">(</span><span class="n">compression</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span><span class="p">)]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">flags</span><span class="o">.</span><span class="n">renegotiate</span><span class="p">,</span> <span class="n">flags</span><span class="o">.</span><span class="n">compression</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">decoded_methods</span><span class="p">))</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">packets</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">flags</span><span class="o">.</span><span class="n">resend</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">last_sent</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span></div>
+
+<div class="viewcode-block" id="base_connection.fileno"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.fileno">[docs]</a>    <span class="k">def</span> <span class="nf">fileno</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Mirror for the fileno() method of the connection&#39;s underlying socket&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">fileno</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">__print__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Private method to print if level is &lt;= self.server.debug_level</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args:      Each argument you wish to feed to the print method</span>
+<span class="sd">            **kargs:    One keyword is used here: level, which defines the</span>
+<span class="sd">                lowest value of self.server.debug_level at which the message</span>
+<span class="sd">                will be printed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">__print__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="base_daemon"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_daemon">[docs]</a><span class="k">class</span> <span class="nc">base_daemon</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The base class for a daemon&quot;&quot;&quot;</span>    
+<div class="viewcode-block" id="base_daemon.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_daemon.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">server</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">get_socket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">settimeout</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exceptions</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">main_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">current_thread</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">daemon</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mainloop</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">daemon</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">protocol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">protocol</span>
+
+<div class="viewcode-block" id="base_daemon.kill_old_nodes"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_daemon.kill_old_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">kill_old_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cleans out connections which never finish a message&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">handler</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="n">handler</span><span class="o">.</span><span class="n">time</span> <span class="o">&lt;</span> <span class="n">getUTC</span><span class="p">()</span> <span class="o">-</span> <span class="mi">60</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SHUT_RDWR</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+            <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">__print__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Private method to print if level is &lt;= self.server.debug_level</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args:      Each argument you wish to feed to the print method</span>
+<span class="sd">            **kargs:    One keyword is used here: level, which defines the</span>
+<span class="sd">                lowest value of self.server.debug_level at which the message</span>
+<span class="sd">                will be printed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">__print__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="base_socket"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_socket">[docs]</a><span class="k">class</span> <span class="nc">base_socket</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The base class for a peer-to-peer socket&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="base_socket.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_socket.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">prot</span><span class="o">=</span><span class="n">default_protocol</span><span class="p">,</span> <span class="n">out_addr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">debug_level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a peer to peer socket</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            addr:           The address you wish to bind to (ie: &quot;192.168.1.1&quot;)</span>
+<span class="sd">            port:           The port you wish to bind to (ie: 44565)</span>
+<span class="sd">            prot:           The protocol you wish to operate over, defined by a base.protocol object</span>
+<span class="sd">            out_addr:       Your outward facing address. Only needed if you&#39;re connecting </span>
+<span class="sd">                over the internet. If you use &#39;0.0.0.0&#39; for the addr argument, this will</span>
+<span class="sd">                automatically be set to your LAN address.</span>
+<span class="sd">            debug_level:    The verbosity you want this socket to use when printing event data</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            socket.error:   The address you wanted could not be bound, or is otherwise used</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">protocol</span> <span class="o">=</span> <span class="n">prot</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug_level</span> <span class="o">=</span> <span class="n">debug_level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">routing_table</span> <span class="o">=</span> <span class="p">{}</span>     <span class="c1"># In format {ID: handler}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">awaiting_ids</span> <span class="o">=</span> <span class="p">[]</span>      <span class="c1"># Connected, but not handshook yet</span>
+        <span class="k">if</span> <span class="n">out_addr</span><span class="p">:</span>                <span class="c1"># Outward facing address, if you&#39;re port forwarding</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">out_addr</span> <span class="o">=</span> <span class="n">out_addr</span>
+        <span class="k">elif</span> <span class="n">addr</span> <span class="o">==</span> <span class="s1">&#39;0.0.0.0&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">out_addr</span> <span class="o">=</span> <span class="n">get_lan_ip</span><span class="p">(),</span> <span class="n">port</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">out_addr</span> <span class="o">=</span> <span class="n">addr</span><span class="p">,</span> <span class="n">port</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_addr</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">prot</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">user_salt</span><span class="p">]</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha384</span><span class="p">(</span><span class="n">b</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">info</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">to_base_58</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(),</span> <span class="mi">16</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__handlers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__closed</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="base_socket.close"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_socket.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;If the socket is not closed, close the socket</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError:   The socket was already closed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__closed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Already closed&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">daemon</span><span class="o">.</span><span class="n">alive</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">daemon</span><span class="o">.</span><span class="n">daemon</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">debug_level</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">daemon</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SHUT_RDWR</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="n">conns</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">routing_table</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">awaiting_ids</span>
+            <span class="k">for</span> <span class="n">conn</span> <span class="ow">in</span> <span class="n">conns</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">disconnect</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__closed</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">):</span>
+        <span class="k">def</span> <span class="nf">register_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Register a handler for incoming method. </span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                method: A function with two given arguments. Its signature</span>
+<span class="sd">                    should be of the form handler(msg, handler), where msg is</span>
+<span class="sd">                    a base.message object, and handler is a base.base_connection</span>
+<span class="sd">                    object. It should return True if it performed an action, to</span>
+<span class="sd">                    reduce the number of handlers checked.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                ValueError: If the method signature doesn&#39;t parse correctly</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">3</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;self&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This method must contain exactly two arguments (or three if first is self)&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+<div class="viewcode-block" id="base_socket.register_handler"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_socket.register_handler">[docs]</a>        <span class="k">def</span> <span class="nf">register_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+            <span class="sd">&quot;&quot;&quot;Register a handler for incoming method. </span>
+
+<span class="sd">            Args:</span>
+<span class="sd">                method: A function with two given arguments. Its signature</span>
+<span class="sd">                    should be of the form handler(msg, handler), where msg is</span>
+<span class="sd">                    a base.message object, and handler is a base.base_connection</span>
+<span class="sd">                    object. It should return True if it performed an action, to</span>
+<span class="sd">                    reduce the number of handlers checked.</span>
+
+<span class="sd">            Raises:</span>
+<span class="sd">                ValueError: If the method signature doesn&#39;t parse correctly</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="n">args</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getargspec</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">!=</span> <span class="p">(</span><span class="mi">3</span> <span class="k">if</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;self&#39;</span> <span class="k">else</span> <span class="mi">2</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This method must contain exactly two arguments (or three if first is self)&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">method</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="base_socket.handle_msg"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_socket.handle_msg">[docs]</a>    <span class="k">def</span> <span class="nf">handle_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">conn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Decides how to handle various message types, allowing some to be handled automatically</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            msg:    A base.message object</span>
+<span class="sd">            conn:   A base.base_connection object</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if an action was taken, None if not.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__handlers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__print__</span><span class="p">(</span><span class="s2">&quot;Checking handler: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">handler</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">handler</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">conn</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">__print__</span><span class="p">(</span><span class="s2">&quot;Breaking from handler: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">handler</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">True</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The status of the socket.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            &quot;Nominal&quot; if all is going well, or a list of unexpected (Excpetion, traceback) tuples if not&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">daemon</span><span class="o">.</span><span class="n">exceptions</span> <span class="ow">or</span> <span class="s2">&quot;Nominal&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__print__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Private method to print if level is &lt;= self.debug_level</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args:      Each argument you wish to feed to the print method</span>
+<span class="sd">            **kargs:    One keyword is used here: level, which defines the</span>
+<span class="sd">                lowest value of self.debug_level at which the message will</span>
+<span class="sd">                be printed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">kargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug_level</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">plock</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_addr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__closed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="message"><a class="viewcode-back" href="../../python/base.html#py2p.base.message">[docs]</a><span class="k">class</span> <span class="nc">message</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An object which gets returned to a user, containing all necessary information to parse and reply to a message&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="message.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.message.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">server</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes a message object</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            msg:    A pathfinding_message object</span>
+<span class="sd">            server: A base_socket object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg</span> <span class="o">=</span> <span class="n">msg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The time this message was sent at&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">time</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">time_58</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the messages timestamp in base_58&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">time_58</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">sender</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The ID of this message&#39;s sender&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">sender</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;This message&#39;s ID&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">id</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">packets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the message&#39;s component packets, including it&#39;s type in position 0&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">payload</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">__len__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">packets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">packets</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s2">&quot;message(type=&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">packets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="s2">&quot;, packets=&quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">packets</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">+</span> <span class="s2">&quot;, sender=&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">,</span> <span class="n">base_connection</span><span class="p">):</span>  <span class="c1"># This should no longer happen, but just in case</span>
+            <span class="k">return</span> <span class="n">string</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="o">.</span><span class="n">addr</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">string</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+
+<div class="viewcode-block" id="message.reply"><a class="viewcode-back" href="../../python/base.html#py2p.base.message.reply">[docs]</a>    <span class="k">def</span> <span class="nf">reply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Replies to the sender if you&#39;re directly connected. Tries to make a connection otherwise</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args: Each argument given is a packet you wish to send. This is</span>
+<span class="sd">                prefixed with base.flags.whisper, so the other end will receive </span>
+<span class="sd">                [base.flags.whisper, *args]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">routing_table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">routing_table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">)</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">flags</span><span class="o">.</span><span class="n">whisper</span><span class="p">,</span> <span class="n">flags</span><span class="o">.</span><span class="n">whisper</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">request_hash</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha384</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sender</span> <span class="o">+</span> <span class="n">to_base_58</span><span class="p">(</span><span class="n">getUTC</span><span class="p">()))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+            <span class="n">request_id</span> <span class="o">=</span> <span class="n">to_base_58</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">request_hash</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">request_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">flags</span><span class="o">.</span><span class="n">request</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">requests</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">request_id</span><span class="p">:</span> <span class="p">[</span><span class="n">flags</span><span class="o">.</span><span class="n">whisper</span><span class="p">,</span> <span class="n">flags</span><span class="o">.</span><span class="n">whisper</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)})</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;You aren&#39;t connected to the original sender. This reply is not guarunteed, but we&#39;re trying to make a connection and put the message through.&quot;</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Gabe Appleton.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.4.319',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

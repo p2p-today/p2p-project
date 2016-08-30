@@ -1,0 +1,375 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Utils Module &mdash; py2p 0.4.319 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="py2p 0.4.319 documentation" href="../index.html"/>
+        <link rel="up" title="Python Implementation" href="../python.html"/>
+        <link rel="next" title="&lt;no title&gt;" href="mesh.html"/>
+        <link rel="prev" title="Base Module (C++ Implementation)" href="cbase.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> py2p
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../protocol.html">Protocol Specifications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../python.html">Python Implementation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="base.html">Base Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cbase.html">Base Module (C++ Implementation)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Utils Module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">py2p</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../python.html">Python Implementation</a> &raquo;</li>
+      
+    <li>Utils Module</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/python/utils.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-py2p.utils">
+<span id="utils-module"></span><h1>Utils Module<a class="headerlink" href="#module-py2p.utils" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="py2p.utils.intersect">
+<code class="descclassname">py2p.utils.</code><code class="descname">intersect</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#intersect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.intersect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the intersection of several iterables</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>*args</strong> &#8211; Several iterables</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A list containing the ordered intersection of all given iterables,
+where the order is defined by the first iterable</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="py2p.utils.get_lan_ip">
+<code class="descclassname">py2p.utils.</code><code class="descname">get_lan_ip</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#get_lan_ip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.get_lan_ip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves the LAN ip. Expanded from <a class="reference external" href="http://stackoverflow.com/a/28950776">http://stackoverflow.com/a/28950776</a></p>
+<p>Note: This will return &#8216;127.0.0.1&#8217; if it is not connected to a network</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="py2p.utils.getUTC">
+<code class="descclassname">py2p.utils.</code><code class="descname">getUTC</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#getUTC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.getUTC" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the current unix time in UTC</p>
+<p>Note: This will always return an integral value</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="py2p.utils.get_socket">
+<code class="descclassname">py2p.utils.</code><code class="descname">get_socket</code><span class="sig-paren">(</span><em>protocol</em>, <em>serverside=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#get_socket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.get_socket" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a protocol object, return the appropriate socket</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>protocol</strong> &#8211; A py2p.base.protocol object</li>
+<li><strong>serverside</strong> &#8211; Whether you are the server end of a connection (default: False)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code></a> &#8211; If your protocol object has an unknown encryption method</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A socket-like object</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.utils.awaiting_value">
+<em class="property">class </em><code class="descclassname">py2p.utils.</code><code class="descname">awaiting_value</code><span class="sig-paren">(</span><em>value=-1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#awaiting_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.awaiting_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy object for an asynchronously retrieved item</p>
+<dl class="method">
+<dt id="py2p.utils.awaiting_value.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>value=-1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#awaiting_value.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.awaiting_value.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="py2p.utils.awaiting_value.callback_method">
+<code class="descname">callback_method</code><span class="sig-paren">(</span><em>method</em>, <em>key</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#awaiting_value.callback_method"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.awaiting_value.callback_method" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="py2p.utils.most_common">
+<code class="descclassname">py2p.utils.</code><code class="descname">most_common</code><span class="sig-paren">(</span><em>tmp</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#most_common"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.most_common" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the most common element in a list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>tmp</strong> &#8211; A non-string iterable</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The most common element in the iterable</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If there are multiple elements which share the same count, it will return a random one.</p>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.utils.file_dict">
+<em class="property">class </em><code class="descclassname">py2p.utils.</code><code class="descname">file_dict</code><span class="sig-paren">(</span><em>start=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#file_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.file_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dictionary-like object which stores objects on the disk rather than in memory</p>
+<dl class="method">
+<dt id="py2p.utils.file_dict.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>start=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#file_dict.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.file_dict.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes a file_dict object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>start</strong> &#8211; A dictionary instance to copy the contents of (default: {})</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.utils.file_dict.update">
+<code class="descname">update</code><span class="sig-paren">(</span><em>d</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#file_dict.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.file_dict.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the file_dict to contain the contents given</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>d</strong> &#8211; A dictionary to get values from</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.utils.file_dict.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>key</em>, <em>ret=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#file_dict.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.file_dict.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets an item, given a key, without raising a KeyError</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>key</strong> &#8211; The key you&#8217;re asking for</li>
+<li><strong>ret</strong> &#8211; The value it should return if the key is not found (default: None)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.utils.file_dict.__iter__">
+<code class="descname">__iter__</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#file_dict.__iter__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.file_dict.__iter__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a generator containing the keys in the file_dict</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">May raise errors if items are removed while parsing</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.utils.file_dict.values">
+<code class="descname">values</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/utils.html#file_dict.values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.utils.file_dict.values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a generator containing the values in the file_dict</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">May raise errors if items are removed while parsing</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mesh.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="cbase.html" class="btn btn-neutral" title="Base Module (C++ Implementation)" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Gabe Appleton.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.4.319',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

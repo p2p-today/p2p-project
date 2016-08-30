@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>IDs and Encoding &mdash; py2p 0.4.319 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="py2p 0.4.319 documentation" href="../index.html"/>
+        <link rel="up" title="Protocol Specifications" href="../protocol.html"/>
+        <link rel="next" title="Flag Definitions" href="flags.html"/>
+        <link rel="prev" title="Reconstruction" href="reconstruction.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> py2p
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../protocol.html">Protocol Specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="goals.html">Protocol Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reconstruction.html">Reconstruction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">IDs and Encoding</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#base-58">base_58</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#subnets">Subnets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#node-ids">Node IDs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#message-ids">Message IDs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="flags.html">Flag Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flaws.html">Potential Serialization Flaws</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mesh.html">Mesh Protocol Definition</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../python.html">Python Implementation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">py2p</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../protocol.html">Protocol Specifications</a> &raquo;</li>
+      
+    <li>IDs and Encoding</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/protocol/ids_and_encoding.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="ids-and-encoding">
+<h1>IDs and Encoding<a class="headerlink" href="#ids-and-encoding" title="Permalink to this headline">¶</a></h1>
+<p>Knowing the overall message structure is great, but it’s not very
+useful if you can’t construct the metadata. To do this, there are
+four parts.</p>
+<div class="section" id="base-58">
+<h2>base_58<a class="headerlink" href="#base-58" title="Permalink to this headline">¶</a></h2>
+<p>This encoding is taken from Bitcoin. If you’ve ever seen a Bitcoin
+address, you’ve seen base_58 encoding in action. The goal behind
+it is to provide data compression without compromising its human
+readability. Base_58, for the purposes of this protocol, is
+defined by the following python methods.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">base_58</span> <span class="o">=</span> <span class="s1">&#39;123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz&#39;</span>
+
+<span class="k">def</span> <span class="nf">to_base_58</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+    <span class="n">string</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">while</span> <span class="n">i</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">base_58</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="mi">58</span><span class="p">]</span> <span class="o">+</span> <span class="n">string</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">//</span> <span class="mi">58</span>    <span class="c1"># Floor division is needed to prevent floats</span>
+    <span class="k">return</span> <span class="n">string</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">from_base_58</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="n">decimal</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+        <span class="n">decimal</span> <span class="o">=</span> <span class="n">decimal</span> <span class="o">*</span> <span class="mi">58</span> <span class="o">+</span> <span class="n">base_58</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">decimal</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="subnets">
+<h2>Subnets<a class="headerlink" href="#subnets" title="Permalink to this headline">¶</a></h2>
+<p>The last element is the ‘subnet ID’ we referred to in the previous
+section. This object is used to weed out undesired connections. If
+someone has the wrong protocol object, then your node will reject
+them from connecting. A rough definition would be as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">protocol</span><span class="p">(</span><span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;protocol&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;subnet&#39;</span><span class="p">,</span> <span class="s1">&#39;encryption&#39;</span><span class="p">])):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">protocol_version</span><span class="p">]</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">info</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">to_base_58</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">(),</span> <span class="mi">16</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Or more explicitly in javascript:</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span></span><span class="kr">class</span> <span class="nx">protocol</span> <span class="p">{</span>
+    <span class="nx">constructor</span><span class="p">(</span><span class="nx">subnet</span><span class="p">,</span> <span class="nx">encryption</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">subnet</span> <span class="o">=</span> <span class="nx">subnet</span><span class="p">;</span>
+        <span class="k">this</span><span class="p">.</span><span class="nx">encryption</span> <span class="o">=</span> <span class="nx">encryption</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="nx">get</span> <span class="nx">id</span><span class="p">()</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">info</span> <span class="o">=</span> <span class="p">[</span><span class="k">this</span><span class="p">.</span><span class="nx">subnet</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">encryption</span><span class="p">,</span> <span class="nx">protocol_version</span><span class="p">];</span>
+        <span class="kd">var</span> <span class="nx">hash</span> <span class="o">=</span> <span class="nx">SHA256</span><span class="p">(</span><span class="nx">info</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">));</span>
+        <span class="k">return</span> <span class="nx">to_base_58</span><span class="p">(</span><span class="nx">BigInt</span><span class="p">(</span><span class="nx">hash</span><span class="p">,</span> <span class="mi">16</span><span class="p">));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="node-ids">
+<h2>Node IDs<a class="headerlink" href="#node-ids" title="Permalink to this headline">¶</a></h2>
+<p>A node ID is taken from a SHA-384 hash of three other elements.
+First, your outward facing address. Second, the ID of your subnet.
+Third, a ‘user salt’ generated on startup. This hash is then
+converted into base_58.</p>
+</div>
+<div class="section" id="message-ids">
+<h2>Message IDs<a class="headerlink" href="#message-ids" title="Permalink to this headline">¶</a></h2>
+<p>A message ID is also a SHA-384 hash. In this case, it is on a
+message’s payload and its timestamp.</p>
+<p>To get the hash, first join each packet together in order. Append
+to this the message’s timestamp in base_58. The ID you will use
+is the hash of this string, encoded into base_58.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="flags.html" class="btn btn-neutral float-right" title="Flag Definitions" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="reconstruction.html" class="btn btn-neutral" title="Reconstruction" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Gabe Appleton.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.4.319',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

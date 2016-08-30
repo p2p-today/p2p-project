@@ -1,0 +1,1019 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Base Module &mdash; py2p 0.4.319 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="py2p 0.4.319 documentation" href="../index.html"/>
+        <link rel="up" title="Python Implementation" href="../python.html"/>
+        <link rel="next" title="Base Module (C++ Implementation)" href="cbase.html"/>
+        <link rel="prev" title="&lt;no title&gt;" href="tutorial.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> py2p
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../protocol.html">Protocol Specifications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../python.html">Python Implementation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Base Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cbase.html">Base Module (C++ Implementation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utils Module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">py2p</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../python.html">Python Implementation</a> &raquo;</li>
+      
+    <li>Base Module</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/python/base.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-py2p.base">
+<span id="base-module"></span><h1>Base Module<a class="headerlink" href="#module-py2p.base" title="Permalink to this headline">¶</a></h1>
+<p>A library to store common functions and protocol definitions</p>
+<dl class="class">
+<dt id="py2p.base.flags">
+<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">flags</code><a class="reference internal" href="../_modules/py2p/base.html#flags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.flags" title="Permalink to this definition">¶</a></dt>
+<dd><p>A namespace to hold protocol-defined flags</p>
+<dl class="attribute">
+<dt id="py2p.base.flags.reserved">
+<code class="descname">reserved</code><em class="property"> = ['\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07', '\x08', '\t', '\n', '\x0b', '\x0c', '\r', '\x0e', '\x0f', '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17', '\x18', '\x19', '\x1a', '\x1b', '\x1c', '\x1d', '\x1e', '\x1f']</em><a class="headerlink" href="#py2p.base.flags.reserved" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p><strong>Main flags:</strong></p>
+<ul>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.broadcast">
+<code class="descname">broadcast</code><a class="headerlink" href="#py2p.base.flags.broadcast" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.waterfall">
+<code class="descname">waterfall</code><a class="headerlink" href="#py2p.base.flags.waterfall" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.whisper">
+<code class="descname">whisper</code><a class="headerlink" href="#py2p.base.flags.whisper" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.renegotiate">
+<code class="descname">renegotiate</code><a class="headerlink" href="#py2p.base.flags.renegotiate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.ping">
+<code class="descname">ping</code><a class="headerlink" href="#py2p.base.flags.ping" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.pong">
+<code class="descname">pong</code><a class="headerlink" href="#py2p.base.flags.pong" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+</ul>
+<p><strong>Sub-flags:</strong></p>
+<ul>
+<li><dl class="attribute">
+<dt>
+<code class="descname">broadcast</code></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.compression">
+<code class="descname">compression</code><a class="headerlink" href="#py2p.base.flags.compression" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt>
+<code class="descname">whisper</code></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.handshake">
+<code class="descname">handshake</code><a class="headerlink" href="#py2p.base.flags.handshake" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt>
+<code class="descname">ping</code></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt>
+<code class="descname">pong</code></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.notify">
+<code class="descname">notify</code><a class="headerlink" href="#py2p.base.flags.notify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.peers">
+<code class="descname">peers</code><a class="headerlink" href="#py2p.base.flags.peers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.request">
+<code class="descname">request</code><a class="headerlink" href="#py2p.base.flags.request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.resend">
+<code class="descname">resend</code><a class="headerlink" href="#py2p.base.flags.resend" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.response">
+<code class="descname">response</code><a class="headerlink" href="#py2p.base.flags.response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.store">
+<code class="descname">store</code><a class="headerlink" href="#py2p.base.flags.store" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.retrieve">
+<code class="descname">retrieve</code><a class="headerlink" href="#py2p.base.flags.retrieve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+</ul>
+<p><strong>Python-implemented compression methods:</strong></p>
+<ul>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.bz2">
+<code class="descname">bz2</code><a class="headerlink" href="#py2p.base.flags.bz2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.gzip">
+<code class="descname">gzip</code><a class="headerlink" href="#py2p.base.flags.gzip" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.lzma">
+<code class="descname">lzma</code><a class="headerlink" href="#py2p.base.flags.lzma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.zlib">
+<code class="descname">zlib</code><a class="headerlink" href="#py2p.base.flags.zlib" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+</ul>
+<p><strong>Other implementations&#8217; and/or planned compression methods:</strong></p>
+<ul>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.bwtc">
+<code class="descname">bwtc</code><a class="headerlink" href="#py2p.base.flags.bwtc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.context1">
+<code class="descname">context1</code><a class="headerlink" href="#py2p.base.flags.context1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.defsum">
+<code class="descname">defsum</code><a class="headerlink" href="#py2p.base.flags.defsum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.dmc">
+<code class="descname">dmc</code><a class="headerlink" href="#py2p.base.flags.dmc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.fenwick">
+<code class="descname">fenwick</code><a class="headerlink" href="#py2p.base.flags.fenwick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.huffman">
+<code class="descname">huffman</code><a class="headerlink" href="#py2p.base.flags.huffman" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.lzjb">
+<code class="descname">lzjb</code><a class="headerlink" href="#py2p.base.flags.lzjb" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.lzjbr">
+<code class="descname">lzjbr</code><a class="headerlink" href="#py2p.base.flags.lzjbr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.lzp3">
+<code class="descname">lzp3</code><a class="headerlink" href="#py2p.base.flags.lzp3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.mtf">
+<code class="descname">mtf</code><a class="headerlink" href="#py2p.base.flags.mtf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.ppmd">
+<code class="descname">ppmd</code><a class="headerlink" href="#py2p.base.flags.ppmd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="attribute">
+<dt id="py2p.base.flags.simple">
+<code class="descname">simple</code><a class="headerlink" href="#py2p.base.flags.simple" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+</ul>
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.base.base_connection">
+<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">base_connection</code><span class="sig-paren">(</span><em>sock</em>, <em>server</em>, <em>outgoing=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>The base class for a connection</p>
+<dl class="method">
+<dt id="py2p.base.base_connection.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>sock</em>, <em>server</em>, <em>outgoing=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.base_connection.collect_incoming_data">
+<code class="descname">collect_incoming_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection.collect_incoming_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection.collect_incoming_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Collects incoming data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> &#8211; The most recently received byte</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if the data collection was successful, False if the connection was closed</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.base_connection.fileno">
+<code class="descname">fileno</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection.fileno"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection.fileno" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mirror for the fileno() method of the connection&#8217;s underlying socket</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.base_connection.find_terminator">
+<code class="descname">find_terminator</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection.find_terminator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection.find_terminator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns whether the definied return sequences is found</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.base_connection.found_terminator">
+<code class="descname">found_terminator</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection.found_terminator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection.found_terminator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Processes received messages</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.base_connection.handle_renegotiate">
+<code class="descname">handle_renegotiate</code><span class="sig-paren">(</span><em>packets</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection.handle_renegotiate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection.handle_renegotiate" title="Permalink to this definition">¶</a></dt>
+<dd><p>The handler for connection renegotiations</p>
+<p>This is to deal with connection maintenence. For instance, it could
+be that a compression method fails to decode on the other end, and a
+node will need to renegotiate which methods it is using. Hence the
+name of the flag associated with it, &#8220;renegotiate&#8221;.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>packets</strong> &#8211; A list containing the packets received in this message</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if an action was taken, None if not</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.base_connection.protocol">
+<code class="descname">protocol</code><a class="headerlink" href="#py2p.base.base_connection.protocol" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.base_connection.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>msg_type</em>, <em>*args</em>, <em>**kargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a message through its connection.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>msg_type</strong> &#8211; Message type, corresponds to the header in a py2p.base.pathfinding_message object</li>
+<li><strong>*args</strong> &#8211; A list of bytes-like objects, which correspond to the packets to send to you</li>
+<li><strong>**kargs</strong> &#8211; There are two available keywords:</li>
+<li><strong>id</strong> &#8211; The ID this message should appear to be sent from (default: your ID)</li>
+<li><strong>time</strong> &#8211; The time this message should appear to be sent from (default: now in UTC)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the pathfinding_message object you just sent, or None if the sending was unsuccessful</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.base.base_daemon">
+<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">base_daemon</code><span class="sig-paren">(</span><em>addr</em>, <em>port</em>, <em>server</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_daemon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_daemon" title="Permalink to this definition">¶</a></dt>
+<dd><p>The base class for a daemon</p>
+<dl class="method">
+<dt id="py2p.base.base_daemon.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>addr</em>, <em>port</em>, <em>server</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_daemon.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_daemon.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.base_daemon.kill_old_nodes">
+<code class="descname">kill_old_nodes</code><span class="sig-paren">(</span><em>handler</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_daemon.kill_old_nodes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_daemon.kill_old_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cleans out connections which never finish a message</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.base_daemon.protocol">
+<code class="descname">protocol</code><a class="headerlink" href="#py2p.base.base_daemon.protocol" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.base.base_socket">
+<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">base_socket</code><span class="sig-paren">(</span><em>addr</em>, <em>port</em>, <em>prot=protocol(subnet=''</em>, <em>encryption='Plaintext')</em>, <em>out_addr=None</em>, <em>debug_level=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_socket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_socket" title="Permalink to this definition">¶</a></dt>
+<dd><p>The base class for a peer-to-peer socket</p>
+<dl class="method">
+<dt id="py2p.base.base_socket.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>addr</em>, <em>port</em>, <em>prot=protocol(subnet=''</em>, <em>encryption='Plaintext')</em>, <em>out_addr=None</em>, <em>debug_level=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_socket.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_socket.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes a peer to peer socket</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>addr</strong> &#8211; The address you wish to bind to (ie: &#8220;192.168.1.1&#8221;)</li>
+<li><strong>port</strong> &#8211; The port you wish to bind to (ie: 44565)</li>
+<li><strong>prot</strong> &#8211; The protocol you wish to operate over, defined by a base.protocol object</li>
+<li><strong>out_addr</strong> &#8211; Your outward facing address. Only needed if you&#8217;re connecting
+over the internet. If you use &#8216;0.0.0.0&#8217; for the addr argument, this will
+automatically be set to your LAN address.</li>
+<li><strong>debug_level</strong> &#8211; The verbosity you want this socket to use when printing event data</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/socket.html#socket.error" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">socket.error</span></code></a> &#8211; The address you wanted could not be bound, or is otherwise used</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.base_socket.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_socket.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_socket.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the socket is not closed, close the socket</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">RuntimeError</span></code></a> &#8211; The socket was already closed</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.base_socket.handle_msg">
+<code class="descname">handle_msg</code><span class="sig-paren">(</span><em>msg</em>, <em>conn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_socket.handle_msg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_socket.handle_msg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decides how to handle various message types, allowing some to be handled automatically</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>msg</strong> &#8211; A base.message object</li>
+<li><strong>conn</strong> &#8211; A base.base_connection object</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">True if an action was taken, None if not.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.base_socket.register_handler">
+<code class="descname">register_handler</code><span class="sig-paren">(</span><em>method</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_socket.register_handler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_socket.register_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Register a handler for incoming method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>method</strong> &#8211; A function with two given arguments. Its signature
+should be of the form handler(msg, handler), where msg is
+a base.message object, and handler is a base.base_connection
+object. It should return True if it performed an action, to
+reduce the number of handlers checked.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code></a> &#8211; If the method signature doesn&#8217;t parse correctly</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.base_socket.status">
+<code class="descname">status</code><a class="headerlink" href="#py2p.base.base_socket.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>The status of the socket.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">&#8220;Nominal&#8221; if all is going well, or a list of unexpected (Excpetion, traceback) tuples if not</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.base.brepr">
+<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">brepr</code><span class="sig-paren">(</span><em>value</em>, <em>rep=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#brepr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.brepr" title="Permalink to this definition">¶</a></dt>
+<dd><p>An extension of the bytearray object which prints a different value than it stores. This is mostly used for debugging purposes.</p>
+<dl class="method">
+<dt id="py2p.base.brepr.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>value</em>, <em>rep=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#brepr.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.brepr.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes a brepr object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>value</strong> &#8211; The value you want this bytearray to store</li>
+<li><strong>rep</strong> &#8211; The value you want this bytearray to print</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="py2p.base.compress">
+<code class="descclassname">py2p.base.</code><code class="descname">compress</code><span class="sig-paren">(</span><em>msg</em>, <em>method</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#compress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.compress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shortcut method for compression</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>msg</strong> &#8211; The message you wish to compress, the type required is defined by the requested method</li>
+<li><strong>method</strong> &#8211; The compression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.zlib, base.flags.bz2, base.flags.lzma</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Defined by the compression method, but typically the bytes of the compressed message</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The types fed are dependent on which compression method you use. Best to assume most values are bytes or bytearray</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="py2p.base.decompress">
+<code class="descclassname">py2p.base.</code><code class="descname">decompress</code><span class="sig-paren">(</span><em>msg</em>, <em>method</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#decompress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.decompress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shortcut method for decompression</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>msg</strong> &#8211; The message you wish to decompress, the type required is defined by the requested method</li>
+<li><strong>method</strong> &#8211; The decompression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.zlib, base.flags.bz2, base.flags.lzma</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Defined by the decompression method, but typically the bytes of the compressed message</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The types fed are dependent on which decompression method you use. Best to assume most values are bytes or bytearray</p>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="py2p.base.from_base_58">
+<code class="descclassname">py2p.base.</code><code class="descname">from_base_58</code><span class="sig-paren">(</span><em>string</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#from_base_58"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.from_base_58" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a base_58 string and returns its corresponding integer</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>string</strong> &#8211; The base_58 value you wish to decode (string, bytes, or bytearray)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Returns integral value which corresponds to the fed string</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.base.message">
+<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">message</code><span class="sig-paren">(</span><em>msg</em>, <em>server</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.message" title="Permalink to this definition">¶</a></dt>
+<dd><p>An object which gets returned to a user, containing all necessary information to parse and reply to a message</p>
+<dl class="method">
+<dt id="py2p.base.message.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>msg</em>, <em>server</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#message.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.message.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes a message object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>msg</strong> &#8211; A pathfinding_message object</li>
+<li><strong>server</strong> &#8211; A base_socket object</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.message.id">
+<code class="descname">id</code><a class="headerlink" href="#py2p.base.message.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>This message&#8217;s ID</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.message.packets">
+<code class="descname">packets</code><a class="headerlink" href="#py2p.base.message.packets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the message&#8217;s component packets, including it&#8217;s type in position 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.base.message.reply">
+<code class="descname">reply</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#message.reply"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.message.reply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replies to the sender if you&#8217;re directly connected. Tries to make a connection otherwise</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>*args</strong> &#8211; Each argument given is a packet you wish to send. This is
+prefixed with base.flags.whisper, so the other end will receive
+[base.flags.whisper, <a href="#id1"><span class="problematic" id="id2">*</span></a>args]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.message.sender">
+<code class="descname">sender</code><a class="headerlink" href="#py2p.base.message.sender" title="Permalink to this definition">¶</a></dt>
+<dd><p>The ID of this message&#8217;s sender</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.message.time">
+<code class="descname">time</code><a class="headerlink" href="#py2p.base.message.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>The time this message was sent at</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.message.time_58">
+<code class="descname">time_58</code><a class="headerlink" href="#py2p.base.message.time_58" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the messages timestamp in base_58</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="py2p.base.pack_value">
+<code class="descclassname">py2p.base.</code><code class="descname">pack_value</code><span class="sig-paren">(</span><em>l</em>, <em>i</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#pack_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.pack_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>For value i, pack it into bytes of size length</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>length</strong> &#8211; A positive, integral value describing how long to make the packed array</li>
+<li><strong>i</strong> &#8211; A positive, integral value to pack into said array</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A bytes object containing the given value</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code></a> &#8211; If length is not large enough to contain the value provided</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.base.pathfinding_message">
+<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">pathfinding_message</code><span class="sig-paren">(</span><em>msg_type</em>, <em>sender</em>, <em>payload</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#pathfinding_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.pathfinding_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>An object used to build and parse protocol-defined message structures</p>
+<dl class="method">
+<dt id="py2p.base.pathfinding_message.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>msg_type</em>, <em>sender</em>, <em>payload</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#pathfinding_message.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.pathfinding_message.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes a pathfinding_message instance</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>msg_type</strong> &#8211; A bytes-like header for the message you wish to send</li>
+<li><strong>sender</strong> &#8211; A bytes-like sender ID the message is using</li>
+<li><strong>payload</strong> &#8211; A list of bytes-like objects containing the payload of the message</li>
+<li><strong>compression</strong> &#8211; A list of the compression methods this message may use (default: [])</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">TypeError</span></code></a> &#8211; If you feed an object which cannot convert to bytes</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you feed a unicode object, it will be decoded using utf-8. All other objects are
+treated as raw_unicode_escape. If you desire a particular codec, encode it yourself
+before feeding it in.</p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.pathfinding_message.compression_used">
+<code class="descname">compression_used</code><a class="headerlink" href="#py2p.base.pathfinding_message.compression_used" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the compression method this message is using</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="py2p.base.pathfinding_message.feed_string">
+<em class="property">classmethod </em><code class="descname">feed_string</code><span class="sig-paren">(</span><em>string</em>, <em>sizeless=False</em>, <em>compressions=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#pathfinding_message.feed_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.pathfinding_message.feed_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a pathfinding_message from a string or bytes object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>string</strong> &#8211; The string you wish to parse</li>
+<li><strong>sizeless</strong> &#8211; A boolean which describes whether this string has its size header (default: it does)</li>
+<li><strong>compressions</strong> &#8211; A list containing the standardized compression methods this message might be under (default: [])</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A base.pathfinding_message from the given string</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#AttributeError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">AttributeError</span></code></a> &#8211; Fed a non-string, non-bytes argument</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#AssertionError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">AssertionError</span></code></a> &#8211; Initial size header is incorrect</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">Exception</span></code></a> &#8211; Unrecognized compression method fed in compressions</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/struct.html#struct.error" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">struct.error</span></code></a> &#8211; Packet headers are incorrect OR unrecognized compression</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IndexError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">IndexError</span></code></a> &#8211; See struct.error</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.pathfinding_message.id">
+<code class="descname">id</code><a class="headerlink" href="#py2p.base.pathfinding_message.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the message id</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.pathfinding_message.len">
+<code class="descname">len</code><a class="headerlink" href="#py2p.base.pathfinding_message.len" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the struct-encoded length header</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.pathfinding_message.packets">
+<code class="descname">packets</code><a class="headerlink" href="#py2p.base.pathfinding_message.packets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the full list of packets in this message encoded as bytes, excluding the header</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.pathfinding_message.payload">
+<code class="descname">payload</code><a class="headerlink" href="#py2p.base.pathfinding_message.payload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list containing the message payload encoded as bytes</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.pathfinding_message.string">
+<code class="descname">string</code><a class="headerlink" href="#py2p.base.pathfinding_message.string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a string representation of the message</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.pathfinding_message.time_58">
+<code class="descname">time_58</code><a class="headerlink" href="#py2p.base.pathfinding_message.time_58" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the messages timestamp in base_58</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.base.protocol">
+<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">protocol</code><a class="reference internal" href="../_modules/py2p/base.html#protocol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines service variables so that you can reject connections looking for a different service</p>
+<dl class="attribute">
+<dt id="py2p.base.protocol.subnet">
+<code class="descname">subnet</code><a class="headerlink" href="#py2p.base.protocol.subnet" title="Permalink to this definition">¶</a></dt>
+<dd><p>The subnet flag this protocol uses</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.protocol.encryption">
+<code class="descname">encryption</code><a class="headerlink" href="#py2p.base.protocol.encryption" title="Permalink to this definition">¶</a></dt>
+<dd><p>The encryption method this protocol uses</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.protocol.id">
+<code class="descname">id</code><a class="headerlink" href="#py2p.base.protocol.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The SHA-256 based ID of this protocol</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt>
+<code class="descname">id</code></dt>
+<dd><p>The SHA-256-based ID of the protocol</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="py2p.base.to_base_58">
+<code class="descclassname">py2p.base.</code><code class="descname">to_base_58</code><span class="sig-paren">(</span><em>i</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#to_base_58"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.to_base_58" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes an integer and returns its corresponding base_58 string</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>i</strong> &#8211; The integral value you wish to encode</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A bytes object which contains the base_58 string</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">TypeError</span></code></a> &#8211; If you feed a non-integral value</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="py2p.base.unpack_value">
+<code class="descclassname">py2p.base.</code><code class="descname">unpack_value</code><span class="sig-paren">(</span><em>string</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#unpack_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.unpack_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>For a string, return the packed value inside of it</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>string</strong> &#8211; A string or bytes-like object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An integral value interpreted from this, as if it were a big-endian, unsigned integral</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="cbase.html" class="btn btn-neutral float-right" title="Base Module (C++ Implementation)" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="tutorial.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Gabe Appleton.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.4.319',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

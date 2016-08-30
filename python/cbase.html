@@ -1,0 +1,586 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Base Module (C++ Implementation) &mdash; py2p 0.4.319 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="py2p 0.4.319 documentation" href="../index.html"/>
+        <link rel="up" title="Python Implementation" href="../python.html"/>
+        <link rel="next" title="Utils Module" href="utils.html"/>
+        <link rel="prev" title="Base Module" href="base.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> py2p
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../protocol.html">Protocol Specifications</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../python.html">Python Implementation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="base.html">Base Module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Base Module (C++ Implementation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utils Module</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">py2p</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../python.html">Python Implementation</a> &raquo;</li>
+      
+    <li>Base Module (C++ Implementation)</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/python/cbase.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-py2p.cbase">
+<span id="base-module-c-implementation"></span><h1>Base Module (C++ Implementation)<a class="headerlink" href="#module-py2p.cbase" title="Permalink to this headline">¶</a></h1>
+<p>C++ implementation of some base functions</p>
+<dl class="class">
+<dt id="py2p.cbase.flags">
+<em class="property">class </em><code class="descclassname">py2p.cbase.</code><code class="descname">flags</code><a class="headerlink" href="#py2p.cbase.flags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Storage container for protocol level flags</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This is not actually a class, it just makes it formatted much neater to treat it as such. In the C++ implementation this is a module. You should not need to import it.</p>
+</div>
+<p><strong>Main flags:</strong></p>
+<ul>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.broadcast">
+<code class="descname">broadcast</code><a class="headerlink" href="#py2p.cbase.flags.broadcast" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.waterfall">
+<code class="descname">waterfall</code><a class="headerlink" href="#py2p.cbase.flags.waterfall" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.whisper">
+<code class="descname">whisper</code><a class="headerlink" href="#py2p.cbase.flags.whisper" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.renegotiate">
+<code class="descname">renegotiate</code><a class="headerlink" href="#py2p.cbase.flags.renegotiate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.ping">
+<code class="descname">ping</code><a class="headerlink" href="#py2p.cbase.flags.ping" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.pong">
+<code class="descname">pong</code><a class="headerlink" href="#py2p.cbase.flags.pong" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+</ul>
+<p><strong>Sub-flags:</strong></p>
+<ul>
+<li><dl class="data">
+<dt>
+<code class="descname">broadcast</code></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.compression">
+<code class="descname">compression</code><a class="headerlink" href="#py2p.cbase.flags.compression" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt>
+<code class="descname">whisper</code></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.handshake">
+<code class="descname">handshake</code><a class="headerlink" href="#py2p.cbase.flags.handshake" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt>
+<code class="descname">ping</code></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt>
+<code class="descname">pong</code></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.notify">
+<code class="descname">notify</code><a class="headerlink" href="#py2p.cbase.flags.notify" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.peers">
+<code class="descname">peers</code><a class="headerlink" href="#py2p.cbase.flags.peers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.request">
+<code class="descname">request</code><a class="headerlink" href="#py2p.cbase.flags.request" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.resend">
+<code class="descname">resend</code><a class="headerlink" href="#py2p.cbase.flags.resend" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.response">
+<code class="descname">response</code><a class="headerlink" href="#py2p.cbase.flags.response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.store">
+<code class="descname">store</code><a class="headerlink" href="#py2p.cbase.flags.store" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.retrieve">
+<code class="descname">retrieve</code><a class="headerlink" href="#py2p.cbase.flags.retrieve" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+</ul>
+<p><strong>C++-implemented compression methods:</strong></p>
+<ul>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.gzip">
+<code class="descname">gzip</code><a class="headerlink" href="#py2p.cbase.flags.gzip" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.zlib">
+<code class="descname">zlib</code><a class="headerlink" href="#py2p.cbase.flags.zlib" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+</ul>
+<p><strong>Other implementations&#8217; and/or planned compression methods:</strong></p>
+<ul>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.bwtc">
+<code class="descname">bwtc</code><a class="headerlink" href="#py2p.cbase.flags.bwtc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.bz2">
+<code class="descname">bz2</code><a class="headerlink" href="#py2p.cbase.flags.bz2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.context1">
+<code class="descname">context1</code><a class="headerlink" href="#py2p.cbase.flags.context1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.defsum">
+<code class="descname">defsum</code><a class="headerlink" href="#py2p.cbase.flags.defsum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.dmc">
+<code class="descname">dmc</code><a class="headerlink" href="#py2p.cbase.flags.dmc" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.fenwick">
+<code class="descname">fenwick</code><a class="headerlink" href="#py2p.cbase.flags.fenwick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.huffman">
+<code class="descname">huffman</code><a class="headerlink" href="#py2p.cbase.flags.huffman" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.lzjb">
+<code class="descname">lzjb</code><a class="headerlink" href="#py2p.cbase.flags.lzjb" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.lzjbr">
+<code class="descname">lzjbr</code><a class="headerlink" href="#py2p.cbase.flags.lzjbr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.lzma">
+<code class="descname">lzma</code><a class="headerlink" href="#py2p.cbase.flags.lzma" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.lzp3">
+<code class="descname">lzp3</code><a class="headerlink" href="#py2p.cbase.flags.lzp3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.mtf">
+<code class="descname">mtf</code><a class="headerlink" href="#py2p.cbase.flags.mtf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.ppmd">
+<code class="descname">ppmd</code><a class="headerlink" href="#py2p.cbase.flags.ppmd" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="data">
+<dt id="py2p.cbase.flags.simple">
+<code class="descname">simple</code><a class="headerlink" href="#py2p.cbase.flags.simple" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+</ul>
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.cbase.pathfinding_message">
+<em class="property">class </em><code class="descclassname">py2p.cbase.</code><code class="descname">pathfinding_message</code><a class="headerlink" href="#py2p.cbase.pathfinding_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>C++ implementation of the pathfinding_message object</p>
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.__init__">
+<code class="descname">__init__</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>x.__init__(...) initializes x; see help(type(x)) for signature</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.compression">
+<code class="descname">compression</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of the compression methods available for use</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.compression_used">
+<code class="descname">compression_used</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.compression_used" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the compression method used, or None if there is none</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.cbase.pathfinding_message.feed_string">
+<code class="descname">feed_string</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#py2p.cbase.pathfinding_message.feed_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs a pathfinding_message from a string or bytes object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>string</strong> &#8211; The string you wish to parse</li>
+<li><strong>sizeless</strong> &#8211; A boolean which describes whether this string has its size header (default: it does)</li>
+<li><strong>compressions</strong> &#8211; A list containing the standardized compression methods this message might be under (default: [])</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A cbase.pathfinding_message from the given string</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">TypeError</span></code></a> &#8211; Fed a non-string, non-bytes argument</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#AssertionError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">AssertionError</span></code></a> &#8211; Initial size header is incorrect</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">Exception</span></code></a> &#8211; Unrecognized compression method fed in compressions</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/struct.html#struct.error" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">struct.error</span></code></a> &#8211; Packet headers are incorrect OR unrecognized compression</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IndexError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">IndexError</span></code></a> &#8211; See struct.error</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you feed a unicode object, it will be decoded using utf-8. All other objects are
+treated as raw_unicode_escape. If you desire a particular codec, encode it yourself
+before feeding it in.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This part is a work in progress. Currently errors often cause segfaults, and the above Exceptions are not consistently raised.</p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.id">
+<code class="descname">id</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the message ID</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.msg_type">
+<code class="descname">msg_type</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.msg_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the message type</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.packets">
+<code class="descname">packets</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.packets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the packets of this message</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.payload">
+<code class="descname">payload</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.payload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the payload of this message</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.sender">
+<code class="descname">sender</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.sender" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the sender ID of this message</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.string">
+<code class="descname">string</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the string of this message</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.time">
+<code class="descname">time</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the message time</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.pathfinding_message.time_58">
+<code class="descname">time_58</code><a class="headerlink" href="#py2p.cbase.pathfinding_message.time_58" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the message encoded in base_58</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.cbase.protocol">
+<em class="property">class </em><code class="descclassname">py2p.cbase.</code><code class="descname">protocol</code><a class="headerlink" href="#py2p.cbase.protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>C++ implementation of the protocol object</p>
+<dl class="attribute">
+<dt id="py2p.cbase.protocol.__init__">
+<code class="descname">__init__</code><a class="headerlink" href="#py2p.cbase.protocol.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>x.__init__(...) initializes x; see help(type(x)) for signature</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.protocol.encryption">
+<code class="descname">encryption</code><a class="headerlink" href="#py2p.cbase.protocol.encryption" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.protocol.id">
+<code class="descname">id</code><a class="headerlink" href="#py2p.cbase.protocol.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the message ID</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.cbase.protocol.subnet">
+<code class="descname">subnet</code><a class="headerlink" href="#py2p.cbase.protocol.subnet" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="utils.html" class="btn btn-neutral float-right" title="Utils Module" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="base.html" class="btn btn-neutral" title="Base Module" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Gabe Appleton.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.4.319',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

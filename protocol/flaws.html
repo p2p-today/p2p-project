@@ -1,0 +1,239 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Potential Serialization Flaws &mdash; py2p 0.4.319 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="py2p 0.4.319 documentation" href="../index.html"/>
+        <link rel="up" title="Protocol Specifications" href="../protocol.html"/>
+        <link rel="next" title="Mesh Protocol Definition" href="mesh.html"/>
+        <link rel="prev" title="Flag Definitions" href="flags.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> py2p
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../protocol.html">Protocol Specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="goals.html">Protocol Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reconstruction.html">Reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ids_and_encoding.html">IDs and Encoding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flags.html">Flag Definitions</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Potential Serialization Flaws</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mesh.html">Mesh Protocol Definition</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../python.html">Python Implementation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">py2p</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../protocol.html">Protocol Specifications</a> &raquo;</li>
+      
+    <li>Potential Serialization Flaws</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/protocol/flaws.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="potential-serialization-flaws">
+<h1>Potential Serialization Flaws<a class="headerlink" href="#potential-serialization-flaws" title="Permalink to this headline">¶</a></h1>
+<p>The structure has a couple immediately obvious shortcomings.</p>
+<p>First, the maximum message size is 4,294,967,299 bytes (including compression and headers). It could well be that in the future there will be more data to send in a single message. But equally so, a present-day attacker could use this to halt sections of a network using this structure. A short-term solution would be to have a soft-defined limit, but as has been shown in other protocols, this can calcify over time and do damage. In the end, this is more of a governance problem than a technical one.</p>
+<p>Second, there is quite a lot of extra data being sent. Using the default parameters, if you want to send a 4 character message it will be expanded to 159 characters. That&#8217;s ~42x larger. If you want these differences to be negligble, you need to send messages on the order of 512 characters. Then there is only an increase of ~34% (0% with decent compression). This can be improved by reducing the size of the various IDs being sent, or making the packet headers shorter. Both of these have disadvantages, however.</p>
+<p>Making a shorter ID space means that you will be more likely to get a conflict. This isn&#8217;t as much of a problem for node IDs as it is for message IDs, but it is certainly a problem you&#8217;d like to avoid.</p>
+<p>Making shorter packet headers presents few immediate problems, but it makes it more difficult for debugging, and may make it more difficult to establish standard headers in the future.</p>
+<p>Results using opportunistic compression look roughly as follows (last updated in 0.4.231):</p>
+<p>For 4 characters…</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">original</span>  <span class="mi">4</span>
+<span class="n">plaintext</span> <span class="mi">167</span>  <span class="p">(</span><span class="mi">4175</span><span class="o">%</span><span class="p">)</span>
+<span class="n">lzma</span>      <span class="mi">220</span>  <span class="p">(</span><span class="mi">5500</span><span class="o">%</span><span class="p">)</span>
+<span class="n">bz2</span>       <span class="mi">189</span>  <span class="p">(</span><span class="mi">4725</span><span class="o">%</span><span class="p">)</span>
+<span class="n">gzip</span>      <span class="mi">156</span>  <span class="p">(</span><span class="mi">3900</span><span class="o">%</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For 512 characters…</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">original</span>  <span class="mi">512</span>
+<span class="n">plaintext</span> <span class="mi">677</span>  <span class="p">(</span><span class="mf">132.2</span><span class="o">%</span><span class="p">)</span>
+<span class="n">lzma</span>      <span class="mi">568</span>  <span class="p">(</span><span class="mf">110.9</span><span class="o">%</span><span class="p">)</span>
+<span class="n">bz2</span>       <span class="mi">555</span>  <span class="p">(</span><span class="mf">108.4</span><span class="o">%</span><span class="p">)</span>
+<span class="n">gzip</span>      <span class="mi">487</span>  <span class="p">(</span><span class="mf">95.1</span><span class="o">%</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Because the reference implementations support all of these (excepting environment variations), this means that the overhead will drop away after ~500 characters. Communications with other implementations may be slower than this, however.</p>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mesh.html" class="btn btn-neutral float-right" title="Mesh Protocol Definition" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="flags.html" class="btn btn-neutral" title="Flag Definitions" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Gabe Appleton.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.4.319',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

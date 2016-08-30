@@ -1,0 +1,247 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Protocol Goals &mdash; py2p 0.4.319 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="py2p 0.4.319 documentation" href="../index.html"/>
+        <link rel="up" title="Protocol Specifications" href="../protocol.html"/>
+        <link rel="next" title="Serialization" href="serialization.html"/>
+        <link rel="prev" title="Protocol Specifications" href="../protocol.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> py2p
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../protocol.html">Protocol Specifications</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Protocol Goals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#portable">Portable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fast">Fast</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dense">Dense</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#abstracted">Abstracted</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reconstruction.html">Reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ids_and_encoding.html">IDs and Encoding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flags.html">Flag Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flaws.html">Potential Serialization Flaws</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mesh.html">Mesh Protocol Definition</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../python.html">Python Implementation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">py2p</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../protocol.html">Protocol Specifications</a> &raquo;</li>
+      
+    <li>Protocol Goals</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/protocol/goals.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="protocol-goals">
+<h1>Protocol Goals<a class="headerlink" href="#protocol-goals" title="Permalink to this headline">¶</a></h1>
+<p>Currently there are very few ways to set up a peer-to-peer network between different languages. There are several proocols out there, but all of them are very specialized, complicated, or both. This is not what we want in a language-agnostic protocol. While we may go after other goals in addition to these, our explicit goals will be laid out below:</p>
+<div class="section" id="portable">
+<h2>Portable<a class="headerlink" href="#portable" title="Permalink to this headline">¶</a></h2>
+<p>The underlying protocol should use only language agnostic features. That is to say, every message will be entirely of strings, and any formatting (like JSON) must be strictly laid out so that you can parse it without knowing the entirety of said formatting.</p>
+<p>Any features which are not language agnostic <strong>must</strong> be optional. This includes things like compression, encryption, etc.</p>
+</div>
+<div class="section" id="fast">
+<h2>Fast<a class="headerlink" href="#fast" title="Permalink to this headline">¶</a></h2>
+<p>Reconstructing a plaintext message with three, single-character, user-placed packets <strong>must</strong> take &lt;1.5ms. (In this case, I&#8217;m judging off my laptop&#8217;s time, rather than my desktop. I have a <a class="reference external" href="http://it.nmu.edu/docs/thinkpad-specs#16s">Lenovo Carbon</a> running Kubuntu 16.04.)</p>
+</div>
+<div class="section" id="dense">
+<h2>Dense<a class="headerlink" href="#dense" title="Permalink to this headline">¶</a></h2>
+<p>Where there are no disadvantages to the above, the resulting messages should be as dense as possible.</p>
+</div>
+<div class="section" id="abstracted">
+<h2>Abstracted<a class="headerlink" href="#abstracted" title="Permalink to this headline">¶</a></h2>
+<p>The resulting protocol <strong>must</strong> be capturable in an object. That is to say, one should be able to call properties of an object whose underlying structures may change at any time. Parsing a message should <strong>never</strong> require knowledge of network state, with the sole exception of compression.</p>
+</div>
+<div class="section" id="notes">
+<h2>Notes<a class="headerlink" href="#notes" title="Permalink to this headline">¶</a></h2>
+<p>These goals are subject to change in the future. If some awesome feature requires that packet reconstruction takes longer, this does not necessarily stop that feature from being implemented. The only hard rule is the portability one.</p>
+<p>Also worthy of note is that backwards compatability <em>intentionally</em> is not on this list. It may be that version 0.4.* and 0.5.* can understand each other, but they will <em>actively reject</em> each other. This allows for an ease of change that isn&#8217;t present if you require backwards compatability. After the 1.0 release, we will try and maintain backports that you can reliably access. If you can&#8217;t through a package manager, you certainly can from the git releases.</p>
+<p>In the next section, we will outline how you construct and serialize a message.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="serialization.html" class="btn btn-neutral float-right" title="Serialization" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../protocol.html" class="btn btn-neutral" title="Protocol Specifications" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Gabe Appleton.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.4.319',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

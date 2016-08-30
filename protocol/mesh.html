@@ -1,0 +1,433 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Mesh Protocol Definition &mdash; py2p 0.4.319 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="py2p 0.4.319 documentation" href="../index.html"/>
+        <link rel="up" title="Protocol Specifications" href="../protocol.html"/>
+        <link rel="next" title="Python Implementation" href="../python.html"/>
+        <link rel="prev" title="Potential Serialization Flaws" href="flaws.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> py2p
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.4
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../protocol.html">Protocol Specifications</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="goals.html">Protocol Goals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="serialization.html">Serialization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reconstruction.html">Reconstruction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ids_and_encoding.html">IDs and Encoding</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flags.html">Flag Definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flaws.html">Potential Serialization Flaws</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Mesh Protocol Definition</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#problem">Problem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#design-goals">Design Goals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#node-construction">Node Construction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#connecting-to-the-network">Connecting to the Network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#message-propagation">Message Propagation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#renegotiating-a-connection">Renegotiating a Connection</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#peer-requests">Peer Requests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#potential-flaws">Potential Flaws</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../python.html">Python Implementation</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">py2p</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../protocol.html">Protocol Specifications</a> &raquo;</li>
+      
+    <li>Mesh Protocol Definition</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="../_sources/protocol/mesh.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mesh-protocol-definition">
+<h1>Mesh Protocol Definition<a class="headerlink" href="#mesh-protocol-definition" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="problem">
+<h2>Problem<a class="headerlink" href="#problem" title="Permalink to this headline">¶</a></h2>
+<p>There are very few ways to construct a peer to peer network in
+dynamic languages. Everyone who does this needs to reinvent the
+wheel. For example, in Python, the only two such libraries either
+never made it out of beta, or were to connect to a cryptocurrency.
+There is certainly no way to communicate <em>between</em> these languages.
+This section will focus on how you can make a mesh (unorganized)
+network like the one in Bitcoin or Gnutella.</p>
+</div>
+<div class="section" id="design-goals">
+<h2>Design Goals<a class="headerlink" href="#design-goals" title="Permalink to this headline">¶</a></h2>
+<p>The network should be unorganized. This means that it’s very simple
+for connections to be added, and for routes to repair themselves in
+the event of obstruction. It also means that there is no central
+point of failure, nor overhead to maintaining a structure.</p>
+<p>The network should also be as flexible as possible. It should be able
+to carry binary data and should have various flags to determine how a
+message is treated.</p>
+<p>In languages that allow it, network nodes should be able to register
+custom callbacks, which can respond to incoming data in real time and
+act upon it as needed.</p>
+<p>Most importantly, nodes should use features that are common across
+multiple languages.</p>
+<p>And as an afterthought, nodes should be optimized for performance and
+data density where possible.</p>
+</div>
+<div class="section" id="node-construction">
+<h2>Node Construction<a class="headerlink" href="#node-construction" title="Permalink to this headline">¶</a></h2>
+<p>Now your node is ready to parse messages on the network, but it can’t
+yet connect. There are important elements it needs to store in order
+to interact with it correctly.</p>
+<ol class="arabic simple">
+<li>A daemon thread which receives messages and incoming connections</li>
+<li>A routing table of peers with the IDs and corresponding connection objects</li>
+<li>A “waterfall queue” of recently received message IDs and timestamps</li>
+<li>A user-interactable queue of recently received messages</li>
+<li>A “protocol”, which contains:</li>
+</ol>
+<blockquote>
+<div><ol class="arabic simple">
+<li>A sub-net flag</li>
+<li>An encryption method (or “Plaintext”)</li>
+<li>A way to obtain a SHA256-based ID of this</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="connecting-to-the-network">
+<h2>Connecting to the Network<a class="headerlink" href="#connecting-to-the-network" title="Permalink to this headline">¶</a></h2>
+<p>This is where the protocol object becomes important.</p>
+<p>When you connect to a node, each will send a message in the following
+format:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">whisper</span>
+<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
+<span class="n">handshake</span>
+<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">your</span> <span class="n">protocol</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">your</span> <span class="n">outward</span><span class="o">-</span><span class="n">facing</span> <span class="n">address</span><span class="p">]</span>
+<span class="p">[</span><span class="n">json</span><span class="o">-</span><span class="n">ized</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">supported</span> <span class="n">compression</span> <span class="n">methods</span><span class="p">,</span> <span class="ow">in</span> <span class="n">order</span> <span class="n">of</span> <span class="n">preference</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>When your node receives the corresponding message, the first thing
+your node does is compare their protocol ID against your own. If they
+do not match, your node shuts down the connection.</p>
+<p>If they do match, your node adds them to your routing table
+(<code class="docutils literal"><span class="pre">{ID:</span> <span class="pre">connection}</span></code>), and makes a note of their outward facing
+address and supported compression methods. Then your node sends a
+standard response:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">whisper</span>
+<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
+<span class="n">peers</span>
+<span class="p">[</span><span class="n">json</span><span class="o">-</span><span class="n">ized</span> <span class="n">copy</span> <span class="n">of</span> <span class="n">your</span> <span class="n">routing</span> <span class="n">table</span> <span class="ow">in</span> <span class="nb">format</span><span class="p">:</span> <span class="p">[[</span><span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="p">],</span> <span class="nb">id</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>Upon receiving this message, your node attempts to connect to each given address. Now you&#8217;re connected to the network! But how do you process the incoming messages?</p>
+</div>
+<div class="section" id="message-propagation">
+<h2>Message Propagation<a class="headerlink" href="#message-propagation" title="Permalink to this headline">¶</a></h2>
+<p>A message is initially broadcast with the <code class="docutils literal"><span class="pre">broadcast</span></code> flag. The
+broadcasting node, as well as all receivers, store this message’s ID
+and timestamp in their waterfall queue. The reciving nodes then
+re-broadcast this message to each of their peers, but changing the
+flag to <code class="docutils literal"><span class="pre">waterfall</span></code>.</p>
+<p>A node which receives these waterfall packets goes through the
+following steps:</p>
+<ol class="arabic simple">
+<li>If the message ID is not in the node’s waterfall queue, continue and add it to the waterfall queue</li>
+<li>Perform cleanup on the waterfall queue</li>
+</ol>
+<blockquote>
+<div><ol class="lowerroman simple">
+<li>Remove all possible duplicates (sending may be done in multiple threads, which may result in duplicate copies)</li>
+<li>Remove all IDs with a timestamp more than 1 minute ago</li>
+</ol>
+</div></blockquote>
+<ol class="arabic simple">
+<li>Re-broadcast this message to all peers (optionally excluding the one you received it from)</li>
+</ol>
+<img alt="../_images/figure_one.png" src="../_images/figure_one.png" />
+</div>
+<div class="section" id="renegotiating-a-connection">
+<h2>Renegotiating a Connection<a class="headerlink" href="#renegotiating-a-connection" title="Permalink to this headline">¶</a></h2>
+<p>It may be that at some point a message fails to decompress on your
+end. If this occurs, you have an easy solution, your node can send a
+<code class="docutils literal"><span class="pre">renegotiate</span></code> message. This flag is used to indicate that a message
+should never be presented to the user, and is only used for
+connection management. At this time there are two possible
+operations.</p>
+<p>The <code class="docutils literal"><span class="pre">compression</span></code> subflag will allow your node to renegotiate your
+compression methods. A message using this subflag should be
+constructed like so:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">renegotiate</span>
+<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
+<span class="n">compression</span>
+<span class="p">[</span><span class="n">json</span><span class="o">-</span><span class="n">ized</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">desired</span> <span class="n">compression</span> <span class="n">methods</span><span class="p">,</span> <span class="ow">in</span> <span class="n">order</span> <span class="n">of</span> <span class="n">preference</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Your peer will respond with the same message, excluding any methods
+they do not support. If this list is different than the one you sent,
+you reply, trimming the list of methods <em>your node</em> does not support.
+This process is repeated until the two agree upon a list.</p>
+<p>Your node may also send a <code class="docutils literal"><span class="pre">resend</span></code> subflag, which requests your
+peer to resend the previous <code class="docutils literal"><span class="pre">whisper</span></code> or <code class="docutils literal"><span class="pre">broadcast</span></code>. This is
+structured like so:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">renegotiate</span>
+<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
+<span class="n">resend</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="peer-requests">
+<h2>Peer Requests<a class="headerlink" href="#peer-requests" title="Permalink to this headline">¶</a></h2>
+<p>If you want to privately reply to a message where you are not
+directly connected to a sender, the following method can be used:</p>
+<p>First, your node broadcasts a message to the network containing the
+<code class="docutils literal"><span class="pre">request</span></code> subflag. This is constructed as follows:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">broadcast</span>
+<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
+<span class="n">request</span>
+<span class="p">[</span><span class="n">a</span> <span class="n">unique</span><span class="p">,</span> <span class="n">base_58</span> <span class="nb">id</span> <span class="n">you</span> <span class="n">assign</span><span class="p">]</span>
+<span class="p">[</span><span class="n">the</span> <span class="nb">id</span> <span class="n">of</span> <span class="n">the</span> <span class="n">desired</span> <span class="n">peer</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Then your node places this in a dictionary so your node can watch for
+when this is responded to. A peer who gets this will reply:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">broadcast</span>
+<span class="p">[</span><span class="n">their</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
+<span class="n">response</span>
+<span class="p">[</span><span class="n">the</span> <span class="nb">id</span> <span class="n">you</span> <span class="n">assigned</span><span class="p">]</span>
+<span class="p">[</span><span class="n">address</span> <span class="n">of</span> <span class="n">desired</span> <span class="n">peer</span> <span class="ow">in</span> <span class="nb">format</span><span class="p">:</span> <span class="p">[[</span><span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="p">],</span> <span class="nb">id</span><span class="p">]</span> <span class="p">]</span>
+</pre></div>
+</div>
+<p>When this is received, your node removes the request from your
+dictionary, makes a connection to the given address, and sends the
+message.</p>
+<p>Another use of this mechanism is to request a copy of your peers’
+routing tables. To do this, your node may send a message structured
+like so:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">whisper</span>
+<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
+<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
+<span class="n">request</span>
+<span class="o">*</span>
+</pre></div>
+</div>
+<p>A node who receives this will respond exactly as they do after a
+successful handshake. Note that while it is technically valid to send
+this request as a <code class="docutils literal"><span class="pre">broadcast</span></code>, it is generally discouraged.</p>
+</div>
+<div class="section" id="potential-flaws">
+<h2>Potential Flaws<a class="headerlink" href="#potential-flaws" title="Permalink to this headline">¶</a></h2>
+<p>This network shcema has an immediately obvious shortcoming.</p>
+<p>In a worst case scenario, every node will receive a given message
+<span class="math">\(n-1\)</span> times, and each message will generate <span class="math">\(n * (n-1)\)</span> total
+broadcasts, where n is the number of connected nodes. This number can
+be arrived at by thinking of the network serially. If you have four
+nodes on a network, each connected to the other three, it will
+proceed roughly as follows.</p>
+<p>Node A will send to B, C, and D. Node B will receive this message and
+send to A, C, and D. Node C will receive the same message and send to
+A, B, and D. Node D will relay to A, B, and C. This makes 12 total
+messages, or <span class="math">\(n * (n-1)\)</span>.</p>
+<p>In most larger cases this will not happen, as a given node will not
+be connected to everyone else. But in smaller networks this will be
+common, and in well-connected networks this could slow things down.
+This calls for optimization, and will need to be explored.</p>
+<p>For instance, not propagating to a peer you receive a message from
+reduces the number of total broadcasts to <span class="math">\((n-1)^2\)</span>. Using the same
+example:</p>
+<p>Node A will send to B, C, and D. Node B will receive this message and send to C and D.
+Node C will receive the same message and send to B and D. Node D will relay to B and C.
+This makes 9 total messages, or <span class="math">\((n-1)^2\)</span>.</p>
+<p>Limiting your number of connections can bring this down to <code class="docutils literal"><span class="pre">min(max_conns,</span> <span class="pre">n-1)</span> <span class="pre">*</span> <span class="pre">(n-1)</span></code>.</p>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../python.html" class="btn btn-neutral float-right" title="Python Implementation" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="flaws.html" class="btn btn-neutral" title="Potential Serialization Flaws" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Gabe Appleton.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.4.319',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
