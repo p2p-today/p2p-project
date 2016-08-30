@@ -107,6 +107,7 @@ following steps:
 #. Perform cleanup on the waterfall queue
   i. Remove all possible duplicates (sending may be done in multiple threads, which may result in duplicate copies)
   #. Remove all IDs with a timestamp more than 1 minute ago
+
 #. Re-broadcast this message to all peers (optionally excluding the one you received it from)
 
 .. image:: ./figure_one.png
