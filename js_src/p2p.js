@@ -13,11 +13,15 @@ function p2p() {
         };
     }
 
-    m.protocol_version = "0.2";
-    m.node_policy_version = "136";
+    m.protocol_version = "0.4";
+    m.node_policy_version = "319";
 
     m.version = [m.protocol_version, m.node_policy_version].join('.');
-    m.compression = ['gzip'];
+
+    m.flags = {};
+    m.flags.zlib = '\x13';
+
+    m.compression = [m.flags.zlib];
 
     // User salt generation pulled from: http://stackoverflow.com/a/2117523
     m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -72,7 +76,7 @@ function p2p() {
 
 
     m.compress = function(text, method) {
-        if (method === "gzip") {
+        if (method === m.flags.zlib) {
             return zlib.deflateSync(Buffer(text));
         }
         else {
@@ -82,7 +86,7 @@ function p2p() {
 
 
     m.decompress = function(text, method) {
-        if (method === "gzip") {
+        if (method === m.flags.zlib) {
             return zlib.inflateSync(Buffer(text));
         }
         else {
@@ -106,8 +110,7 @@ function p2p() {
     m.default_protocol = new m.protocol('', 'Plaintext');
 
     m.pathfinding_message = class pathfinding_message {
-        constructor(protocol, msg_type, sender, payload, compression) {
-            this.protocol = protocol
+        constructor(msg_type, sender, payload, compression) {
             this.msg_type = msg_type
             this.sender = sender
             this.payload = payload
@@ -121,13 +124,13 @@ function p2p() {
             this.compression_fail = false
         }
 
-        static feed_string(protocol, string, sizeless, compressions) {
+        static feed_string(string, sizeless, compressions) {
             string = m.pathfinding_message.sanitize_string(string, sizeless)
             var compression_return = m.pathfinding_message.decompress_string(string, compressions)
             var compression_fail = compression_return[1]
             string = compression_return[0]
             var packets = m.pathfinding_message.process_string(string)
-            var msg = new m.pathfinding_message(protocol, packets[0], packets[1], packets.slice(4), compressions)
+            var msg = new m.pathfinding_message(packets[0], packets[1], packets.slice(4), compressions)
             msg.time = m.from_base_58(packets[3])
             msg.compression_fail = compression_fail
             return msg
@@ -135,14 +138,14 @@ function p2p() {
 
         static sanitize_string(string, sizeless) {
             try {
-                string = string.toString()
+                string = Buffer(string)
             }
             finally {
                 if (!sizeless) {
-                    if (struct.unpack("!L", Buffer(string.substring(0,4)))[0] !== string.substring(4).length) {
-                        throw "The following expression must be true: struct.unpack(\"!L\", Buffer(string.substring(0,4)))[0] === string.substring(4).length"
+                    if (struct.unpack("!L", string.slice(0,4))[0] !== string.length - 4) {
+                        throw "The following expression must be true: struct.unpack(\"!L\", string.slice(0,4))[0] === string.length - 4"
                     }
-                    string = string.substring(4)
+                    string = string.slice(4)
                 }
                 return string
             }
@@ -152,15 +155,18 @@ function p2p() {
             var compression_fail = false
             compressions = compressions || []
             for (var i = 0; i < compressions.length; i++) {
-                if (compressions[i] in m.compression) {  // module scope compression
-                    console.log("Trying %s compression" % method)
+                console.log(`Checking ${compressions[i]} compression`)
+                if (m.compression.indexOf(compressions[i]) > -1) {  // module scope compression
+                    console.log(`Trying ${compressions[i]} compression`)
                     try {
-                        string = m.decompress(string, method)
+                        string = m.decompress(string, compressions[i])
                         compression_fail = false
+                        console.log(`Compression ${compressions[i]} succeeded`)
                         break
                     }
                     catch(err) {
                         compression_fail = true
+                        console.log(`compresion ${compressions[i]} failed: ${err}`)
                         continue
                     }
                 }
@@ -176,16 +182,20 @@ function p2p() {
             function add(a, b) {
                 return a + b
             }
-            while (processed !== expected) {
-                pack_lens = pack_lens.concat(struct.unpack("!L", Buffer(string.substring(processed, processed+4))))
+            while (processed < expected) {
+                pack_lens = pack_lens.concat(struct.unpack("!L", Buffer(string.slice(processed, processed+4))))
                 processed += 4
                 expected -= pack_lens.last()
             }
+            if (processed > expected)   {
+                throw [`Could not parse correctly processed=${processed}, expected=${expected}, pack_lens=${pack_lens}`]
+            }
             // Then reconstruct the packets
+            var start = 0;
             for (var i=0; i < pack_lens.length; i++) {
-                var start = processed + pack_lens.slice(0, i).reduce(add, 0)
                 var end = start + pack_lens[i]
-                packets = packets.concat([string.substring(start, end)])
+                packets = packets.concat([string.slice(start, end)])
+                start = end
             }
             return packets
         }
@@ -255,10 +265,6 @@ function p2p() {
 
         get sender() {
             return this.msg.sender
-        }
-
-        get protocol() {
-            return this.msg.protocol
         }
 
         get id() {
