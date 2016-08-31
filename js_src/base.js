@@ -3,14 +3,18 @@ const SHA = require('./SHA/src/sha.js');
 const zlib = require('./zlib/bin/node-zlib.js');
 const assert = require('assert');
 
+if (buffer.kMaxLength < 4294967299) {
+    console.log(`WARNING: This implementation of javascript does not support the maximum protocol length. The largest message you may receive is 4294967299 bytes, but you can only allocate ${buffer.kMaxLength}, or ${(buffer.kMaxLength / 4294967299 * 100).toFixed(2)}% of that.`);
+}
+
 function p2p() {
     "use strict";
     var m = this;
 
-    m.protocol_version = "0.4";
-    m.node_policy_version = "319";
-
-    m.version = [m.protocol_version, m.node_policy_version].join('.');
+    m.version_info = [0, 4, 319];
+    m.node_policy_version = m.version_info[2].toString();
+    m.protocol_version = m.version_info.slice(0, 2).join(".");
+    m.version = m.version_info.join('.');
 
     m.flags = {
         //main flags
