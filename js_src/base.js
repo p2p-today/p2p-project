@@ -1,18 +1,11 @@
-var BigInt = require('./BigInteger/BigInteger.js');
-var struct = require('./pack/bufferpack.js');
-var SHA = require('./SHA/src/sha.js');
-var zlib = require('./zlib/bin/node-zlib.js');
+const BigInt = require('./BigInteger/BigInteger.js');
+const SHA = require('./SHA/src/sha.js');
+const zlib = require('./zlib/bin/node-zlib.js');
 const assert = require('assert');
 
 function p2p() {
     "use strict";
     var m = this;
-
-    if (!Array.prototype.last) {
-        Array.prototype.last = function() {
-            return this[this.length - 1];
-        };
-    }
 
     m.protocol_version = "0.4";
     m.node_policy_version = "319";
@@ -70,13 +63,32 @@ function p2p() {
         return v.toString(16);
     });
 
+    m.unpack_value = function(str)  {
+        str = new Buffer(str, 'ascii');
+        var val = BigInt.zero;
+        for (var i = 0; i < str.length; i++)    {
+            val = val.shiftLeft(8);
+            val = val.add(str[i]);
+        }
+        return val;
+    }
+
+    m.pack_value = function(len, i) {
+        var arr = new Buffer(new Array(len));
+        for (var j = 0; j < len && i != 0; j++)    {
+            arr[len - j - 1] = i & 0xff;
+            i = i >> 8;
+        }
+        return arr;
+    }
+
     m.base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
     m.to_base_58 = function(i) {
         //Takes an integer and returns its corresponding base_58 string
         var string = "";
         if (!BigInt.isInstance(i)) {
-            i = BigInt(i);
+            i = new BigInt(i);
         }
         while (i.notEquals(0)) {
             string = m.base_58[i.mod(58)] + string;
@@ -92,7 +104,7 @@ function p2p() {
             string = string.toString()
         }
         finally {
-            var decimal = BigInt(0);
+            var decimal = new BigInt(0);
             //for char in string {
             for (var i = 0; i < string.length; i++) {
                 decimal = decimal.times(58).plus(m.base_58.indexOf(string[i]));
@@ -123,10 +135,10 @@ function p2p() {
 
     m.compress = function(text, method) {
         if (method === m.flags.zlib) {
-            return zlib.deflateSync(Buffer(text));
+            return zlib.deflateSync(new Buffer(text));
         }
         else if (method === m.flags.gzip) {
-            return zlib.gzipSync(Buffer(text));
+            return zlib.gzipSync(new Buffer(text));
         }
         else {
             throw "Unknown compression method";
@@ -136,10 +148,10 @@ function p2p() {
 
     m.decompress = function(text, method) {
         if (method === m.flags.zlib) {
-            return zlib.inflateSync(Buffer(text));
+            return zlib.inflateSync(new Buffer(text));
         }
         else if (method === m.flags.gzip) {
-            return zlib.gunzipSync(Buffer(text));
+            return zlib.gunzipSync(new Buffer(text));
         }
         else {
             throw "Unknown compression method";
@@ -155,7 +167,7 @@ function p2p() {
 
         id() {
             var protocol_hash = m.SHA256([this.subnet, this.encryption, m.protocol_version].join(''));
-            return m.to_base_58(BigInt(protocol_hash, 16));
+            return m.to_base_58(new BigInt(protocol_hash, 16));
         }
     };
 
@@ -163,11 +175,11 @@ function p2p() {
 
     m.pathfinding_message = class pathfinding_message {
         constructor(msg_type, sender, payload, compression) {
-            this.msg_type = Buffer(msg_type)
-            this.sender = Buffer(sender)
+            this.msg_type = new Buffer(msg_type)
+            this.sender = new Buffer(sender)
             this.payload = payload
             for (var i = 0; i < this.payload.length; i++)   {
-                this.payload[i] = Buffer(this.payload[i])
+                this.payload[i] = new Buffer(this.payload[i])
             }
             this.time = m.getUTC()
             if (compression) {
@@ -194,12 +206,13 @@ function p2p() {
 
         static sanitize_string(string, sizeless) {
             try {
-                string = Buffer(string)
+                string = new Buffer(string)
             }
             finally {
                 if (!sizeless) {
-                    if (struct.unpack("!L", string.slice(0,4))[0] !== string.length - 4) {
-                        throw "The following expression must be true: struct.unpack(\"!L\", string.slice(0,4))[0] === string.length - 4"
+                    if (m.unpack_value(string.slice(0,4)) + 4 !== string.length) {
+                        console.log(`slice given: ${string.slice(0, 4).inspect()}.  Value expected: ${string.length - 4}.  Value derived: ${m.unpack_value(string.slice(0, 4))}`)
+                        throw "The following expression must be true: unpack_value(string.slice(0,4)) === string.length - 4"
                     }
                     string = string.slice(4)
                 }
@@ -235,23 +248,19 @@ function p2p() {
             var expected = string.length
             var pack_lens = []
             var packets = []
-            function add(a, b) {
-                return a + b
-            }
             while (processed < expected) {
-                pack_lens = pack_lens.concat(struct.unpack("!L", Buffer(string.slice(processed, processed+4))))
+                pack_lens = pack_lens.concat(m.unpack_value(new Buffer(string.slice(processed, processed+4))))
                 processed += 4
-                expected -= pack_lens.last()
+                expected -= pack_lens[pack_lens.length - 1]
             }
             if (processed > expected)   {
                 throw [`Could not parse correctly processed=${processed}, expected=${expected}, pack_lens=${pack_lens}`]
             }
             // Then reconstruct the packets
-            var start = processed;
             for (var i=0; i < pack_lens.length; i++) {
-                var end = start + pack_lens[i]
-                packets = packets.concat([string.slice(start, end)])
-                start = end
+                var end = processed + pack_lens[i]
+                packets = packets.concat([string.slice(processed, end)])
+                processed = end
             }
             return packets
         }
@@ -274,7 +283,7 @@ function p2p() {
         get id() {
             var payload_string = this.payload.join('')
             var payload_hash = m.SHA384(payload_string + this.time_58)
-            return m.to_base_58(BigInt(payload_hash, 16))
+            return m.to_base_58(new BigInt(payload_hash, 16))
         }
 
         get packets() {
@@ -286,7 +295,7 @@ function p2p() {
             var string = this.packets.join('')
             var headers = []
             for (var i = 0; i < this.packets.length; i++) {
-                headers = headers.concat(struct.pack("!L", [this.packets[i].length]))
+                headers = headers.concat(m.pack_value(4, this.packets[i].length))
             }
             string = headers.join('') + string
             if (this.compression_used) {
@@ -297,7 +306,7 @@ function p2p() {
         
         get string() {
             var string = this.__non_len_string
-            return struct.pack("!L", [string.length]) + string
+            return m.pack_value(4, string.length) + string
         }
 
         get length() {
@@ -305,7 +314,7 @@ function p2p() {
         }
 
         len() {
-            return struct.pack("!L", [this.length])
+            return pack_vlaue(4, this.length)
         }
     };
 
@@ -333,6 +342,10 @@ function p2p() {
 
         get length() {
             return this.msg.length
+        }
+
+        get protocol()  {
+            return this.server.protocol
         }
 
         reply(args) {
