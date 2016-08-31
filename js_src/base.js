@@ -2,6 +2,7 @@ var BigInt = require('./BigInteger/BigInteger.js');
 var struct = require('./pack/bufferpack.js');
 var SHA = require('./SHA/src/sha.js');
 var zlib = require('./zlib/bin/node-zlib.js');
+const assert = require('assert');
 
 function p2p() {
     "use strict";
@@ -87,12 +88,17 @@ function p2p() {
 
     m.from_base_58 = function(string) {
         //Takes a base_58 string and returns its corresponding integer
-        var decimal = BigInt(0);
-        //for char in string {
-        for (var i = 0; i < string.length; i++) {
-            decimal = decimal.times(58).plus(m.base_58.indexOf(string[i]));
+        try {
+            string = string.toString()
         }
-        return decimal;
+        finally {
+            var decimal = BigInt(0);
+            //for char in string {
+            for (var i = 0; i < string.length; i++) {
+                decimal = decimal.times(58).plus(m.base_58.indexOf(string[i]));
+            }
+            return decimal;
+        }
     };
 
 
@@ -157,9 +163,12 @@ function p2p() {
 
     m.pathfinding_message = class pathfinding_message {
         constructor(msg_type, sender, payload, compression) {
-            this.msg_type = msg_type
-            this.sender = sender
+            this.msg_type = Buffer(msg_type)
+            this.sender = Buffer(sender)
             this.payload = payload
+            for (var i = 0; i < this.payload.length; i++)   {
+                this.payload[i] = Buffer(this.payload[i])
+            }
             this.time = m.getUTC()
             if (compression) {
                 this.compression = compression
@@ -179,6 +188,7 @@ function p2p() {
             var msg = new m.pathfinding_message(packets[0], packets[1], packets.slice(4), compressions)
             msg.time = m.from_base_58(packets[3])
             msg.compression_fail = compression_fail
+            assert (msg.id === packets[2].toString(), `ID check failed. ${msg.id} !== ${packets[2].toString()}`)
             return msg
         }
 
@@ -237,7 +247,7 @@ function p2p() {
                 throw [`Could not parse correctly processed=${processed}, expected=${expected}, pack_lens=${pack_lens}`]
             }
             // Then reconstruct the packets
-            var start = 0;
+            var start = processed;
             for (var i=0; i < pack_lens.length; i++) {
                 var end = start + pack_lens[i]
                 packets = packets.concat([string.slice(start, end)])
