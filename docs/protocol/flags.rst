@@ -74,6 +74,7 @@ C++ Planned
 Javascript Implemented
 ~~~~~~~~~~~~~~~~~~~~~~
 
+- gzip
 - zlib
 
 Reserved Flags

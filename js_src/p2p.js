@@ -18,10 +18,50 @@ function p2p() {
 
     m.version = [m.protocol_version, m.node_policy_version].join('.');
 
-    m.flags = {};
-    m.flags.zlib = '\x13';
+    m.flags = {
+        //main flags
+        broadcast:   '\x00',
+        waterfall:   '\x01',
+        whisper:     '\x02',
+        renegotiate: '\x03',
+        ping:        '\x04',
+        pong:        '\x05',
 
-    m.compression = [m.flags.zlib];
+        //sub-flags
+        //broadcast: '\x00',
+        compression: '\x01',
+        //whisper:   '\x02',
+        handshake:   '\x03',
+        //ping:      '\x04',
+        //pong:      '\x05',
+        notify:      '\x06',
+        peers:       '\x07',
+        request:     '\x08',
+        resend:      '\x09',
+        response:    '\x0A',
+        store:       '\x0B',
+        retrieve:    '\x0C',
+
+        //compression methods
+        bz2:      '\x10',
+        gzip:     '\x11',
+        lzma:     '\x12',
+        zlib:     '\x13',
+        bwtc:     '\x14',
+        context1: '\x15',
+        defsum:   '\x16',
+        dmc:      '\x17',
+        fenwick:  '\x18',
+        huffman:  '\x19',
+        lzjb:     '\x1A',
+        lzjbr:    '\x1B',
+        lzp3:     '\x1C',
+        mtf:      '\x1D',
+        ppmd:     '\x1E',
+        simple:   '\x1F'
+    };
+
+    m.compression = [m.flags.zlib, m.flags.gzip];
 
     // User salt generation pulled from: http://stackoverflow.com/a/2117523
     m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -79,6 +119,9 @@ function p2p() {
         if (method === m.flags.zlib) {
             return zlib.deflateSync(Buffer(text));
         }
+        else if (method === m.flags.gzip) {
+            return zlib.gzipSync(Buffer(text));
+        }
         else {
             throw "Unknown compression method";
         }
@@ -88,6 +131,9 @@ function p2p() {
     m.decompress = function(text, method) {
         if (method === m.flags.zlib) {
             return zlib.inflateSync(Buffer(text));
+        }
+        else if (method === m.flags.gzip) {
+            return zlib.gunzipSync(Buffer(text));
         }
         else {
             throw "Unknown compression method";
