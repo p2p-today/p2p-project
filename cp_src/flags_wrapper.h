@@ -20,6 +20,7 @@ static void addConstants(PyObject *cbase, PyObject *flags_wrapper)  {
         compression.push_back(string((size_t)1, flags::implemented_compressions[i]));
     PyModule_AddObject(cbase, "compression", pylist_from_vector_string(compression));
     PyModule_AddObject(cbase, "version", pybytes_from_string(string(CP2P_VERSION)));
+    PyModule_AddObject(cbase, "user_salt", pybytes_from_string(user_salt));
     
     // Add reserved flags
     vector<string> reserved_set;
