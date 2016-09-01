@@ -11,13 +11,12 @@ Contents:
 .. toctree::
     :maxdepth: 1
     
-    intro
     protocol
     python
     C++
     Javascript
     Golang
-    contributing
+    CONTRIBUTING_LINK
 
 Indices and tables
 ==================
