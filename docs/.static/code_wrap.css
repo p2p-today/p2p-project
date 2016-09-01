@@ -1,0 +1,4 @@
+.rst-content code {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}

@@ -66,8 +66,18 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.mathjax',
+    'sphinx.ext.extlinks',
     'sphinxcontrib.napoleon',
 ]
+
+extlinks = {'issue':   ('https://github.com/gappleto97/p2p-project/issues/%s',
+                        'issue #'),
+            'commit':  ('https://github.com/gappleto97/p2p-project/commit/%s',
+                        'commit '),
+            'user':    ('https://github.com/%s',
+                        '@'),
+            'gitfile': ('https://github.com/gappleto97/p2p-project/blob/%s',
+                        'file ')}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
