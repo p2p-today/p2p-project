@@ -376,6 +376,30 @@
 </dd></dl>
 
 <dl class="class">
+<dt id="py2p.base.protocol">
+<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">protocol</code><a class="reference internal" href="../_modules/py2p/base.html#protocol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines service variables so that you can reject connections looking for a different service</p>
+<dl class="attribute">
+<dt id="py2p.base.protocol.subnet">
+<code class="descname">subnet</code><a class="headerlink" href="#py2p.base.protocol.subnet" title="Permalink to this definition">¶</a></dt>
+<dd><p>The subnet flag this protocol uses</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.protocol.encryption">
+<code class="descname">encryption</code><a class="headerlink" href="#py2p.base.protocol.encryption" title="Permalink to this definition">¶</a></dt>
+<dd><p>The encryption method this protocol uses</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.base.protocol.id">
+<code class="descname">id</code><a class="headerlink" href="#py2p.base.protocol.id" title="Permalink to this definition">¶</a></dt>
+<dd><p>The SHA-256 based ID of this protocol</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="py2p.base.base_connection">
 <em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">base_connection</code><span class="sig-paren">(</span><em>sock</em>, <em>server</em>, <em>outgoing=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection" title="Permalink to this definition">¶</a></dt>
 <dd><p>The base class for a connection</p>
@@ -438,11 +462,6 @@ name of the flag associated with it, &#8220;renegotiate&#8221;.</p>
 </table>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="py2p.base.base_connection.protocol">
-<code class="descname">protocol</code><a class="headerlink" href="#py2p.base.base_connection.protocol" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="method">
 <dt id="py2p.base.base_connection.send">
 <code class="descname">send</code><span class="sig-paren">(</span><em>msg_type</em>, <em>*args</em>, <em>**kargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection.send" title="Permalink to this definition">¶</a></dt>
@@ -483,11 +502,6 @@ name of the flag associated with it, &#8220;renegotiate&#8221;.</p>
 <code class="descname">kill_old_nodes</code><span class="sig-paren">(</span><em>handler</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_daemon.kill_old_nodes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_daemon.kill_old_nodes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cleans out connections which never finish a message</p>
 </dd></dl>
-
-<dl class="attribute">
-<dt id="py2p.base.base_daemon.protocol">
-<code class="descname">protocol</code><a class="headerlink" href="#py2p.base.base_daemon.protocol" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
@@ -880,36 +894,6 @@ before feeding it in.</p>
 <dt id="py2p.base.pathfinding_message.time_58">
 <code class="descname">time_58</code><a class="headerlink" href="#py2p.base.pathfinding_message.time_58" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the messages timestamp in base_58</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="py2p.base.protocol">
-<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">protocol</code><a class="reference internal" href="../_modules/py2p/base.html#protocol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.protocol" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines service variables so that you can reject connections looking for a different service</p>
-<dl class="attribute">
-<dt id="py2p.base.protocol.subnet">
-<code class="descname">subnet</code><a class="headerlink" href="#py2p.base.protocol.subnet" title="Permalink to this definition">¶</a></dt>
-<dd><p>The subnet flag this protocol uses</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="py2p.base.protocol.encryption">
-<code class="descname">encryption</code><a class="headerlink" href="#py2p.base.protocol.encryption" title="Permalink to this definition">¶</a></dt>
-<dd><p>The encryption method this protocol uses</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="py2p.base.protocol.id">
-<code class="descname">id</code><a class="headerlink" href="#py2p.base.protocol.id" title="Permalink to this definition">¶</a></dt>
-<dd><p>The SHA-256 based ID of this protocol</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt>
-<code class="descname">id</code></dt>
-<dd><p>The SHA-256-based ID of the protocol</p>
 </dd></dl>
 
 </dd></dl>

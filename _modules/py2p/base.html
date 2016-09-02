@@ -166,7 +166,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">brepr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__rep</span> <span class="o">=</span> <span class="p">(</span><span class="n">rep</span> <span class="ow">or</span> <span class="n">value</span><span class="p">)</span></div>
-        
+
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__rep</span></div>
 
@@ -377,7 +377,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Defined by the compression method, but typically the bytes of the compressed message</span>
-<span class="sd">    </span>
+
 <span class="sd">    Warning:</span>
 <span class="sd">        The types fed are dependent on which compression method you use. Best to assume most values are bytes or bytearray</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -404,7 +404,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Defined by the decompression method, but typically the bytes of the compressed message</span>
-<span class="sd">    </span>
+
 <span class="sd">    Warning:</span>
 <span class="sd">        The types fed are dependent on which decompression method you use. Best to assume most values are bytes or bytearray</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -440,12 +440,12 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__sanitize_string</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">sizeless</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Removes the size header for further processing. Also checks if the header is valid.</span>
-<span class="sd">        </span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            string:     The string you wish to sanitize</span>
 <span class="sd">            sizeless:   Whether this string contains a size header (default: it does)</span>
 
-<span class="sd">        Returns: </span>
+<span class="sd">        Returns:</span>
 <span class="sd">            The fed string without the size header</span>
 
 <span class="sd">        Raises:</span>
@@ -463,17 +463,17 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__decompress_string</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">compressions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a tuple containing the decompressed bytes and a boolean as to whether decompression failed or not</span>
-<span class="sd">        </span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            string:         The possibly-compressed message you wish to parse</span>
 <span class="sd">            compressions:   A list of the standard compression methods this message may be under (defualt: [])</span>
 
-<span class="sd">        Returns: </span>
+<span class="sd">        Returns:</span>
 <span class="sd">            A decompressed version of the message</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">           Exception:  Unrecognized compression method fed in compressions</span>
-<span class="sd">        </span>
+
 <span class="sd">        Warning:</span>
 <span class="sd">            Do not feed it with the size header, it will throw errors</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -491,7 +491,7 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__process_string</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Given a sanitized, plaintext string, returns a list of its packets</span>
-<span class="sd">        </span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            string: The message you wish to parse</span>
 
@@ -521,7 +521,7 @@
     <span class="nd">@classmethod</span>
 <div class="viewcode-block" id="pathfinding_message.feed_string"><a class="viewcode-back" href="../../python/base.html#py2p.base.pathfinding_message.feed_string">[docs]</a>    <span class="k">def</span> <span class="nf">feed_string</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">sizeless</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compressions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Constructs a pathfinding_message from a string or bytes object.</span>
-<span class="sd">        </span>
+
 <span class="sd">        Args:</span>
 <span class="sd">            string:         The string you wish to parse</span>
 <span class="sd">            sizeless:       A boolean which describes whether this string has its size header (default: it does)</span>
@@ -623,7 +623,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_used</span><span class="p">:</span>
             <span class="n">string</span> <span class="o">=</span> <span class="n">compress</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_used</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">string</span>
-    
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">string</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns a string representation of the message&quot;&quot;&quot;</span>
@@ -655,7 +655,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="base_connection.send"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.send">[docs]</a>    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg_type</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sends a message through its connection. </span>
+        <span class="sd">&quot;&quot;&quot;Sends a message through its connection.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object</span>
@@ -663,7 +663,7 @@
 <span class="sd">            **kargs:    There are two available keywords:</span>
 <span class="sd">            id:         The ID this message should appear to be sent from (default: your ID)</span>
 <span class="sd">            time:       The time this message should appear to be sent from (default: now in UTC)</span>
-<span class="sd">        </span>
+
 <span class="sd">        Returns:</span>
 <span class="sd">            the pathfinding_message object you just sent, or None if the sending was unsuccessful</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -726,9 +726,9 @@
 <div class="viewcode-block" id="base_connection.handle_renegotiate"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.handle_renegotiate">[docs]</a>    <span class="k">def</span> <span class="nf">handle_renegotiate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">packets</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The handler for connection renegotiations</span>
 
-<span class="sd">        This is to deal with connection maintenence. For instance, it could </span>
-<span class="sd">        be that a compression method fails to decode on the other end, and a </span>
-<span class="sd">        node will need to renegotiate which methods it is using. Hence the </span>
+<span class="sd">        This is to deal with connection maintenence. For instance, it could</span>
+<span class="sd">        be that a compression method fails to decode on the other end, and a</span>
+<span class="sd">        node will need to renegotiate which methods it is using. Hence the</span>
 <span class="sd">        name of the flag associated with it, &quot;renegotiate&quot;.</span>
 
 <span class="sd">        Args:</span>
@@ -768,7 +768,7 @@
 
 
 <div class="viewcode-block" id="base_daemon"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_daemon">[docs]</a><span class="k">class</span> <span class="nc">base_daemon</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;The base class for a daemon&quot;&quot;&quot;</span>    
+    <span class="sd">&quot;&quot;&quot;The base class for a daemon&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="base_daemon.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_daemon.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">server</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">get_socket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
@@ -818,7 +818,7 @@
 <span class="sd">            addr:           The address you wish to bind to (ie: &quot;192.168.1.1&quot;)</span>
 <span class="sd">            port:           The port you wish to bind to (ie: 44565)</span>
 <span class="sd">            prot:           The protocol you wish to operate over, defined by a base.protocol object</span>
-<span class="sd">            out_addr:       Your outward facing address. Only needed if you&#39;re connecting </span>
+<span class="sd">            out_addr:       Your outward facing address. Only needed if you&#39;re connecting</span>
 <span class="sd">                over the internet. If you use &#39;0.0.0.0&#39; for the addr argument, this will</span>
 <span class="sd">                automatically be set to your LAN address.</span>
 <span class="sd">            debug_level:    The verbosity you want this socket to use when printing event data</span>
@@ -865,7 +865,7 @@
 
     <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">):</span>
         <span class="k">def</span> <span class="nf">register_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Register a handler for incoming method. </span>
+            <span class="sd">&quot;&quot;&quot;Register a handler for incoming method.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                method: A function with two given arguments. Its signature</span>
@@ -884,7 +884,7 @@
 
     <span class="k">else</span><span class="p">:</span>
 <div class="viewcode-block" id="base_socket.register_handler"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_socket.register_handler">[docs]</a>        <span class="k">def</span> <span class="nf">register_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
-            <span class="sd">&quot;&quot;&quot;Register a handler for incoming method. </span>
+            <span class="sd">&quot;&quot;&quot;Register a handler for incoming method.</span>
 
 <span class="sd">            Args:</span>
 <span class="sd">                method: A function with two given arguments. Its signature</span>
@@ -969,7 +969,7 @@
     <span class="k">def</span> <span class="nf">sender</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;The ID of this message&#39;s sender&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="o">.</span><span class="n">sender</span>
-    
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;This message&#39;s ID&quot;&quot;&quot;</span>
@@ -996,7 +996,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            *args: Each argument given is a packet you wish to send. This is</span>
-<span class="sd">                prefixed with base.flags.whisper, so the other end will receive </span>
+<span class="sd">                prefixed with base.flags.whisper, so the other end will receive</span>
 <span class="sd">                [base.flags.whisper, *args]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">routing_table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sender</span><span class="p">):</span>
