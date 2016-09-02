@@ -6,6 +6,8 @@ This section contains information specific to the python implementation of this 
 Contents:
 
 .. toctree::
+	:maxdepth: 2
+
 	python/tutorial
 	python/base
 	python/cbase

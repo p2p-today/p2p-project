@@ -17,7 +17,7 @@ Contents:
     C++
     Javascript
     Golang
-    contributing
+    CONTRIBUTING_LINK
 
 Indices and tables
 ==================
