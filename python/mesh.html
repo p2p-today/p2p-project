@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>&lt;no title&gt; &mdash; py2p 0.4.319 documentation</title>
+  <title>Mesh Module &mdash; py2p 0.4.319 documentation</title>
   
 
   
@@ -82,9 +82,16 @@
           
             
             
-                <ul>
+                <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../protocol.html">Protocol Specifications</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../python.html">Python Implementation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../python.html">Python Implementation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="base.html">Base Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cbase.html">Base Module (C++ Implementation)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="utils.html">Utils Module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Mesh Module</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING_LINK.html">Contributing</a></li>
 </ul>
 
@@ -118,7 +125,7 @@
       
           <li><a href="../python.html">Python Implementation</a> &raquo;</li>
       
-    <li>&lt;no title&gt;</li>
+    <li>Mesh Module</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -132,7 +139,119 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  
+  <div class="section" id="module-py2p.mesh">
+<span id="mesh-module"></span><h1>Mesh Module<a class="headerlink" href="#module-py2p.mesh" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="py2p.mesh.mesh_connection">
+<em class="property">class </em><code class="descclassname">py2p.mesh.</code><code class="descname">mesh_connection</code><span class="sig-paren">(</span><em>sock</em>, <em>server</em>, <em>outgoing=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_connection" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="py2p.mesh.mesh_connection.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>msg_type</em>, <em>*args</em>, <em>**kargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_connection.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_connection.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a message through its connection. The first argument is message type. All after that are content packets</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_connection.found_terminator">
+<code class="descname">found_terminator</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_connection.found_terminator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_connection.found_terminator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Processes received messages</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_connection.handle_waterfall">
+<code class="descname">handle_waterfall</code><span class="sig-paren">(</span><em>msg</em>, <em>packets</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_connection.handle_waterfall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_connection.handle_waterfall" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.mesh.mesh_daemon">
+<em class="property">class </em><code class="descclassname">py2p.mesh.</code><code class="descname">mesh_daemon</code><span class="sig-paren">(</span><em>addr</em>, <em>port</em>, <em>server</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_daemon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_daemon" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="py2p.mesh.mesh_daemon.mainloop">
+<code class="descname">mainloop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_daemon.mainloop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_daemon.mainloop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Daemon thread which handles all incoming data and connections</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_daemon.handle_accept">
+<code class="descname">handle_accept</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_daemon.handle_accept"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_daemon.handle_accept" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle an incoming connection</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_daemon.process_data">
+<code class="descname">process_data</code><span class="sig-paren">(</span><em>handler</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_daemon.process_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_daemon.process_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Collects incoming data from nodes</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py2p.mesh.mesh_socket">
+<em class="property">class </em><code class="descclassname">py2p.mesh.</code><code class="descname">mesh_socket</code><span class="sig-paren">(</span><em>addr</em>, <em>port</em>, <em>prot=&lt;protocol object&gt;</em>, <em>out_addr=None</em>, <em>debug_level=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_socket"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_socket" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="py2p.mesh.mesh_socket.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>addr</em>, <em>port</em>, <em>prot=&lt;protocol object&gt;</em>, <em>out_addr=None</em>, <em>debug_level=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_socket.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_socket.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.mesh.mesh_socket.outgoing">
+<code class="descname">outgoing</code><a class="headerlink" href="#py2p.mesh.mesh_socket.outgoing" title="Permalink to this definition">¶</a></dt>
+<dd><p>IDs of outgoing connections</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="py2p.mesh.mesh_socket.incoming">
+<code class="descname">incoming</code><a class="headerlink" href="#py2p.mesh.mesh_socket.incoming" title="Permalink to this definition">¶</a></dt>
+<dd><p>IDs of incoming connections</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_socket.handle_msg">
+<code class="descname">handle_msg</code><span class="sig-paren">(</span><em>msg</em>, <em>conn</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_socket.handle_msg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_socket.handle_msg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decides how to handle various message types, allowing some to be handled automatically</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_socket.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>*args</em>, <em>**kargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_socket.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_socket.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends data to all peers. type flag will override normal subflag. Defaults to &#8216;broadcast&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_socket.waterfall">
+<code class="descname">waterfall</code><span class="sig-paren">(</span><em>msg</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_socket.waterfall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_socket.waterfall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles the waterfalling of received messages</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_socket.connect">
+<code class="descname">connect</code><span class="sig-paren">(</span><em>addr</em>, <em>port</em>, <em>id=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_socket.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_socket.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connects to a specified node. Specifying ID will immediately add to routing table. Blocking</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_socket.disconnect">
+<code class="descname">disconnect</code><span class="sig-paren">(</span><em>handler</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_socket.disconnect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_socket.disconnect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnects a node</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_socket.request_peers">
+<code class="descname">request_peers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_socket.request_peers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_socket.request_peers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Requests your peers&#8217; routing tables</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py2p.mesh.mesh_socket.recv">
+<code class="descname">recv</code><span class="sig-paren">(</span><em>quantity=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/mesh.html#mesh_socket.recv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.mesh.mesh_socket.recv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive 1 or several message objects. Returns none if none are present. Non-blocking.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
 
            </div>
           </div>
