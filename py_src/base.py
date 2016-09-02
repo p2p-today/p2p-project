@@ -35,7 +35,7 @@ class brepr(bytearray):
         """
         super(brepr, self).__init__(value)
         self.__rep = (rep or value)
-        
+
     def __repr__(self):
         return self.__rep
 
@@ -246,7 +246,7 @@ def compress(msg, method):
 
     Returns:
         Defined by the compression method, but typically the bytes of the compressed message
-    
+
     Warning:
         The types fed are dependent on which compression method you use. Best to assume most values are bytes or bytearray
     """
@@ -273,7 +273,7 @@ def decompress(msg, method):
 
     Returns:
         Defined by the decompression method, but typically the bytes of the compressed message
-    
+
     Warning:
         The types fed are dependent on which decompression method you use. Best to assume most values are bytes or bytearray
     """
@@ -309,12 +309,12 @@ class pathfinding_message(object):
     @classmethod
     def __sanitize_string(cls, string, sizeless=False):
         """Removes the size header for further processing. Also checks if the header is valid.
-        
+
         Args:
             string:     The string you wish to sanitize
             sizeless:   Whether this string contains a size header (default: it does)
 
-        Returns: 
+        Returns:
             The fed string without the size header
 
         Raises:
@@ -332,17 +332,17 @@ class pathfinding_message(object):
     @classmethod
     def __decompress_string(cls, string, compressions=None):
         """Returns a tuple containing the decompressed bytes and a boolean as to whether decompression failed or not
-        
+
         Args:
             string:         The possibly-compressed message you wish to parse
             compressions:   A list of the standard compression methods this message may be under (defualt: [])
 
-        Returns: 
+        Returns:
             A decompressed version of the message
 
         Raises:
            Exception:  Unrecognized compression method fed in compressions
-        
+
         Warning:
             Do not feed it with the size header, it will throw errors
         """
@@ -360,7 +360,7 @@ class pathfinding_message(object):
     @classmethod
     def __process_string(cls, string):
         """Given a sanitized, plaintext string, returns a list of its packets
-        
+
         Args:
             string: The message you wish to parse
 
@@ -390,7 +390,7 @@ class pathfinding_message(object):
     @classmethod
     def feed_string(cls, string, sizeless=False, compressions=None):
         """Constructs a pathfinding_message from a string or bytes object.
-        
+
         Args:
             string:         The string you wish to parse
             sizeless:       A boolean which describes whether this string has its size header (default: it does)
@@ -492,7 +492,7 @@ class pathfinding_message(object):
         if self.compression_used:
             string = compress(string, self.compression_used)
         return string
-    
+
     @property
     def string(self):
         """Returns a string representation of the message"""
@@ -511,6 +511,13 @@ class pathfinding_message(object):
 class base_connection(object):
     """The base class for a connection"""
     def __init__(self, sock, server, outgoing=False):
+        """Sets up a connection to another peer-to-peer socket
+
+        Args:
+            sock:       The connected socket object
+            server:     A reference to your peer-to-peer socket
+            outgoing:   Whether this connection is outgoing (default: False)
+        """
         self.sock = sock
         self.server = server
         self.outgoing = outgoing
@@ -524,7 +531,7 @@ class base_connection(object):
         self.active = False
 
     def send(self, msg_type, *args, **kargs):
-        """Sends a message through its connection. 
+        """Sends a message through its connection.
 
         Args:
             msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object
@@ -532,7 +539,7 @@ class base_connection(object):
             **kargs:    There are two available keywords:
             id:         The ID this message should appear to be sent from (default: your ID)
             time:       The time this message should appear to be sent from (default: now in UTC)
-        
+
         Returns:
             the pathfinding_message object you just sent, or None if the sending was unsuccessful
         """
@@ -554,6 +561,7 @@ class base_connection(object):
 
     @property
     def protocol(self):
+        """Returns server.protocol"""
         return self.server.protocol
 
     def collect_incoming_data(self, data):
@@ -595,9 +603,9 @@ class base_connection(object):
     def handle_renegotiate(self, packets):
         """The handler for connection renegotiations
 
-        This is to deal with connection maintenence. For instance, it could 
-        be that a compression method fails to decode on the other end, and a 
-        node will need to renegotiate which methods it is using. Hence the 
+        This is to deal with connection maintenence. For instance, it could
+        be that a compression method fails to decode on the other end, and a
+        node will need to renegotiate which methods it is using. Hence the
         name of the flag associated with it, "renegotiate".
 
         Args:
@@ -637,8 +645,19 @@ class base_connection(object):
 
 
 class base_daemon(object):
-    """The base class for a daemon"""    
+    """The base class for a daemon"""
     def __init__(self, addr, port, server):
+        """Sets up a daemon process for your peer-to-peer socket
+
+        Args:
+            addr:   The address you wish to bind to
+            port:   The port you wish to bind to
+            server: A reference to the peer-to-peer socket
+
+        Raises:
+            socket.error:   The address you wanted is already in use
+            ValueError:     If your peer-to-peer socket is set up with an unknown encryption method
+        """
         self.server = server
         self.sock = get_socket(self.protocol, True)
         self.sock.bind((addr, port))
@@ -652,6 +671,7 @@ class base_daemon(object):
 
     @property
     def protocol(self):
+        """Returns server.protocol"""
         return self.server.protocol
 
     def kill_old_nodes(self, handler):
@@ -687,7 +707,7 @@ class base_socket(object):
             addr:           The address you wish to bind to (ie: "192.168.1.1")
             port:           The port you wish to bind to (ie: 44565)
             prot:           The protocol you wish to operate over, defined by a base.protocol object
-            out_addr:       Your outward facing address. Only needed if you're connecting 
+            out_addr:       Your outward facing address. Only needed if you're connecting
                 over the internet. If you use '0.0.0.0' for the addr argument, this will
                 automatically be set to your LAN address.
             debug_level:    The verbosity you want this socket to use when printing event data
@@ -734,7 +754,7 @@ class base_socket(object):
 
     if sys.version_info >= (3, ):
         def register_handler(self, method):
-            """Register a handler for incoming method. 
+            """Register a handler for incoming method.
 
             Args:
                 method: A function with two given arguments. Its signature
@@ -753,7 +773,7 @@ class base_socket(object):
 
     else:
         def register_handler(self, method):
-            """Register a handler for incoming method. 
+            """Register a handler for incoming method.
 
             Args:
                 method: A function with two given arguments. Its signature
@@ -838,7 +858,7 @@ class message(object):
     def sender(self):
         """The ID of this message's sender"""
         return self.msg.sender
-    
+
     @property
     def id(self):
         """This message's ID"""
@@ -865,7 +885,7 @@ class message(object):
 
         Args:
             *args: Each argument given is a packet you wish to send. This is
-                prefixed with base.flags.whisper, so the other end will receive 
+                prefixed with base.flags.whisper, so the other end will receive
                 [base.flags.whisper, *args]
         """
         if self.server.routing_table.get(self.sender):

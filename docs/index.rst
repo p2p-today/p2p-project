@@ -10,8 +10,7 @@ Contents:
 
 .. toctree::
     :maxdepth: 1
-    
-    intro
+
     protocol
     python
     C++

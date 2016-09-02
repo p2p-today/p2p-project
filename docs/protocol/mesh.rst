@@ -105,9 +105,9 @@ following steps:
 
 #. If the message ID is not in the node’s waterfall queue, continue and add it to the waterfall queue
 #. Perform cleanup on the waterfall queue
-  i. Remove all possible duplicates (sending may be done in multiple threads, which may result in duplicate copies)
-  #. Remove all IDs with a timestamp more than 1 minute ago
 
+    a. Remove all possible duplicates (sending may be done in multiple threads, which may result in duplicate copies)
+    #. Remove all IDs with a timestamp more than 1 minute ago
 #. Re-broadcast this message to all peers (optionally excluding the one you received it from)
 
 .. image:: ./figure_one.png
@@ -235,4 +235,4 @@ Node A will send to B, C, and D. Node B will receive this message and send to C 
 Node C will receive the same message and send to B and D. Node D will relay to B and C.
 This makes 9 total messages, or :math:`(n-1)^2`.
 
-Limiting your number of connections can bring this down to ``min(max_conns, n-1) * (n-1)``.
+Limiting your number of connections can bring this down to :math:`min(MaxConns, n-1) * (n-1)`.
