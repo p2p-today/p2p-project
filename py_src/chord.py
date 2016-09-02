@@ -207,10 +207,10 @@ class chord_socket(base_socket):
                     if distance(self.__findFinger__(goal).id_10, goal, self.limit) \
                             > distance(key, goal, self.limit):
                         self.__connect(*addr)
-                if distance(self.id_10, self.next.id_10, self.limit) \
+                if distance(self.id_10, self.next.id_10-1, self.limit) \
                     > distance(self.id_10, key, self.limit):
                     self.__connect(*addr)
-                if distance(self.prev.id_10, self.id_10, self.limit) \
+                if distance(self.prev.id_10+1, self.id_10, self.limit) \
                     > distance(key, self.id_10, self.limit):
                     self.__connect(*addr)
             return True
