@@ -13,6 +13,23 @@
     #define CP2P_DEBUG(...)
 #endif
 
+//This macro was taken from http://www.pixelbeat.org/programming/gcc/static_assert.html under the GNU All-Permissive License
+#define ASSERT_CONCAT_(a, b) a##b
+#define ASSERT_CONCAT(a, b) ASSERT_CONCAT_(a, b)
+/* These can't be used after statements in c89. */
+#ifdef __COUNTER__
+  #define STATIC_ASSERT(e,m) \
+    ;enum { ASSERT_CONCAT(static_assert_, __COUNTER__) = 1/(int)(!!(e)) }
+#else
+  /* This can't be used twice on the same line so ensure if using in headers
+   * that the headers are not included twice (by wrapping in #ifndef...#endif)
+   * Note it doesn't cause an issue when used on same line of separate modules
+   * compiled with gcc -combine -fwhole-program.  */
+  #define STATIC_ASSERT(e,m) \
+    ;enum { ASSERT_CONCAT(assert_line_, __LINE__) = 1/(int)(!!(e)) }
+#endif
+//End macro
+
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -27,7 +44,7 @@
 
 using namespace std;
 
-typedef basic_string<unsigned char> ustring;
+STATIC_ASSERT(sizeof(size_t) >= 4, "Size of strings is too small to easily meet protocol specs");
 
 namespace flags {
     static const unsigned char\
@@ -92,7 +109,7 @@ static string get_user_salt()  {
         if (temp_user_salt[i] == 'x')
             temp_user_salt[i] = temp_hex_set[(rand() % 16)];
         else if (temp_user_salt[i] == 'y')
-            temp_user_salt[i] = temp_hex_set[(rand() % 16) & 0x3 | 0x8];
+            temp_user_salt[i] = temp_hex_set[((rand() % 16) & 0x3) | 0x8];
     }
 
     const string user_salt = string(temp_user_salt, 36);
