@@ -242,18 +242,19 @@ re-broadcast this message to each of their peers, but changing the
 flag to <code class="docutils literal"><span class="pre">waterfall</span></code>.</p>
 <p>A node which receives these waterfall packets goes through the
 following steps:</p>
-<ol class="arabic simple">
-<li>If the message ID is not in the node’s waterfall queue, continue and add it to the waterfall queue</li>
-<li>Perform cleanup on the waterfall queue</li>
-</ol>
+<ol class="arabic">
+<li><p class="first">If the message ID is not in the node’s waterfall queue, continue and add it to the waterfall queue</p>
+</li>
+<li><p class="first">Perform cleanup on the waterfall queue</p>
 <blockquote>
-<div><ol class="lowerroman simple">
+<div><ol class="loweralpha simple">
 <li>Remove all possible duplicates (sending may be done in multiple threads, which may result in duplicate copies)</li>
 <li>Remove all IDs with a timestamp more than 1 minute ago</li>
 </ol>
 </div></blockquote>
-<ol class="arabic simple">
-<li>Re-broadcast this message to all peers (optionally excluding the one you received it from)</li>
+</li>
+<li><p class="first">Re-broadcast this message to all peers (optionally excluding the one you received it from)</p>
+</li>
 </ol>
 <img alt="../_images/figure_one.png" src="../_images/figure_one.png" />
 </div>
@@ -358,7 +359,7 @@ example:</p>
 <p>Node A will send to B, C, and D. Node B will receive this message and send to C and D.
 Node C will receive the same message and send to B and D. Node D will relay to B and C.
 This makes 9 total messages, or <span class="math">\((n-1)^2\)</span>.</p>
-<p>Limiting your number of connections can bring this down to <code class="docutils literal"><span class="pre">min(max_conns,</span> <span class="pre">n-1)</span> <span class="pre">*</span> <span class="pre">(n-1)</span></code>.</p>
+<p>Limiting your number of connections can bring this down to <span class="math">\(min(MaxConns, n-1) * (n-1)\)</span>.</p>
 </div>
 </div>
 

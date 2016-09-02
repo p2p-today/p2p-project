@@ -406,7 +406,21 @@
 <dl class="method">
 <dt id="py2p.base.base_connection.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>sock</em>, <em>server</em>, <em>outgoing=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_connection.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_connection.__init__" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Sets up a connection to another peer-to-peer socket</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sock</strong> &#8211; The connected socket object</li>
+<li><strong>server</strong> &#8211; A reference to your peer-to-peer socket</li>
+<li><strong>outgoing</strong> &#8211; Whether this connection is outgoing (default: False)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="py2p.base.base_connection.collect_incoming_data">
@@ -495,7 +509,27 @@ name of the flag associated with it, &#8220;renegotiate&#8221;.</p>
 <dl class="method">
 <dt id="py2p.base.base_daemon.__init__">
 <code class="descname">__init__</code><span class="sig-paren">(</span><em>addr</em>, <em>port</em>, <em>server</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#base_daemon.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.base_daemon.__init__" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Sets up a daemon process for your peer-to-peer socket</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>addr</strong> &#8211; The address you wish to bind to</li>
+<li><strong>port</strong> &#8211; The port you wish to bind to</li>
+<li><strong>server</strong> &#8211; A reference to the peer-to-peer socket</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li><a class="reference external" href="https://docs.python.org/3/library/socket.html#socket.error" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">socket.error</span></code></a> &#8211; The address you wanted is already in use</li>
+<li><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">ValueError</span></code></a> &#8211; If your peer-to-peer socket is set up with an unknown encryption method</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="py2p.base.base_daemon.kill_old_nodes">

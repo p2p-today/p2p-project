@@ -642,6 +642,13 @@
 <div class="viewcode-block" id="base_connection"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection">[docs]</a><span class="k">class</span> <span class="nc">base_connection</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;The base class for a connection&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="base_connection.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">server</span><span class="p">,</span> <span class="n">outgoing</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets up a connection to another peer-to-peer socket</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sock:       The connected socket object</span>
+<span class="sd">            server:     A reference to your peer-to-peer socket</span>
+<span class="sd">            outgoing:   Whether this connection is outgoing (default: False)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">sock</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outgoing</span> <span class="o">=</span> <span class="n">outgoing</span>
@@ -685,6 +692,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">protocol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns server.protocol&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">protocol</span>
 
 <div class="viewcode-block" id="base_connection.collect_incoming_data"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.collect_incoming_data">[docs]</a>    <span class="k">def</span> <span class="nf">collect_incoming_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
@@ -770,6 +778,17 @@
 <div class="viewcode-block" id="base_daemon"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_daemon">[docs]</a><span class="k">class</span> <span class="nc">base_daemon</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;The base class for a daemon&quot;&quot;&quot;</span>
 <div class="viewcode-block" id="base_daemon.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_daemon.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">server</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets up a daemon process for your peer-to-peer socket</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            addr:   The address you wish to bind to</span>
+<span class="sd">            port:   The port you wish to bind to</span>
+<span class="sd">            server: A reference to the peer-to-peer socket</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            socket.error:   The address you wanted is already in use</span>
+<span class="sd">            ValueError:     If your peer-to-peer socket is set up with an unknown encryption method</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sock</span> <span class="o">=</span> <span class="n">get_socket</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">protocol</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sock</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
@@ -783,6 +802,7 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">protocol</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns server.protocol&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">protocol</span>
 
 <div class="viewcode-block" id="base_daemon.kill_old_nodes"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_daemon.kill_old_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">kill_old_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
