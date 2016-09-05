@@ -116,6 +116,9 @@ string pathfinding_message::compression_used()  {
 
 string pathfinding_message::time_58()   {
     return to_base_58(timestamp);
+    // size_t i = 0;
+    // char *temp = to_base_58(timestamp, i);
+    // return string(temp, i);
 }
 
 string pathfinding_message::id()    {
@@ -123,7 +126,7 @@ string pathfinding_message::id()    {
         CP2P_DEBUG("Fetching cached ID\n")
         return string(cache.id); //for copy constructor
     }
-    
+
     string t58 = time_58();
     size_t done = 0, expected = t58.length();
 
@@ -147,7 +150,7 @@ string pathfinding_message::id()    {
 
     cache.payload = vector<string>(payload);
     cache.timestamp = timestamp;
-    cache.id = ascii_to_base_58_(string((char*)digest, SHA384::DIGEST_SIZE));
+    cache.id = ascii_to_base_58(string((char*)digest, SHA384::DIGEST_SIZE));
 
 #ifdef CP2P_DEBUG_FLAG
     printf("ID for [\"");
@@ -167,7 +170,7 @@ vector<string> pathfinding_message::packets()   {
     packs.push_back(msg_type);
     packs.push_back(sender);
     packs.push_back(id());
-    packs.push_back(to_base_58(timestamp));
+    packs.push_back(time_58());
     packs.insert(packs.end(), payload.begin(), payload.end());
     return packs;
 }

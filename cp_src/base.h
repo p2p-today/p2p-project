@@ -154,10 +154,10 @@ class pathfinding_message   {
             vector<string> packets = process_string(msg);
             pathfinding_message *pm = new pathfinding_message(
                 packets[0],
-                packets[1], 
+                packets[1],
                 vector<string>(packets.begin() + 4, packets.end()));
-            CP2P_DEBUG("Setting timestamp as %s (%i)", packets[3].c_str(), from_base_58(packets[3]))
-            pm->timestamp = from_base_58(packets[3]);
+            CP2P_DEBUG("Setting timestamp as %s (%i)", packets[3].c_str(), from_base_58(packets[3].c_str(), packets[3].length()))
+            pm->timestamp = from_base_58(packets[3].c_str(), packets[3].length());
             return pm;
         }
 
