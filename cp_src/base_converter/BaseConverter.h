@@ -3,6 +3,9 @@
 // This has been heavily modified since copying, has been hardcoded for a specific case, then translated to C
 
 #include <math.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifdef __cplusplus
 #include <string>
@@ -41,7 +44,7 @@ static inline unsigned int base2dec(const char *value, const size_t len)  {
     return result;
 }
 
-static inline char *dec2base(unsigned int value, size_t &len)  {
+static inline char *dec2base(unsigned int value, size_t *len)  {
     char result[4] = {};
     size_t pos = 4;
     do  {
@@ -50,13 +53,13 @@ static inline char *dec2base(unsigned int value, size_t &len)  {
     }
     while (value);
 
-    len = 4 - pos;
-    char *ret = (char *)malloc(sizeof(char) * len);
-    memcpy(ret, result + pos, len);
+    *len = 4 - pos;
+    char *ret = (char *)malloc(sizeof(char) * (*len));
+    memcpy(ret, result + pos, *len);
     return ret;
 }
 
-static char *to_base_58(unsigned long long i, size_t &len) {
+static char *to_base_58(unsigned long long i, size_t *len) {
     size_t pos = 0;
     char *str = (char*)malloc(sizeof(char) * 4);
     while (i)   {
@@ -75,18 +78,18 @@ static char *to_base_58(unsigned long long i, size_t &len) {
             str[i] ^= str[lim - i];
         }
     }
-    len = pos;
+    *len = pos;
     return str;
 }
 
-static unsigned int divide_58(char *x, size_t &length)  {
-    const size_t const_length = length;
+static unsigned int divide_58(char *x, size_t *length)  {
+    const size_t const_length = *length;
     size_t pos = 0;
     char *quotient = (char*) malloc(sizeof(char) * const_length);
 
     for (size_t i = 0; i < const_length; ++i) {
-        const size_t j = i + 1 + length - const_length;
-        if (length < j)
+        const size_t j = i + 1 + (*length) - const_length;
+        if (*length < j)
             break;
 
         const unsigned int value = base2dec(x, j);
@@ -96,28 +99,28 @@ static unsigned int divide_58(char *x, size_t &length)  {
             pos++;
 
         size_t len = 4;
-        char *temp_str = dec2base(value % 58, len);
+        char *temp_str = dec2base(value % 58, &len);
         memcpy(x, temp_str, len);
         free(temp_str);
 
-        memmove(x + len, x + j, length - j);
-        length -= j;
-        length += len;
+        memmove(x + len, x + j, (*length) - j);
+        *length -= j;
+        *length += len;
     }
 
     // calculate remainder
-    const unsigned int remainder = base2dec(x, length);
+    const unsigned int remainder = base2dec(x, *length);
 
     // remove leading "zeros" from quotient and store in 'x'
     memcpy(x, quotient, pos);
     free(quotient);
-    length = pos;
+    *length = pos;
 
     return remainder;
 }
 
-static char *ascii_to_base_58_(const char *input, size_t length, size_t &res_len)    {
-    char *c_input = new char[length];
+static char *ascii_to_base_58_(const char *input, size_t length, size_t *res_len)    {
+    char *c_input = (char*)malloc(sizeof(char) * length);
     memcpy(c_input, input, length);
 
     const size_t res_size = ceil(length * 1.4);
@@ -125,21 +128,23 @@ static char *ascii_to_base_58_(const char *input, size_t length, size_t &res_len
     char *result = (char*)malloc(sizeof(char) * res_size);
 
     do  {
-        result[--pos] = base_58[divide_58(c_input, length)];
+        result[--pos] = base_58[divide_58(c_input, &length)];
     }
     while (length && !(length == 1 && c_input[0] == ascii[0]));
+    
+    free(c_input);
 
-    res_len = res_size - pos;
-    memcpy(result, result + pos, res_len);
+    *res_len = res_size - pos;
+    memcpy(result, result + pos, *res_len);
     return result;
 }
 
-static char *ascii_to_base_58(const char *input, size_t length, size_t &res_len, size_t minDigits) {
+static char *ascii_to_base_58(const char *input, size_t length, size_t *res_len, size_t minDigits) {
     char *result = ascii_to_base_58_(input, length, res_len);
     if (length < minDigits) {
-        size_t end_zeros = minDigits - res_len;
+        size_t end_zeros = minDigits - *res_len;
         result = (char*)realloc(result, minDigits);
-        memcpy(result + end_zeros, result, res_len);
+        memcpy(result + end_zeros, result, *res_len);
         memset(result, base_58[0], end_zeros);
     }
     return result;
@@ -150,7 +155,7 @@ static char *ascii_to_base_58(const char *input, size_t length, size_t &res_len,
 
 static string ascii_to_base_58(string input)   {
     size_t res_size = 0;
-    char *c_string = ascii_to_base_58(input.c_str(), input.length(), res_size, 1);
+    char *c_string = ascii_to_base_58(input.c_str(), input.length(), &res_size, 1);
     string result = string(c_string, res_size);
     free(c_string);
     return result;
@@ -158,7 +163,7 @@ static string ascii_to_base_58(string input)   {
 
 static inline string to_base_58(unsigned long long i)   {
     size_t len = 0;
-    char *temp_str = to_base_58(i, len);
+    char *temp_str = to_base_58(i, &len);
     string ret = string(temp_str, len);
     free(temp_str);
     return ret;
