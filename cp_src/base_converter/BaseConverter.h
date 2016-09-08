@@ -82,7 +82,7 @@ static char *to_base_58(unsigned long long i, size_t &len) {
 static unsigned int divide_58(char *x, size_t &length)  {
     const size_t const_length = length;
     size_t pos = 0;
-    char *quotient = new char[const_length];
+    char *quotient = (char*) malloc(sizeof(char) * const_length);
 
     for (size_t i = 0; i < const_length; ++i) {
         const size_t j = i + 1 + length - const_length;
@@ -110,6 +110,7 @@ static unsigned int divide_58(char *x, size_t &length)  {
 
     // remove leading "zeros" from quotient and store in 'x'
     memcpy(x, quotient, pos);
+    free(quotient);
     length = pos;
 
     return remainder;
