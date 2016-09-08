@@ -79,11 +79,6 @@ static char *to_base_58(unsigned long long i, size_t *len) {
     return str;
 }
 
-#define printbuf(a, b) \
-for (size_t i = 0; i < b; i++)\
-    printf("\\x%02x", (unsigned char)a[i]);\
-printf("\n");
-
 static unsigned int divide_58(char *x, size_t *length)  {
     const size_t const_length = *length;
     size_t pos = 0;
@@ -109,7 +104,6 @@ static unsigned int divide_58(char *x, size_t *length)  {
 
         *length -= j;
         *length += len;
-        printbuf(x, *length);
     }
 
     // calculate remainder
@@ -140,7 +134,7 @@ static char *ascii_to_base_58_(const char *input, size_t length, size_t *res_len
     free(c_input);
 
     *res_len = res_size - pos;
-    memcpy(result, result + pos, *res_len);
+    memmove(result, result + pos, *res_len);
     fwrite(result, *res_len, 1, stdout);
     printf("\n");
     return result;
@@ -151,7 +145,7 @@ static char *ascii_to_base_58(const char *input, size_t length, size_t *res_len,
     if (length < minDigits) {
         size_t end_zeros = minDigits - *res_len;
         result = (char*)realloc(result, minDigits);
-        memcpy(result + end_zeros, result, *res_len);
+        memmove(result + end_zeros, result, *res_len);
         memset(result, base_58[0], end_zeros);
     }
     return result;
