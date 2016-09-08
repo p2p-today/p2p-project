@@ -44,8 +44,7 @@ static inline unsigned int base2dec(const char *value, const size_t len)  {
     return result;
 }
 
-static inline char *dec2base(unsigned int value, size_t *len)  {
-    char result[4] = {};
+static inline void dec2base(unsigned int value, char *result, size_t *len)  {
     size_t pos = 4;
     do  {
         result[--pos] = (unsigned char)value % 256;
@@ -54,9 +53,7 @@ static inline char *dec2base(unsigned int value, size_t *len)  {
     while (value);
 
     *len = 4 - pos;
-    char *ret = (char *)malloc(sizeof(char) * (*len));
-    memcpy(ret, result + pos, *len);
-    return ret;
+    memmove(result, result + pos, *len);
 }
 
 static char *to_base_58(unsigned long long i, size_t *len) {
@@ -86,6 +83,8 @@ static unsigned int divide_58(char *x, size_t *length)  {
     const size_t const_length = *length;
     size_t pos = 0;
     char *quotient = (char*) malloc(sizeof(char) * const_length);
+    size_t len = 4;
+    char dec2base_str[len] = {};
 
     for (size_t i = 0; i < const_length; ++i) {
         const size_t j = i + 1 + (*length) - const_length;
@@ -98,12 +97,10 @@ static unsigned int divide_58(char *x, size_t *length)  {
         if (pos != 0 || quotient[pos] != ascii[0])
             pos++;
 
-        size_t len = 4;
-        char *temp_str = dec2base(value % 58, &len);
-        memcpy(x, temp_str, len);
-        free(temp_str);
-
+        dec2base(value % 58, dec2base_str, &len);
         memmove(x + len, x + j, (*length) - j);
+        memcpy(x, dec2base_str, len);
+
         *length -= j;
         *length += len;
     }
@@ -131,7 +128,7 @@ static char *ascii_to_base_58_(const char *input, size_t length, size_t *res_len
         result[--pos] = base_58[divide_58(c_input, &length)];
     }
     while (length && !(length == 1 && c_input[0] == ascii[0]));
-    
+
     free(c_input);
 
     *res_len = res_size - pos;
