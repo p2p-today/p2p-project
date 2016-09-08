@@ -85,7 +85,6 @@ static unsigned int divide_58(char *x, size_t *length)  {
     char *quotient = (char*) malloc(sizeof(char) * const_length);
     size_t len = 4;
     char dec2base_str[4] = {};
-    printbuf(x, *length);
 
     for (size_t i = 0; i < const_length; ++i) {
         const size_t j = i + 1 + (*length) - const_length;
