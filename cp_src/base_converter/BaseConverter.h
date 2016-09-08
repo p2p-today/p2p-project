@@ -100,7 +100,7 @@ static unsigned int divide_58(char *x, size_t &length)  {
         memcpy(x, temp_str, len);
         free(temp_str);
 
-        memcpy(x + len, x + j, length - j);
+        memmove(x + len, x + j, length - j);
         length -= j;
         length += len;
     }
