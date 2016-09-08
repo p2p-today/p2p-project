@@ -133,7 +133,7 @@ static char *ascii_to_base_58_(const char *input, size_t length, size_t *res_len
 
     do  {
         result[--pos] = base_58[divide_58(c_input, &length)];
-        printbuf(result + pos, res_size - pos);
+        printf("%i\n", result[pos]);
     }
     while (length && !(length == 1 && c_input[0] == ascii[0]));
 
