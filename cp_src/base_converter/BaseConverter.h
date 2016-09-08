@@ -93,8 +93,9 @@ static unsigned int divide_58(char *x, size_t *length)  {
 
         const unsigned int value = base2dec(x, j);
 
-        if (pos != 0 || quotient[pos] != ascii[0])  // prevent leading zeros
-            quotient[pos++] = (unsigned char)(value / 58);
+        quotient[pos] = (unsigned char)(value / 58);
+        if (pos != 0 || quotient[pos] != ascii[0])  // Prevent leading zeros
+            pos++;
 
         dec2base(value % 58, dec2base_str, &len);
         memmove(x + len, x + j, (*length) - j);
