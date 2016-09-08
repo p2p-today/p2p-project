@@ -104,8 +104,6 @@ static unsigned int divide_58(char *x, size_t *length)  {
             pos++;
 
         dec2base(value % 58, dec2base_str, &len);
-        printbuf(dec2base_str, len);
-        printbuf(x, j);
         memmove(x + len, x + j, (*length) - j);
         memcpy(x, dec2base_str, len);
 
@@ -135,6 +133,7 @@ static char *ascii_to_base_58_(const char *input, size_t length, size_t *res_len
 
     do  {
         result[--pos] = base_58[divide_58(c_input, &length)];
+        printbuf(result + pos, res_size - pos);
     }
     while (length && !(length == 1 && c_input[0] == ascii[0]));
 
@@ -142,6 +141,8 @@ static char *ascii_to_base_58_(const char *input, size_t length, size_t *res_len
 
     *res_len = res_size - pos;
     memcpy(result, result + pos, *res_len);
+    fwrite(result, *res_len, 1, stdout);
+    printf("\n");
     return result;
 }
 
