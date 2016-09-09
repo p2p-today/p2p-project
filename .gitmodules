@@ -8,5 +8,5 @@
 	path = js_src/zlib
 	url = https://github.com/imaya/zlib.js
 [submodule "cp_src/zlib"]
-	path = cp_src/zlib
+	path = c_src/zlib
 	url = https://github.com/madler/zlib
