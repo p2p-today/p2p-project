@@ -90,7 +90,7 @@ class awaiting_value(object):
         self.callback.send(flags.whisper, flags.response, method, key, self.value)
 
     def __repr__(self):
-        return repr(value)
+        return repr(self.value)
 
 
 def most_common(tmp):
@@ -174,7 +174,7 @@ class file_dict(object):
             f.close()
             return ret
         except:  # pragma: no cover
-            raise KeyError(key) 
+            raise KeyError(key)
 
     def get(self, key, ret=None):
         """Gets an item, given a key, without raising a KeyError
@@ -207,7 +207,7 @@ class file_dict(object):
     def __repr__(self):
         counter = 0
         keys = min(10, len(os.listdir(self.__dir)))
-        string = "{" 
+        string = "{"
         for key in self.__iter__():
             counter += 1
             string += "%s: %s, " % (repr(key), repr(self.__getitem__(key)))
