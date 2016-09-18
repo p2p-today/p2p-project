@@ -238,7 +238,7 @@ class mesh_socket(base_socket):
             self.waterfalls.appendleft((msg.id, msg.time))
             for handler in self.routing_table.values():
                 if handler.id != msg.sender:
-                    handler.send(flags.waterfall, *msg.packets, time=msg.time_58, id=msg.sender)
+                    handler.send(flags.waterfall, *msg.packets, time=msg.time, id=msg.sender)
             self.__clean_waterfalls()
             return True
         else:
