@@ -48,7 +48,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
                 // this.__print__("Waterfall already captured", level=2);
                 return true;
             }
-            this.__print__("New waterfall received. Proceeding as normal", level=2)
+            // this.__print__("New waterfall received. Proceeding as normal", level=2)
         }
     }
 }
@@ -91,7 +91,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         //                                                     id in self.routing_table:
         //     self.__print__("Connection already established", level=1)
         //     return false
-        var shouldBreak = false;
+        var shouldBreak = (id == this.id || [addr, port] == this.out_addr || [addr, port] == this.addr);
         const self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
             if (key == id || self.routing_table[key].addr == [addr, port])   {
@@ -206,14 +206,13 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     waterfall(msg)  {
         if (this.waterfalls.indexOf([msg.id, msg.time]) <= -1)  {
             this.waterfalls.unshift([msg.id, msg.time]);
-            for (var key in Object.keys(this.routing_table))    {
-                const handler = this.routing_table[key];
-                console.log(this.routing_table);
-                console.log(handler);
+            const self = this;
+            Object.keys(this.routing_table).forEach(function(key)   {
+                const handler = self.routing_table[key];
                 if (handler.id !== msg.sender)   {
-                    handler.send(flags.waterfall, msg.packets, msg.sender, msg.time);
+                    handler.send(base.flags.waterfall, msg.packets, msg.sender, msg.time);
                 }
-            }
+            });
             this.__clean_waterfalls()
             return true
         }
