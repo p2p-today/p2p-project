@@ -71,10 +71,12 @@ m.flags = {
 };
 
 m.compression = [m.flags.zlib, m.flags.gzip];
+m.json_compressions = JSON.stringify(m.compression);
 
 // User salt generation pulled from: http://stackoverflow.com/a/2117523
 m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8);
+    const r = Math.random()*16|0;
+    const v = c === 'x' ? r : (r&0x3|0x8);
     return v.toString(16);
 });
 
@@ -180,7 +182,7 @@ m.protocol = class protocol {
         this.encryption = encryption;
     }
 
-    id() {
+    get id() {
         var protocol_hash = m.SHA256([this.subnet, this.encryption, m.protocol_version].join(''));
         return m.to_base_58(new BigInt(protocol_hash, 16));
     }
@@ -189,20 +191,15 @@ m.protocol = class protocol {
 m.default_protocol = new m.protocol('', 'Plaintext');
 
 m.pathfinding_message = class pathfinding_message {
-    constructor(msg_type, sender, payload, compression) {
-        this.msg_type = new Buffer(msg_type)
-        this.sender = new Buffer(sender)
-        this.payload = payload
+    constructor(msg_type, sender, payload, compression, timestamp) {
+        this.msg_type = new Buffer(msg_type);
+        this.sender = new Buffer(sender);
+        this.payload = payload || [];
         for (var i = 0; i < this.payload.length; i++)   {
-            this.payload[i] = new Buffer(this.payload[i])
+            this.payload[i] = new Buffer(this.payload[i]);
         }
-        this.time = m.getUTC()
-        if (compression) {
-            this.compression = compression
-        }
-        else {
-            this.compression = []
-        }
+        this.time = timestamp || m.getUTC();
+        this.compression = compression || [];
         this.compression_fail = false
     }
 
@@ -259,25 +256,25 @@ m.pathfinding_message = class pathfinding_message {
     }
 
     static process_string(string) {
-        var processed = 0
-        var expected = string.length
-        var pack_lens = []
-        var packets = []
+        var processed = 0;
+        var expected = string.length;
+        var pack_lens = [];
+        var packets = [];
         while (processed < expected) {
-            pack_lens = pack_lens.concat(m.unpack_value(new Buffer(string.slice(processed, processed+4))))
-            processed += 4
-            expected -= pack_lens[pack_lens.length - 1]
+            pack_lens = pack_lens.concat(m.unpack_value(new Buffer(string.slice(processed, processed+4))));
+            processed += 4;
+            expected -= pack_lens[pack_lens.length - 1];
         }
         if (processed > expected)   {
-            throw [`Could not parse correctly processed=${processed}, expected=${expected}, pack_lens=${pack_lens}`]
+            throw `Could not parse correctly processed=${processed}, expected=${expected}, pack_lens=${pack_lens}`;
         }
         // Then reconstruct the packets
         for (var i=0; i < pack_lens.length; i++) {
-            var end = processed + pack_lens[i]
-            packets = packets.concat([string.slice(processed, end)])
-            processed = end
+            var end = processed + pack_lens[i];
+            packets = packets.concat([string.slice(processed, end)]);
+            processed = end;
         }
-        return packets
+        return packets;
     }
 
     get compression_used() {
@@ -365,5 +362,131 @@ m.message = class message {
 
     reply(args) {
         throw "Not implemented"
+    }
+};
+
+m.base_connection = class base_connection   {
+    constructor(sock, server, outgoing)   {
+        this.sock = sock;
+        this.server = server;
+        this.outgoing = outgoing | false;
+        this.buffer = new Buffer(0);
+        this.id = null;
+        this.time = m.getUTC();
+        this.addr = null;
+        this.compression = [];
+        this.last_sent = [];
+        this.expected = 4;
+        this.active = false;
+        const self = this;
+
+        this.sock.on('data', function(data) {
+            self.collect_incoming_data(self, data);
+        });
+    }
+
+    send(msg_type, packs, id, time)  {
+        /**Sends a message through its connection.
+        *
+        * Args:
+        *     msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object
+        *     packs:      A list of Buffer-like objects, which correspond to the packets to send to you
+        *     id:         The ID this message should appear to be sent from (default: your ID)
+        *     time:       The time this message should appear to be sent from (default: now in UTC)
+        *
+        * Returns:
+        *     the pathfinding_message object you just sent, or None if the sending was unsuccessful
+        **/
+
+        //This section handles waterfall-specific flags
+        id = id || this.server.id;  //Latter is returned if key not found
+        time = time || m.getUTC();
+        //Begin real method
+        const msg = new m.pathfinding_message(msg_type, id, packs, this.compression, time);
+        if (msg_type === m.flags.whisper || msg_type === m.flags.broadcast) {
+            this.last_sent = [msg_type].concat(packs);
+        }
+        // this.__print__(`Sending ${[msg.len()].concat(msg.packets)} to ${this}`, 4);
+        if (msg.compression_used)   {
+            // self.__print__(`Compressing with ${msg.compression_used}`, level=4)
+        }
+        // try {
+            this.sock.write(msg.string)
+            return msg
+        // }
+        // catch(e)   {
+        //     self.server.daemon.exceptions.append((e, traceback.format_exc()))
+        //     self.server.disconnect(self)
+        // }
+    }
+
+    get protocol()  {
+        return this.server.protocol;
+    }
+
+    collect_incoming_data(self, data) {
+        self.buffer = Buffer.concat([self.buffer, data]);
+        console.log(self.buffer);
+        self.time = m.getUTC();
+        if (!self.active && self.buffer.length >= self.expected) {
+            // this.__print__(this.buffer, this.expected, this.find_terminator(), level=4)
+            self.expected = m.unpack_value(self.buffer.slice(0, 4)).add(4);
+            self.active = true;
+            // this.found_terminator();
+        }
+        if (self.active && self.buffer.length >= self.expected) {
+            self.found_terminator();
+        }
+        return true;
+    }
+
+    found_terminator()  {
+        console.log("I got called");
+        var msg = m.pathfinding_message.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
+        this.buffer = this.buffer.slice(this.expected);
+        this.expected = 4;
+        this.active = false;
+        return msg;
+    }
+
+    handle_renegotiate(packets) {
+
+    }
+
+    __print__() {
+
+    }
+};
+
+m.base_socket = class base_socket   {
+    constructor(addr, port, protocol, out_addr, debug_level)   {
+        const self = this;
+        this.addr = [addr, port];
+        this.incoming = new net.Server();
+        this.incoming.listen(port, addr);
+        this.protocol = protocol || m.default_protocol;
+        this.out_addr = out_addr || this.addr;
+        this.debug_level = debug_level || 0;
+
+        this.awaiting_ids = [];
+        this.routing_table = {};
+        this.id = m.to_base_58(BigInt(m.SHA384(`(${addr}, ${port})${this.protocol.id}${m.user_salt}`), 16));
+        this.__handlers = [];
+    }
+
+    register_handler(callback)  {
+        this.__handlers = this.__handlers.concat(callback);
+    }
+
+    handle_msg(msg, conn) {
+        this.__handlers.some(function(handler)  {
+            // self.__print__("Checking handler: %s" % handler.__name__, level=4)
+            console.log(`Entering handler ${handler.name}`);
+            if (handler(msg, conn)) {
+                // self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
+                console.log(`breaking from ${handler.name}`);
+                return true
+            }
+        });
     }
 };
