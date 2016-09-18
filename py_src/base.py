@@ -418,7 +418,7 @@ class pathfinding_message(object):
         assert packets[2] == msg.id, "Checksum failed"
         return msg
 
-    def __init__(self, msg_type, sender, payload, compression=None):
+    def __init__(self, msg_type, sender, payload, compression=None, timestamp=None):
         """Initializes a pathfinding_message instance
 
         Args:
@@ -426,6 +426,7 @@ class pathfinding_message(object):
             sender:         A bytes-like sender ID the message is using
             payload:        A list of bytes-like objects containing the payload of the message
             compression:    A list of the compression methods this message may use (default: [])
+            timestamp:      The current UTC timestamp (as an integer) (default: result of utils.getUTC())
 
         Raises:
             TypeError:  If you feed an object which cannot convert to bytes
@@ -446,7 +447,7 @@ class pathfinding_message(object):
         self.msg_type = sanitize_packet(msg_type)
         self.sender = sanitize_packet(sender)
         self.__payload = [sanitize_packet(packet) for packet in payload]
-        self.time = getUTC()
+        self.time = timestamp or getUTC()
         self.compression_fail = False
 
         if compression:
@@ -547,7 +548,7 @@ class base_connection(object):
         id = kargs.get('id', self.server.id)  # Latter is returned if key not found
         time = kargs.get('time') or getUTC()
         # Begin real method
-        msg = pathfinding_message(msg_type, id, list(args), self.compression)
+        msg = pathfinding_message(msg_type, id, list(args), self.compression, timestamp=time)
         if msg_type in [flags.whisper, flags.broadcast]:
             self.last_sent = [msg_type] + list(args)
         self.__print__("Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)

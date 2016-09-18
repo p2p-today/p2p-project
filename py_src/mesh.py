@@ -36,8 +36,8 @@ class mesh_connection(base_connection):
         try:
             msg = super(mesh_connection, self).found_terminator()
         except (IndexError, struct.error):
-            self.__print__("Failed to decode message: %s. Expected compression: %s." % \
-                            (raw_msg, intersect(compression, self.compression)[0]), level=1)
+            self.__print__("Failed to decode message. Expected compression: %s." % \
+                            intersect(compression, self.compression)[0], level=1)
             self.send(flags.renegotiate, flags.compression, json.dumps([]))
             self.send(flags.renegotiate, flags.resend)
             return
