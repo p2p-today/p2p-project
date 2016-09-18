@@ -70,7 +70,7 @@ m.flags = {
     simple:   '\x1F'
 };
 
-m.compression = [m.flags.zlib, m.flags.gzip];
+m.compression = [];// [m.flags.zlib, m.flags.gzip];
 m.json_compressions = JSON.stringify(m.compression);
 
 // User salt generation pulled from: http://stackoverflow.com/a/2117523
@@ -408,10 +408,12 @@ m.base_connection = class base_connection   {
         }
         // this.__print__(`Sending ${[msg.len()].concat(msg.packets)} to ${this}`, 4);
         if (msg.compression_used)   {
+            console.log(`Compressing with ${JSON.stringify(msg.compression_used)}`);
             // self.__print__(`Compressing with ${msg.compression_used}`, level=4)
         }
         // try {
-            this.sock.write(msg.string)
+            console.log(`Sending message ${JSON.stringify(msg.string.toString())} to ${this.id}`);
+            this.sock.write(msg.string, 'ascii')
             return msg
         // }
         // catch(e)   {

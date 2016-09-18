@@ -377,6 +377,7 @@ class pathfinding_message(object):
         processed, expected = 0, len(string)
         pack_lens, packets = [], []
         while processed != expected:
+            print(processed, expected)
             pack_lens.extend(struct.unpack("!L", string[processed:processed+4]))
             processed += 4
             expected -= pack_lens[-1]
@@ -595,6 +596,7 @@ class base_connection(object):
     def found_terminator(self):
         """Processes received messages"""
         raw_msg = ''.encode().join(self.buffer)
+        self.__print__("Received: %s" % repr(raw_msg), level=6)
         self.expected = 4
         self.buffer = []
         self.active = False

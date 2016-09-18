@@ -191,6 +191,15 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     }
 
+    send(packets, flag, type)  {
+        const send_type = type || base.flags.broadcast;
+        const main_flag = flag || base.flags.broadcast;
+        const self = this;
+        Object.keys(this.routing_table).forEach(function(key)   {
+            self.routing_table[key].send(main_flag, [send_type].concat(packets));
+        });
+    }
+
     __clean_waterfalls()    {
         this.waterfalls = Array.from(new Set(this.waterfalls));
         var new_waterfalls = [];
