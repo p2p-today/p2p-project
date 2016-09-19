@@ -201,11 +201,35 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     __handle_response(msg, conn)    {
-
+        const packets = msg.packets;
+        if (packets[0].toString() == base.flags.response)  {
+            // self.__print__("Response received for request id %s" % packets[1], level=1)
+            if (this.requests[packets[1]])  {
+                var addr = JSON.parse(packets[2]);
+                if (addr)   {
+                    var msg = this.requests.get(packets[1]);
+                    this.requests.pop(packets[1]);
+                    this.connect(addr[0][0], addr[0][1], addr[1]);
+                    this.routing_table[addr[1]].send(msg[0], msg[1]);
+                }
+            }
+            return true;
+        }
     }
 
     __handle_request(msg, conn) {
-
+        const packets = msg.packets;
+        console.log(packets[0].toString());
+        console.log(packets[1].toString());
+        if (packets[0].toString() == base.flags.request)  {
+            if (packets[1].toString() == '*')  {
+                conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
+            }
+            else if (self.routing_table[packets[2]])    {
+                conn.send(base.flags.broadcast, [base.flags.response, packets[1], JSON.stringify([this.routing_table[packets[2]].addr, packets[2]])]);
+            }
+            return true;
+        }
     }
 
     send(packets, flag, type)  {
