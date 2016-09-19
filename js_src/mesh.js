@@ -14,6 +14,8 @@ else {
     m = root;
 }
 
+m.max_outgoing = 4;
+
 m.default_protocol = new base.protocol('mesh', "Plaintext");
 
 m.mesh_connection = class mesh_connection extends base.base_connection  {
@@ -72,6 +74,17 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         });
     }
 
+    get outgoing()  {
+        var outs = [];
+        const self = this;
+        Object.keys(this.routing_table).forEach(function(key)   {
+            if (self.routing_table[key].outgoing)   {
+                outs.push(self.routing_table[key]);
+            }
+        });
+        return outs;
+    }
+
     recv(num)   {
         var ret;
         if (num)    {
@@ -93,9 +106,12 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         //     return false
         var shouldBreak = (id == this.id || [addr, port] == this.out_addr || [addr, port] == this.addr);
         const self = this;
-        Object.keys(this.routing_table).forEach(function(key)   {
+        Object.keys(this.routing_table).some(function(key)   {
             if (key == id || self.routing_table[key].addr == [addr, port])   {
                 shouldBreak = true;
+            }
+            if (shouldBreak)    {
+                return true;
             }
         });
         if (shouldBreak)    {
@@ -170,11 +186,12 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             var new_peers = JSON.parse(packets[1]);
             const self = this;
             new_peers.forEach(function(peer_array)  {
-                // if len(self.outgoing) < max_outgoing:
+                if (self.outgoing.length < m.max_outgoing)  {
                     // try:
                         var addr = peer_array[0];
                         var id = peer_array[1];
                         self.connect(addr[0], addr[1], id);
+                }
                     // except:  # pragma: no cover
                         // self.__print__("Could not connect to %s:%s because\n%s" % (addr[0], addr[1], traceback.format_exc()), level=1)
                         // continue

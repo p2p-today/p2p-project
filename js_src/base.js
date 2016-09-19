@@ -80,6 +80,27 @@ m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c
     return v.toString(16);
 });
 
+m.intersect = function()    {
+    const last = arguments.length - 1;
+    var seen={};
+    var result=[];
+    for (var i = 0; i < last; i++)   {
+        for (var j = 0; j < arguments[i].length; j++)  {
+            if (seen[arguments[i][j]])  {
+                seen[arguments[i][j]] += 1;
+            }
+            else if (!i)    {
+                seen[arguments[i][j]] = 1;
+            }
+        }
+    }
+    for (var i = 0; i < arguments[last].length; i++) {
+        if ( seen[arguments[last][i]] === last)
+            result.push(arguments[last][i]);
+        }
+    return result;
+}
+
 m.unpack_value = function(str)  {
     str = new Buffer(str, 'ascii');
     var val = BigInt.zero;
@@ -452,7 +473,25 @@ m.base_connection = class base_connection   {
     }
 
     handle_renegotiate(packets) {
-
+        if (packets[0] == m.flags.renegotiate)    {
+            if (packets[4] == m.flags.compression)   {
+                var encoded_methods = JSON.parse(packets[5]);
+                var respond = (this.compression != encoded_methods);
+                this.compression = encoded_methods;
+                // self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
+                if (respond)    {
+                    var decoded_methods = m.intersect(m.compression, this.compression);
+                    self.send(m.flags.renegotiate, m.flags.compression, JSON.stringify(decoded_methods))
+                }
+                return true;
+            }
+            else if (packets[4] == m.flags.resend)   {
+                var type = self.last_sent[0];
+                var packs = self.last_sent.slice(1);
+                self.send(type, packs);
+                return true;
+            }
+        }
     }
 
     __print__() {
