@@ -377,7 +377,6 @@ class pathfinding_message(object):
         processed, expected = 0, len(string)
         pack_lens, packets = [], []
         while processed != expected:
-            print(processed, expected)
             pack_lens.extend(struct.unpack("!L", string[processed:processed+4]))
             processed += 4
             expected -= pack_lens[-1]
