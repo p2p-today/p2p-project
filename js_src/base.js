@@ -309,7 +309,7 @@ m.pathfinding_message = class pathfinding_message {
         for (var i = 0; i < this.packets.length; i++) {
             headers = headers.concat(m.pack_value(4, this.packets[i].length))
         }
-        string = headers.join('') + string
+        string = Buffer.concat(headers.concat(new Buffer(string, 'ascii')));
         if (this.compression_used) {
             string = m.compress(string, this.compression_used)
         }
@@ -318,7 +318,7 @@ m.pathfinding_message = class pathfinding_message {
 
     get string() {
         var string = this.__non_len_string
-        return m.pack_value(4, string.length) + string
+        return Buffer.concat([m.pack_value(4, string.length), string]);
     }
 
     get length() {

@@ -218,7 +218,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             const self = this;
             Object.keys(this.routing_table).forEach(function(key)   {
                 const handler = self.routing_table[key];
-                if (handler.id !== msg.sender)   {
+                if (handler.id.toString() !== msg.sender.toString())   {
                     handler.send(base.flags.waterfall, msg.packets, msg.sender, msg.time);
                 }
             });
