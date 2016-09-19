@@ -70,7 +70,7 @@ m.flags = {
     simple:   '\x1F'
 };
 
-m.compression = [];// [m.flags.zlib, m.flags.gzip];
+m.compression = [m.flags.zlib, m.flags.gzip];
 m.json_compressions = JSON.stringify(m.compression);
 
 // User salt generation pulled from: http://stackoverflow.com/a/2117523
