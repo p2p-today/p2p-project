@@ -30,7 +30,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
 
     found_terminator()  {
         var msg = super.found_terminator();
-        console.log(msg.packets);
+        //console.log(msg.packets);
         if (this.handle_waterfall(msg, msg.packets))   {
             return true;
         }
@@ -168,7 +168,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             // }
             conn.id = packets[1];
             conn.addr = JSON.parse(packets[3]);
-            console.log(`changed compression methods to: ${packets[4]}`);
+            //console.log(`changed compression methods to: ${packets[4]}`);
             conn.compression = JSON.parse(packets[4]);
             // self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
             if (this.awaiting_ids.indexOf(conn) > -1)   {  // handler in this.awaiting_ids
@@ -219,8 +219,8 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     __handle_request(msg, conn) {
         const packets = msg.packets;
-        console.log(packets[0].toString());
-        console.log(packets[1].toString());
+        //console.log(packets[0].toString());
+        //console.log(packets[1].toString());
         if (packets[0].toString() == base.flags.request)  {
             if (packets[1].toString() == '*')  {
                 conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);

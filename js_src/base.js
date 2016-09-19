@@ -244,7 +244,7 @@ m.pathfinding_message = class pathfinding_message {
         finally {
             if (!sizeless) {
                 if (m.unpack_value(string.slice(0,4)) + 4 !== string.length) {
-                    console.log(`slice given: ${string.slice(0, 4).inspect()}.  Value expected: ${string.length - 4}.  Value derived: ${m.unpack_value(string.slice(0, 4))}`)
+                    //console.log(`slice given: ${string.slice(0, 4).inspect()}.  Value expected: ${string.length - 4}.  Value derived: ${m.unpack_value(string.slice(0, 4))}`)
                     throw "The following expression must be true: unpack_value(string.slice(0,4)) === string.length - 4"
                 }
                 string = string.slice(4)
@@ -257,18 +257,18 @@ m.pathfinding_message = class pathfinding_message {
         var compression_fail = false
         compressions = compressions || []
         for (var i = 0; i < compressions.length; i++) {
-            console.log(`Checking ${compressions[i]} compression`)
+            //console.log(`Checking ${compressions[i]} compression`)
             if (m.compression.indexOf(compressions[i]) > -1) {  // module scope compression
-                console.log(`Trying ${compressions[i]} compression`)
+                //console.log(`Trying ${compressions[i]} compression`)
                 try {
                     string = m.decompress(string, compressions[i])
                     compression_fail = false
-                    console.log(`Compression ${compressions[i]} succeeded`)
+                    //console.log(`Compression ${compressions[i]} succeeded`)
                     break
                 }
                 catch(err) {
                     compression_fail = true
-                    console.log(`compresion ${compressions[i]} failed: ${err}`)
+                    //console.log(`compresion ${compressions[i]} failed: ${err}`)
                     continue
                 }
             }
@@ -429,11 +429,11 @@ m.base_connection = class base_connection   {
         }
         // this.__print__(`Sending ${[msg.len()].concat(msg.packets)} to ${this}`, 4);
         if (msg.compression_used)   {
-            console.log(`Compressing with ${JSON.stringify(msg.compression_used)}`);
+            //console.log(`Compressing with ${JSON.stringify(msg.compression_used)}`);
             // self.__print__(`Compressing with ${msg.compression_used}`, level=4)
         }
         // try {
-            console.log(`Sending message ${JSON.stringify(msg.string.toString())} to ${this.id}`);
+            //console.log(`Sending message ${JSON.stringify(msg.string.toString())} to ${this.id}`);
             this.sock.write(msg.string, 'ascii')
             return msg
         // }
@@ -449,7 +449,7 @@ m.base_connection = class base_connection   {
 
     collect_incoming_data(self, data) {
         self.buffer = Buffer.concat([self.buffer, data]);
-        console.log(self.buffer);
+        //console.log(self.buffer);
         self.time = m.getUTC();
         if (!self.active && self.buffer.length >= self.expected) {
             // this.__print__(this.buffer, this.expected, this.find_terminator(), level=4)
@@ -464,7 +464,7 @@ m.base_connection = class base_connection   {
     }
 
     found_terminator()  {
-        console.log("I got called");
+        //console.log("I got called");
         var msg = m.pathfinding_message.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
         this.buffer = this.buffer.slice(this.expected);
         this.expected = 4;
@@ -522,10 +522,10 @@ m.base_socket = class base_socket   {
     handle_msg(msg, conn) {
         this.__handlers.some(function(handler)  {
             // self.__print__("Checking handler: %s" % handler.__name__, level=4)
-            console.log(`Entering handler ${handler.name}`);
+            //console.log(`Entering handler ${handler.name}`);
             if (handler(msg, conn)) {
                 // self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
-                console.log(`breaking from ${handler.name}`);
+                //console.log(`breaking from ${handler.name}`);
                 return true
             }
         });

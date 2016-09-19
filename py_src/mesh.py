@@ -192,7 +192,7 @@ class mesh_socket(base_socket):
                     try:
                         self.connect(addr[0], addr[1], id.encode())
                     except:  # pragma: no cover
-                        self.__print__("Could not connect to %s:%s because\n%s" % (addr[0], addr[1], traceback.format_exc()), level=1)
+                        self.__print__("Could not connect to %s because\n%s" % (addr, traceback.format_exc()), level=1)
                         continue
             return True
 
