@@ -53,6 +53,17 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
             // this.__print__("New waterfall received. Proceeding as normal", level=2)
         }
     }
+
+    onClose()   {
+        if (this.server.routing_table[this.id]) {
+            delete this.server.routing_table[this.id];
+        }
+    }
+
+    onEnd()   {
+        this.sock.end();
+        this.sock.destroy();
+    }
 }
 
 m.mesh_socket = class mesh_socket extends base.base_socket  {
@@ -132,7 +143,8 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     disconnect(handler) {
-
+        handler.sock.end();
+        handler.sock.destroy(); //These implicitly remove from routing table
     }
 
     handle_msg(msg, conn)    {

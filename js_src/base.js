@@ -404,6 +404,29 @@ m.base_connection = class base_connection   {
         this.sock.on('data', function(data) {
             self.collect_incoming_data(self, data);
         });
+        this.sock.on('end', function()  {
+            self.onEnd();
+        });
+        this.sock.on('error', function(err)    {
+            self.onError(err);
+        });
+        this.sock.on('close', function()    {
+            self.onClose();
+        });
+    }
+
+    onEnd() {
+        console.log(`Connection to ${this.id || this} ended. This is the template function`);
+    }
+
+    onError(err)    {
+        console.log(`Error: ${err}`);
+        this.sock.end();
+        this.sock.destroy();
+    }
+
+    onClose()   {
+        console.log(`Connection to ${this.id || this} closed. This is the template function`);
     }
 
     send(msg_type, packs, id, time)  {
