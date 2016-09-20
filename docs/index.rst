@@ -17,6 +17,7 @@ Contents:
     Javascript
     Golang
     CONTRIBUTING_LINK
+    License
 
 Indices and tables
 ==================

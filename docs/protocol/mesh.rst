@@ -5,12 +5,12 @@ Problem
 +++++++
 
 There are very few ways to construct a peer to peer network in
-dynamic languages. Everyone who does this needs to reinvent the
-wheel. For example, in Python, the only two such libraries either
-never made it out of beta, or were to connect to a cryptocurrency.
-There is certainly no way to communicate *between* these languages.
-This section will focus on how you can make a mesh (unorganized)
-network like the one in Bitcoin or Gnutella.
+dynamic languages. Everyone who wants to make such a network needs
+to reinvent the wheel. For example, in Python, the only two such
+libraries either never made it out of beta, or were to connect to a
+cryptocurrency. There is certainly no way to communicate *between*
+these languages. This section will focus on how you can make a mesh
+(unorganized) network like the one in Bitcoin or Gnutella.
 
 Design Goals
 ++++++++++++
@@ -41,9 +41,9 @@ Now your node is ready to parse messages on the network, but it can’t
 yet connect. There are important elements it needs to store in order
 to interact with it correctly.
 
-#. A daemon thread which receives messages and incoming connections
+#. A daemon thread or callback system which receives messages and incoming connections
 #. A routing table of peers with the IDs and corresponding connection objects
-#. A “waterfall queue” of recently received message IDs and timestamps
+#. A “waterfall list of recently received message IDs and timestamps
 #. A user-interactable queue of recently received messages
 #. A “protocol”, which contains:
 
@@ -59,7 +59,7 @@ This is where the protocol object becomes important.
 When you connect to a node, each will send a message in the following
 format:
 
-::
+.. code-block:: none
 
    whisper
    [your id]
@@ -80,7 +80,7 @@ If they do match, your node adds them to your routing table
 address and supported compression methods. Then your node sends a
 standard response:
 
-::
+.. code-block:: none
 
    whisper
    [your id]
@@ -126,7 +126,7 @@ The ``compression`` subflag will allow your node to renegotiate your
 compression methods. A message using this subflag should be
 constructed like so:
 
-::
+.. code-block:: none
 
    renegotiate
    [your id]
@@ -144,7 +144,7 @@ Your node may also send a ``resend`` subflag, which requests your
 peer to resend the previous ``whisper`` or ``broadcast``. This is
 structured like so:
 
-::
+.. code-block:: none
 
    renegotiate
    [your id]
@@ -161,7 +161,7 @@ directly connected to a sender, the following method can be used:
 First, your node broadcasts a message to the network containing the
 ``request`` subflag. This is constructed as follows:
 
-::
+.. code-block:: none
 
    broadcast
    [your id]
@@ -174,7 +174,7 @@ First, your node broadcasts a message to the network containing the
 Then your node places this in a dictionary so your node can watch for
 when this is responded to. A peer who gets this will reply:
 
-::
+.. code-block:: none
 
    broadcast
    [their id]
@@ -192,7 +192,7 @@ Another use of this mechanism is to request a copy of your peers’
 routing tables. To do this, your node may send a message structured
 like so:
 
-::
+.. code-block:: none
 
    whisper
    [your id]
