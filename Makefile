@@ -28,9 +28,9 @@ else
 	pypy = False
 endif
 
-pylibdir = $(shell python -c "import sys, sysconfig; print('{}.{}-{v[0]}.{v[1]}'.format('lib', sysconfig.get_platform(), v=sys.version_info))")
-py2libdir = $(shell $(python2) -c "import sys, sysconfig; print('{}.{}-{v[0]}.{v[1]}'.format('lib', sysconfig.get_platform(), v=sys.version_info))")
-py3libdir = $(shell $(python3) -c "import sys, sysconfig; print('{}.{}-{v[0]}.{v[1]}'.format('lib', sysconfig.get_platform(), v=sys.version_info))")
+pylibdir = $(shell python -c "import sys, sysconfig; print('lib.{}-{v[0]}.{v[1]}'.format(sysconfig.get_platform(), v=sys.version_info))")
+py2libdir = $(shell $(python2) -c "import sys, sysconfig; print('lib.{}-{v[0]}.{v[1]}'.format(sysconfig.get_platform(), v=sys.version_info))")
+py3libdir = $(shell $(python3) -c "import sys, sysconfig; print('lib.{}-{v[0]}.{v[1]}'.format(sysconfig.get_platform(), v=sys.version_info))")
 ifeq ($(python2), python)
 	pyunvlibdir = $(pylibdir)
 else
@@ -91,7 +91,7 @@ py2testdeps:
 	$(python2) $(py_test_deps)
 
 py3testdeps:
-	$(python3) $(py_test_deps)	
+	$(python3) $(py_test_deps)
 
 pytest: LICENSE setup.py setup.cfg
 	$(MAKE) python pytestdeps
@@ -118,7 +118,7 @@ else
 endif
 
 ifeq ($(pypy), True)
-cpytest; pytest
+cpytest: pytest
 
 else
 cpytest: LICENSE setup.py setup.cfg
