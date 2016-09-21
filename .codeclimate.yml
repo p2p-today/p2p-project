@@ -31,8 +31,8 @@ engines:
     enabled: true
   gnu-complexity:
     enabled: true
-  nodesecurity:
-    enabled: true
+#  nodesecurity:
+#    enabled: true
   pep8:
     enabled: true
 ratings:
