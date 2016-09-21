@@ -84,6 +84,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../protocol.html">Protocol Specifications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../python.html">Python Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../CONTRIBUTING_LINK.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../License.html">License and Credits</a></li>
 </ul>
 
             
@@ -549,7 +550,7 @@
         <span class="k">assert</span> <span class="n">packets</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">msg</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">&quot;Checksum failed&quot;</span>
         <span class="k">return</span> <span class="n">msg</span></div>
 
-<div class="viewcode-block" id="pathfinding_message.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.pathfinding_message.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg_type</span><span class="p">,</span> <span class="n">sender</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="pathfinding_message.__init__"><a class="viewcode-back" href="../../python/base.html#py2p.base.pathfinding_message.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg_type</span><span class="p">,</span> <span class="n">sender</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initializes a pathfinding_message instance</span>
 
 <span class="sd">        Args:</span>
@@ -557,6 +558,7 @@
 <span class="sd">            sender:         A bytes-like sender ID the message is using</span>
 <span class="sd">            payload:        A list of bytes-like objects containing the payload of the message</span>
 <span class="sd">            compression:    A list of the compression methods this message may use (default: [])</span>
+<span class="sd">            timestamp:      The current UTC timestamp (as an integer) (default: result of utils.getUTC())</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            TypeError:  If you feed an object which cannot convert to bytes</span>
@@ -577,7 +579,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">msg_type</span> <span class="o">=</span> <span class="n">sanitize_packet</span><span class="p">(</span><span class="n">msg_type</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sender</span> <span class="o">=</span> <span class="n">sanitize_packet</span><span class="p">(</span><span class="n">sender</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__payload</span> <span class="o">=</span> <span class="p">[</span><span class="n">sanitize_packet</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="k">for</span> <span class="n">packet</span> <span class="ow">in</span> <span class="n">payload</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">getUTC</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">timestamp</span> <span class="ow">or</span> <span class="n">getUTC</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compression_fail</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="k">if</span> <span class="n">compression</span><span class="p">:</span>
@@ -678,7 +680,7 @@
         <span class="nb">id</span> <span class="o">=</span> <span class="n">kargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>  <span class="c1"># Latter is returned if key not found</span>
         <span class="n">time</span> <span class="o">=</span> <span class="n">kargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;time&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">getUTC</span><span class="p">()</span>
         <span class="c1"># Begin real method</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="n">pathfinding_message</span><span class="p">(</span><span class="n">msg_type</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span><span class="p">)</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="n">pathfinding_message</span><span class="p">(</span><span class="n">msg_type</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span><span class="p">,</span> <span class="n">timestamp</span><span class="o">=</span><span class="n">time</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">msg_type</span> <span class="ow">in</span> <span class="p">[</span><span class="n">flags</span><span class="o">.</span><span class="n">whisper</span><span class="p">,</span> <span class="n">flags</span><span class="o">.</span><span class="n">broadcast</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">last_sent</span> <span class="o">=</span> <span class="p">[</span><span class="n">msg_type</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__print__</span><span class="p">(</span><span class="s2">&quot;Sending </span><span class="si">%s</span><span class="s2"> to </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">([</span><span class="n">msg</span><span class="o">.</span><span class="n">len</span><span class="p">]</span> <span class="o">+</span> <span class="n">msg</span><span class="o">.</span><span class="n">packets</span><span class="p">,</span> <span class="bp">self</span><span class="p">),</span> <span class="n">level</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
@@ -725,6 +727,7 @@
 <div class="viewcode-block" id="base_connection.found_terminator"><a class="viewcode-back" href="../../python/base.html#py2p.base.base_connection.found_terminator">[docs]</a>    <span class="k">def</span> <span class="nf">found_terminator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Processes received messages&quot;&quot;&quot;</span>
         <span class="n">raw_msg</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">buffer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__print__</span><span class="p">(</span><span class="s2">&quot;Received: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">repr</span><span class="p">(</span><span class="n">raw_msg</span><span class="p">),</span> <span class="n">level</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">expected</span> <span class="o">=</span> <span class="mi">4</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">False</span>

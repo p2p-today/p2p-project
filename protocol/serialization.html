@@ -95,6 +95,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../python.html">Python Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING_LINK.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../License.html">License and Credits</a></li>
 </ul>
 
             
@@ -151,21 +152,21 @@ well as how to divide up its various packets. The metadata is used to
 assist propagation functions. And the payload is what the user on the
 other end receives.</p>
 <p>A more formal definition would look like:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Size</span> <span class="n">of</span> <span class="n">message</span>    <span class="o">-</span> <span class="mi">4</span> <span class="p">(</span><span class="n">big</span><span class="o">-</span><span class="n">endian</span><span class="p">)</span> <span class="nb">bytes</span> <span class="n">defining</span> <span class="n">the</span> <span class="n">size</span> <span class="n">of</span> <span class="n">the</span> <span class="n">message</span>
-<span class="o">------------------------</span><span class="n">All</span> <span class="n">below</span> <span class="n">may</span> <span class="n">be</span> <span class="n">compressed</span><span class="o">------------------------</span>
-<span class="n">Size</span> <span class="n">of</span> <span class="n">packet</span> <span class="mi">0</span>   <span class="o">-</span> <span class="mi">4</span> <span class="nb">bytes</span> <span class="n">defining</span> <span class="n">the</span> <span class="n">plaintext</span> <span class="n">size</span> <span class="n">of</span> <span class="n">packet</span> <span class="mi">0</span>
-<span class="n">Size</span> <span class="n">of</span> <span class="n">packet</span> <span class="mi">1</span>   <span class="o">-</span> <span class="mi">4</span> <span class="nb">bytes</span> <span class="n">defining</span> <span class="n">the</span> <span class="n">plaintext</span> <span class="n">size</span> <span class="n">of</span> <span class="n">packet</span> <span class="mi">1</span>
-<span class="o">...</span>
-<span class="n">Size</span> <span class="n">of</span> <span class="n">packet</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">4</span> <span class="nb">bytes</span> <span class="n">defining</span> <span class="n">the</span> <span class="n">plaintext</span> <span class="n">size</span> <span class="n">of</span> <span class="n">packet</span> <span class="n">n</span><span class="o">-</span><span class="mi">1</span>
-<span class="n">Size</span> <span class="n">of</span> <span class="n">packet</span> <span class="n">n</span>   <span class="o">-</span> <span class="mi">4</span> <span class="nb">bytes</span> <span class="n">defining</span> <span class="n">the</span> <span class="n">plaintext</span> <span class="n">size</span> <span class="n">of</span> <span class="n">packet</span> <span class="n">n</span>
-<span class="o">---------------------------------</span><span class="n">End</span> <span class="n">Header</span><span class="o">--------------------------------</span>
-<span class="n">Pathfinding</span> <span class="n">header</span> <span class="o">-</span> <span class="p">[</span><span class="n">broadcast</span><span class="p">,</span> <span class="n">waterfall</span><span class="p">,</span> <span class="n">whisper</span><span class="p">,</span> <span class="n">renegotiate</span><span class="p">]</span>
-<span class="n">Sender</span> <span class="n">ID</span>          <span class="o">-</span> <span class="n">A</span> <span class="n">base_58</span> <span class="n">SHA384</span><span class="o">-</span><span class="n">based</span> <span class="n">ID</span> <span class="k">for</span> <span class="n">the</span> <span class="n">sender</span>
-<span class="n">Message</span> <span class="n">ID</span>         <span class="o">-</span> <span class="n">A</span> <span class="n">base_58</span> <span class="n">SHA384</span><span class="o">-</span><span class="n">based</span> <span class="n">ID</span> <span class="k">for</span> <span class="n">the</span> <span class="n">message</span> <span class="n">packets</span>
-<span class="n">Timestamp</span>          <span class="o">-</span> <span class="n">A</span> <span class="n">base_58</span> <span class="n">unix</span> <span class="n">UTC</span> <span class="n">timestamp</span> <span class="n">of</span> <span class="n">initial</span> <span class="n">broadcast</span>
-<span class="n">Payload</span> <span class="n">packets</span>
-  <span class="n">Payload</span> <span class="n">header</span>   <span class="o">-</span> <span class="p">[</span><span class="n">broadcast</span><span class="p">,</span> <span class="n">whisper</span><span class="p">,</span> <span class="n">handshake</span><span class="p">,</span> <span class="n">peers</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">response</span><span class="p">]</span>
-  <span class="n">Payload</span> <span class="n">contents</span>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Size of message    - 4 (big-endian) bytes defining the size of the message
+------------------------All below may be compressed------------------------
+Size of packet 0   - 4 bytes defining the plaintext size of packet 0
+Size of packet 1   - 4 bytes defining the plaintext size of packet 1
+...
+Size of packet n-1 - 4 bytes defining the plaintext size of packet n-1
+Size of packet n   - 4 bytes defining the plaintext size of packet n
+---------------------------------End Header--------------------------------
+Pathfinding header - [broadcast, waterfall, whisper, renegotiate]
+Sender ID          - A base_58 SHA384-based ID for the sender
+Message ID         - A base_58 SHA384-based ID for the message packets
+Timestamp          - A base_58 unix UTC timestamp of initial broadcast
+Payload packets
+  Payload header   - [broadcast, whisper, handshake, peers, request, response]
+  Payload contents
 </pre></div>
 </div>
 <p>To understand this, let’s work from the bottom up. When a user wants to

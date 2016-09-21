@@ -12,7 +12,7 @@ These flags will denote the primary purpose of a message.
 - renegotiate   = ``"\x03"``
 - ping          = ``"\x04"``
 - pong          = ``"\x05"``
-            
+
 Sub-Flags
 +++++++++
 
@@ -61,9 +61,12 @@ Python Implemented
 ~~~~~~~~~~~~~~~~~~
 
 - bz2
-- gzip   
-- lzma 
+- gzip
+- lzma
 - zlib
+
+.. note::
+    Only on systems where these modules are available
 
 C++ Planned
 ~~~~~~~~~~~
@@ -81,3 +84,5 @@ Reserved Flags
 ++++++++++++++
 
 These define the flags that other applications should *not* use, as they either are (or will be) used by the standard protocol.
+
+Currently, this is all single byte characters from ``0x00`` to ``0x20``. This list may be expanded later.

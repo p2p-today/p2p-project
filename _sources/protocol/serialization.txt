@@ -15,7 +15,7 @@ other end receives.
 
 A more formal definition would look like:
 
-::
+.. code-block:: none
 
     Size of message    - 4 (big-endian) bytes defining the size of the message
     ------------------------All below may be compressed------------------------

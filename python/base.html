@@ -93,6 +93,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING_LINK.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../License.html">License and Credits</a></li>
 </ul>
 
             
@@ -826,11 +827,11 @@ prefixed with base.flags.whisper, so the other end will receive
 
 <dl class="class">
 <dt id="py2p.base.pathfinding_message">
-<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">pathfinding_message</code><span class="sig-paren">(</span><em>msg_type</em>, <em>sender</em>, <em>payload</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#pathfinding_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.pathfinding_message" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">py2p.base.</code><code class="descname">pathfinding_message</code><span class="sig-paren">(</span><em>msg_type</em>, <em>sender</em>, <em>payload</em>, <em>compression=None</em>, <em>timestamp=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#pathfinding_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.pathfinding_message" title="Permalink to this definition">¶</a></dt>
 <dd><p>An object used to build and parse protocol-defined message structures</p>
 <dl class="method">
 <dt id="py2p.base.pathfinding_message.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>msg_type</em>, <em>sender</em>, <em>payload</em>, <em>compression=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#pathfinding_message.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.pathfinding_message.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>msg_type</em>, <em>sender</em>, <em>payload</em>, <em>compression=None</em>, <em>timestamp=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py2p/base.html#pathfinding_message.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py2p.base.pathfinding_message.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializes a pathfinding_message instance</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -841,6 +842,7 @@ prefixed with base.flags.whisper, so the other end will receive
 <li><strong>sender</strong> &#8211; A bytes-like sender ID the message is using</li>
 <li><strong>payload</strong> &#8211; A list of bytes-like objects containing the payload of the message</li>
 <li><strong>compression</strong> &#8211; A list of the compression methods this message may use (default: [])</li>
+<li><strong>timestamp</strong> &#8211; The current UTC timestamp (as an integer) (default: result of utils.getUTC())</li>
 </ul>
 </td>
 </tr>

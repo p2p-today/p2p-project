@@ -105,6 +105,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../python.html">Python Implementation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../CONTRIBUTING_LINK.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../License.html">License and Credits</a></li>
 </ul>
 
             
@@ -156,12 +157,12 @@
 <div class="section" id="problem">
 <h2>Problem<a class="headerlink" href="#problem" title="Permalink to this headline">¶</a></h2>
 <p>There are very few ways to construct a peer to peer network in
-dynamic languages. Everyone who does this needs to reinvent the
-wheel. For example, in Python, the only two such libraries either
-never made it out of beta, or were to connect to a cryptocurrency.
-There is certainly no way to communicate <em>between</em> these languages.
-This section will focus on how you can make a mesh (unorganized)
-network like the one in Bitcoin or Gnutella.</p>
+dynamic languages. Everyone who wants to make such a network needs
+to reinvent the wheel. For example, in Python, the only two such
+libraries either never made it out of beta, or were to connect to a
+cryptocurrency. There is certainly no way to communicate <em>between</em>
+these languages. This section will focus on how you can make a mesh
+(unorganized) network like the one in Bitcoin or Gnutella.</p>
 </div>
 <div class="section" id="design-goals">
 <h2>Design Goals<a class="headerlink" href="#design-goals" title="Permalink to this headline">¶</a></h2>
@@ -186,9 +187,9 @@ data density where possible.</p>
 yet connect. There are important elements it needs to store in order
 to interact with it correctly.</p>
 <ol class="arabic simple">
-<li>A daemon thread which receives messages and incoming connections</li>
+<li>A daemon thread or callback system which receives messages and incoming connections</li>
 <li>A routing table of peers with the IDs and corresponding connection objects</li>
-<li>A “waterfall queue” of recently received message IDs and timestamps</li>
+<li>A “waterfall list of recently received message IDs and timestamps</li>
 <li>A user-interactable queue of recently received messages</li>
 <li>A “protocol”, which contains:</li>
 </ol>
@@ -205,15 +206,15 @@ to interact with it correctly.</p>
 <p>This is where the protocol object becomes important.</p>
 <p>When you connect to a node, each will send a message in the following
 format:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">whisper</span>
-<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
-<span class="n">handshake</span>
-<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">your</span> <span class="n">protocol</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">your</span> <span class="n">outward</span><span class="o">-</span><span class="n">facing</span> <span class="n">address</span><span class="p">]</span>
-<span class="p">[</span><span class="n">json</span><span class="o">-</span><span class="n">ized</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">supported</span> <span class="n">compression</span> <span class="n">methods</span><span class="p">,</span> <span class="ow">in</span> <span class="n">order</span> <span class="n">of</span> <span class="n">preference</span><span class="p">]</span>
+<div class="highlight-none"><div class="highlight"><pre><span></span>whisper
+[your id]
+[message id]
+[timestamp]
+handshake
+[your id]
+[your protocol id]
+[your outward-facing address]
+[json-ized list of supported compression methods, in order of preference]
 </pre></div>
 </div>
 <p>When your node receives the corresponding message, the first thing
@@ -223,12 +224,12 @@ do not match, your node shuts down the connection.</p>
 (<code class="docutils literal"><span class="pre">{ID:</span> <span class="pre">connection}</span></code>), and makes a note of their outward facing
 address and supported compression methods. Then your node sends a
 standard response:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">whisper</span>
-<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
-<span class="n">peers</span>
-<span class="p">[</span><span class="n">json</span><span class="o">-</span><span class="n">ized</span> <span class="n">copy</span> <span class="n">of</span> <span class="n">your</span> <span class="n">routing</span> <span class="n">table</span> <span class="ow">in</span> <span class="nb">format</span><span class="p">:</span> <span class="p">[[</span><span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="p">],</span> <span class="nb">id</span><span class="p">]]</span>
+<div class="highlight-none"><div class="highlight"><pre><span></span>whisper
+[your id]
+[message id]
+[timestamp]
+peers
+[json-ized copy of your routing table in format: [[addr, port], id]]
 </pre></div>
 </div>
 <p>Upon receiving this message, your node attempts to connect to each given address. Now you&#8217;re connected to the network! But how do you process the incoming messages?</p>
@@ -269,12 +270,12 @@ operations.</p>
 <p>The <code class="docutils literal"><span class="pre">compression</span></code> subflag will allow your node to renegotiate your
 compression methods. A message using this subflag should be
 constructed like so:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">renegotiate</span>
-<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
-<span class="n">compression</span>
-<span class="p">[</span><span class="n">json</span><span class="o">-</span><span class="n">ized</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">desired</span> <span class="n">compression</span> <span class="n">methods</span><span class="p">,</span> <span class="ow">in</span> <span class="n">order</span> <span class="n">of</span> <span class="n">preference</span><span class="p">]</span>
+<div class="highlight-none"><div class="highlight"><pre><span></span>renegotiate
+[your id]
+[message id]
+[timestamp]
+compression
+[json-ized list of desired compression methods, in order of preference]
 </pre></div>
 </div>
 <p>Your peer will respond with the same message, excluding any methods
@@ -284,11 +285,11 @@ This process is repeated until the two agree upon a list.</p>
 <p>Your node may also send a <code class="docutils literal"><span class="pre">resend</span></code> subflag, which requests your
 peer to resend the previous <code class="docutils literal"><span class="pre">whisper</span></code> or <code class="docutils literal"><span class="pre">broadcast</span></code>. This is
 structured like so:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">renegotiate</span>
-<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
-<span class="n">resend</span>
+<div class="highlight-none"><div class="highlight"><pre><span></span>renegotiate
+[your id]
+[message id]
+[timestamp]
+resend
 </pre></div>
 </div>
 </div>
@@ -298,24 +299,24 @@ structured like so:</p>
 directly connected to a sender, the following method can be used:</p>
 <p>First, your node broadcasts a message to the network containing the
 <code class="docutils literal"><span class="pre">request</span></code> subflag. This is constructed as follows:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">broadcast</span>
-<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
-<span class="n">request</span>
-<span class="p">[</span><span class="n">a</span> <span class="n">unique</span><span class="p">,</span> <span class="n">base_58</span> <span class="nb">id</span> <span class="n">you</span> <span class="n">assign</span><span class="p">]</span>
-<span class="p">[</span><span class="n">the</span> <span class="nb">id</span> <span class="n">of</span> <span class="n">the</span> <span class="n">desired</span> <span class="n">peer</span><span class="p">]</span>
+<div class="highlight-none"><div class="highlight"><pre><span></span>broadcast
+[your id]
+[message id]
+[timestamp]
+request
+[a unique, base_58 id you assign]
+[the id of the desired peer]
 </pre></div>
 </div>
 <p>Then your node places this in a dictionary so your node can watch for
 when this is responded to. A peer who gets this will reply:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">broadcast</span>
-<span class="p">[</span><span class="n">their</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
-<span class="n">response</span>
-<span class="p">[</span><span class="n">the</span> <span class="nb">id</span> <span class="n">you</span> <span class="n">assigned</span><span class="p">]</span>
-<span class="p">[</span><span class="n">address</span> <span class="n">of</span> <span class="n">desired</span> <span class="n">peer</span> <span class="ow">in</span> <span class="nb">format</span><span class="p">:</span> <span class="p">[[</span><span class="n">addr</span><span class="p">,</span> <span class="n">port</span><span class="p">],</span> <span class="nb">id</span><span class="p">]</span> <span class="p">]</span>
+<div class="highlight-none"><div class="highlight"><pre><span></span>broadcast
+[their id]
+[message id]
+[timestamp]
+response
+[the id you assigned]
+[address of desired peer in format: [[addr, port], id] ]
 </pre></div>
 </div>
 <p>When this is received, your node removes the request from your
@@ -324,12 +325,12 @@ message.</p>
 <p>Another use of this mechanism is to request a copy of your peers’
 routing tables. To do this, your node may send a message structured
 like so:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">whisper</span>
-<span class="p">[</span><span class="n">your</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">message</span> <span class="nb">id</span><span class="p">]</span>
-<span class="p">[</span><span class="n">timestamp</span><span class="p">]</span>
-<span class="n">request</span>
-<span class="o">*</span>
+<div class="highlight-none"><div class="highlight"><pre><span></span>whisper
+[your id]
+[message id]
+[timestamp]
+request
+*
 </pre></div>
 </div>
 <p>A node who receives this will respond exactly as they do after a
