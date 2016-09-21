@@ -4,11 +4,9 @@ License and Credits
 Authors
 -------
 
-The following people have contributed to, or had their work added to, this project:
+The following people have contributed to this project:
 
 - Gabe Appleton
-- Olivier Gay/Zenwood.com
-- Daniel Gehriger
 
 Licenses
 --------
