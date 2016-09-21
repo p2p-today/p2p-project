@@ -47,16 +47,16 @@ string protocol::id()  {
     size_t buff_size = sprintf(buffer, "%llu.%llu", (unsigned long long)CP2P_PROTOCOL_MAJOR_VERSION, (unsigned long long)CP2P_PROTOCOL_MINOR_VERSION);
     string info = subnet + encryption + string(buffer, buff_size);
 
-    unsigned char digest[SHA256::DIGEST_SIZE];
-    memset(digest, 0, SHA256::DIGEST_SIZE);
-    SHA256 ctx = SHA256();
-    ctx.init();
-    ctx.update((unsigned char*)info.c_str(), info.length());
-    ctx.final(digest);
+    unsigned char digest[SHA256_DIGEST_LENGTH];
+    memset(digest, 0, SHA256_DIGEST_LENGTH);
+    SHA256_CTX ctx;
+    SHA256_Init(&ctx);
+    SHA256_Update(&ctx, (unsigned char*)info.c_str(), info.length());
+    SHA256_Final(digest, &ctx);
 
     cache.subnet = string(subnet);
     cache.encryption = string(encryption);
-    cache.id = ascii_to_base_58(string((char*)digest, SHA256::DIGEST_SIZE));
+    cache.id = ascii_to_base_58(string((char*)digest, SHA256_DIGEST_LENGTH));
     return cache.id;
 }
 
@@ -141,16 +141,16 @@ string pathfinding_message::id()    {
     }
     memcpy(info + done, t58.c_str(), t58.length());
 
-    unsigned char digest[SHA384::DIGEST_SIZE];
-    memset(digest, 0, SHA384::DIGEST_SIZE);
-    SHA384 ctx = SHA384();
-    ctx.init();
-    ctx.update((unsigned char*)info, expected);
-    ctx.final(digest);
+    unsigned char digest[SHA384_DIGEST_LENGTH];
+    memset(digest, 0, SHA384_DIGEST_LENGTH);
+    SHA384_CTX ctx;
+    SHA384_Init(&ctx);
+    SHA384_Update(&ctx, (unsigned char*)info, expected);
+    SHA384_Final(digest, &ctx);
 
     cache.payload = vector<string>(payload);
     cache.timestamp = timestamp;
-    cache.id = ascii_to_base_58(string((char*)digest, SHA384::DIGEST_SIZE));
+    cache.id = ascii_to_base_58(string((char*)digest, SHA384_DIGEST_LENGTH));
 
 #ifdef CP2P_DEBUG_FLAG
     printf("ID for [\"");

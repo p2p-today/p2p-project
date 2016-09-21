@@ -77,8 +77,7 @@ def main():
                 'py2p.cbase',
                 sources=[os.path.join(loc, 'cp_src', 'base_wrapper.cpp'),
                          os.path.join(loc, 'cp_src', 'base.cpp'),
-                         os.path.join(loc, 'cp_src', 'sha', 'sha384.cpp'),
-                         os.path.join(loc, 'cp_src', 'sha', 'sha256.cpp')],
+                         os.path.join(loc, 'c_src', 'sha', 'sha2.c')],
                 define_macros=__DEBUG__))
 
     try:
@@ -112,7 +111,7 @@ def main():
               classifiers=classifiers,
               install_requires=install_requires,
               extras_require=extras_require
-        )        
+        )
 
 if __name__ == "__main__":
     main()

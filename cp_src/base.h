@@ -38,8 +38,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <string.h>
-#include "sha/sha256.h"
-#include "sha/sha384.h"
+#include "../c_src/sha/sha2.h"
 #include "../c_src/BaseConverter.h"
 
 using namespace std;
