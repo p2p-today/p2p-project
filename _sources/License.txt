@@ -16,15 +16,12 @@ Overall Project
 
 .. literalinclude:: ../LICENSE
     :language: none
+    :linenos:
 
-C++ SHA256 Code
+C SHA2 Code
 ~~~~~~~~~~~~~~~
 
-.. literalinclude:: ../cp_src/sha/sha256-LICENSE.txt
+.. literalinclude:: ../c_src/sha/sha2.h
+    :lines: 1-33
     :language: none
-
-C++ SHA384 Code
-~~~~~~~~~~~~~~~
-
-.. literalinclude:: ../cp_src/sha/sha384-LICENSE.txt
-    :language: none
+    :linenos:

@@ -88,8 +88,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#authors">Authors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#licenses">Licenses</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#overall-project">Overall Project</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#c-sha256-code">C++ SHA256 Code</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#c-sha384-code">C++ SHA384 Code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#c-sha2-code">C SHA2 Code</a></li>
 </ul>
 </li>
 </ul>
@@ -151,7 +150,171 @@
 <h2>Licenses<a class="headerlink" href="#licenses" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="overall-project">
 <h3>Overall Project<a class="headerlink" href="#overall-project" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-none"><div class="highlight"><pre><span></span>                   GNU LESSER GENERAL PUBLIC LICENSE
+<div class="highlight-none"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre>  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+ 78
+ 79
+ 80
+ 81
+ 82
+ 83
+ 84
+ 85
+ 86
+ 87
+ 88
+ 89
+ 90
+ 91
+ 92
+ 93
+ 94
+ 95
+ 96
+ 97
+ 98
+ 99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165</pre></div></td><td class="code"><div class="highlight"><pre><span></span>                   GNU LESSER GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
  Copyright (C) 2007 Free Software Foundation, Inc. &lt;http://fsf.org/&gt;
@@ -317,20 +480,47 @@ apply, that proxy&#39;s public statement of acceptance of any version is
 permanent authorization for you to choose that version for the
 Library.
 </pre></div>
+</td></tr></table></div>
 </div>
-</div>
-<div class="section" id="c-sha256-code">
-<h3>C++ SHA256 Code<a class="headerlink" href="#c-sha256-code" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-none"><div class="highlight"><pre><span></span>/*
- * Updated to C++, zedwood.com 2012
- * Based on Olivier Gay&#39;s version
- * See Modified BSD License below: 
- *
- * FIPS 180-2 SHA-224/256/384/512 implementation
- * Issue date:  04/30/2005
- * http://www.ouah.org/ogay/sha2/
- *
- * Copyright (C) 2005, 2007 Olivier Gay &lt;olivier.gay@a3.epfl.ch&gt;
+<div class="section" id="c-sha2-code">
+<h3>C SHA2 Code<a class="headerlink" href="#c-sha2-code" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-none"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33</pre></div></td><td class="code"><div class="highlight"><pre><span></span>/*
+ * FILE:	sha2.h
+ * AUTHOR:	Aaron D. Gifford - http://www.aarongifford.com/
+ * 
+ * Copyright (c) 2000-2001, Aaron D. Gifford
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -341,14 +531,14 @@ Library.
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the project nor the names of its contributors
+ * 3. Neither the name of the copyright holder nor the names of contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS&#39;&#39; AND
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTOR(S) ``AS IS&#39;&#39; AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTOR(S) BE LIABLE
  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
  * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
@@ -356,50 +546,11 @@ Library.
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * $Id: sha2.h,v 1.1 2001/11/08 00:02:01 adg Exp adg $
  */
 </pre></div>
-</div>
-</div>
-<div class="section" id="c-sha384-code">
-<h3>C++ SHA384 Code<a class="headerlink" href="#c-sha384-code" title="Permalink to this headline">¶</a></h3>
-<div class="highlight-none"><div class="highlight"><pre><span></span>/*
- * Updated to C++, zedwood.com 2012
- * Based on Olivier Gay&#39;s version
- * See Modified BSD License below: 
- *
- * FIPS 180-2 SHA-224/256/384/512 implementation
- * Issue date:  04/30/2005
- * http://www.ouah.org/ogay/sha2/
- *
- * Copyright (C) 2005, 2007 Olivier Gay &lt;olivier.gay@a3.epfl.ch&gt;
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the project nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS&#39;&#39; AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- */
-</pre></div>
-</div>
+</td></tr></table></div>
 </div>
 </div>
 </div>
