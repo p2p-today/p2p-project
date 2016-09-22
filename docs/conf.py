@@ -36,6 +36,7 @@ import subprocess
 import sys
 import sysconfig
 
+
 def distutils_dir_name(dname):
     """Returns the name of a distutils build directory"""
     f = "{dirname}.{platform}-{version[0]}.{version[1]}"
@@ -45,11 +46,13 @@ def distutils_dir_name(dname):
 
 loc = os.path.dirname(os.path.abspath(__file__))
 print("Building from file %s" % loc)
-bld = subprocess.call(['python', os.path.join(loc, '..', 'setup.py'), 'build', '-b', '.py-build'])
+bld = subprocess.call(['python', os.path.join(loc, '..', 'setup.py'),
+                       'build', '-b', '.py-build'])
 
 if os.path.isfile(os.path.join(loc, 'py2p', '__init__.py')):
     shutil.rmtree(os.path.join(loc, 'py2p'))
-shutil.move(os.path.join(loc, '.py-build', distutils_dir_name('lib'), 'py2p'), os.path.join('py2p'))
+shutil.move(os.path.join(loc, '.py-build', distutils_dir_name('lib'), 'py2p'),
+            os.path.join('.', 'py2p'))
 shutil.rmtree(os.path.join(loc, '.py-build'))
 
 sys.path.insert(0, loc)
@@ -173,7 +176,7 @@ html_theme = 'sphinx_rtd_theme'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-#html_theme_options = {}
+# html_theme_options = {}
 html_context = {
     'cssfiles': ['.static/code_wrap.css']
 }
@@ -196,7 +199,7 @@ html_context = {
 # html_logo = None
 
 # The name of an image file (relative to this directory) to use as a favicon of
-# the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
+# the docs. This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
 #
 # html_favicon = None
