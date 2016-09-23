@@ -83,7 +83,7 @@ m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c
     return v.toString(16);
 });
 
-m.intersect = function()    {
+m.intersect = function intersect()    {
     /**
     * This function returns the intersection of two arrays.
     * That is, it returns an array of the elements present in all arrays,
@@ -109,7 +109,7 @@ m.intersect = function()    {
     return result;
 }
 
-m.unpack_value = function(str)  {
+m.unpack_value = function unpack_value(str)  {
     str = new Buffer(str, 'ascii');
     var val = BigInt.zero;
     for (var i = 0; i < str.length; i++)    {
@@ -119,7 +119,7 @@ m.unpack_value = function(str)  {
     return val;
 }
 
-m.pack_value = function(len, i) {
+m.pack_value = function pack_value(len, i) {
     var arr = new Buffer(new Array(len));
     for (var j = 0; j < len && i != 0; j++)    {
         arr[len - j - 1] = i & 0xff;
@@ -130,7 +130,7 @@ m.pack_value = function(len, i) {
 
 m.base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
-m.to_base_58 = function(i) {
+m.to_base_58 = function to_base_58(i) {
     //Takes an integer and returns its corresponding base_58 string
     var string = "";
     if (!BigInt.isInstance(i)) {
@@ -144,7 +144,7 @@ m.to_base_58 = function(i) {
 };
 
 
-m.from_base_58 = function(string) {
+m.from_base_58 = function from_base_58(string) {
     //Takes a base_58 string and returns its corresponding integer
     try {
         string = string.toString()
@@ -160,26 +160,26 @@ m.from_base_58 = function(string) {
 };
 
 
-m.getUTC = function() {
+m.getUTC = function getUTC() {
     return Math.floor(Date.now() / 1000);
 };
 
 
-m.SHA384 = function(text) {
+m.SHA384 = function SHA384(text) {
     var hash = new SHA("SHA-384", "TEXT");
     hash.update(text);
     return hash.getHash("HEX");
 };
 
 
-m.SHA256 = function(text) {
+m.SHA256 = function SHA256(text) {
     var hash = new SHA("SHA-256", "TEXT");
     hash.update(text);
     return hash.getHash("HEX");
 };
 
 
-m.compress = function(text, method) {
+m.compress = function compress(text, method) {
     if (method === m.flags.zlib) {
         return zlib.deflateSync(new Buffer(text));
     }
@@ -192,7 +192,7 @@ m.compress = function(text, method) {
 };
 
 
-m.decompress = function(text, method) {
+m.decompress = function decompress(text, method) {
     if (method === m.flags.zlib) {
         return zlib.inflateSync(new Buffer(text));
     }
