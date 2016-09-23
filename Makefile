@@ -39,6 +39,27 @@ endif
 
 #End python setup section
 
+#Begin node setup section
+
+npm = npm
+
+js_deps = jssha zlibjs buffer big-integer
+
+nodeornodejs:
+	nodejs --version
+
+ifneq (${MAKE} nodeornodejs, 0)
+    node = nodejs
+else
+    node = node
+endif
+
+#End node setup section
+
+ES5: LICENSE
+	$(npm) install babel-cli $(js_deps)
+	$(node) node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
+
 python: LICENSE setup.py
 	python $(py_deps)
 	python setup.py build --universal

@@ -1,5 +1,7 @@
 "use strict";
 
+const buffer = require('buffer');  // These ensure compatability with browserify
+const Buffer = buffer.Buffer;
 const BigInt = require('big-integer');
 const SHA = require('jssha');  //('./SHA/src/sha.js');
 const zlib = require('zlibjs');
