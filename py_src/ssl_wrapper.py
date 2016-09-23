@@ -5,8 +5,9 @@ import os
 import socket
 import ssl
 import sys
-import tempfile
 import uuid
+
+from tempfile import NamedTemporaryFile
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -50,7 +51,8 @@ def generate_self_signed_cert(cert_file, key_file):
         x509.NameAttribute(NameOID.COMMON_NAME, u'cryptography.io'),
     ]))
     builder = builder.not_valid_before(datetime.datetime.today() - one_day)
-    builder = builder.not_valid_after(datetime.datetime.today() + datetime.timedelta(365*10))
+    builder = builder.not_valid_after(datetime.datetime.today() +
+                                      datetime.timedelta(365*10))
     builder = builder.serial_number(int(uuid.uuid4()))
     builder = builder.public_key(public_key)
     builder = builder.add_extension(
@@ -62,7 +64,7 @@ def generate_self_signed_cert(cert_file, key_file):
     )
 
     key_file.write(private_key.private_bytes(
-        Encoding.PEM, 
+        Encoding.PEM,
         PrivateFormat.TraditionalOpenSSL,
         NoEncryption()
     ))
@@ -80,11 +82,13 @@ def get_socket(server_side):
     """
     if server_side:
         names = (None, None)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".cert") as cert_file:
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".key") as key_file:
+        with NamedTemporaryFile(delete=False, suffix=".cert") as cert_file:
+            with NamedTemporaryFile(delete=False, suffix=".key") as key_file:
                 generate_self_signed_cert(cert_file, key_file)
                 names = (cert_file.name, key_file.name)
-        sock = ssl.wrap_socket(socket.socket(), suppress_ragged_eofs=True, server_side=True, keyfile=names[1], certfile=names[0])
+        sock = ssl.wrap_socket(socket.socket(), suppress_ragged_eofs=True,
+                               server_side=True, keyfile=names[1],
+                               certfile=names[0])
         if sys.version_info >= (3, ):
             os.remove(names[0])
             os.remove(names[1])
@@ -92,4 +96,5 @@ def get_socket(server_side):
             cleanup_files.extend(names)
         return sock
     else:
-        return ssl.wrap_socket(socket.socket(), server_side=False, suppress_ragged_eofs=True)
+        return ssl.wrap_socket(socket.socket(), server_side=False,
+                               suppress_ragged_eofs=True)
