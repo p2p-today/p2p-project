@@ -73,12 +73,12 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         this.waterfalls = [];
         this.requests = [];
         this.queue = [];
-        this.register_handler(function(msg, conn)   {return self.__handle_handshake(msg, conn);});
-        this.register_handler(function(msg, conn)   {return self.__handle_peers(msg, conn);});
-        this.register_handler(function(msg, conn)   {return self.__handle_response(msg, conn);});
-        this.register_handler(function(msg, conn)   {return self.__handle_request(msg, conn);});
+        this.register_handler(function handle_handshake(msg, conn)  {return self.__handle_handshake(msg, conn);});
+        this.register_handler(function handle_peers(msg, conn)      {return self.__handle_peers(msg, conn);});
+        this.register_handler(function handle_response(msg, conn)   {return self.__handle_response(msg, conn);});
+        this.register_handler(function handle_request(msg, conn)    {return self.__handle_request(msg, conn);});
 
-        this.incoming.on('connection', function(sock)   {
+        this.incoming.on('connection', function onConnection(sock)   {
             const conn = new m.mesh_connection(sock, self, false);
             conn.send(base.flags.whisper, [base.flags.handshake, self.id, self.id, JSON.stringify(self.out_addr), base.json_compressions]);
             self.awaiting_ids = self.awaiting_ids.concat(conn);
@@ -237,7 +237,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             if (packets[1].toString() == '*')  {
                 conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
             }
-            else if (self.routing_table[packets[2]])    {
+            else if (this.routing_table[packets[2]])    {
                 conn.send(base.flags.broadcast, [base.flags.response, packets[1], JSON.stringify([this.routing_table[packets[2]].addr, packets[2]])]);
             }
             return true;

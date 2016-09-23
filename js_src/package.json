@@ -1,0 +1,18 @@
+{
+  "name": "js2p",
+  "main": "js2p.js",
+  "version": "0.4.319",
+  "license": "LGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gappleto97/p2p-project.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gappleto97/p2p-project/issues"
+  },
+  "dependencies": {
+    "big-integer": "^1.6.16",
+    "jssha": "^2.2.0",
+    "zlibjs": "^0.2.0"
+  }
+}

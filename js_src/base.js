@@ -1,10 +1,13 @@
 "use strict";
 
-const BigInt = require('./BigInteger/BigInteger.js');
-const SHA = require('./SHA/src/sha.js');
-const zlib = require('./zlib/bin/node-zlib.js');
+const BigInt = require('big-integer');
+const SHA = require('jssha');  //('./SHA/src/sha.js');
+const zlib = require('zlibjs');
 const assert = require('assert');
 
+/**
+* This is a warning to which tests if Buffer can handle data of the appropriate size.
+*/
 if (buffer.kMaxLength < 4294967299) {
     console.log(`WARNING: This implementation of javascript does not support the maximum protocol length. The largest message you may receive is 4294967299 bytes, but you can only allocate ${buffer.kMaxLength}, or ${(buffer.kMaxLength / 4294967299 * 100).toFixed(2)}% of that.`);
 }
@@ -81,22 +84,27 @@ m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c
 });
 
 m.intersect = function()    {
+    /**
+    * This function returns the intersection of two arrays.
+    * That is, it returns an array of the elements present in all arrays,
+    * in the order that they were present in the first array.
+    */
     const last = arguments.length - 1;
     var seen={};
     var result=[];
-    for (var i = 0; i < last; i++)   {
+    for (var i = 1; i <= last; i++)   {
         for (var j = 0; j < arguments[i].length; j++)  {
             if (seen[arguments[i][j]])  {
                 seen[arguments[i][j]] += 1;
             }
-            else if (!i)    {
+            else if (i === 1)    {
                 seen[arguments[i][j]] = 1;
             }
         }
     }
-    for (var i = 0; i < arguments[last].length; i++) {
-        if ( seen[arguments[last][i]] === last)
-            result.push(arguments[last][i]);
+    for (var i = 0; i < arguments[0].length; i++) {
+        if ( seen[arguments[0][i]] === last)
+            result.push(arguments[0][i]);
         }
     return result;
 }
