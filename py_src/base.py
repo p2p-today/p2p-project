@@ -431,13 +431,14 @@ class pathfinding_message(object):
         Raises:
             TypeError:  If you feed an object which cannot convert to bytes
 
-        Note:
+        Warning:
             If you feed a unicode object, it will be decoded using utf-8. All other objects are
-            treated as raw_unicode_escape. If you desire a particular codec, encode it yourself
+            treated as raw bytes. If you desire a particular codec, encode it yourself
             before feeding it in.
         """
 
         def sanitize_packet(packet):
+            """Inline function to sanitize a packet"""
             if isinstance(packet, type(u'')):
                 return packet.encode('utf-8')
             elif not isinstance(packet, (bytes, bytearray)):
