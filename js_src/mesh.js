@@ -80,7 +80,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
         this.incoming.on('connection', function onConnection(sock)   {
             const conn = new m.mesh_connection(sock, self, false);
-            conn.send(base.flags.whisper, [base.flags.handshake, self.id, self.id, JSON.stringify(self.out_addr), base.json_compressions]);
+            conn.send(base.flags.whisper, [base.flags.handshake, self.id, self.protocol.id, JSON.stringify(self.out_addr), base.json_compressions]);
             self.awaiting_ids = self.awaiting_ids.concat(conn);
         });
     }
