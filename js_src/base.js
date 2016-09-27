@@ -484,14 +484,16 @@ m.base_connection = class base_connection   {
         self.buffer = Buffer.concat([self.buffer, data]);
         //console.log(self.buffer);
         self.time = m.getUTC();
-        if (!self.active && self.buffer.length >= self.expected) {
-            // this.__print__(this.buffer, this.expected, this.find_terminator(), level=4)
-            self.expected = m.unpack_value(self.buffer.slice(0, 4)).add(4);
-            self.active = true;
-            // this.found_terminator();
-        }
-        if (self.active && self.buffer.length >= self.expected) {
-            self.found_terminator();
+        while (self.buffer.length >= self.expected) {
+            if (!self.active)   {
+                // this.__print__(this.buffer, this.expected, this.find_terminator(), level=4)
+                self.expected = m.unpack_value(self.buffer.slice(0, 4)).add(4);
+                self.active = true;
+                // this.found_terminator();
+            }
+            if (self.active && self.buffer.length >= self.expected) {  //gets checked again because the answer may have changed
+                self.found_terminator();
+            }
         }
         return true;
     }
