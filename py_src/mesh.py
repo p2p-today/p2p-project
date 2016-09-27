@@ -168,9 +168,11 @@ class mesh_socket(base_socket):
         packets = msg.packets
         if packets[0] == flags.handshake:
             if packets[2] != self.protocol.id:
+                self.__print__("Connected to peer on wrong subnet. ID: %s" % packets[2], level=2)
                 self.disconnect(handler)
                 return True
             elif handler is not self.routing_table.get(packets[1], handler):
+                self.__print__("Connection conflict detected. Trying to resolve", level=2)
                 self.__resolve_connection_conflict(handler, packets[1])
             handler.id = packets[1]
             handler.addr = json.loads(packets[3].decode())
