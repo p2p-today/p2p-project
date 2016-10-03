@@ -381,10 +381,10 @@ class pathfinding_message(object):
             processed += 4
             expected -= pack_lens[-1]
         # Then reconstruct the packets
-        for index, length in enumerate(pack_lens):
-            start = processed + sum(pack_lens[:index])
-            end = start + length
-            packets.append(string[start:end])
+        for length in pack_lens:
+            end = processed + length
+            packets.append(string[processed:end])
+            processed = end
         return packets
 
     @classmethod
