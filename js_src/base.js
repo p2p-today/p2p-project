@@ -1,3 +1,8 @@
+/**
+* Base Module
+* ===========
+*/
+
 "use strict";
 
 const buffer = require('buffer');  // These ensure compatability with browserify
@@ -7,7 +12,7 @@ const SHA = require('jssha');  //('./SHA/src/sha.js');
 const zlib = require('zlibjs');
 const assert = require('assert');
 
-/**
+/*
 * This is a warning to which tests if Buffer can handle data of the appropriate size.
 */
 if (buffer.kMaxLength < 4294967299) {
@@ -32,7 +37,13 @@ m.node_policy_version = m.version_info[2].toString();
 m.protocol_version = m.version_info.slice(0, 2).join(".");
 m.version = m.version_info.join('.');
 
+/**
+* .. js:data:: flags
+*
+*     A "namespace" which defines protocol reserved flags
+*/
 m.flags = {
+
     //main flags
     broadcast:   '\x00',
     waterfall:   '\x01',
@@ -87,9 +98,13 @@ m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c
 
 m.intersect = function intersect()    {
     /**
-    * This function returns the intersection of two arrays.
-    * That is, it returns an array of the elements present in all arrays,
-    * in the order that they were present in the first array.
+    * .. js:function:: intersect(array, array, [array, [...]])
+    *
+    *     This function returns the intersection of two or more arrays.
+    *     That is, it returns an array of the elements present in all arrays,
+    *     in the order that they were present in the first array.
+    *
+    *     :returns: An array
     */
     const last = arguments.length - 1;
     var seen={};
@@ -112,6 +127,15 @@ m.intersect = function intersect()    {
 }
 
 m.unpack_value = function unpack_value(str)  {
+    /**
+    * .. js:function:: unpack_value(str)
+    *
+    *     This function unpacks a string into its corresponding big endian value
+    *
+    *     :param str: The string you want to unpack
+    *
+    *     :returns: A big-integer
+    */
     str = new Buffer(str, 'ascii');
     var val = BigInt.zero;
     for (var i = 0; i < str.length; i++)    {
@@ -122,6 +146,16 @@ m.unpack_value = function unpack_value(str)  {
 }
 
 m.pack_value = function pack_value(len, i) {
+    /**
+    * .. js:function:: pack_value(len, i)
+    *
+    *     This function packs an integer i into a buffer of length len
+    *
+    *     :param len: An integral value
+    *     :param i: An integeral value
+    *
+    *     :returns: A big endian buffer of length len
+    */
     var arr = new Buffer(new Array(len));
     for (var j = 0; j < len && i != 0; j++)    {
         arr[len - j - 1] = i & 0xff;
@@ -133,7 +167,15 @@ m.pack_value = function pack_value(len, i) {
 m.base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
 m.to_base_58 = function to_base_58(i) {
-    //Takes an integer and returns its corresponding base_58 string
+    /**
+    * .. js:function:: to_base_58(i)
+    *
+    *     Takes an integer and returns its corresponding base_58 string
+    *
+    *     :param i: An integral value
+    *
+    *     :returns: the corresponding base_58 string
+    */
     var string = "";
     if (!BigInt.isInstance(i)) {
         i = new BigInt(i);
@@ -147,7 +189,15 @@ m.to_base_58 = function to_base_58(i) {
 
 
 m.from_base_58 = function from_base_58(string) {
-    //Takes a base_58 string and returns its corresponding integer
+    /**
+    * .. js:function:: from_base_58(string)
+    *
+    *     Takes a base_58 string and returns its corresponding integer
+    *
+    *     :param string: A base_58 string or string-like object
+    *
+    *     :returns: A big-integer
+    */
     try {
         string = string.toString()
     }
@@ -324,9 +374,15 @@ m.pathfinding_message = class pathfinding_message {
     }
 
     get id() {
-        var payload_string = this.payload.join('')
-        var payload_hash = m.SHA384(payload_string + this.time_58)
-        return m.to_base_58(new BigInt(payload_hash, 16))
+        try     {
+            var payload_string = this.payload.join('')
+            var payload_hash = m.SHA384(payload_string + this.time_58)
+            return m.to_base_58(new BigInt(payload_hash, 16))
+        }
+        catch (err) {
+            console.log(err);
+            console.log(this.payload);
+        }
     }
 
     get packets() {
@@ -391,8 +447,17 @@ m.message = class message {
         return this.server.protocol
     }
 
-    reply(args) {
-        throw "Not implemented"
+    reply(packs) {
+        if (this.server.routing_table[this.sender]) {
+            this.server.routing_table[this.sender].send(m.flags.whisper, [m.flags.whisper].concat(packs));
+        }
+        else    {
+            var request_hash = m.SHA384(this.sender + m.to_base_58(m.getUTC()));
+            var request_id = m.to_base_58(new BigInt(request_hash, 16));
+            this.server.requests[request_id] = [packs, m.flags.whisper, m.flags.whisper];
+            this.server.send([request_id, this.sender], m.flags.broadcast, m.flags.request);
+            console.log("You aren't connected to the original sender. This reply is not guarunteed, but we're trying to make a connection and put the message through.");
+        }
     }
 };
 
@@ -440,23 +505,27 @@ m.base_connection = class base_connection   {
     }
 
     send(msg_type, packs, id, time)  {
-        /**Sends a message through its connection.
+        /**
+        * .. js:function:: send(msg_type, packs, id, time)
         *
-        * Args:
-        *     msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object
-        *     packs:      A list of Buffer-like objects, which correspond to the packets to send to you
-        *     id:         The ID this message should appear to be sent from (default: your ID)
-        *     time:       The time this message should appear to be sent from (default: now in UTC)
+        *     Sends a message through its connection.
         *
-        * Returns:
-        *     the pathfinding_message object you just sent, or None if the sending was unsuccessful
-        **/
+        *
+        *     :param msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object
+        *     :param packs:      A list of Buffer-like objects, which correspond to the packets to send to you
+        *     :param id:         The ID this message should appear to be sent from (default: your ID)
+        *     :param time:       The time this message should appear to be sent from (default: now in UTC)
+        *
+        *     :returns: the pathfinding_message object you just sent, or undefined if the sending was unsuccessful
+        */
 
         //This section handles waterfall-specific flags
+        // console.log(packs);
         id = id || this.server.id;  //Latter is returned if key not found
         time = time || m.getUTC();
         //Begin real method
         const msg = new m.pathfinding_message(msg_type, id, packs, this.compression, time);
+        // console.log(msg.payload);
         if (msg_type === m.flags.whisper || msg_type === m.flags.broadcast) {
             this.last_sent = [msg_type].concat(packs);
         }

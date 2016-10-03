@@ -24,6 +24,8 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
     }
 
     send(msg_type, packs, id, time)  {
+        // console.log(msg_type);
+        // console.log(packs);
         var msg = super.send(msg_type, packs, id, time);
         //add msg to waterfall
     }
@@ -71,7 +73,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
         const self = this;
         this.waterfalls = [];
-        this.requests = [];
+        this.requests = {};
         this.queue = [];
         this.register_handler(function handle_handshake(msg, conn)  {return self.__handle_handshake(msg, conn);});
         this.register_handler(function handle_peers(msg, conn)      {return self.__handle_peers(msg, conn);});
@@ -219,10 +221,11 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             if (this.requests[packets[1]])  {
                 var addr = JSON.parse(packets[2]);
                 if (addr)   {
-                    var msg = this.requests.get(packets[1]);
-                    this.requests.pop(packets[1]);
+                    var msg = this.requests[packets[1]];
+                    // console.log(msg);
                     this.connect(addr[0][0], addr[0][1], addr[1]);
-                    this.routing_table[addr[1]].send(msg[0], msg[1]);
+                    this.routing_table[addr[1]].send(msg[1], [msg[2]].concat(msg[0]));
+                    delete this.requests[packets[1]];
                 }
             }
             return true;
@@ -266,7 +269,14 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     waterfall(msg)  {
-        if (this.waterfalls.indexOf([msg.id, msg.time]) <= -1)  {
+        var contained = false;
+        this.waterfalls.some(function(entry)    {
+            if (entry[0] === msg.id && entry[1].equals(msg.time))   {
+                contained = true;
+                return true;
+            }
+        });
+        if (!contained)  {
             this.waterfalls.unshift([msg.id, msg.time]);
             const self = this;
             Object.keys(this.routing_table).forEach(function(key)   {
