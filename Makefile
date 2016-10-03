@@ -60,6 +60,9 @@ ES5: LICENSE
 	$(npm) install babel-cli $(js_deps)
 	$(node) node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
 
+jsdocs:
+	$(node) js_src/docs_test.js
+
 python: LICENSE setup.py
 	python $(py_deps)
 	python setup.py build --universal
@@ -167,7 +170,7 @@ else
 	$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
 endif
 
-html:
+html: jsdocs
 	python $(docs_deps)
 	cd docs; rm -r .build; $(MAKE) html
 

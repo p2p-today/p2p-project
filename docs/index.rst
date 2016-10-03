@@ -14,7 +14,7 @@ Contents:
     protocol
     python
     C++
-    Javascript
+    javascript
     Golang
     CONTRIBUTING_LINK
     License
