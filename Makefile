@@ -46,9 +46,9 @@ npm = npm
 js_deps = jssha zlibjs buffer big-integer
 
 nodeornodejs:
-	nodejs --version
+	node --version
 
-ifneq (${MAKE} nodeornodejs, 0)
+ifneq ($(${MAKE} nodeornodejs), 0)
     node = nodejs
 else
     node = node
