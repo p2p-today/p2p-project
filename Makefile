@@ -45,24 +45,15 @@ npm = npm
 
 js_deps = jssha zlibjs buffer big-integer
 
-nodeornodejs:
-	node --version
-
-ifneq ($(${MAKE} nodeornodejs), 0)
-    node = nodejs
-else
-    node = node
-endif
-
 #End node setup section
 
 ES5: LICENSE
 	$(npm) install babel-cli $(js_deps)
-	$(node) node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
+	node node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5 || nodejs node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
 
 jsdocs:
-	mkdir docs/javascript || @echo "javascript folder present"
-	$(node) js_src/docs_test.js
+	mkdir docs/javascript || echo "javascript folder present"
+	node js_src/docs_test.js || nodejs js_src/docs_test.js
 
 python: LICENSE setup.py
 	python $(py_deps)
