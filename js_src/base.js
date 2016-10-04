@@ -1,14 +1,16 @@
 /**
 * Base Module
 * ===========
+*
+* This module contains common classes and functions which are used throughout the rest of the js2p library.
 */
 
 "use strict";
 
-const buffer = require('buffer');  // These ensure compatability with browserify
+const buffer = require('buffer');  // These ensure parser compatability with browserify
 const Buffer = buffer.Buffer;
 const BigInt = require('big-integer');
-const SHA = require('jssha');  //('./SHA/src/sha.js');
+const SHA = require('jssha');
 const zlib = require('zlibjs');
 const assert = require('assert');
 
@@ -37,12 +39,16 @@ m.node_policy_version = m.version_info[2].toString();
 m.protocol_version = m.version_info.slice(0, 2).join(".");
 m.version = m.version_info.join('.');
 
-/**
-* .. js:data:: flags
-*
-*     A "namespace" which defines protocol reserved flags
-*/
 m.flags = {
+    /**
+    * .. js:data:: js2p.base.flags
+    *
+    *     A "namespace" which defines protocol reserved flags
+    */
+    reserved: ['\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
+               '\x08', '\x09', '\x0A', '\x0B', '\x0C', '\x0D', '\x0E', '\x0F',
+               '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17',
+               '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F'],
 
     //main flags
     broadcast:   '\x00',
@@ -98,11 +104,13 @@ m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c
 
 m.intersect = function intersect()    {
     /**
-    * .. js:function:: intersect(array, array, [array, [...]])
+    * .. js:function:: js2p.base.intersect(array1, array2, [array3, [...]])
     *
     *     This function returns the intersection of two or more arrays.
     *     That is, it returns an array of the elements present in all arrays,
     *     in the order that they were present in the first array.
+    *
+    *     :param arrayn: Any array-like object
     *
     *     :returns: An array
     */
@@ -128,7 +136,7 @@ m.intersect = function intersect()    {
 
 m.unpack_value = function unpack_value(str)  {
     /**
-    * .. js:function:: unpack_value(str)
+    * .. js:function:: js2p.base.unpack_value(str)
     *
     *     This function unpacks a string into its corresponding big endian value
     *
@@ -147,7 +155,7 @@ m.unpack_value = function unpack_value(str)  {
 
 m.pack_value = function pack_value(len, i) {
     /**
-    * .. js:function:: pack_value(len, i)
+    * .. js:function:: js2p.base.pack_value(len, i)
     *
     *     This function packs an integer i into a buffer of length len
     *
@@ -168,7 +176,7 @@ m.base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
 m.to_base_58 = function to_base_58(i) {
     /**
-    * .. js:function:: to_base_58(i)
+    * .. js:function:: js2p.base.to_base_58(i)
     *
     *     Takes an integer and returns its corresponding base_58 string
     *
@@ -190,7 +198,7 @@ m.to_base_58 = function to_base_58(i) {
 
 m.from_base_58 = function from_base_58(string) {
     /**
-    * .. js:function:: from_base_58(string)
+    * .. js:function:: js2p.base.from_base_58(string)
     *
     *     Takes a base_58 string and returns its corresponding integer
     *
@@ -213,11 +221,25 @@ m.from_base_58 = function from_base_58(string) {
 
 
 m.getUTC = function getUTC() {
+    /**
+    * .. js:function:: js2p.base.getUTC()
+    *
+    *     :returns: An integral value containing the unix timestamp in seconds UTC
+    */
     return Math.floor(Date.now() / 1000);
 };
 
 
 m.SHA384 = function SHA384(text) {
+    /**
+    * .. js:function:: js2p.base.SHA384(text)
+    *
+    *     This function returns the hex digest of the SHA384 hash of the input text
+    *
+    *     :param string text: A string you wish to hash
+    *
+    *     :returns: the hex SHA384 hash
+    */
     var hash = new SHA("SHA-384", "TEXT");
     hash.update(text);
     return hash.getHash("HEX");
@@ -225,6 +247,15 @@ m.SHA384 = function SHA384(text) {
 
 
 m.SHA256 = function SHA256(text) {
+    /**
+    * .. js:function:: js2p.base.SHA256(text)
+    *
+    *     This function returns the hex digest of the SHA256 hash of the input text
+    *
+    *     :param string text: A string you wish to hash
+    *
+    *     :returns: the hex SHA256 hash
+    */
     var hash = new SHA("SHA-256", "TEXT");
     hash.update(text);
     return hash.getHash("HEX");
@@ -232,6 +263,16 @@ m.SHA256 = function SHA256(text) {
 
 
 m.compress = function compress(text, method) {
+    /**
+    * .. js:function:: js2p.base.compress(text, method)
+    *
+    *     This function is a shortcut for compressing data using a predefined method
+    *
+    *     :param text: The string or Buffer-like object you wish to compress
+    *     :param method: A compression method as defined in :js:data:`js2p.base.flags`
+    *
+    *     :returns: A variabley typed object containing a compressed version of text
+    */
     if (method === m.flags.zlib) {
         return zlib.deflateSync(new Buffer(text));
     }
@@ -245,6 +286,16 @@ m.compress = function compress(text, method) {
 
 
 m.decompress = function decompress(text, method) {
+    /**
+    * .. js:function:: js2p.base.decompress(text, method)
+    *
+    *     This function is a shortcut for decompressing data using a predefined method
+    *
+    *     :param text: The string or Buffer-like object you wish to decompress
+    *     :param method: A compression method as defined in :js:data:`js2p.base.flags`
+    *
+    *     :returns: A variabley typed object containing a decompressed version of text
+    */
     if (method === m.flags.zlib) {
         return zlib.inflateSync(new Buffer(text));
     }
@@ -258,12 +309,27 @@ m.decompress = function decompress(text, method) {
 
 
 m.protocol = class protocol {
+    /**
+    * .. js:class:: js2p.base.protocol(subnet, encryption)
+    *
+    *     This class is used as a subnet object. Its role is to reject undesired connections.
+    *     If you connect to someone who has a different protocol object than you, this descrepency is detected,
+    *     and you are silently disconnected.
+    *
+    *     :param string subnet: The subnet ID you wish to connect to. Ex: 'mesh'
+    *     :param string encryption: The encryption method you wish to use. Ex: 'Plaintext'
+    */
     constructor(subnet, encryption) {
         this.subnet = subnet;
         this.encryption = encryption;
     }
 
     get id() {
+        /**
+        *     .. js:attribute:: js2p.base.protocol.id
+        *
+        *         The ID of your desired network
+        */
         var protocol_hash = m.SHA256([this.subnet, this.encryption, m.protocol_version].join(''));
         return m.to_base_58(new BigInt(protocol_hash, 16));
     }
@@ -272,6 +338,17 @@ m.protocol = class protocol {
 m.default_protocol = new m.protocol('', 'Plaintext');
 
 m.pathfinding_message = class pathfinding_message {
+    /**
+    * .. js:class:: js2p.base.pathfinding_message(msg_type, sender, payload, compression, timestamp)
+    *
+    *     This is the message serialization/deserialization class.
+    *
+    *     :param msg_type: This is the main flag checked by nodes, used for routing information
+    *     :param sender: The ID of the person sending the message
+    *     :param payload: A list of "packets" that you want your peers to receive
+    *     :param compression: A list of compression methods that the receiver supports
+    *     :param number timestamp: The time at which this message will be sent in seconds UTC
+    */
     constructor(msg_type, sender, payload, compression, timestamp) {
         this.msg_type = new Buffer(msg_type);
         this.sender = new Buffer(sender);
@@ -285,6 +362,17 @@ m.pathfinding_message = class pathfinding_message {
     }
 
     static feed_string(string, sizeless, compressions) {
+        /**
+        *     .. js:function:: js2p.base.pathfinding_message.feed_string(string, sizeless, compressions)
+        *
+        *         This method deserializes a message
+        *
+        *         :param string: The message you would like to deserialize
+        *         :param sizeless: A bool-like object describing whether the size header is present
+        *         :param compressions: A list of possible compression methods this message may be under
+        *
+        *         :returns: A :js:class:`js2p.base.pathfinding_message` object containing the deserialized message
+        */
         string = m.pathfinding_message.sanitize_string(string, sizeless)
         var compression_return = m.pathfinding_message.decompress_string(string, compressions)
         var compression_fail = compression_return[1]
@@ -359,6 +447,11 @@ m.pathfinding_message = class pathfinding_message {
     }
 
     get compression_used() {
+        /**
+        *     .. js:attribute:: js2p.base.pathfinding_message.compression_used
+        *
+        *         Returns the compression method used in this message, as defined in :js:data:`js2p.base.flags`, or ``null`` if none
+        */
         for (var i = 0; i < m.compression.length; i++) {
             for (var j = 0; j < this.compression.length; j++) {
                 if (m.compression[i] === this.compression[j]) {
@@ -370,10 +463,25 @@ m.pathfinding_message = class pathfinding_message {
     }
 
     get time_58() {
+        /**
+        *     .. js:attribute:: js2p.base.pathfinding_message.time
+        *
+        *         Returns the timestamp of this message
+        *
+        *
+        *     .. js:attribute:: js2p.base.pathfinding_message.time_58
+        *
+        *         Returns the timestamp encoded in base_58
+        */
         return m.to_base_58(this.time)
     }
 
     get id() {
+        /**
+        *     .. js:attribute:: js2p.base.pathfinding_message.id
+        *
+        *         Returns the ID/checksum associated with this message
+        */
         try     {
             var payload_string = this.payload.join('')
             var payload_hash = m.SHA384(payload_string + this.time_58)
@@ -386,6 +494,16 @@ m.pathfinding_message = class pathfinding_message {
     }
 
     get packets() {
+        /**
+        *     .. js:attribute:: js2p.base.pathfinding_message.payload
+        *
+        *         Returns the payload "packets" associated with this message
+        *
+        *
+        *     .. js:attribute:: js2p.base.pathfinding_message.packets
+        *
+        *         Returns the total "packets" associated with this message
+        */
         var meta = [this.msg_type, this.sender, this.id, this.time_58]
         return meta.concat(this.payload)
     }
@@ -404,11 +522,21 @@ m.pathfinding_message = class pathfinding_message {
     }
 
     get string() {
+        /**
+        *     .. js:attribute:: js2p.base.pathfinding_message.string
+        *
+        *         Returns a Buffer containing the serialized version of this message
+        */
         var string = this.__non_len_string
         return Buffer.concat([m.pack_value(4, string.length), string]);
     }
 
     get length() {
+        /**
+        *     .. js:attribute:: js2p.base.pathfinding_message.length
+        *
+        *         Returns the length of this message when serialized
+        */
         return this.__non_len_string.length
     }
 
@@ -418,36 +546,88 @@ m.pathfinding_message = class pathfinding_message {
 };
 
 m.message = class message {
+    /**
+    * .. js:class:: js2p.base.message(msg, server)
+    *
+    *     This is the message class we present to the user.
+    *
+    *     :param js2p.base.pathfinding_message msg: This is the serialization object you received
+    *     :param js2p.base.base_socket sender: This is the "socket" object that received it
+    */
     constructor(msg, server) {
         this.msg = msg
         this.server = server
     }
 
     get time() {
+        /**
+        *     .. js:attribute:: js2p.base.message.time
+        *
+        *         Returns the time (in seconds UTC) this message was sent at
+        */
         return this.msg.time
     }
 
     get sender() {
+        /**
+        *     .. js:attribute:: js2p.base.message.sender
+        *
+        *         Returns the ID of this message's sender
+        */
         return this.msg.sender
     }
 
     get id() {
+        /**
+        *     .. js:attribute:: js2p.base.message.id
+        *
+        *         Returns the ID/checksum associated with this message
+        */
         return this.msg.id
     }
 
     get packets() {
+        /**
+        *     .. js:attribute:: js2p.base.message.packets
+        *
+        *         Returns the packets the sender wished you to have, sans metadata
+        */
         return this.msg.payload
     }
 
     get length() {
+        /**
+        *     .. js:attribute:: js2p.base.message.length
+        *
+        *         Returns the serialized length of this message
+        */
         return this.msg.length
     }
 
     get protocol()  {
+        /**
+        *     .. js:attribute:: js2p.base.message.protocol
+        *
+        *         Returns the :js:class:`js2p.base.protocol` associated with this message
+        */
         return this.server.protocol
     }
 
     reply(packs) {
+        /**
+        *     .. js:function:: js2p.base.message.reply(packs)
+        *
+        *         Replies privately to this message.
+        *
+        *         .. warning::
+        *
+        *             Using this method has potential effects on the network composition.
+        *             If you are not connected to the sender, we cannot garuntee
+        *             the message will get through. If successful, you will experience
+        *             higher network load on average.
+        *
+        *         :param packs: A list of packets you want the other user to receive
+        */
         if (this.server.routing_table[this.sender]) {
             this.server.routing_table[this.sender].send(m.flags.whisper, [m.flags.whisper].concat(packs));
         }
@@ -462,6 +642,15 @@ m.message = class message {
 };
 
 m.base_connection = class base_connection   {
+    /**
+    * .. js:class:: js2p.base.base_connection(sock, server, outgoing)
+    *
+    *     This is the template class for connection abstracters.
+    *
+    *     :param sock: This is the raw socket object
+    *     :param js2p.base.base_socket server: This is a link to the :js:class:`js2p.base.base_socket` parent
+    *     :param outgoing: This bool describes whether ``server`` initiated the connection
+    */
     constructor(sock, server, outgoing)   {
         this.sock = sock;
         this.server = server;
@@ -491,32 +680,46 @@ m.base_connection = class base_connection   {
     }
 
     onEnd() {
+        /**
+        *     .. js:function:: js2p.base.base_connection.onEnd()
+        *
+        *         This function is run when a connection is ended
+        */
         console.log(`Connection to ${this.id || this} ended. This is the template function`);
     }
 
     onError(err)    {
+        /**
+        *     .. js:function:: js2p.base.base_connection.onError()
+        *
+        *         This function is run when a connection experiences an error
+        */
         console.log(`Error: ${err}`);
         this.sock.end();
         this.sock.destroy();
     }
 
     onClose()   {
+        /**
+        *     .. js:function:: js2p.base.base_connection.onClose()
+        *
+        *         This function is run when a connection is closed
+        */
         console.log(`Connection to ${this.id || this} closed. This is the template function`);
     }
 
     send(msg_type, packs, id, time)  {
         /**
-        * .. js:function:: send(msg_type, packs, id, time)
+        *     .. js:function:: js2p.base.base_connection.send(msg_type, packs, id, time)
         *
-        *     Sends a message through its connection.
+        *         Sends a message through its connection.
         *
+        *         :param msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object
+        *         :param packs:      A list of Buffer-like objects, which correspond to the packets to send to you
+        *         :param id:         The ID this message should appear to be sent from (default: your ID)
+        *         :param number time:       The time this message should appear to be sent from (default: now in UTC)
         *
-        *     :param msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object
-        *     :param packs:      A list of Buffer-like objects, which correspond to the packets to send to you
-        *     :param id:         The ID this message should appear to be sent from (default: your ID)
-        *     :param time:       The time this message should appear to be sent from (default: now in UTC)
-        *
-        *     :returns: the pathfinding_message object you just sent, or undefined if the sending was unsuccessful
+        *         :returns: the :js:class:`js2p.base.pathfinding_message` object you just sent, or ``undefined`` if the sending was unsuccessful
         */
 
         //This section handles waterfall-specific flags
@@ -550,6 +753,14 @@ m.base_connection = class base_connection   {
     }
 
     collect_incoming_data(self, data) {
+        /**
+        *     .. js:function:: js2p.base.base_connection.collect_incoming_data(self, data)
+        *
+        *         Collects and processes data which just came in on the socket
+        *
+        *         :param self: A reference to this connection. Will be refactored out.
+        *         :param Buffer data: The data which was just received
+        */
         self.buffer = Buffer.concat([self.buffer, data]);
         //console.log(self.buffer);
         self.time = m.getUTC();
@@ -568,6 +779,13 @@ m.base_connection = class base_connection   {
     }
 
     found_terminator()  {
+        /**
+        *     .. js:function:: js2p.base.base_connection.found_terminator()
+        *
+        *         This method is called when the expected amount of data is received
+        *
+        *         :returns: The deserialized message received
+        */
         //console.log("I got called");
         var msg = m.pathfinding_message.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
         this.buffer = this.buffer.slice(this.expected);
@@ -577,6 +795,16 @@ m.base_connection = class base_connection   {
     }
 
     handle_renegotiate(packets) {
+        /**
+        *     .. js:function:: js2p.base.base_connection.handle_renegotiate(packets)
+        *
+        *         This function handles connection renegotiations. This is used when compression methods
+        *         fail, or when a node needs a message resent.
+        *
+        *         :param packs: The array of packets which were received to initiate the renegotiation
+        *
+        *         :returns: ``true`` if action was taken, ``undefined`` if not
+        */
         if (packets[0] == m.flags.renegotiate)    {
             if (packets[4] == m.flags.compression)   {
                 var encoded_methods = JSON.parse(packets[5]);
@@ -604,6 +832,25 @@ m.base_connection = class base_connection   {
 };
 
 m.base_socket = class base_socket   {
+    /**
+    * .. js:class:: js2p.base.base_socket(addr, port [, protocol [, out_addr [, debug_level]]])
+    *
+    *     This is the template class for socket abstracters.
+    *
+    *     :param string addr: The address you'd like to bind to
+    *     :param number port: The port you'd like to bind to
+    *     :param js2p.base.protocol protocol: The subnet you're looking to connect to
+    *     :param array out_addr: Your outward-facing address
+    *     :param number debug_level: The verbosity of debug prints
+    *
+    *     .. js:attribute:: js2p.base.base_socket.routing_table
+    *
+    *         An object which contains :js:class:`js2p.base.base_connection` s keyed by their IDs
+    *
+    *     .. js:attribute:: js2p.base.base_socket.awaiting_ids
+    *
+    *         An array which contains :js:class:`js2p.base.base_connection` s that are awaiting handshake information
+    */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         const self = this;
         this.addr = [addr, port];
@@ -620,6 +867,24 @@ m.base_socket = class base_socket   {
     }
 
     register_handler(callback)  {
+        /**
+        *     .. js:function:: js2p.base.base_socket.register_handler(callback)
+        *
+        *         This registers a message callback. Each is run through until one returns ``true``,
+        *         rather like :js:func:`Array.some()`. The callback is expected to be of the form:
+        *
+        *         .. code-block:: javascript
+        *
+        *             function callback(msg, conn)  {
+        *                 const packets = msg.packets;
+        *                 if (packets[0] === some_expected_value)   {
+        *                     some_action(msg, conn);
+        *                     return true;
+        *                 }
+        *             }
+        *
+        *         :param function callback: A function formatted like the above
+        */
         this.__handlers = this.__handlers.concat(callback);
     }
 

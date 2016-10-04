@@ -61,6 +61,7 @@ ES5: LICENSE
 	$(node) node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
 
 jsdocs:
+	mkdir docs/javascript || @echo "javascript folder present"
 	$(node) js_src/docs_test.js
 
 python: LICENSE setup.py
