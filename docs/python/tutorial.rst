@@ -42,7 +42,7 @@ Unfortunately, this failure is currently silent. Because this is asynchronous in
     >>> time.sleep(1)
     >>> assert sock.routing_table
 
-To send a message, you should use the :py:meth:`~py2p.mesh.mesh_socket.send` method. Each argument you supply will correspond to a packet that your peer receives. In addition, there are two keyed arguments you can use. ``flag`` will specify how other nodes relay this. ``b'broadcast'`` will indicate that other nodes are supposed to relay it. ``b'whisper'`` will indicate that your peers are *not* supposed to relay it. There are other technically valid options, but they are not recommended. ``type`` will specify what actions other nodes are supposed to take on it. It defaults to ``b'broadcast'``, which indicates no change from the norm. There are other valid options, but they should normally be left alone, unless you've written a handler (see below) to act on this.
+To send a message, you should use the :py:meth:`~py2p.mesh.mesh_socket.send` method. Each argument you supply will correspond to a packet that your peer receives. In addition, there are two keyed arguments you can use. ``flag`` will specify how other nodes relay this. These flags are defined in :py:class:`py2p.base.flags` . ``broadcast`` will indicate that other nodes are supposed to relay it. ``whisper`` will indicate that your peers are *not* supposed to relay it. There are other technically valid options, but they are not recommended. ``type`` will specify what actions other nodes are supposed to take on it. It defaults to ``broadcast``, which indicates no change from the norm. There are other valid options, but they should normally be left alone, unless you've written a handler (see below) to act on this.
 
 .. code-block:: python
 
@@ -78,7 +78,7 @@ In addition to this, you can register a custom handler for incoming messages. Th
     ...         services.blockchain_info.send_tx(relay)
     ...         services.insight.InsightProvider().send_tx(relay)
     ...         return True        # This tells the daemon to stop calling handlers
-    ... 
+    ...
     >>> import py2p
     >>> sock = py2p.mesh_socket('0.0.0.0', 4444)
     >>> sock.register_handler(relay_tx)

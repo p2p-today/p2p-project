@@ -82,8 +82,6 @@ extlinks = {'issue':   ('https://github.com/gappleto97/p2p-project/issues/%s',
             'gitfile': ('https://github.com/gappleto97/p2p-project/blob/%s',
                         'file ')}
 
-html_last_updated_fmt = ' %B %d, %Y at %H:%M'
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
 
@@ -101,7 +99,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'py2p'
+project = u'p2p.today'
 copyright = u'2016, Gabe Appleton'
 author = u'Gabe Appleton'
 
@@ -221,7 +219,7 @@ html_static_path = ['.static']
 # bottom, using the given strftime format.
 # The empty string is equivalent to '%b %d, %Y'.
 #
-# html_last_updated_fmt = None
+html_last_updated_fmt = ' %B %d, %Y at %H:%M'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
@@ -251,15 +249,15 @@ html_static_path = ['.static']
 
 # If true, links to the reST sources are added to the pages.
 #
-# html_show_sourcelink = True
+html_show_sourcelink = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 #
-# html_show_sphinx = True
+html_show_sphinx = True
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
 #
-# html_show_copyright = True
+html_show_copyright = True
 
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the
@@ -315,7 +313,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'py2p.tex', u'py2p Documentation',
+    (master_doc, 'p2p.today.tex', u'p2p.today Documentation',
      u'Gabe Appleton', 'manual'),
 ]
 
@@ -357,7 +355,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'py2p', u'py2p Documentation',
+    (master_doc, 'p2p.today', u'p2p.today Documentation',
      [author], 1)
 ]
 
@@ -372,8 +370,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'py2p', u'py2p Documentation',
-     author, 'py2p', 'One line description of project.',
+    (master_doc, 'p2p.today', u'p2p.today Documentation',
+     author, 'p2p.today', 'One line description of project.',
      'Miscellaneous'),
 ]
 

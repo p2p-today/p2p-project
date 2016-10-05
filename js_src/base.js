@@ -559,6 +559,17 @@ m.message = class message {
         this.server = server
     }
 
+    inspect()   {
+        const packets = this.packets;
+        const type = packets[0];
+        const payload = packets.slice(1);
+        var text = "message {\n";
+        text += ` type: ${util.inspect(type)}\n`;
+        text += ` packets: ${util.inspect(payload)}\n`;
+        text += ` sender: ${util.inspect(this.sender.toString())} }`;
+        return text;
+    }
+
     get time() {
         /**
         *     .. js:attribute:: js2p.base.message.time
