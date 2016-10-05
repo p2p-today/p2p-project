@@ -1,4 +1,10 @@
+/**
+* Mesh Module
+* ===========
+*/
+
 "use strict";
+
 const base = require('./base.js');
 
 var m;
@@ -17,13 +23,39 @@ else {
 m.max_outgoing = 4;
 
 m.default_protocol = new base.protocol('mesh', "Plaintext");
+/**
+* .. js:data:: js2p.mesh.default_protocol
+*
+*     A :js:class:`~js2p.base.protocol` object which is used by default in the mesh module
+*/
 
 m.mesh_connection = class mesh_connection extends base.base_connection  {
+    /**
+    * .. js:class:: js2p.mesh.mesh_connection(sock, server, outgoing)
+    *
+    *     This is the class for mesh connection abstractraction. It inherits from :js:class:`js2p.base.base_connection`
+    *
+    *     :param sock:                          This is the raw socket object
+    *     :param js2p.mesh.mesh_socket server:  This is a link to the :js:class:`~js2p.mesh.mesh_socket` parent
+    *     :param outgoing:                      This bool describes whether ``server`` initiated the connection
+    */
     constructor(sock, server, outgoing) {
         super(sock, server, outgoing);
     }
 
     send(msg_type, packs, id, time)  {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_connection.send(msg_type, packs, id, time)
+        *
+        *         Sends a message through its connection.
+        *
+        *         :param msg_type:      Message type, corresponds to the header in a :js:class:`~js2p.base.pathfinding_message` object
+        *         :param packs:         A list of Buffer-like objects, which correspond to the packets to send to you
+        *         :param id:            The ID this message should appear to be sent from (default: your ID)
+        *         :param number time:   The time this message should appear to be sent from (default: now in UTC)
+        *
+        *         :returns: ``undefined``
+        */
         // console.log(msg_type);
         // console.log(packs);
         var msg = super.send(msg_type, packs, id, time);
@@ -31,6 +63,13 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
     }
 
     found_terminator()  {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_connection.found_terminator()
+        *
+        *         This method is called when the expected amount of data is received
+        *
+        *         :returns: ``undefined``
+        */
         var msg = super.found_terminator();
         //console.log(msg.packets);
         if (this.handle_waterfall(msg, msg.packets))   {
@@ -43,6 +82,19 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
     }
 
     handle_waterfall(msg, packets)  {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_connection.handle_waterfall(msg, packets)
+        *
+        *         This method determines whether this message has been previously received or not.
+        *         If it has been previously received, this method returns ``true``.
+        *         If it is older than a preset limit, this method returns ``true``.
+        *         Otherwise this method returns ``undefined``, and forwards the message appropriately.
+        *
+        *         :param js2p.base.pathfinding_message msg: The message in question
+        *         :param packets:                           The message's packets
+        *
+        *         :returns: ``true`` or ``undefined``
+        */
         if (packets[0] == base.flags.waterfall || packets[0] == base.flags.broadcast) {
             if (base.from_base_58(packets[3]) < base.getUTC() - 60) {
                 // this.__print__("Waterfall expired", level=2);
@@ -57,18 +109,47 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
     }
 
     onClose()   {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_connection.onClose()
+        *
+        *         This function is run when a connection is closed
+        */
         if (this.server.routing_table[this.id]) {
             delete this.server.routing_table[this.id];
         }
     }
 
     onEnd()   {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_connection.onEnd()
+        *
+        *         This function is run when a connection is ended
+        */
         this.sock.end();
         this.sock.destroy();
     }
 }
 
 m.mesh_socket = class mesh_socket extends base.base_socket  {
+    /**
+    * .. js:class:: js2p.mesh.mesh_socket(addr, port [, protocol [, out_addr [, debug_level]]])
+    *
+    *     This is the class for mesh network socket abstraction. It inherits from :js:class:`js2p.base.base_socket`
+    *
+    *     :param string addr:                   The address you'd like to bind to
+    *     :param number port:                   The port you'd like to bind to
+    *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
+    *     :param array out_addr:                Your outward-facing address
+    *     :param number debug_level:            The verbosity of debug prints
+    *
+    *     .. js:attribute:: js2p.mesh.mesh_socket.routing_table
+    *
+    *         An object which contains :js:class:`~js2p.mesh.mesh_connection` s keyed by their IDs
+    *
+    *     .. js:attribute:: js2p.mesh.mesh_socket.awaiting_ids
+    *
+    *         An array which contains :js:class:`~js2p.mesh.mesh_connection` s that are awaiting handshake information
+    */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
         const self = this;
@@ -88,6 +169,12 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     get outgoing()  {
+        /**
+        *     .. js:attribute:: js2p.mesh.mesh_socket.outgoing
+        *
+        *         This is an array of all outgoing connections. The length of this array is used to determine
+        *         whether the "socket" should automatically initiate connections
+        */
         var outs = [];
         const self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
@@ -99,6 +186,19 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     recv(num)   {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket.recv([num])
+        *
+        *         This function has two behaviors depending on whether num is truthy.
+        *
+        *         If num is truthy, it will return a list of :js:class:`~js2p.base.message` objects up to length len.
+        *
+        *         If num is not truthy, it will return either a single :js:class:`~js2p.base.message` object, or ``undefined``
+        *
+        *         :param number num: The maximum number of :js:class:`~js2p.base.message` s you would like to pull
+        *
+        *         :returns: A list of :js:class:`~js2p.base.message` s, an empty list, a single :js:class:`~js2p.base.message` , or ``undefined``
+        */
         var ret;
         if (num)    {
             ret = this.queue.slice(0, num);
@@ -248,6 +348,21 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     send(packets, flag, type)  {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_connection.send(packets [, flag [, type]])
+        *
+        *         This sends a message to all of your peers. If you use default values it will send it to everyone on the network
+        *
+        *         :param packets:   A list of strings or Buffer-like objects you want your peers to receive
+        *         :param flag:      A string or Buffer-like object which defines your flag. In other words, this defines packet 0.
+        *         :param type:      A string or Buffer-like object which defines your message type. Changing this from default can have adverse effects.
+        *
+        *         .. warning::
+        *
+        *             If you change the type attribute from default values, bad things could happen. It MUST be a value from :js:data:`js2p.base.flags` ,
+        *             and more specifically, it MUST be either ``broadcast`` or ``whisper``. The only other valid flags are ``waterfall`` and ``renegotiate``,
+        *             but these are RESERVED and must NOT be used.
+        */
         const send_type = type || base.flags.broadcast;
         const main_flag = flag || base.flags.broadcast;
         const self = this;

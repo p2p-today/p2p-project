@@ -49,11 +49,10 @@ js_deps = jssha zlibjs buffer big-integer
 
 ES5: LICENSE
 	$(npm) install babel-cli $(js_deps)
-	node node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5 || nodejs node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
+	nodejs node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5 || node node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
 
 jsdocs:
-	mkdir docs/javascript || echo "javascript folder present"
-	node js_src/docs_test.js || nodejs js_src/docs_test.js
+	nodejs js_src/docs_test.js || node js_src/docs_test.js
 
 python: LICENSE setup.py
 	python $(py_deps)

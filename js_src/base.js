@@ -159,8 +159,8 @@ m.pack_value = function pack_value(len, i) {
     *
     *     This function packs an integer i into a buffer of length len
     *
-    *     :param len: An integral value
-    *     :param i: An integeral value
+    *     :param len:   An integral value
+    *     :param i:     An integeral value
     *
     *     :returns: A big endian buffer of length len
     */
@@ -268,8 +268,8 @@ m.compress = function compress(text, method) {
     *
     *     This function is a shortcut for compressing data using a predefined method
     *
-    *     :param text: The string or Buffer-like object you wish to compress
-    *     :param method: A compression method as defined in :js:data:`js2p.base.flags`
+    *     :param text:      The string or Buffer-like object you wish to compress
+    *     :param method:    A compression method as defined in :js:data:`~js2p.base.flags`
     *
     *     :returns: A variabley typed object containing a compressed version of text
     */
@@ -291,8 +291,8 @@ m.decompress = function decompress(text, method) {
     *
     *     This function is a shortcut for decompressing data using a predefined method
     *
-    *     :param text: The string or Buffer-like object you wish to decompress
-    *     :param method: A compression method as defined in :js:data:`js2p.base.flags`
+    *     :param text:      The string or Buffer-like object you wish to decompress
+    *     :param method:    A compression method as defined in :js:data:`~js2p.base.flags`
     *
     *     :returns: A variabley typed object containing a decompressed version of text
     */
@@ -316,8 +316,8 @@ m.protocol = class protocol {
     *     If you connect to someone who has a different protocol object than you, this descrepency is detected,
     *     and you are silently disconnected.
     *
-    *     :param string subnet: The subnet ID you wish to connect to. Ex: 'mesh'
-    *     :param string encryption: The encryption method you wish to use. Ex: 'Plaintext'
+    *     :param string subnet:     The subnet ID you wish to connect to. Ex: ``'mesh'``
+    *     :param string encryption: The encryption method you wish to use. Ex: ``'Plaintext'``
     */
     constructor(subnet, encryption) {
         this.subnet = subnet;
@@ -343,11 +343,11 @@ m.pathfinding_message = class pathfinding_message {
     *
     *     This is the message serialization/deserialization class.
     *
-    *     :param msg_type: This is the main flag checked by nodes, used for routing information
-    *     :param sender: The ID of the person sending the message
-    *     :param payload: A list of "packets" that you want your peers to receive
-    *     :param compression: A list of compression methods that the receiver supports
-    *     :param number timestamp: The time at which this message will be sent in seconds UTC
+    *     :param msg_type:          This is the main flag checked by nodes, used for routing information
+    *     :param sender:            The ID of the person sending the message
+    *     :param payload:           A list of "packets" that you want your peers to receive
+    *     :param compression:       A list of compression methods that the receiver supports
+    *     :param number timestamp:  The time at which this message will be sent in seconds UTC
     */
     constructor(msg_type, sender, payload, compression, timestamp) {
         this.msg_type = new Buffer(msg_type);
@@ -367,11 +367,11 @@ m.pathfinding_message = class pathfinding_message {
         *
         *         This method deserializes a message
         *
-        *         :param string: The message you would like to deserialize
-        *         :param sizeless: A bool-like object describing whether the size header is present
-        *         :param compressions: A list of possible compression methods this message may be under
+        *         :param string:        The message you would like to deserialize
+        *         :param sizeless:      A bool-like object describing whether the size header is present
+        *         :param compressions:  A list of possible compression methods this message may be under
         *
-        *         :returns: A :js:class:`js2p.base.pathfinding_message` object containing the deserialized message
+        *         :returns: A :js:class:`~js2p.base.pathfinding_message` object containing the deserialized message
         */
         string = m.pathfinding_message.sanitize_string(string, sizeless)
         var compression_return = m.pathfinding_message.decompress_string(string, compressions)
@@ -450,7 +450,7 @@ m.pathfinding_message = class pathfinding_message {
         /**
         *     .. js:attribute:: js2p.base.pathfinding_message.compression_used
         *
-        *         Returns the compression method used in this message, as defined in :js:data:`js2p.base.flags`, or ``null`` if none
+        *         Returns the compression method used in this message, as defined in :js:data:`~js2p.base.flags`, or ``null`` if none
         */
         for (var i = 0; i < m.compression.length; i++) {
             for (var j = 0; j < this.compression.length; j++) {
@@ -552,7 +552,7 @@ m.message = class message {
     *     This is the message class we present to the user.
     *
     *     :param js2p.base.pathfinding_message msg: This is the serialization object you received
-    *     :param js2p.base.base_socket sender: This is the "socket" object that received it
+    *     :param js2p.base.base_socket sender:      This is the "socket" object that received it
     */
     constructor(msg, server) {
         this.msg = msg
@@ -608,7 +608,7 @@ m.message = class message {
         /**
         *     .. js:attribute:: js2p.base.message.protocol
         *
-        *         Returns the :js:class:`js2p.base.protocol` associated with this message
+        *         Returns the :js:class:`~js2p.base.protocol` associated with this message
         */
         return this.server.protocol
     }
@@ -647,9 +647,9 @@ m.base_connection = class base_connection   {
     *
     *     This is the template class for connection abstracters.
     *
-    *     :param sock: This is the raw socket object
-    *     :param js2p.base.base_socket server: This is a link to the :js:class:`js2p.base.base_socket` parent
-    *     :param outgoing: This bool describes whether ``server`` initiated the connection
+    *     :param sock:                          This is the raw socket object
+    *     :param js2p.base.base_socket server:  This is a link to the :js:class:`~js2p.base.base_socket` parent
+    *     :param outgoing:                      This bool describes whether ``server`` initiated the connection
     */
     constructor(sock, server, outgoing)   {
         this.sock = sock;
@@ -714,12 +714,12 @@ m.base_connection = class base_connection   {
         *
         *         Sends a message through its connection.
         *
-        *         :param msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object
-        *         :param packs:      A list of Buffer-like objects, which correspond to the packets to send to you
-        *         :param id:         The ID this message should appear to be sent from (default: your ID)
-        *         :param number time:       The time this message should appear to be sent from (default: now in UTC)
+        *         :param msg_type:      Message type, corresponds to the header in a :js:class:`~js2p.base.pathfinding_message` object
+        *         :param packs:         A list of Buffer-like objects, which correspond to the packets to send to you
+        *         :param id:            The ID this message should appear to be sent from (default: your ID)
+        *         :param number time:   The time this message should appear to be sent from (default: now in UTC)
         *
-        *         :returns: the :js:class:`js2p.base.pathfinding_message` object you just sent, or ``undefined`` if the sending was unsuccessful
+        *         :returns: the :js:class:`~js2p.base.pathfinding_message` object you just sent, or ``undefined`` if the sending was unsuccessful
         */
 
         //This section handles waterfall-specific flags
@@ -758,8 +758,8 @@ m.base_connection = class base_connection   {
         *
         *         Collects and processes data which just came in on the socket
         *
-        *         :param self: A reference to this connection. Will be refactored out.
-        *         :param Buffer data: The data which was just received
+        *         :param self:          A reference to this connection. Will be refactored out.
+        *         :param Buffer data:   The data which was just received
         */
         self.buffer = Buffer.concat([self.buffer, data]);
         //console.log(self.buffer);
@@ -837,19 +837,19 @@ m.base_socket = class base_socket   {
     *
     *     This is the template class for socket abstracters.
     *
-    *     :param string addr: The address you'd like to bind to
-    *     :param number port: The port you'd like to bind to
-    *     :param js2p.base.protocol protocol: The subnet you're looking to connect to
-    *     :param array out_addr: Your outward-facing address
-    *     :param number debug_level: The verbosity of debug prints
+    *     :param string addr:                   The address you'd like to bind to
+    *     :param number port:                   The port you'd like to bind to
+    *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
+    *     :param array out_addr:                Your outward-facing address
+    *     :param number debug_level:            The verbosity of debug prints
     *
     *     .. js:attribute:: js2p.base.base_socket.routing_table
     *
-    *         An object which contains :js:class:`js2p.base.base_connection` s keyed by their IDs
+    *         An object which contains :js:class:`~js2p.base.base_connection` s keyed by their IDs
     *
     *     .. js:attribute:: js2p.base.base_socket.awaiting_ids
     *
-    *         An array which contains :js:class:`js2p.base.base_connection` s that are awaiting handshake information
+    *         An array which contains :js:class:`~js2p.base.base_connection` s that are awaiting handshake information
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         const self = this;
