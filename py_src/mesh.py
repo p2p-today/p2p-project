@@ -192,6 +192,19 @@ class mesh_socket(base_socket):
         self.routing_table.update({h_id: to_keep})
 
     def __handle_handshake(self, msg, handler):
+        """This callback is used to deal with handshake signals. Its three primary jobs are:
+
+             - reject connections seeking a different network
+             - set connection state
+             - deal with connection conflicts
+
+             Args:
+                msg:        A :py:class:`~py2p.base.message`
+                handler:    A :py:class:`~py2p.mesh.mesh_connection`
+
+             Returns:
+                Either ``True`` or ``None``
+        """
         packets = msg.packets
         if packets[0] == flags.handshake:
             if packets[2] != self.protocol.id:
@@ -213,6 +226,15 @@ class mesh_socket(base_socket):
             return True
 
     def __handle_peers(self, msg, handler):
+        """This callback is used to deal with peer signals. Its primary jobs is to connect to the given peers, if this does not exceed :py:const:`py2p.mesh.max_outgoing`
+
+             Args:
+                msg:        A :py:class:`~py2p.base.message`
+                handler:    A :py:class:`~py2p.mesh.mesh_connection`
+
+             Returns:
+                Either ``True`` or ``None``
+        """
         packets = msg.packets
         if packets[0] == flags.peers:
             new_peers = json.loads(packets[1].decode())
@@ -226,6 +248,18 @@ class mesh_socket(base_socket):
             return True
 
     def __handle_response(self, msg, handler):
+        """This callback is used to deal with response signals. Its two primary jobs are:
+
+             - if it was your request, send the deferred message
+             - if it was someone else's request, relay the information
+
+             Args:
+                msg:        A :py:class:`~py2p.base.message`
+                handler:    A :py:class:`~py2p.mesh.mesh_connection`
+
+             Returns:
+                Either ``True`` or ``None``
+        """
         packets = msg.packets
         if packets[0] == flags.response:
             self.__print__("Response received for request id %s" % packets[1], level=1)
@@ -239,6 +273,19 @@ class mesh_socket(base_socket):
             return True
 
     def __handle_request(self, msg, handler):
+        """This callback is used to deal with request signals. Its three primary jobs are:
+
+             - respond with a peers signal if packets[1] is ``'*'``
+             - if you know the ID requested, respond to it
+             - if you don't, make a request with your peers
+
+             Args:
+                msg:        A :py:class:`~py2p.base.message`
+                handler:    A :py:class:`~py2p.mesh.mesh_connection`
+
+             Returns:
+                Either ``True`` or ``None``
+        """
         packets = msg.packets
         if packets[0] == flags.request:
             if packets[1] == b'*':
@@ -248,7 +295,20 @@ class mesh_socket(base_socket):
             return True
 
     def send(self, *args, **kargs):
-        """Sends data to all peers. type flag will override normal subflag. Defaults to 'broadcast'"""
+        """This sends a message to all of your peers. If you use default values it will send it to everyone on the network
+        *
+        Args:
+            *args:      A list of strings or bytes-like objects you want your peers to receive
+            **kargs:    There are two keywords available:
+            flag:       A string or bytes-like object which defines your flag. In other words, this defines packet 0.
+            type:       A string or bytes-like object which defines your message type. Changing this from default can have adverse effects.
+
+        Warning:
+
+            If you change the type attribute from default values, bad things could happen. It **MUST** be a value from :py:data:`py2p.base.flags` ,
+            and more specifically, it **MUST** be either ``broadcast`` or ``whisper``. The only other valid flags are ``waterfall`` and ``renegotiate``,
+            but these are **RESERVED** and must **NOT** be used.
+        """
         send_type = kargs.pop('type', flags.broadcast)
         main_flag = kargs.pop('flag', flags.broadcast)
         # map(methodcaller('send', 'broadcast', 'broadcast', *args), self.routing_table.values())

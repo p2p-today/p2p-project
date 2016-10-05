@@ -769,10 +769,11 @@ class base_socket(object):
 
             Args:
                 method: A function with two given arguments. Its signature
-                    should be of the form handler(msg, handler), where msg is
-                    a base.message object, and handler is a base.base_connection
-                    object. It should return True if it performed an action, to
-                    reduce the number of handlers checked.
+                    should be of the form ``handler(msg, handler)``, where msg
+                    is a :py:class:`py2p.base.message` object, and handler is
+                    a :py:class:`py2p.base.base_connection` object. It should
+                    return ``True`` if it performed an action, to reduce the
+                    number of handlers checked.
 
             Raises:
                 ValueError: If the method signature doesn't parse correctly
@@ -788,10 +789,11 @@ class base_socket(object):
 
             Args:
                 method: A function with two given arguments. Its signature
-                    should be of the form handler(msg, handler), where msg is
-                    a base.message object, and handler is a base.base_connection
-                    object. It should return True if it performed an action, to
-                    reduce the number of handlers checked.
+                    should be of the form ``handler(msg, handler)``, where msg
+                    is a :py:class:`py2p.base.message` object, and handler is
+                    a :py:class:`py2p.base.base_connection` object. It should
+                    return ``True`` if it performed an action, to reduce the
+                    number of handlers checked.
 
             Raises:
                 ValueError: If the method signature doesn't parse correctly

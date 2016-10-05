@@ -1,6 +1,11 @@
-// Arbitrary precision base conversion by Daniel Gehriger <gehriger@linkcad.com>
-// Permission for use was given here: http://archive.is/BFA8H#17%
-// This has been heavily modified since copying, has been hardcoded for a specific case, then translated to C
+/**
+* Base Converter
+* ==============
+*
+* Arbitrary precision base conversion by Daniel Gehriger <gehriger@linkcad.com>
+* Permission for use was given `here <http://archive.is/BFA8H#17%>`_.
+* This has been heavily modified since copying, has been hardcoded for a specific case, then translated to C.
+*/
 
 #include <math.h>
 #include <stddef.h>

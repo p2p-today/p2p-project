@@ -1,3 +1,7 @@
+/**
+* Base Python Wrapper
+* ===================
+*/
 #include <Python.h>
 #include <bytesobject.h>
 #include "structmember.h"

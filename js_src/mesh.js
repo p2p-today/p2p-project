@@ -271,6 +271,20 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     __handle_handshake(msg, conn)    {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket.__handle_handshake(msg, conn)
+        *
+        *         This callback is used to deal with handshake signals. Its three primary jobs are:
+        *
+        *         - reject connections seeking a different network
+        *         - set connection state
+        *         - deal with connection conflicts
+        *
+        *         :param js2p.base.message msg:
+        *         :param js2p.mesh.mesh_connection conn:
+        *
+        *         :returns: Either ``true`` or ``undefined``
+        */
         const packets = msg.packets;
         if (packets[0].toString() == base.flags.handshake)  {
             if (packets[2] != msg.protocol.id) {
@@ -295,6 +309,16 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     __handle_peers(msg, conn)   {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket.__handle_peers(msg, conn)
+        *
+        *         This callback is used to deal with peer signals. Its primary jobs is to connect to the given peers, if this does not exceed :js:data:`js2p.mesh.max_outgoing`
+        *
+        *         :param js2p.base.message msg:
+        *         :param js2p.mesh.mesh_connection conn:
+        *
+        *         :returns: Either ``true`` or ``undefined``
+        */
         const packets = msg.packets;
         if (packets[0].toString() == base.flags.peers)  {
             var new_peers = JSON.parse(packets[1]);
@@ -315,6 +339,19 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     __handle_response(msg, conn)    {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket.__handle_response(msg, conn)
+        *
+        *         This callback is used to deal with response signals. Its two primary jobs are:
+        *
+        *         - if it was your request, send the deferred message
+        *         - if it was someone else's request, relay the information
+        *
+        *         :param js2p.base.message msg:
+        *         :param js2p.mesh.mesh_connection conn:
+        *
+        *         :returns: Either ``true`` or ``undefined``
+        */
         const packets = msg.packets;
         if (packets[0].toString() == base.flags.response)  {
             // self.__print__("Response received for request id %s" % packets[1], level=1)
@@ -333,6 +370,20 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     __handle_request(msg, conn) {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket.__handle_request(msg, conn)
+        *
+        *         This callback is used to deal with request signals. Its three primary jobs are:
+        *
+        *         - respond with a peers signal if packets[1] is ``'*'``
+        *         - if you know the ID requested, respond to it
+        *         - if you don't, make a request with your peers
+        *
+        *         :param js2p.base.message msg:
+        *         :param js2p.mesh.mesh_connection conn:
+        *
+        *         :returns: Either ``true`` or ``undefined``
+        */
         const packets = msg.packets;
         //console.log(packets[0].toString());
         //console.log(packets[1].toString());
@@ -359,9 +410,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *
         *         .. warning::
         *
-        *             If you change the type attribute from default values, bad things could happen. It MUST be a value from :js:data:`js2p.base.flags` ,
-        *             and more specifically, it MUST be either ``broadcast`` or ``whisper``. The only other valid flags are ``waterfall`` and ``renegotiate``,
-        *             but these are RESERVED and must NOT be used.
+        *             If you change the type attribute from default values, bad things could happen. It **MUST** be a value from :js:data:`js2p.base.flags` ,
+        *             and more specifically, it **MUST** be either ``broadcast`` or ``whisper``. The only other valid flags are ``waterfall`` and ``renegotiate``,
+        *             but these are **RESERVED** and must **NOT** be used.
         */
         const send_type = type || base.flags.broadcast;
         const main_flag = flag || base.flags.broadcast;

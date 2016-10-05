@@ -17,6 +17,7 @@ Mesh Module
 .. autoclass:: py2p.mesh.mesh_socket
     :members:
     :special-members: __init__, __iter__
+    :private-members:
     :undoc-members:
     :inherited-members:
 
