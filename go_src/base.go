@@ -1,3 +1,9 @@
+/**
+* Base Module
+* ===========
+*
+* This module contains common functions and types used in the rest of the library.
+*/
 package main
 
 import (
@@ -20,7 +26,7 @@ func pseudo_uuid() (string) {
     if err != nil {
         panic(err)
     }
-    
+
     b[8] = (b[8] | 0x80) & 0xBF
     b[6] = (b[6] | 0x40) & 0x4F
 
@@ -52,7 +58,7 @@ func get_ulong_from_bytes(arr []byte) (int64) {
         val *= 256
         val += int64(arr[i])
     }
-    return val    
+    return val
 }
 
 func pack_ulong(i int64) ([]byte)    {
@@ -167,7 +173,7 @@ func divide_byte_by_58(b []byte, remainder int) ([]byte, int)   {
         d := c / 58
         remainder = c % 58
         if len(answer) != 0 || d != 0   {
-            answer = append(answer, byte(d))        
+            answer = append(answer, byte(d))
         }
     }
     return answer, remainder
@@ -183,7 +189,7 @@ func to_base_58_from_bytes(b []byte) (string)   {
     return string(answer)
 }
 
-func from_base_58(str string) (int64)   { 
+func from_base_58(str string) (int64)   {
     decimal := int64(0)
     for i := len(str) - 1; i >= 0; i-- {
         decimal *= 58

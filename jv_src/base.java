@@ -1,3 +1,9 @@
+/**
+* Base Module
+* ===========
+*
+* This module contains common functions and classes used in the rest of the library.
+*/
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.math.BigInteger;
@@ -91,7 +97,7 @@ public class base   {
                 packets[i] = new String(Arrays.copyOfRange(fed_string, processed, end));
                 processed = end;
             }
-            
+
             return packets;
         }
 
