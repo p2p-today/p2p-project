@@ -25,8 +25,20 @@ max_outgoing = 4
 default_protocol = protocol('mesh', "Plaintext")  # SSL")
 
 class mesh_connection(base_connection):
+    """The class for mesh connection abstraction. This inherits from :py:class:`py2p.base.base_connection`"""
     def send(self, msg_type, *args, **kargs):
-        """Sends a message through its connection. The first argument is message type. All after that are content packets"""
+        """Sends a message through its connection.
+
+        Args:
+            msg_type:   Message type, corresponds to the header in a :py:class:`py2p.base.pathfinding_message` object
+            *args:      A list of bytes-like objects, which correspond to the packets to send to you
+            **kargs:    There are two available keywords:
+            id:         The ID this message should appear to be sent from (default: your ID)
+            time:       The time this message should appear to be sent from (default: now in UTC)
+
+        Returns:
+            the :py:class:`~py2p.base.pathfinding_message` object you just sent, or None if the sending was unsuccessful
+        """
         msg = super(mesh_connection, self).send(msg_type, *args, **kargs)
         if msg and (msg.id, msg.time) not in self.server.waterfalls:
             self.server.waterfalls.appendleft((msg.id, msg.time))
@@ -50,6 +62,21 @@ class mesh_connection(base_connection):
         self.server.handle_msg(message(msg, self.server), self)
 
     def handle_waterfall(self, msg, packets):
+        """This method determines whether this message has been previously received or not.
+
+        If it has been previously received, this method returns ``True``.
+
+        If it is older than a preset limit, this method returns ``True``.
+
+        Otherwise this method returns ``None``, and forwards the message appropriately.
+
+        Args:
+            msg:        The message in question
+            packets:    The message's packets
+
+        Returns:
+            Either ``True`` or ``None``
+        """
         if packets[0] in [flags.waterfall, flags.broadcast]:
             if from_base_58(packets[3]) < getUTC() - 60:
                 self.__print__("Waterfall expired", level=2)

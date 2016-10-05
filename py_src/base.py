@@ -30,8 +30,8 @@ class brepr(bytearray):
         """Initializes a brepr object
 
         Args:
-            value: The value you want this bytearray to store
-            rep: The value you want this bytearray to print
+            value:  The value you want this bytearray to store
+            rep:    The value you want this bytearray to print
         """
         super(brepr, self).__init__(value)
         self.__rep = (rep or value)
@@ -162,7 +162,7 @@ else:
             i:      A positive, integral value to pack into said array
 
         Returns:
-            A bytes object containing the given value
+            A :py:class:`bytes` object containing the given value
 
         Raises:
             ValueError: If length is not large enough to contain the value provided
@@ -206,7 +206,7 @@ def to_base_58(i):
         i: The integral value you wish to encode
 
     Returns:
-        A bytes object which contains the base_58 string
+        A :py:class:`bytes` object which contains the base_58 string
 
     Raises:
         TypeError: If you feed a non-integral value
@@ -242,13 +242,17 @@ def compress(msg, method):
 
     Args:
         msg:    The message you wish to compress, the type required is defined by the requested method
-        method: The compression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.zlib, base.flags.bz2, base.flags.lzma
+        method: The compression method you wish to use. Supported (assuming installed):
+                    :py:class:`~base.flags.gzip`,
+                    :py:class:`~base.flags.zlib`,
+                    :py:class:`~base.flags.bz2`,
+                    :py:class:`~base.flags.lzma`
 
     Returns:
         Defined by the compression method, but typically the bytes of the compressed message
 
     Warning:
-        The types fed are dependent on which compression method you use. Best to assume most values are bytes or bytearray
+        The types fed are dependent on which compression method you use. Best to assume most values are :py:class:`bytes` or :py:class:`bytearray`
     """
     if method == flags.gzip:
         compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 31)
@@ -269,13 +273,17 @@ def decompress(msg, method):
 
     Args:
         msg:    The message you wish to decompress, the type required is defined by the requested method
-        method: The decompression method you wish to use. Supported (assuming installed): base.flags.gzip, base.flags.zlib, base.flags.bz2, base.flags.lzma
+        method: The decompression method you wish to use. Supported (assuming installed):
+                    :py:class:`~base.flags.gzip`,
+                    :py:class:`~base.flags.zlib`,
+                    :py:class:`~base.flags.bz2`,
+                    :py:class:`~base.flags.lzma`
 
     Returns:
         Defined by the decompression method, but typically the bytes of the compressed message
 
     Warning:
-        The types fed are dependent on which decompression method you use. Best to assume most values are bytes or bytearray
+        The types fed are dependent on which decompression method you use. Best to assume most values are :py:class:`bytes` or :py:class:`bytearray`
     """
     if method in (flags.gzip, flags.zlib):
         return zlib.decompress(msg, zlib.MAX_WBITS | 32)
@@ -312,7 +320,7 @@ class pathfinding_message(object):
 
         Args:
             string:     The string you wish to sanitize
-            sizeless:   Whether this string contains a size header (default: it does)
+            sizeless:   Whether this string is missing a size header (default: ``False``)
 
         Returns:
             The fed string without the size header
@@ -369,7 +377,7 @@ class pathfinding_message(object):
 
         Raises:
            struct.error:   Packet headers are incorrect OR not fed plaintext
-           IndexError:     See struct.error
+           IndexError:     See  case of :py:class:`struct.error`
 
         Warning:
             Do not feed a message with the size header. Do not feed a compressed message.
@@ -404,7 +412,7 @@ class pathfinding_message(object):
            AssertionError: Initial size header is incorrect
            Exception:      Unrecognized compression method fed in compressions
            struct.error:   Packet headers are incorrect OR unrecognized compression
-           IndexError:     See struct.error
+           IndexError:     See case of :py:class:`struct.error`
         """
         # First section checks size header
         string = cls.__sanitize_string(string, sizeless)
@@ -536,7 +544,7 @@ class base_connection(object):
         """Sends a message through its connection.
 
         Args:
-            msg_type:   Message type, corresponds to the header in a py2p.base.pathfinding_message object
+            msg_type:   Message type, corresponds to the header in a :py:class:`py2p.base.pathfinding_message` object
             *args:      A list of bytes-like objects, which correspond to the packets to send to you
             **kargs:    There are two available keywords:
             id:         The ID this message should appear to be sent from (default: your ID)
@@ -573,7 +581,7 @@ class base_connection(object):
             data:   The most recently received byte
 
         Returns:
-            True if the data collection was successful, False if the connection was closed
+            ``True`` if the data collection was successful, ``False`` if the connection was closed
         """
         if not bool(data):
             try:
@@ -615,7 +623,7 @@ class base_connection(object):
             packets:    A list containing the packets received in this message
 
         Returns:
-            True if an action was taken, None if not
+            ``True`` if an action was taken, ``None`` if not
         """
         if packets[0] == flags.renegotiate:
             if packets[4] == flags.compression:
@@ -709,7 +717,7 @@ class base_socket(object):
         Args:
             addr:           The address you wish to bind to (ie: "192.168.1.1")
             port:           The port you wish to bind to (ie: 44565)
-            prot:           The protocol you wish to operate over, defined by a base.protocol object
+            prot:           The protocol you wish to operate over, defined by a :py:class:`py2p.base.protocol` object
             out_addr:       Your outward facing address. Only needed if you're connecting
                 over the internet. If you use '0.0.0.0' for the addr argument, this will
                 automatically be set to your LAN address.
@@ -797,8 +805,8 @@ class base_socket(object):
         """Decides how to handle various message types, allowing some to be handled automatically
 
         Args:
-            msg:    A base.message object
-            conn:   A base.base_connection object
+            msg:    A :py:class:`py2p.base.message` object
+            conn:   A :py:class:`py2p.base.base_connection` object
 
         Returns:
             True if an action was taken, None if not.
@@ -814,7 +822,7 @@ class base_socket(object):
         """The status of the socket.
 
         Returns:
-            "Nominal" if all is going well, or a list of unexpected (Excpetion, traceback) tuples if not"""
+            ``"Nominal"`` if all is going well, or a list of unexpected (Excpetion, traceback) tuples if not"""
         return self.daemon.exceptions or "Nominal"
 
     def __print__(self, *args, **kargs):
@@ -841,8 +849,8 @@ class message(object):
         """Initializes a message object
 
         Args:
-            msg:    A pathfinding_message object
-            server: A base_socket object
+            msg:    A :py:class:`py2p.base.pathfinding_message` object
+            server: A :py:class:`py2p.base.base_socket` object
         """
         self.msg = msg
         self.server = server
