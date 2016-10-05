@@ -82,6 +82,8 @@ extlinks = {'issue':   ('https://github.com/gappleto97/p2p-project/issues/%s',
             'gitfile': ('https://github.com/gappleto97/p2p-project/blob/%s',
                         'file ')}
 
+html_last_updated_fmt = ' %B %d, %Y at %H:%M'
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
 
