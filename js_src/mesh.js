@@ -349,7 +349,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     send(packets, flag, type)  {
         /**
-        *     .. js:function:: js2p.mesh.mesh_connection.send(packets [, flag [, type]])
+        *     .. js:function:: js2p.mesh.mesh_socket.send(packets [, flag [, type]])
         *
         *         This sends a message to all of your peers. If you use default values it will send it to everyone on the network
         *
