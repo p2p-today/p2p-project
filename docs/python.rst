@@ -1,7 +1,7 @@
 Python Implementation
 =====================
 
-This section contains information specific to the python implementation of this networking schema. The python version is considered the reference implementation, and is where most of the experimenting on new protocol ideas will come from. Most users will only need to pay attention to the tutorial and last few sections (mesh, chord, kademlia). The rest is for developers who are interested in helping out.
+This section contains information specific to the Python implementation of p2p.today. The python version is considered the reference implementation, and is where most experimenting on new protocol ideas will come from. Most users will only need to pay attention to the tutorial and last few sections (mesh, chord, kademlia). The rest is for developers who are interested in helping out.
 
 Contents:
 

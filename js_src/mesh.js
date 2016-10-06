@@ -262,6 +262,13 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     __get_peer_list()   {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket.__get_peer_list()
+        *
+        *         This function is used to generate a list-formatted group of your peers. It goes in format ``[ [[addr, port], ID], ...]``
+        *
+        *         :returns: An array in the above format
+        */
         var ret = [];
         const self = this;
         Object.keys(this.routing_table).forEach(function(key)   {

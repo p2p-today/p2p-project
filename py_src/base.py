@@ -710,7 +710,7 @@ class base_daemon(object):
 
 
 class base_socket(object):
-    """The base class for a peer-to-peer socket"""
+    """The base class for a peer-to-peer socket abstractor"""
     def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
         """Initializes a peer to peer socket
 

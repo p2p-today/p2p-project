@@ -44,7 +44,11 @@ class mesh_connection(base_connection):
             self.server.waterfalls.appendleft((msg.id, msg.time))
 
     def found_terminator(self):
-        """Processes received messages"""
+        """This method is called when the expected amount of data is received
+
+        Returns:
+            ``None``
+        """
         try:
             msg = super(mesh_connection, self).found_terminator()
         except (IndexError, struct.error):
@@ -88,6 +92,7 @@ class mesh_connection(base_connection):
 
 
 class mesh_daemon(base_daemon):
+    """The class for mesh daemon. This inherits from :py:class:`py2p.base.base_daemon`"""
     def mainloop(self):
         """Daemon thread which handles all incoming data and connections"""
         while self.main_thread.is_alive() and self.alive:
@@ -143,7 +148,22 @@ class mesh_daemon(base_daemon):
 
 
 class mesh_socket(base_socket):
+    """The class for mesh socket abstraction. This inherits from :py:class:`py2p.base.base_socket`"""
     def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
+        """Initializes a mesh socket
+
+        Args:
+            addr:           The address you wish to bind to (ie: "192.168.1.1")
+            port:           The port you wish to bind to (ie: 44565)
+            prot:           The protocol you wish to operate over, defined by a :py:class:`py2p.base.protocol` object
+            out_addr:       Your outward facing address. Only needed if you're connecting
+                over the internet. If you use '0.0.0.0' for the addr argument, this will
+                automatically be set to your LAN address.
+            debug_level:    The verbosity you want this socket to use when printing event data
+
+        Raises:
+            socket.error:   The address you wanted could not be bound, or is otherwise used
+        """
         super(mesh_socket, self).__init__(addr, port, prot, out_addr, debug_level)
         self.requests = {}          # Metadata about message replies where you aren't connected to the sender
         self.waterfalls = deque()   # Metadata of messages to waterfall
@@ -173,6 +193,7 @@ class mesh_socket(base_socket):
                 self.__print__("Ignoring message with invalid subflag", level=4)
 
     def __get_peer_list(self):
+        """This function is used to generate a list-formatted group of your peers. It goes in format ``[ ((addr, port), ID), ...]``"""
         peer_list = [(self.routing_table[key].addr, key.decode()) for key in self.routing_table]
         random.shuffle(peer_list)
         return peer_list
