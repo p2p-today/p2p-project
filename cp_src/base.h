@@ -13,23 +13,23 @@
 #define CP2P_NODE_VERSION 319
 #define CP2P_VERSION CP2P__STR__(CP2P_PROTOCOL_MAJOR_VERSION) "." CP2P__STR__(CP2P_PROTOCOL_MINOR_VERSION) "." CP2P__STR__(CP2P_NODE_VERSION)
 /**
-* .. :c:macro:: CP2P_PROTOCOL_MAJOR_VERSION
+* .. c:macro:: CP2P_PROTOCOL_MAJOR_VERSION
 *
 *     This macro defines the major version number. A change here indicates a major change or release, and may be breaking. In a scheme x.y.z, it would be x
 *
-* .. :c:macro:: CP2P_PROTOCOL_MINOR_VERSION
+* .. c:macro:: CP2P_PROTOCOL_MINOR_VERSION
 *
 *     This macro defines the minor version number. It refers specifically to minor protocol revisions, and all changes here are API compatible (after 1.0), but not compatbile with other nodes. In a scheme x.y.z, it would be y
 *
-* .. :c:macro:: CP2P_NODE_VERSION
+* .. c:macro:: CP2P_NODE_VERSION
 *
 *     This macro defines the patch version number. It refers specifically to node policies, and all changes here are backwards compatible. In a scheme x.y.z, it would be z
 *
-* .. :c:macro:: CP2P_VERSION
+* .. c:macro:: CP2P_VERSION
 *
 *     This macro is a string literal. It combines all the above macros into a single string. It will generate whatever a string literal would normally be interpreted as in that context.
 *
-* .. :c:macro:: CP2P_DEBUG_FLAG
+* .. c:macro:: CP2P_DEBUG_FLAG
 *
 *     This macro indicates whether cp2p should generate debug prints. If you define this as anything it will print
 */
