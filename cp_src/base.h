@@ -81,13 +81,46 @@ STATIC_ASSERT(sizeof(size_t) >= 4, "Size of strings is too small to easily meet 
 
 namespace flags {
     static const unsigned char\
-    *reserved_cstr = (unsigned char*)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F",
-    *implemented_compressions_cstr = (unsigned char*)"";
+    *reserved = (unsigned char*)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F",
+    *implemented_compressions = (unsigned char*)"";
 
+    static const size_t\
+    reserved_len = 0x20,
+    compression_len = 0x00;
 
-    static const vector<unsigned char>\
-    reserved(reserved_cstr, reserved_cstr + 0x20),
-    implemented_compressions(implemented_compressions_cstr, implemented_compressions_cstr + 0);
+    /**
+    * .. cpp:var:: static const unsigned char *flags::reserved_cstr
+    *
+    *     This binary data string contains every reserved flag.
+    *
+    *     .. note::
+    *
+    *         This will be refactored later to an array of unsigned char *s, but for know just know that all flags are one char long.
+    *
+    * .. cpp:var:: static const size_t flags::reserved_len
+    *
+    *     The length of the above string
+    *
+    * .. cpp:var:: static const unsigned char *flags::implemented_compressions_cstr
+    *
+    *     This binary data string contains the flag of every implemented compression methods.
+    *
+    *     .. note::
+    *
+    *         This will be refactored later to an array of unsigned char *s, but for know just know that all flags are one char long.
+    *
+    * .. cpp:var:: static const size_t flags::compression_len
+    *
+    *     The length of the above string
+    *
+    * .. cpp:var:: static const unsigned char flags::other_flags
+    *
+    *     These are the flags currently reserved. They are guarunteed to be the same names and values as the flags within :py:class:`py2p.base.flags`.
+    *
+    *     .. note::
+    *
+    *         This will be refactored later to an array of unsigned char *s, but for know just know that all flags are one char long.
+    */
 
     static const unsigned char\
     broadcast   =  0x00,  // also sub-flag
@@ -134,6 +167,11 @@ namespace flags {
 }
 
 static string get_user_salt()  {
+    /**
+    * .. cpp:function:: std::string get_user_salt()
+    *
+    *     This generates a uuid4 for use in this library
+    */
     srand (time(NULL));
     CP2P_DEBUG("Building user_salt\n");
     char temp_user_salt[] = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";
@@ -150,11 +188,31 @@ static string get_user_salt()  {
     return user_salt;
 }
 
+/**
+* .. cpp:var:: const static std::string user_salt
+*
+*     A generated uuid4 for use in this library
+*/
 const static string user_salt = get_user_salt();
 
 unsigned long getUTC();
+/**
+* .. cpp:function:: unsigned long getUTC()
+*
+*     Returns the current UNIX second in UTC
+*/
 unsigned long long unpack_value(string str);
+/**
+* .. cpp:function:: unsigned long long unpack_value(std::string str)
+*
+*     Unpacks a big-endian binary value into an unsigned long long
+*/
 string pack_value(size_t len, unsigned long long i);
+/**
+* .. cpp:function:: std::string pack_value(size_t, len unsigned long long i)
+*
+*     Packs an unsigned long long into a big-endian binary string of length len
+*/
 string sanitize_string(string str, bool sizeless);
 string decompress_string(string str, vector<string> compressions);
 vector<string> process_string(string str);
