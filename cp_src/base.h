@@ -1,3 +1,9 @@
+/**
+* Base Module
+* ===========
+*
+* This module contains common functions and classes used throughout the rest of the library
+*/
 #ifndef CP2P_PROTOCOL_MAJOR_VERSION
 #define CP2P__STR( ARG ) #ARG
 #define CP2P__STR__( ARG ) CP2P__STR(ARG)
@@ -6,6 +12,27 @@
 #define CP2P_PROTOCOL_MINOR_VERSION 4
 #define CP2P_NODE_VERSION 319
 #define CP2P_VERSION CP2P__STR__(CP2P_PROTOCOL_MAJOR_VERSION) "." CP2P__STR__(CP2P_PROTOCOL_MINOR_VERSION) "." CP2P__STR__(CP2P_NODE_VERSION)
+/**
+* .. :c:macro:: CP2P_PROTOCOL_MAJOR_VERSION
+*
+*     This macro defines the major version number. A change here indicates a major change or release, and may be breaking. In a scheme x.y.z, it would be x
+*
+* .. :c:macro:: CP2P_PROTOCOL_MINOR_VERSION
+*
+*     This macro defines the minor version number. It refers specifically to minor protocol revisions, and all changes here are API compatible (after 1.0), but not compatbile with other nodes. In a scheme x.y.z, it would be y
+*
+* .. :c:macro:: CP2P_NODE_VERSION
+*
+*     This macro defines the patch version number. It refers specifically to node policies, and all changes here are backwards compatible. In a scheme x.y.z, it would be z
+*
+* .. :c:macro:: CP2P_VERSION
+*
+*     This macro is a string literal. It combines all the above macros into a single string. It will generate whatever a string literal would normally be interpreted as in that context.
+*
+* .. :c:macro:: CP2P_DEBUG_FLAG
+*
+*     This macro indicates whether cp2p should generate debug prints. If you define this as anything it will print
+*/
 
 #ifdef CP2P_DEBUG_FLAG
     #define CP2P_DEBUG(...) printf(__VA_ARGS__);
@@ -13,7 +40,14 @@
     #define CP2P_DEBUG(...)
 #endif
 
-//This macro was taken from http://www.pixelbeat.org/programming/gcc/static_assert.html under the GNU All-Permissive License
+//This macro was taken from:
+//http://www.pixelbeat.org/programming/gcc/static_assert.html
+//under the GNU All-Permissive License, which is included below:
+//Copyright © Pádraig Brady 2008
+//
+//Copying and distribution of this file, with or without modification,
+//are permitted in any medium without royalty provided the copyright
+//notice and this notice are preserved.
 #define ASSERT_CONCAT_(a, b) a##b
 #define ASSERT_CONCAT(a, b) ASSERT_CONCAT_(a, b)
 /* These can't be used after statements in c89. */

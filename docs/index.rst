@@ -28,7 +28,7 @@ You can see more information about our serialization scheme in the :doc:`protoco
 Base Network Structures
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-All of our networks will be built on common base classes. Because of this, we can garuntee some network features.
+All of our networks will be built on common base classes. Because of this, we can guarantee some network features.
 
 #. Networks will have as much common codebase as possible
 #. Networks will have opportunistic compression across the board
@@ -41,7 +41,7 @@ Mesh Network
 This is our unorganized network. It operates under three simple rules:
 
 #. The first node to broadcast sends the message to all its peers
-#. Each node which receives a message relays the message to each peer, except the node which sent it
+#. Each node which receives a message relays the message to each of its peers, except the node which sent it to them
 #. Nodes do not relay a message they have seen before
 
 Using these principles you can create a messaging network which scales linearly with the number of nodes.
