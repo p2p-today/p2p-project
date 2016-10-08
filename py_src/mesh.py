@@ -338,7 +338,11 @@ class mesh_socket(base_socket):
             handler.send(main_flag, send_type, *args)
 
     def __clean_waterfalls(self):
-        """Cleans up the waterfall deque"""
+        """This function cleans the list of recently relayed messages based on the following heurisitics:
+
+        * Delete all duplicates
+        * Delete all older than 60 seconds
+        """
         self.waterfalls = deque(set(self.waterfalls))
         self.waterfalls = deque((i for i in self.waterfalls if i[1] > getUTC() - 60))
 
@@ -394,7 +398,18 @@ class mesh_socket(base_socket):
         self.send('*', type=flags.request, flag=flags.whisper)
 
     def recv(self, quantity=1):
-        """Receive 1 or several message objects. Returns none if none are present. Non-blocking."""
+        """This function has two behaviors depending on whether quantity is truthy.
+
+        If truthy is truthy, it will return a list of :py:class:`~py2p.base.message` objects up to length len.
+
+        If truthy is not truthy, it will return either a single :py:class:`~py2p.base.message` object, or ``None``
+
+        Args:
+            quantity:   The maximum number of :py:class:`~py2p.base.message` s you would like to pull
+
+        Returns:
+            A list of :py:class:`~py2p.base.message` s, an empty list, a single :py:class:`~py2p.base.message` , or ``None``
+        """
         if quantity != 1:
             ret_list = []
             while len(self.queue) and quantity > 0:

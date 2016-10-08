@@ -430,6 +430,15 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     __clean_waterfalls()    {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket.__clean_waterfalls()
+        *
+        *         This function cleans the list of recently relayed messages based on
+        *         the following heurisitics:
+        *
+        *         - Delete all duplicates
+        *         - Delete all older than 60 seconds
+        */
         this.waterfalls = Array.from(new Set(this.waterfalls));
         var new_waterfalls = [];
         const filter_time = base.getUTC() - 60;

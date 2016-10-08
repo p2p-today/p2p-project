@@ -14,32 +14,60 @@ const SHA = require('jssha');
 const zlib = require('zlibjs');
 const assert = require('assert');
 
-/*
-* This is a warning to which tests if Buffer can handle data of the appropriate size.
+/**
+* .. note::
+*
+*     This library will likely issue a warning over the size of data that :js:class:`Buffer` can hold. On most implementations
+*     of Javascript this is 2GiB, but the maximum size message that can be transmitted in our serialization scheme is 4GiB.
+*     This shouldn't be a problem for most applications, but you can discuss it in :issue:`83`.
 */
 if (buffer.kMaxLength < 4294967299) {
     console.log(`WARNING: This implementation of javascript does not support the maximum protocol length. The largest message you may receive is 4294967299 bytes, but you can only allocate ${buffer.kMaxLength}, or ${(buffer.kMaxLength / 4294967299 * 100).toFixed(2)}% of that.`);
 }
 
-var m;
+var base;
 
 if( typeof exports !== 'undefined' ) {
     if( typeof module !== 'undefined' && module.exports ) {
-        m = exports = module.exports;
+        base = exports = module.exports;
     }
-    m = exports;
+    base = exports;
 }
 else {
-    root.p2p = {};
-    m = root;
+    root.base = {};
+    base = root;
 }
 
-m.version_info = [0, 4, 319];
-m.node_policy_version = m.version_info[2].toString();
-m.protocol_version = m.version_info.slice(0, 2).join(".");
-m.version = m.version_info.join('.');
+/**
+* .. js:data:: js2p.base.version_info
+*
+*     A list containing the version numbers in the format ``[major, minor, patch]``.
+*
+*     The first two numbers refer specifically to the protocol version. The last number increments with each build.
+*
+* .. js:data:: js2p.base.node_policy_version
+*
+*     This is the last number in :js:data:`~js2p.base.version_info`
+*
+* .. js:data:: js2p.base.protocol_version
+*
+*     This is the first two numbers of :js:data:`~js2p.base.version_info` joined in the format ``'a.b'``
+*
+*     .. warning::
+*
+*         Nodes with different versions of this variable will actively reject connections with each other
+*
+* .. js:data:: js2p.base.version
+*
+*     This is :js:data:`~js2p.base.version_info` joined in the format ``'a.b.c'``
+*/
 
-m.flags = {
+base.version_info = [0, 4, 319];
+base.node_policy_version = base.version_info[2].toString();
+base.protocol_version = base.version_info.slice(0, 2).join(".");
+base.version = base.version_info.join('.');
+
+base.flags = {
     /**
     * .. js:data:: js2p.base.flags
     *
@@ -92,17 +120,17 @@ m.flags = {
     simple:   '\x1F'
 };
 
-m.compression = [m.flags.zlib, m.flags.gzip];
-m.json_compressions = JSON.stringify(m.compression);
+base.compression = [base.flags.zlib, base.flags.gzip];
+base.json_compressions = JSON.stringify(base.compression);
 
 // User salt generation pulled from: http://stackoverflow.com/a/2117523
-m.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+base.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random()*16|0;
     const v = c === 'x' ? r : (r&0x3|0x8);
     return v.toString(16);
 });
 
-m.intersect = function intersect()    {
+base.intersect = function intersect()    {
     /**
     * .. js:function:: js2p.base.intersect(array1, array2, [array3, [...]])
     *
@@ -134,7 +162,7 @@ m.intersect = function intersect()    {
     return result;
 }
 
-m.unpack_value = function unpack_value(str)  {
+base.unpack_value = function unpack_value(str)  {
     /**
     * .. js:function:: js2p.base.unpack_value(str)
     *
@@ -153,7 +181,7 @@ m.unpack_value = function unpack_value(str)  {
     return val;
 }
 
-m.pack_value = function pack_value(len, i) {
+base.pack_value = function pack_value(len, i) {
     /**
     * .. js:function:: js2p.base.pack_value(len, i)
     *
@@ -172,9 +200,9 @@ m.pack_value = function pack_value(len, i) {
     return arr;
 }
 
-m.base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+base.base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 
-m.to_base_58 = function to_base_58(i) {
+base.to_base_58 = function to_base_58(i) {
     /**
     * .. js:function:: js2p.base.to_base_58(i)
     *
@@ -189,14 +217,14 @@ m.to_base_58 = function to_base_58(i) {
         i = new BigInt(i);
     }
     while (i.notEquals(0)) {
-        string = m.base_58[i.mod(58)] + string;
+        string = base.base_58[i.mod(58)] + string;
         i = i.divide(58);
     }
     return string;
 };
 
 
-m.from_base_58 = function from_base_58(string) {
+base.from_base_58 = function from_base_58(string) {
     /**
     * .. js:function:: js2p.base.from_base_58(string)
     *
@@ -213,14 +241,14 @@ m.from_base_58 = function from_base_58(string) {
         var decimal = new BigInt(0);
         //for char in string {
         for (var i = 0; i < string.length; i++) {
-            decimal = decimal.times(58).plus(m.base_58.indexOf(string[i]));
+            decimal = decimal.times(58).plus(base.base_58.indexOf(string[i]));
         }
         return decimal;
     }
 };
 
 
-m.getUTC = function getUTC() {
+base.getUTC = function getUTC() {
     /**
     * .. js:function:: js2p.base.getUTC()
     *
@@ -230,7 +258,7 @@ m.getUTC = function getUTC() {
 };
 
 
-m.SHA384 = function SHA384(text) {
+base.SHA384 = function SHA384(text) {
     /**
     * .. js:function:: js2p.base.SHA384(text)
     *
@@ -246,7 +274,7 @@ m.SHA384 = function SHA384(text) {
 };
 
 
-m.SHA256 = function SHA256(text) {
+base.SHA256 = function SHA256(text) {
     /**
     * .. js:function:: js2p.base.SHA256(text)
     *
@@ -262,7 +290,7 @@ m.SHA256 = function SHA256(text) {
 };
 
 
-m.compress = function compress(text, method) {
+base.compress = function compress(text, method) {
     /**
     * .. js:function:: js2p.base.compress(text, method)
     *
@@ -273,10 +301,10 @@ m.compress = function compress(text, method) {
     *
     *     :returns: A variabley typed object containing a compressed version of text
     */
-    if (method === m.flags.zlib) {
+    if (method === base.flags.zlib) {
         return zlib.deflateSync(new Buffer(text));
     }
-    else if (method === m.flags.gzip) {
+    else if (method === base.flags.gzip) {
         return zlib.gzipSync(new Buffer(text));
     }
     else {
@@ -285,7 +313,7 @@ m.compress = function compress(text, method) {
 };
 
 
-m.decompress = function decompress(text, method) {
+base.decompress = function decompress(text, method) {
     /**
     * .. js:function:: js2p.base.decompress(text, method)
     *
@@ -296,10 +324,10 @@ m.decompress = function decompress(text, method) {
     *
     *     :returns: A variabley typed object containing a decompressed version of text
     */
-    if (method === m.flags.zlib) {
+    if (method === base.flags.zlib) {
         return zlib.inflateSync(new Buffer(text));
     }
-    else if (method === m.flags.gzip) {
+    else if (method === base.flags.gzip) {
         return zlib.gunzipSync(new Buffer(text));
     }
     else {
@@ -308,7 +336,7 @@ m.decompress = function decompress(text, method) {
 };
 
 
-m.protocol = class protocol {
+base.protocol = class protocol {
     /**
     * .. js:class:: js2p.base.protocol(subnet, encryption)
     *
@@ -330,14 +358,14 @@ m.protocol = class protocol {
         *
         *         The ID of your desired network
         */
-        var protocol_hash = m.SHA256([this.subnet, this.encryption, m.protocol_version].join(''));
-        return m.to_base_58(new BigInt(protocol_hash, 16));
+        var protocol_hash = base.SHA256([this.subnet, this.encryption, base.protocol_version].join(''));
+        return base.to_base_58(new BigInt(protocol_hash, 16));
     }
 };
 
-m.default_protocol = new m.protocol('', 'Plaintext');
+base.default_protocol = new base.protocol('', 'Plaintext');
 
-m.pathfinding_message = class pathfinding_message {
+base.pathfinding_message = class pathfinding_message {
     /**
     * .. js:class:: js2p.base.pathfinding_message(msg_type, sender, payload, compression, timestamp)
     *
@@ -356,7 +384,7 @@ m.pathfinding_message = class pathfinding_message {
         for (var i = 0; i < this.payload.length; i++)   {
             this.payload[i] = new Buffer(this.payload[i]);
         }
-        this.time = timestamp || m.getUTC();
+        this.time = timestamp || base.getUTC();
         this.compression = compression || [];
         this.compression_fail = false
     }
@@ -373,13 +401,13 @@ m.pathfinding_message = class pathfinding_message {
         *
         *         :returns: A :js:class:`~js2p.base.pathfinding_message` object containing the deserialized message
         */
-        string = m.pathfinding_message.sanitize_string(string, sizeless)
-        var compression_return = m.pathfinding_message.decompress_string(string, compressions)
+        string = base.pathfinding_message.sanitize_string(string, sizeless)
+        var compression_return = base.pathfinding_message.decompress_string(string, compressions)
         var compression_fail = compression_return[1]
         string = compression_return[0]
-        var packets = m.pathfinding_message.process_string(string)
-        var msg = new m.pathfinding_message(packets[0], packets[1], packets.slice(4), compressions)
-        msg.time = m.from_base_58(packets[3])
+        var packets = base.pathfinding_message.process_string(string)
+        var msg = new base.pathfinding_message(packets[0], packets[1], packets.slice(4), compressions)
+        msg.time = base.from_base_58(packets[3])
         msg.compression_fail = compression_fail
         assert (msg.id === packets[2].toString(), `ID check failed. ${msg.id} !== ${packets[2].toString()}`)
         return msg
@@ -391,8 +419,8 @@ m.pathfinding_message = class pathfinding_message {
         }
         finally {
             if (!sizeless) {
-                if (m.unpack_value(string.slice(0,4)) + 4 !== string.length) {
-                    //console.log(`slice given: ${string.slice(0, 4).inspect()}.  Value expected: ${string.length - 4}.  Value derived: ${m.unpack_value(string.slice(0, 4))}`)
+                if (base.unpack_value(string.slice(0,4)) + 4 !== string.length) {
+                    //console.log(`slice given: ${string.slice(0, 4).inspect()}.  Value expected: ${string.length - 4}.  Value derived: ${base.unpack_value(string.slice(0, 4))}`)
                     throw "The following expression must be true: unpack_value(string.slice(0,4)) === string.length - 4"
                 }
                 string = string.slice(4)
@@ -406,10 +434,10 @@ m.pathfinding_message = class pathfinding_message {
         compressions = compressions || []
         for (var i = 0; i < compressions.length; i++) {
             //console.log(`Checking ${compressions[i]} compression`)
-            if (m.compression.indexOf(compressions[i]) > -1) {  // module scope compression
+            if (base.compression.indexOf(compressions[i]) > -1) {  // module scope compression
                 //console.log(`Trying ${compressions[i]} compression`)
                 try {
-                    string = m.decompress(string, compressions[i])
+                    string = base.decompress(string, compressions[i])
                     compression_fail = false
                     //console.log(`Compression ${compressions[i]} succeeded`)
                     break
@@ -430,7 +458,7 @@ m.pathfinding_message = class pathfinding_message {
         var pack_lens = [];
         var packets = [];
         while (processed < expected) {
-            pack_lens = pack_lens.concat(m.unpack_value(new Buffer(string.slice(processed, processed+4))));
+            pack_lens = pack_lens.concat(base.unpack_value(new Buffer(string.slice(processed, processed+4))));
             processed += 4;
             expected -= pack_lens[pack_lens.length - 1];
         }
@@ -450,16 +478,15 @@ m.pathfinding_message = class pathfinding_message {
         /**
         *     .. js:attribute:: js2p.base.pathfinding_message.compression_used
         *
-        *         Returns the compression method used in this message, as defined in :js:data:`~js2p.base.flags`, or ``null`` if none
+        *         Returns the compression method used in this message, as defined in :js:data:`~js2p.base.flags`, or ``undefined`` if none
         */
-        for (var i = 0; i < m.compression.length; i++) {
+        for (var i = 0; i < base.compression.length; i++) {
             for (var j = 0; j < this.compression.length; j++) {
-                if (m.compression[i] === this.compression[j]) {
-                    return m.compression[i]
+                if (base.compression[i] === this.compression[j]) {
+                    return base.compression[i];
                 }
             }
         }
-        return null
     }
 
     get time_58() {
@@ -473,7 +500,7 @@ m.pathfinding_message = class pathfinding_message {
         *
         *         Returns the timestamp encoded in base_58
         */
-        return m.to_base_58(this.time)
+        return base.to_base_58(this.time);
     }
 
     get id() {
@@ -484,8 +511,8 @@ m.pathfinding_message = class pathfinding_message {
         */
         try     {
             var payload_string = this.payload.join('')
-            var payload_hash = m.SHA384(payload_string + this.time_58)
-            return m.to_base_58(new BigInt(payload_hash, 16))
+            var payload_hash = base.SHA384(payload_string + this.time_58)
+            return base.to_base_58(new BigInt(payload_hash, 16))
         }
         catch (err) {
             console.log(err);
@@ -512,11 +539,11 @@ m.pathfinding_message = class pathfinding_message {
         var string = this.packets.join('')
         var headers = []
         for (var i = 0; i < this.packets.length; i++) {
-            headers = headers.concat(m.pack_value(4, this.packets[i].length))
+            headers = headers.concat(base.pack_value(4, this.packets[i].length))
         }
         string = Buffer.concat(headers.concat(new Buffer(string, 'ascii')));
         if (this.compression_used) {
-            string = m.compress(string, this.compression_used)
+            string = base.compress(string, this.compression_used)
         }
         return string
     }
@@ -528,7 +555,7 @@ m.pathfinding_message = class pathfinding_message {
         *         Returns a Buffer containing the serialized version of this message
         */
         var string = this.__non_len_string
-        return Buffer.concat([m.pack_value(4, string.length), string]);
+        return Buffer.concat([base.pack_value(4, string.length), string]);
     }
 
     get length() {
@@ -545,7 +572,7 @@ m.pathfinding_message = class pathfinding_message {
     }
 };
 
-m.message = class message {
+base.message = class message {
     /**
     * .. js:class:: js2p.base.message(msg, server)
     *
@@ -640,19 +667,19 @@ m.message = class message {
         *         :param packs: A list of packets you want the other user to receive
         */
         if (this.server.routing_table[this.sender]) {
-            this.server.routing_table[this.sender].send(m.flags.whisper, [m.flags.whisper].concat(packs));
+            this.server.routing_table[this.sender].send(base.flags.whisper, [base.flags.whisper].concat(packs));
         }
         else    {
-            var request_hash = m.SHA384(this.sender + m.to_base_58(m.getUTC()));
-            var request_id = m.to_base_58(new BigInt(request_hash, 16));
-            this.server.requests[request_id] = [packs, m.flags.whisper, m.flags.whisper];
-            this.server.send([request_id, this.sender], m.flags.broadcast, m.flags.request);
+            var request_hash = base.SHA384(this.sender + base.to_base_58(base.getUTC()));
+            var request_id = base.to_base_58(new BigInt(request_hash, 16));
+            this.server.requests[request_id] = [packs, base.flags.whisper, base.flags.whisper];
+            this.server.send([request_id, this.sender], base.flags.broadcast, base.flags.request);
             console.log("You aren't connected to the original sender. This reply is not guarunteed, but we're trying to make a connection and put the message through.");
         }
     }
 };
 
-m.base_connection = class base_connection   {
+base.base_connection = class base_connection   {
     /**
     * .. js:class:: js2p.base.base_connection(sock, server, outgoing)
     *
@@ -668,7 +695,7 @@ m.base_connection = class base_connection   {
         this.outgoing = outgoing | false;
         this.buffer = new Buffer(0);
         this.id = null;
-        this.time = m.getUTC();
+        this.time = base.getUTC();
         this.addr = null;
         this.compression = [];
         this.last_sent = [];
@@ -736,11 +763,11 @@ m.base_connection = class base_connection   {
         //This section handles waterfall-specific flags
         // console.log(packs);
         id = id || this.server.id;  //Latter is returned if key not found
-        time = time || m.getUTC();
+        time = time || base.getUTC();
         //Begin real method
-        const msg = new m.pathfinding_message(msg_type, id, packs, this.compression, time);
+        const msg = new base.pathfinding_message(msg_type, id, packs, this.compression, time);
         // console.log(msg.payload);
-        if (msg_type === m.flags.whisper || msg_type === m.flags.broadcast) {
+        if (msg_type === base.flags.whisper || msg_type === base.flags.broadcast) {
             this.last_sent = [msg_type].concat(packs);
         }
         // this.__print__(`Sending ${[msg.len()].concat(msg.packets)} to ${this}`, 4);
@@ -774,11 +801,11 @@ m.base_connection = class base_connection   {
         */
         self.buffer = Buffer.concat([self.buffer, data]);
         //console.log(self.buffer);
-        self.time = m.getUTC();
+        self.time = base.getUTC();
         while (self.buffer.length >= self.expected) {
             if (!self.active)   {
                 // this.__print__(this.buffer, this.expected, this.find_terminator(), level=4)
-                self.expected = m.unpack_value(self.buffer.slice(0, 4)).add(4);
+                self.expected = base.unpack_value(self.buffer.slice(0, 4)).add(4);
                 self.active = true;
                 // this.found_terminator();
             }
@@ -798,7 +825,7 @@ m.base_connection = class base_connection   {
         *         :returns: The deserialized message received
         */
         //console.log("I got called");
-        var msg = m.pathfinding_message.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
+        var msg = base.pathfinding_message.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
         this.buffer = this.buffer.slice(this.expected);
         this.expected = 4;
         this.active = false;
@@ -816,19 +843,19 @@ m.base_connection = class base_connection   {
         *
         *         :returns: ``true`` if action was taken, ``undefined`` if not
         */
-        if (packets[0] == m.flags.renegotiate)    {
-            if (packets[4] == m.flags.compression)   {
+        if (packets[0] == base.flags.renegotiate)    {
+            if (packets[4] == base.flags.compression)   {
                 var encoded_methods = JSON.parse(packets[5]);
                 var respond = (this.compression != encoded_methods);
                 this.compression = encoded_methods;
                 // self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
                 if (respond)    {
-                    var decoded_methods = m.intersect(m.compression, this.compression);
-                    self.send(m.flags.renegotiate, m.flags.compression, JSON.stringify(decoded_methods))
+                    var decoded_methods = base.intersect(base.compression, this.compression);
+                    self.send(base.flags.renegotiate, base.flags.compression, JSON.stringify(decoded_methods))
                 }
                 return true;
             }
-            else if (packets[4] == m.flags.resend)   {
+            else if (packets[4] == base.flags.resend)   {
                 var type = self.last_sent[0];
                 var packs = self.last_sent.slice(1);
                 self.send(type, packs);
@@ -842,7 +869,7 @@ m.base_connection = class base_connection   {
     }
 };
 
-m.base_socket = class base_socket   {
+base.base_socket = class base_socket   {
     /**
     * .. js:class:: js2p.base.base_socket(addr, port [, protocol [, out_addr [, debug_level]]])
     *
@@ -867,13 +894,13 @@ m.base_socket = class base_socket   {
         this.addr = [addr, port];
         this.incoming = new net.Server();
         this.incoming.listen(port, addr);
-        this.protocol = protocol || m.default_protocol;
+        this.protocol = protocol || base.default_protocol;
         this.out_addr = out_addr || this.addr;
         this.debug_level = debug_level || 0;
 
         this.awaiting_ids = [];
         this.routing_table = {};
-        this.id = m.to_base_58(BigInt(m.SHA384(`(${addr}, ${port})${this.protocol.id}${m.user_salt}`), 16));
+        this.id = base.to_base_58(BigInt(base.SHA384(`(${addr}, ${port})${this.protocol.id}${base.user_salt}`), 16));
         this.__handlers = [];
     }
 
