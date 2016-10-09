@@ -40,14 +40,14 @@ matrix:
     #   python: pypy3
     #   os: osx
     #   env: Cov='true' pyver=pypy3 pydist=homebrew
-    - language: nodejs
-      nodejs: "6"
+    - language: node_js
+      node_js: "6"
       os: osx
-    - language: nodejs
-      nodejs: "5"
+    - language: node_js
+      node_js: "5"
       os: osx
-    - language: nodejs
-      nodejs: "iojs"
+    - language: node_js
+      node_js: "iojs"
       os: osx
 
 before_install:
