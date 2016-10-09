@@ -26,7 +26,7 @@ To see a better formatted, more frequently updated version of this, please visit
 
 Current build status:
 
- |shippable| |travis| |appveyor| |codeclimate| |codecov|
+|shippable| |travis| |appveyor| |codeclimate| |codecov|
 
 |waffleio_queued| |waffleio_in_progress| |waffleio_in_review|
 
