@@ -40,23 +40,22 @@ matrix:
     #   python: pypy3
     #   os: osx
     #   env: Cov='true' pyver=pypy3 pydist=homebrew
+    - language: nodejs
+      nodejs: "6"
+      os: osx
+    - language: nodejs
+      nodejs: "5"
+      os: osx
+    - language: nodejs
+      nodejs: "iojs"
+      os: osx
 
 before_install:
-  - if [ $pyver != pypy ] && [ $pyver != pypy3 ]; then git clone https://github.com/MacPython/terryfy; source terryfy/travis_tools.sh; get_python_environment  $pydist $pyver; fi
-  - if [ $pyver == pypy ] || [ $pyver == pypy3 ]; then brew install $pyver; PYTHON_EXE=$pyver; curl $GET_PIP_URL > $DOWNLOADS_SDIR/get-pip.py; sudo $PYTHON_EXE $DOWNLOADS_SDIR/get-pip.py --ignore-installed; PIP_CMD="sudo $PYTHON_EXE -m pip"; export PYTHON_EXE PIP_CMD; fi
-  - $PIP_CMD install virtualenv
-  - virtualenv -p $PYTHON_EXE venv
-  - source venv/bin/activate
+  - sh ./.scripts/travis_before_install.sh
 # Everything after this is user editable
-install: 
-  - make cpython
+install:
+  - sh ./.scripts/travis_insall.sh
 script:
-  - pip install pytest-coverage codecov
-  - py.test -vv --cov=./py_src/ ./py_src/
-  - python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
-  - mv .coverage .covvv
-  - make cpytest cov=true
-  - mv .covvv .coverage.1
-  - mv .coverage .coverage.2
+  - sh ./.scripts/travis_script.sh
 after_success:
-  - python -m coverage combine; python -m coverage xml; codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml
+  - sh ./.scripts/travis_after_success.sh
