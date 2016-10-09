@@ -8,7 +8,8 @@ describe('base', function() {
     describe('compress/decompress', function() {
 
         it('should always be reversable', function() {
-            for (var i = 0; i < 1000; i++)  {
+            this.timeout(1500);
+            for (var i = 0; i < 500; i++)  {
                 // Step one: generate a random buffer up to size 40
                 var len = Math.floor(Math.random() * 40);
                 var pre_buffer = [];
@@ -26,7 +27,8 @@ describe('base', function() {
 
     describe('to_base_58/from_base_58', function()  {
         it('should always be reversable', function()    {
-            for (var i = 0; i < 1000; i++)  {
+            this.timeout(125);
+            for (var i = 0; i < 500; i++)  {
                 var test = Math.floor(Math.random() * 1000000000);
                 var shouldEqual = base.from_base_58(base.to_base_58(test));
                 assert(shouldEqual.equals(test), `${test} != ${shouldEqual}`);
@@ -34,6 +36,7 @@ describe('base', function() {
         });
 
         it('should return "1" if fed 0', function() {
+            this.timeout(25);
             assert.equal("1", base.to_base_58(0));
         });
     });
