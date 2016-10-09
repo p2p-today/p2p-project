@@ -311,7 +311,7 @@ base.compress = function compress(text, method) {
         return zlib.gzipSync(new Buffer(text));
     }
     else {
-        throw "Unknown compression method";
+        throw new Error("Unknown compression method");
     }
 };
 
@@ -334,7 +334,7 @@ base.decompress = function decompress(text, method) {
         return zlib.gunzipSync(new Buffer(text));
     }
     else {
-        throw "Unknown compression method";
+        throw new Error("Unknown compression method");
     }
 };
 
