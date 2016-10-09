@@ -50,12 +50,5 @@ matrix:
       node_js: "iojs"
       os: osx
 
-before_install:
-  - sh ./.scripts/travis_before_install.sh
-# Everything after this is user editable
-install:
-  - sh ./.scripts/travis_install.sh
 script:
   - sh ./.scripts/travis_script.sh
-after_success:
-  - sh ./.scripts/travis_after_success.sh
