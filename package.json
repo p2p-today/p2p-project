@@ -15,5 +15,8 @@
     "buffer": "^4.9.1",
     "jssha": "^2.2.0",
     "zlibjs": "^0.2.0"
+  },
+  "devDependencies": {
+    "mocha": "^3.1.0"
   }
 }

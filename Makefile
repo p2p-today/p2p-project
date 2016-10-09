@@ -43,16 +43,22 @@ endif
 
 npm = npm
 
-js_deps = jssha zlibjs buffer big-integer
-
 #End node setup section
 
 ES5: LICENSE
-	$(npm) install babel-cli $(js_deps)
+	$(npm) install . babel-cli
 	nodejs node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5 || node node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
 
 jsdocs:
 	nodejs js_src/docs_test.js || node js_src/docs_test.js
+
+jstest:
+	$(npm) install . mocha
+	nodejs node_modules/mocha/bin/mocha js_src/test* || node node_modules/mocha/bin/mocha js_src/test*
+
+ES5test: ES5
+	$(npm) install mocha
+	nodejs node_modules/mocha/bin/mocha build/es5/test* || node node_modules/mocha/bin/mocha build/es5/test*
 
 python: LICENSE setup.py
 	python $(py_deps)

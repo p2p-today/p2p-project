@@ -220,6 +220,9 @@ base.to_base_58 = function to_base_58(i) {
         string = base.base_58[i.mod(58)] + string;
         i = i.divide(58);
     }
+    if (!string)    {
+        string = "1";
+    }
     return string;
 };
 
