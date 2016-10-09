@@ -614,6 +614,15 @@ base.message = class message {
         return this.msg.time
     }
 
+    get time_58() {
+        /**
+        *     .. js:attribute:: js2p.base.message.time_58
+        *
+        *         Returns the time (in seconds UTC) this message was sent at, encoded in base_58
+        */
+        return this.msg.time_58
+    }
+
     get sender() {
         /**
         *     .. js:attribute:: js2p.base.message.sender
