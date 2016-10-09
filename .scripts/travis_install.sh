@@ -1,4 +1,4 @@
-if [ $py_ver ]; then
+if [ $pyver ]; then
     make cpython;
 else
     make ES5;

@@ -1,4 +1,4 @@
-if [ $py_ver ]; then
+if [ $pyver ]; then
     pip install pytest-coverage codecov
     py.test -vv --cov=./py_src/ ./py_src/
     python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
