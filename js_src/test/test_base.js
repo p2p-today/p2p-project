@@ -115,7 +115,7 @@ describe('base', function() {
                     if (j < base.compression.length)    {
                         compressions.push(base.compression[j]);
                     }
-                    var payload = []; //get_random_array(Math.floor(Math.random() * 16));
+                    var payload = get_random_array(Math.floor(Math.random() * 16));
                     var msg = new base.pathfinding_message(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload, compressions);
                     var deserialized = base.pathfinding_message.feed_string(msg.string, false, compressions);
                     test_pathfinding_message(payload, deserialized);

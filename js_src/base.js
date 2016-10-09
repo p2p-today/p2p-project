@@ -539,16 +539,21 @@ base.pathfinding_message = class pathfinding_message {
     }
 
     get __non_len_string() {
-        var string = this.packets.join('')
-        var headers = []
-        for (var i = 0; i < this.packets.length; i++) {
-            headers = headers.concat(base.pack_value(4, this.packets[i].length))
+        var buf_array = [];
+        const packets = this.packets;
+        for (var i = 0; i < packets.length; i++)    {
+            buf_array.push(new Buffer(packets[i]));
         }
-        string = Buffer.concat(headers.concat(new Buffer(string, 'ascii')));
+        var total = Buffer.concat(buf_array);
+        var headers = [];
+        for (var i = 0; i < buf_array.length; i++) {
+            headers = headers.concat(base.pack_value(4, buf_array[i].length));
+        }
+        total = Buffer.concat(headers.concat(total));
         if (this.compression_used) {
-            string = base.compress(string, this.compression_used)
+            total = base.compress(total, this.compression_used);
         }
-        return string
+        return total;
     }
 
     get string() {
