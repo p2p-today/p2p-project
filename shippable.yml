@@ -21,20 +21,14 @@ matrix:
     # - python: pypy3
     #   env: pyver=pypy3
     - language: node_js
-      node_js: "0.12"
-      env: jsver=0.12
+      node_js: "4"
+      env: jsver=4
     - language: node_js
-      node_js: "0.10"
-      env: jsver=0.10
+      node_js: "5"
+      env: jsver=5
     - language: node_js
-      node_js: "4.2.3"
-      env: jsver=4.2.3
-    - language: node_js
-      node_js: "iojs 1.0"
-      env: jsver=iojs1.0
-    - language: node_js
-      node_js: "iojs 2.0"
-      env: jsver=iojs2.0
+      node_js: "6"
+      env: jsver=6
   allow_failures:
     - python: pypy
     - python: pypy3
