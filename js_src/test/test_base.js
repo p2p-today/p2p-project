@@ -1,3 +1,5 @@
+"use strict";
+
 const assert = require('assert');
 const base = require('../base.js');
 const BigInt = require('big-integer');
