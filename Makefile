@@ -39,26 +39,20 @@ endif
 
 #End python setup section
 
-#Begin node setup section
-
-npm = npm
-
-#End node setup section
-
 ES5: LICENSE
-	$(npm) install . babel-cli
-	nodejs node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5 || node node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
+	npm install . babel-cli
+	node node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
 
 jsdocs:
-	nodejs js_src/docs_test.js || node js_src/docs_test.js
+	node js_src/docs_test.js
 
 jstest:
-	$(npm) install . mocha
-	nodejs node_modules/mocha/bin/mocha js_src/test* || node node_modules/mocha/bin/mocha js_src/test*
+	npm install . mocha
+	node node_modules/mocha/bin/mocha js_src/test/*
 
 ES5test: ES5
-	$(npm) install mocha
-	nodejs node_modules/mocha/bin/mocha build/es5/test* || node node_modules/mocha/bin/mocha build/es5/test*
+	npm install mocha
+	node node_modules/mocha/bin/mocha build/es5/test/*
 
 python: LICENSE setup.py
 	python $(py_deps)
@@ -114,24 +108,21 @@ py2testdeps:
 py3testdeps:
 	$(python3) $(py_test_deps)
 
-pytest: LICENSE setup.py setup.cfg
-	$(MAKE) python pytestdeps
+pytest: LICENSE setup.py setup.cfg python pytestdeps
 ifeq ($(cov), true)
 	python -m pytest -c ./setup.cfg --cov=build/$(pyunvlibdir) build/$(pyunvlibdir)
 else
 	python -m pytest -c ./setup.cfg build/$(pyunvlibdir)
 endif
 
-py2test: LICENSE setup.py setup.cfg
-	$(MAKE) python2 py2testdeps
+py2test: LICENSE setup.py setup.cfg python2 py2testdeps
 ifeq ($(cov), true)
 	$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
 else
 	$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
 endif
 
-py3test: LICENSE setup.py setup.cfg
-	$(MAKE) python3 py3testdeps
+py3test: LICENSE setup.py setup.cfg python3 py3testdeps
 ifeq ($(cov), true)
 	$(python3) -m pytest -c ./setup.cfg --cov=build/$(py3libdir) build/$(py3libdir)
 else
@@ -142,8 +133,7 @@ ifeq ($(pypy), True)
 cpytest: pytest
 
 else
-cpytest: LICENSE setup.py setup.cfg
-	$(MAKE) cpython pytestdeps
+cpytest: LICENSE setup.py setup.cfg cpython pytestdeps
 ifeq ($(cov), true)
 	python -m pytest -c ./setup.cfg --cov=build/$(pylibdir) build/$(pylibdir)
 else
@@ -151,16 +141,14 @@ else
 endif
 endif
 
-cpy2test: LICENSE setup.py setup.cfg
-	$(MAKE) cpython2 py2testdeps
+cpy2test: LICENSE setup.py setup.cfg cpython2 py2testdeps
 ifeq ($(cov), true)
 	$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
 else
 	$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
 endif
 
-cpy3test: LICENSE setup.py setup.cfg
-	$(MAKE) cpython3 py3testdeps
+cpy3test: LICENSE setup.py setup.cfg cpython3 py3testdeps
 ifeq ($(cov), true)
 	$(python3) -m pytest -c ./setup.cfg --cov=build/$(py3libdir) build/$(py3libdir)
 else
@@ -171,9 +159,4 @@ html: jsdocs
 	python $(docs_deps)
 	cd docs; rm -r .build; $(MAKE) html
 
-py_all: LICENSE setup.py setup.cfg
-	$(MAKE) python
-	$(MAKE) html
-	$(MAKE) cpython2
-	$(MAKE) cpython3
-	$(MAKE) pypy
+py_all: LICENSE setup.py setup.cfg python html cpython2 cpython3 pypy
