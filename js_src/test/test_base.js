@@ -30,7 +30,7 @@ function test_pathfinding_message(payload, instance)  {
     var expected_packets = [new Buffer(base.flags.broadcast), new Buffer('\u00ff', 'ascii'), msg.id, msg.time_58].concat(payload);
     var packets = msg.packets;
     for (var j = 0; j < packets.length; j++)    {
-        assert.equal(packets[j].toString(), expected_packets[j].toString(), `At position ${j}: ${packets[j]} != ${expected_packets[j]}`);
+        assert.equal(packets[j].toString(), expected_packets[j].toString());
     }
     var p_hash_info = payload.concat(msg.time_58).join('');
     var p_hash = base.SHA384(p_hash_info);
@@ -79,7 +79,7 @@ describe('base', function() {
             for (var i = 0; i < 500; i++)  {
                 var test = Math.floor(Math.random() * 1000000000);
                 var shouldEqual = base.from_base_58(base.to_base_58(test));
-                assert(shouldEqual.equals(test), `${test} != ${shouldEqual}`);
+                assert(shouldEqual.equals(test));
             }
         });
     });
