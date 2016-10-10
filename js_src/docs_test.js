@@ -43,8 +43,8 @@ var folder_map = {
     cp_src: "cpp",
     c_src: "c"
 };
-const find_relevant_comments = /\/\*\*\r?\n(?:(?:(?![\n\r])\s)*\*([^\r\n]*)\r?\n)*\s*\*\//g;  // http://regexr.com/3eb1d
-const extract_lines = /(?:(?![\n\r])\s)*\*[ ]?([^\r\n\*\/][^\r\n]*)?\r?\n/g;  // http://regexr.com/3ecnv
+var find_relevant_comments = /\/\*\*\r?\n(?:(?:(?![\n\r])\s)*\*([^\r\n]*)\r?\n)*\s*\*\//g;  // http://regexr.com/3eb1d
+var extract_lines = /(?:(?![\n\r])\s)*\*[ ]?([^\r\n\*\/][^\r\n]*)?\r?\n/g;  // http://regexr.com/3ecnv
 
 function gen_walker(folder) {
     return function done(err, res) {

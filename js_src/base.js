@@ -7,12 +7,12 @@
 
 "use strict";
 
-const buffer = require('buffer');  // These ensure parser compatability with browserify
-const Buffer = buffer.Buffer;
-const BigInt = require('big-integer');
-const SHA = require('jssha');
-const zlib = require('zlibjs');
-const assert = require('assert');
+var buffer = require('buffer');  // These ensure parser compatability with browserify
+var Buffer = buffer.Buffer;
+var BigInt = require('big-integer');
+var SHA = require('jssha');
+var zlib = require('zlibjs');
+var assert = require('assert');
 
 /**
 * .. note::
@@ -125,8 +125,8 @@ base.json_compressions = JSON.stringify(base.compression);
 
 // User salt generation pulled from: http://stackoverflow.com/a/2117523
 base.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random()*16|0;
-    const v = c === 'x' ? r : (r&0x3|0x8);
+    var r = Math.random()*16|0;
+    var v = c === 'x' ? r : (r&0x3|0x8);
     return v.toString(16);
 });
 
@@ -142,7 +142,7 @@ base.intersect = function intersect()    {
     *
     *     :returns: An array
     */
-    const last = arguments.length - 1;
+    var last = arguments.length - 1;
     var seen={};
     var result=[];
     for (var i = 1; i <= last; i++)   {
@@ -350,7 +350,7 @@ base.protocol = class protocol {
     *     :param string subnet:     The subnet ID you wish to connect to. Ex: ``'mesh'``
     *     :param string encryption: The encryption method you wish to use. Ex: ``'Plaintext'``
     */
-    constructor(subnet, encryption) {
+    varructor(subnet, encryption) {
         this.subnet = subnet;
         this.encryption = encryption;
     }
@@ -380,7 +380,7 @@ base.pathfinding_message = class pathfinding_message {
     *     :param compression:       A list of compression methods that the receiver supports
     *     :param number timestamp:  The time at which this message will be sent in seconds UTC
     */
-    constructor(msg_type, sender, payload, compression, timestamp) {
+    varructor(msg_type, sender, payload, compression, timestamp) {
         this.msg_type = new Buffer(msg_type);
         this.sender = new Buffer(sender);
         this.payload = payload || [];
@@ -468,7 +468,7 @@ base.pathfinding_message = class pathfinding_message {
         if (processed > expected)   {
             throw `Could not parse correctly processed=${processed}, expected=${expected}, pack_lens=${pack_lens}`;
         }
-        // Then reconstruct the packets
+        // Then revarruct the packets
         for (var i=0; i < pack_lens.length; i++) {
             var end = processed + pack_lens[i];
             packets = packets.concat([string.slice(processed, end)]);
@@ -540,7 +540,7 @@ base.pathfinding_message = class pathfinding_message {
 
     get __non_len_string() {
         var buf_array = [];
-        const packets = this.packets;
+        var packets = this.packets;
         for (var i = 0; i < packets.length; i++)    {
             buf_array.push(new Buffer(packets[i]));
         }
@@ -589,15 +589,15 @@ base.message = class message {
     *     :param js2p.base.pathfinding_message msg: This is the serialization object you received
     *     :param js2p.base.base_socket sender:      This is the "socket" object that received it
     */
-    constructor(msg, server) {
+    varructor(msg, server) {
         this.msg = msg
         this.server = server
     }
 
     inspect()   {
-        const packets = this.packets;
-        const type = packets[0];
-        const payload = packets.slice(1);
+        var packets = this.packets;
+        var type = packets[0];
+        var payload = packets.slice(1);
         var text = "message {\n";
         text += ` type: ${util.inspect(type)}\n`;
         text += ` packets: ${util.inspect(payload)}\n`;
@@ -706,7 +706,7 @@ base.base_connection = class base_connection   {
     *     :param js2p.base.base_socket server:  This is a link to the :js:class:`~js2p.base.base_socket` parent
     *     :param outgoing:                      This bool describes whether ``server`` initiated the connection
     */
-    constructor(sock, server, outgoing)   {
+    varructor(sock, server, outgoing)   {
         this.sock = sock;
         this.server = server;
         this.outgoing = outgoing | false;
@@ -718,7 +718,7 @@ base.base_connection = class base_connection   {
         this.last_sent = [];
         this.expected = 4;
         this.active = false;
-        const self = this;
+        var self = this;
 
         this.sock.on('data', function(data) {
             self.collect_incoming_data(self, data);
@@ -782,7 +782,7 @@ base.base_connection = class base_connection   {
         id = id || this.server.id;  //Latter is returned if key not found
         time = time || base.getUTC();
         //Begin real method
-        const msg = new base.pathfinding_message(msg_type, id, packs, this.compression, time);
+        var msg = new base.pathfinding_message(msg_type, id, packs, this.compression, time);
         // console.log(msg.payload);
         if (msg_type === base.flags.whisper || msg_type === base.flags.broadcast) {
             this.last_sent = [msg_type].concat(packs);
@@ -906,8 +906,8 @@ base.base_socket = class base_socket   {
     *
     *         An array which contains :js:class:`~js2p.base.base_connection` s that are awaiting handshake information
     */
-    constructor(addr, port, protocol, out_addr, debug_level)   {
-        const self = this;
+    varructor(addr, port, protocol, out_addr, debug_level)   {
+        var self = this;
         this.addr = [addr, port];
         this.incoming = new net.Server();
         this.incoming.listen(port, addr);
@@ -931,7 +931,7 @@ base.base_socket = class base_socket   {
         *         .. code-block:: javascript
         *
         *             function callback(msg, conn)  {
-        *                 const packets = msg.packets;
+        *                 var packets = msg.packets;
         *                 if (packets[0] === some_expected_value)   {
         *                     some_action(msg, conn);
         *                     return true;

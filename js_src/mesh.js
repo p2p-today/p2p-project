@@ -5,7 +5,7 @@
 
 "use strict";
 
-const base = require('./base.js');
+var base = require('./base.js');
 
 var m;
 
@@ -39,7 +39,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
     *     :param js2p.mesh.mesh_socket server:  This is a link to the :js:class:`~js2p.mesh.mesh_socket` parent
     *     :param outgoing:                      This bool describes whether ``server`` initiated the connection
     */
-    constructor(sock, server, outgoing) {
+    varructor(sock, server, outgoing) {
         super(sock, server, outgoing);
     }
 
@@ -150,9 +150,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *
     *         An array which contains :js:class:`~js2p.mesh.mesh_connection` s that are awaiting handshake information
     */
-    constructor(addr, port, protocol, out_addr, debug_level)   {
+    varructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
-        const self = this;
+        var self = this;
         this.waterfalls = [];
         this.requests = {};
         this.queue = [];
@@ -162,7 +162,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         this.register_handler(function handle_request(msg, conn)    {return self.__handle_request(msg, conn);});
 
         this.incoming.on('connection', function onConnection(sock)   {
-            const conn = new m.mesh_connection(sock, self, false);
+            var conn = new m.mesh_connection(sock, self, false);
             conn.send(base.flags.whisper, [base.flags.handshake, self.id, self.protocol.id, JSON.stringify(self.out_addr), base.json_compressions]);
             self.awaiting_ids = self.awaiting_ids.concat(conn);
         });
@@ -176,7 +176,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         whether the "socket" should automatically initiate connections
         */
         var outs = [];
-        const self = this;
+        var self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
             if (self.routing_table[key].outgoing)   {
                 outs.push(self.routing_table[key]);
@@ -218,7 +218,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         //     self.__print__("Connection already established", level=1)
         //     return false
         var shouldBreak = (id == this.id || [addr, port] == this.out_addr || [addr, port] == this.addr);
-        const self = this;
+        var self = this;
         Object.keys(this.routing_table).some(function(key)   {
             if (key == id || self.routing_table[key].addr == [addr, port])   {
                 shouldBreak = true;
@@ -251,7 +251,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     handle_msg(msg, conn)    {
         if (!super.handle_msg(msg, conn))   {
-            const packs = msg.packets;
+            var packs = msg.packets;
             if (packs[0] == base.flags.whisper || packs[0] == base.flags.broadcast) {
                 this.queue = this.queue.concat(msg);
             }
@@ -270,7 +270,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: An array in the above format
         */
         var ret = [];
-        const self = this;
+        var self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
             ret = ret.concat([[self.routing_table[key].addr, key]]);
         });
@@ -292,7 +292,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *
         *         :returns: Either ``true`` or ``undefined``
         */
-        const packets = msg.packets;
+        var packets = msg.packets;
         if (packets[0].toString() == base.flags.handshake)  {
             if (packets[2] != msg.protocol.id) {
                 this.disconnect(conn);
@@ -326,10 +326,10 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *
         *         :returns: Either ``true`` or ``undefined``
         */
-        const packets = msg.packets;
+        var packets = msg.packets;
         if (packets[0].toString() == base.flags.peers)  {
             var new_peers = JSON.parse(packets[1]);
-            const self = this;
+            var self = this;
             new_peers.forEach(function(peer_array)  {
                 if (self.outgoing.length < m.max_outgoing)  {
                     // try:
@@ -359,7 +359,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *
         *         :returns: Either ``true`` or ``undefined``
         */
-        const packets = msg.packets;
+        var packets = msg.packets;
         if (packets[0].toString() == base.flags.response)  {
             // self.__print__("Response received for request id %s" % packets[1], level=1)
             if (this.requests[packets[1]])  {
@@ -391,7 +391,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *
         *         :returns: Either ``true`` or ``undefined``
         */
-        const packets = msg.packets;
+        var packets = msg.packets;
         //console.log(packets[0].toString());
         //console.log(packets[1].toString());
         if (packets[0].toString() == base.flags.request)  {
@@ -421,9 +421,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *             and more specifically, it **MUST** be either ``broadcast`` or ``whisper``. The only other valid flags are ``waterfall`` and ``renegotiate``,
         *             but these are **RESERVED** and must **NOT** be used.
         */
-        const send_type = type || base.flags.broadcast;
-        const main_flag = flag || base.flags.broadcast;
-        const self = this;
+        var send_type = type || base.flags.broadcast;
+        var main_flag = flag || base.flags.broadcast;
+        var self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
             self.routing_table[key].send(main_flag, [send_type].concat(packets));
         });
@@ -441,7 +441,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         */
         this.waterfalls = Array.from(new Set(this.waterfalls));
         var new_waterfalls = [];
-        const filter_time = base.getUTC() - 60;
+        var filter_time = base.getUTC() - 60;
         for (var i in this.waterfalls)  {
             if (this.waterfalls[i][1] > filter_time) {
                 new_waterfalls.push(this.waterfalls[i]);
@@ -460,9 +460,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         });
         if (!contained)  {
             this.waterfalls.unshift([msg.id, msg.time]);
-            const self = this;
+            var self = this;
             Object.keys(this.routing_table).forEach(function(key)   {
-                const handler = self.routing_table[key];
+                var handler = self.routing_table[key];
                 if (handler.id.toString() !== msg.sender.toString())   {
                     handler.send(base.flags.waterfall, msg.packets, msg.sender, msg.time);
                 }
