@@ -11,6 +11,7 @@ if [ $pyver ]; then
     coverage xml
     codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml
 elif [ $jsver ]; then
+    nodejs --version || node --version
     make jstest
     make ES5test
 fi
