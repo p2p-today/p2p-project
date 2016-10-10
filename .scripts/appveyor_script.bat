@@ -21,6 +21,6 @@ IF DEFINED PIP (
     npm install .
     npm install -g mocha babel-cli
     mocha js_src\\test\\*
-    babel-cli js_src --out-dir build\\es5
+    babel js_src --out-dir build\\es5
     mocha build\\es5\\test\\*
 )
