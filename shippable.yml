@@ -1,6 +1,6 @@
 language: python
 
-python: 
+python:
   - 3.5
 env: pyver=3.5
 
@@ -31,10 +31,10 @@ matrix:
       env: jsver=4.2.3
     - language: node_js
       node_js: "iojs 1.0"
-      env: jsver="iojs 1.0"
+      env: jsver=iojs1.0
     - language: node_js
       node_js: "iojs 2.0"
-      env: jsver="iojs 2.0"
+      env: jsver=iojs2.0
   allow_failures:
     - python: pypy
     - python: pypy3
