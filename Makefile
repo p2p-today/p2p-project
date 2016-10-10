@@ -39,18 +39,21 @@ endif
 
 #End python setup section
 
-ES5: LICENSE
-	npm install . babel-cli
+jsdeps: LICENSE
+	npm install .
+
+ES5: LICENSE jsdeps
+	npm install babel-cli
 	node node_modules/babel-cli/bin/babel.js js_src --out-dir build/es5
 
 jsdocs:
 	node js_src/docs_test.js
 
-jstest:
-	npm install . mocha
+jstest: LICENSE jsdeps
+	npm install mocha
 	node node_modules/mocha/bin/mocha js_src/test/*
 
-ES5test: ES5
+ES5test: LICENSE ES5
 	npm install mocha
 	node node_modules/mocha/bin/mocha build/es5/test/*
 
