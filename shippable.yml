@@ -26,6 +26,8 @@ matrix:
       env: jsver="iojs 1.0"
     - node_js: "iojs 2.0"
       env: jsver="iojs 2.0"
+  exclude:
+    - env:
   allow_failures:
     - python: pypy
     - python: pypy3
