@@ -1,40 +1,31 @@
+language: python
+language: node_js
+
 matrix:
   include:
-    # - language: python
-    #   python: 2.6
+    # - python: 2.6
     #   env: pyver=2.6
-    - language: python
-      python: 2.7
+    - python: 2.7
       env: pyver=2.7
-    - language: python
-      python: 3.3
+    - python: 3.3
       env: pyver=3.3
-    - language: python
-      python: 3.4
+    - python: 3.4
       env: pyver=3.4
-    - language: python
-      python: 3.5
+    - python: 3.5
       env: pyver=3.5
-    - language: python
-      python: pypy
+    - python: pypy
       env: pyver=pypy
-    # - language: python
-    #   python: pypy3
+    # - python: pypy3
     #   env: pyver=pypy3
-    - language: node_js
-      node_js: "0.12"
+    - node_js: "0.12"
       env: jsver=0.12
-    - language: node_js
-      node_js: "0.10"
+    - node_js: "0.10"
       env: jsver=0.10
-    - language: node_js
-      node_js: "4.2.3"
+    - node_js: "4.2.3"
       env: jsver=4.2.3
-    - language: node_js
-      node_js: "iojs 1.0"
+    - node_js: "iojs 1.0"
       env: jsver="iojs 1.0"
-    - language: node_js
-      node_js: "iojs 2.0"
+    - node_js: "iojs 2.0"
       env: jsver="iojs 2.0"
   allow_failures:
     - python: pypy
