@@ -163,3 +163,7 @@ html: jsdocs
 	cd docs; rm -r .build; $(MAKE) html
 
 py_all: LICENSE setup.py setup.cfg python html cpython2 cpython3 pypy
+
+js_all: LICENSE ES5 html
+
+test_all: LICENSE jstest ES5test pytest cpy2test cpy3test
