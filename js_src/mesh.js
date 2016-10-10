@@ -3,8 +3,6 @@
 * ===========
 */
 
-"use strict";
-
 const base = require('./base.js');
 
 var m;

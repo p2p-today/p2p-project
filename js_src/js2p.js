@@ -1,5 +1,3 @@
-"use strict";
-
 var m;
 
 if( typeof exports !== 'undefined' ) {

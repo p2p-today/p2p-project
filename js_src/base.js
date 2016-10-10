@@ -5,8 +5,6 @@
 * This module contains common classes and functions which are used throughout the rest of the js2p library.
 */
 
-"use strict";
-
 const buffer = require('buffer');  // These ensure parser compatability with browserify
 const Buffer = buffer.Buffer;
 const BigInt = require('big-integer');
