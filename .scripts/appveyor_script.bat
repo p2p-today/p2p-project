@@ -17,7 +17,7 @@ IF DEFINED PIP (
     %COV% xml
     %RUN% -c "import codecov; codecov.main('--token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5', '--file=coverage.xml')"
 ) ELSE (
-    ps: Install-Product node $env:NODE
+    powershell -Command "Install-Product node $env:NODE"
     npm install .
     npm install -g mocha babel-cli
     mocha js_src\\test\\*
