@@ -39,7 +39,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
     *     :param js2p.mesh.mesh_socket server:  This is a link to the :js:class:`~js2p.mesh.mesh_socket` parent
     *     :param outgoing:                      This bool describes whether ``server`` initiated the connection
     */
-    varructor(sock, server, outgoing) {
+    constructor(sock, server, outgoing) {
         super(sock, server, outgoing);
     }
 
@@ -150,7 +150,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *
     *         An array which contains :js:class:`~js2p.mesh.mesh_connection` s that are awaiting handshake information
     */
-    varructor(addr, port, protocol, out_addr, debug_level)   {
+    constructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
         var self = this;
         this.waterfalls = [];

@@ -350,7 +350,7 @@ base.protocol = class protocol {
     *     :param string subnet:     The subnet ID you wish to connect to. Ex: ``'mesh'``
     *     :param string encryption: The encryption method you wish to use. Ex: ``'Plaintext'``
     */
-    varructor(subnet, encryption) {
+    constructor(subnet, encryption) {
         this.subnet = subnet;
         this.encryption = encryption;
     }
@@ -380,7 +380,7 @@ base.pathfinding_message = class pathfinding_message {
     *     :param compression:       A list of compression methods that the receiver supports
     *     :param number timestamp:  The time at which this message will be sent in seconds UTC
     */
-    varructor(msg_type, sender, payload, compression, timestamp) {
+    constructor(msg_type, sender, payload, compression, timestamp) {
         this.msg_type = new Buffer(msg_type);
         this.sender = new Buffer(sender);
         this.payload = payload || [];
@@ -589,7 +589,7 @@ base.message = class message {
     *     :param js2p.base.pathfinding_message msg: This is the serialization object you received
     *     :param js2p.base.base_socket sender:      This is the "socket" object that received it
     */
-    varructor(msg, server) {
+    constructor(msg, server) {
         this.msg = msg
         this.server = server
     }
@@ -706,7 +706,7 @@ base.base_connection = class base_connection   {
     *     :param js2p.base.base_socket server:  This is a link to the :js:class:`~js2p.base.base_socket` parent
     *     :param outgoing:                      This bool describes whether ``server`` initiated the connection
     */
-    varructor(sock, server, outgoing)   {
+    constructor(sock, server, outgoing)   {
         this.sock = sock;
         this.server = server;
         this.outgoing = outgoing | false;
@@ -906,7 +906,7 @@ base.base_socket = class base_socket   {
     *
     *         An array which contains :js:class:`~js2p.base.base_connection` s that are awaiting handshake information
     */
-    varructor(addr, port, protocol, out_addr, debug_level)   {
+    constructor(addr, port, protocol, out_addr, debug_level)   {
         var self = this;
         this.addr = [addr, port];
         this.incoming = new net.Server();
