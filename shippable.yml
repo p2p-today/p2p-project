@@ -38,9 +38,6 @@ matrix:
     - language: node_js
       node_js: "iojs-v2"
       env: jsver=iojs-v2
-    - language: node_js
-      node_js: "iojs-v1"
-      env: jsver=iojs-v1
   allow_failures:
     - python: pypy
     - python: pypy3
