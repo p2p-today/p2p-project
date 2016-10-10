@@ -22,7 +22,7 @@ var assert = require('assert');
 *     This shouldn't be a problem for most applications, but you can discuss it in :issue:`83`.
 */
 if (buffer.kMaxLength < 4294967299) {
-    console.log('WARNING: This implementation of javascript does not support the maximum protocol length. The largest message you may receive is 4294967299 bytes, but you can only allocate ' + util.inspect(buffer.kMaxLength) + ', or ' + (buffer.kMaxLength / 4294967299 * 100).toFixed(2) + '% of that.');
+    console.log(`WARNING: This implementation of javascript does not support the maximum protocol length. The largest message you may receive is 4294967299 bytes, but you can only allocate ${buffer.kMaxLength}, or ${(buffer.kMaxLength / 4294967299 * 100).toFixed(2)}% of that.`);
 }
 
 var base;
@@ -412,7 +412,7 @@ base.pathfinding_message = class pathfinding_message {
         var msg = new base.pathfinding_message(packets[0], packets[1], packets.slice(4), compressions)
         msg.time = base.from_base_58(packets[3])
         msg.compression_fail = compression_fail
-        assert (msg.id === packets[2].toString(), 'ID check failed.')
+        assert (msg.id === packets[2].toString(), `ID check failed. ${msg.id} !== ${packets[2].toString()}`)
         return msg
     }
 
@@ -424,7 +424,7 @@ base.pathfinding_message = class pathfinding_message {
             if (!sizeless) {
                 if (base.unpack_value(string.slice(0,4)) + 4 !== string.length) {
                     //console.log(`slice given: ${string.slice(0, 4).inspect()}.  Value expected: ${string.length - 4}.  Value derived: ${base.unpack_value(string.slice(0, 4))}`)
-                    throw new Error("The following expression must be true: unpack_value(string.slice(0,4)) === string.length - 4");
+                    throw "The following expression must be true: unpack_value(string.slice(0,4)) === string.length - 4"
                 }
                 string = string.slice(4)
             }
@@ -466,7 +466,7 @@ base.pathfinding_message = class pathfinding_message {
             expected -= pack_lens[pack_lens.length - 1];
         }
         if (processed > expected)   {
-            throw new Error('Could not parse correctly processed=' + util.inspect(processed) + ', expected=' + util.inspect(expected) + ', pack_lens=' + util.inspect(pack_lens));
+            throw `Could not parse correctly processed=${processed}, expected=${expected}, pack_lens=${pack_lens}`;
         }
         // Then revarruct the packets
         for (var i=0; i < pack_lens.length; i++) {
@@ -599,13 +599,9 @@ base.message = class message {
         var type = packets[0];
         var payload = packets.slice(1);
         var text = "message {\n";
-        text += ' type: ';
-        text += util.inspect(type)
-        text += '\n packets: ';
-        text += util.inspect(payload);
-        text += '\n sender: '
-        text += util.inspect(this.sender.toString())
-        text += ' }';
+        text += ` type: ${util.inspect(type)}\n`;
+        text += ` packets: ${util.inspect(payload)}\n`;
+        text += ` sender: ${util.inspect(this.sender.toString())} }`;
         return text;
     }
 
@@ -744,7 +740,7 @@ base.base_connection = class base_connection   {
         *
         *         This function is run when a connection is ended
         */
-        console.log('Connection to ' + (this.id || util.inspect(this)) + ' ended. This is the template function');
+        console.log(`Connection to ${this.id || this} ended. This is the template function`);
     }
 
     onError(err)    {
@@ -753,7 +749,7 @@ base.base_connection = class base_connection   {
         *
         *         This function is run when a connection experiences an error
         */
-        console.log(err);
+        console.log(`Error: ${err}`);
         this.sock.end();
         this.sock.destroy();
     }
@@ -764,7 +760,7 @@ base.base_connection = class base_connection   {
         *
         *         This function is run when a connection is closed
         */
-        console.log('Connection to ' + (this.id || util.inspect(this)) + ' ended. This is the template function');
+        console.log(`Connection to ${this.id || this} closed. This is the template function`);
     }
 
     send(msg_type, packs, id, time)  {
@@ -921,8 +917,7 @@ base.base_socket = class base_socket   {
 
         this.awaiting_ids = [];
         this.routing_table = {};
-        var id_info = '(' + util.inspect(addr) + ', ' + util.inspect(port) + this.protocol.id + base.user_salt;
-        this.id = base.to_base_58(BigInt(base.SHA384(id_info, 16));
+        this.id = base.to_base_58(BigInt(base.SHA384(`(${addr}, ${port})${this.protocol.id}${base.user_salt}`), 16));
         this.__handlers = [];
     }
 
