@@ -1,30 +1,45 @@
-language: python
-
-python:
-  # - 2.6
-  - 2.7
-  - 3.3
-  - 3.4
-  - 3.5
-  - pypy
-#  - pypy3
-
 matrix:
+  include:
+    # - language: python
+    #   python: 2.6
+    #   env: pyver=2.6
+    - language: python
+      python: 2.7
+      env: pyver=2.7
+    - language: python
+      python: 3.3
+      env: pyver=3.3
+    - language: python
+      python: 3.4
+      env: pyver=3.4
+    - language: python
+      python: 3.5
+      env: pyver=3.5
+    - language: python
+      python: pypy
+      env: pyver=pypy
+    # - language: python
+    #   python: pypy3
+    #   env: pyver=pypy3
+    - language: node_js
+      node_js: "0.12"
+      env: jsver=0.12
+    - language: node_js
+      node_js: "0.10"
+      env: jsver=0.10
+    - language: node_js
+      node_js: "4.2.3"
+      env: jsver=4.2.3
+    - language: node_js
+      node_js: "iojs 1.0"
+      env: jsver="iojs 1.0"
+    - language: node_js
+      node_js: "iojs 2.0"
+      env: jsver="iojs 2.0"
   allow_failures:
     - python: pypy
     - python: pypy3
 
 build:
   ci:
-    - pip install codecov
-    - make cpython pytestdeps
-    - py.test -vv --cov=./py_src/ ./py_src/
-    - python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
-    - mv .coverage .covvv
-    - make cpytest cov=true
-    - mv .covvv .coverage.1
-    - mv .coverage .coverage.2
-  on_success:
-    - coverage combine
-    - coverage xml
-    - codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml
+    - sh ./.scripts/shippable_script.sh
