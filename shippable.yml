@@ -20,15 +20,20 @@ matrix:
       env: pyver=pypy
     # - python: pypy3
     #   env: pyver=pypy3
-    - node_js: "0.12"
+    - language: node_js
+      node_js: "0.12"
       env: jsver=0.12
-    - node_js: "0.10"
+    - language: node_js
+      node_js: "0.10"
       env: jsver=0.10
-    - node_js: "4.2.3"
+    - language: node_js
+      node_js: "4.2.3"
       env: jsver=4.2.3
-    - node_js: "iojs 1.0"
+    - language: node_js
+      node_js: "iojs 1.0"
       env: jsver="iojs 1.0"
-    - node_js: "iojs 2.0"
+    - language: node_js
+      node_js: "iojs 2.0"
       env: jsver="iojs 2.0"
   allow_failures:
     - python: pypy
