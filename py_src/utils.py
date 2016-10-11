@@ -90,7 +90,7 @@ class awaiting_value(object):
         self.callback.send(flags.whisper, flags.response, method, key, self.value)
 
     def __repr__(self):
-        return repr(self.value)
+        return "<" + repr(self.value) + ">"
 
 
 def most_common(tmp):
@@ -111,7 +111,8 @@ def most_common(tmp):
             lst.append(item.value)
         else:
             lst.append(item)
-    return max(set(lst), key=lst.count)
+    ret = max(set(lst), key=lst.count)
+    return ret, lst.count(ret)
 
 
 class file_dict(object):

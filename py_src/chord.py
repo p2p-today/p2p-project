@@ -258,8 +258,9 @@ class chord_socket(base_socket):
         if packets[0] == flags.retrieve:
             if packets[1] in hashes:
                 val = self.__lookup(packets[1], from_base_58(packets[2]), handler)
-                if val.value:
-                    handler.send(flags.whisper, flags.response, packets[1], val.value)
+                if isinstance(val.value, str):
+                    self.__print__(val.value)
+                    handler.send(flags.whisper, flags.response, packets[1], packets[2], val.value)
                 return True
 
     def __handle_store(self, msg, handler):
@@ -329,13 +330,13 @@ class chord_socket(base_socket):
             key = str(key).encode()
         keys = [int(hashlib.new(algo, key).hexdigest(), 16) for algo in hashes]
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
-        common = most_common(vals)
+        common, count = most_common(vals)
         while common == -1:
             time.sleep(1)
             print('loop')
             print(vals)
-            common = most_common(vals)
-        if common is not None and vals.count(common) > len(hashes) // 2:
+            common, count = most_common(vals)
+        if common is not None and count > len(hashes) // 2:
             return common
         raise KeyError("This key does not have an agreed-upon value", vals)
 
