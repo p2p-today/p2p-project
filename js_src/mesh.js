@@ -212,6 +212,35 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     connect(addr, port, id) {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket.connect(addr, port [, id])
+        *
+        *         This function connects you to a specific node in the overall network.
+        *         Connecting to one node *should* connect you to the rest of the network,
+        *         however if you connect to the wrong subnet, the handshake failure involved
+        *         is silent. You can check this by looking at the truthiness of this objects
+        *         routing table. Example:
+        *
+        *         .. code-block:: javascript
+        *
+        *             > var conn = new mesh.mesh_socket('localhost', 4444);
+        *             > conn.connect('localhost', 5555);
+        *             > //do some other setup for your program
+        *             > if (!conn.routing_table)    {
+        *             ... conn.connect('localhost', 6666); // any fallback address
+        *             ... }
+        *
+        *         :param string addr: A string address
+        *         :param number port: A positive, integral port
+        *         :param id:          A string-like object which represents the expected ID of this node
+        *
+        *         .. note::
+        *
+        *             While in the Python version there are more thorough checks on this, the Javascript
+        *             implementation *can* connect to itself. There are checks to keep this from happening
+        *             automatically, but it's still trivial to override this via human intervention. Please
+        *             do not try to connect to yourself.
+        */
         // self.__print__("Attempting connection to %s:%s with id %s" % (addr, port, repr(id)), level=1)
         // if socket.getaddrinfo(addr, port)[0] == socket.getaddrinfo(*self.out_addr)[0] or \
         //                                                     id in self.routing_table:
@@ -245,6 +274,13 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     disconnect(handler) {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket.disconnect(handler)
+        *
+        *         Closes a given connection, and removes it from your routing tables
+        *
+        *         :param js2p.mesh.mesh_connection handler: The connection you wish to close
+        */
         handler.sock.end();
         handler.sock.destroy(); //These implicitly remove from routing table
     }
@@ -451,6 +487,16 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     waterfall(msg)  {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket.waterfall(msg)
+        *
+        *         This function handles message relays. Its return value is based on
+        *         whether it took an action or not.
+        *
+        *         :param js2p.base.message msg: The message in question
+        *
+        *         :returns: ``true`` if the message was then forwarded. ``false`` if not.
+        */
         var contained = false;
         this.waterfalls.some(function(entry)    {
             if (entry[0] === msg.id && entry[1].equals(msg.time))   {

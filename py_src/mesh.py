@@ -199,6 +199,17 @@ class mesh_socket(base_socket):
         return peer_list
 
     def __resolve_connection_conflict(self, handler, h_id):
+        """Sometimes in trying to recover a network a race condition is created.
+        This function applies a heuristic to try and organize the fallout from
+        that race condition. While it isn't perfect, it seems to have increased
+        connection recovery rate from ~20% to ~75%. This statistic is from memory
+        on passed tests. Much improvement can be made here, but this statistic
+        can likely never be brought to 100%.
+
+        In the failure condition, the overall network is unaffacted *for large
+        networks*. In small networks this failure condition causes a fork, usually
+        where an individual node is kicked out.
+        """
         self.__print__("Resolving peer conflict on id %s" % repr(h_id), level=1)
         to_keep, to_kill = None, None
         if bool(from_base_58(self.id) > from_base_58(h_id)) ^ bool(handler.outgoing):  # logical xor
@@ -317,7 +328,7 @@ class mesh_socket(base_socket):
 
     def send(self, *args, **kargs):
         """This sends a message to all of your peers. If you use default values it will send it to everyone on the network
-        *
+
         Args:
             *args:      A list of strings or bytes-like objects you want your peers to receive
             **kargs:    There are two keywords available:
@@ -347,7 +358,15 @@ class mesh_socket(base_socket):
         self.waterfalls = deque((i for i in self.waterfalls if i[1] > getUTC() - 60))
 
     def waterfall(self, msg):
-        """Handles the waterfalling of received messages"""
+        """This function handles message relays. Its return value is based on
+        whether it took an action or not.
+
+        Args:
+            msg: The :py:class:`~py2p.base.message` in question
+
+        Returns:
+            ``True`` if the message was then forwarded. ``False`` if not.
+        """
         if msg.id not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id, msg.time))
             for handler in self.routing_table.values():
@@ -360,7 +379,25 @@ class mesh_socket(base_socket):
             return False
 
     def connect(self, addr, port, id=None):
-        """Connects to a specified node. Specifying ID will immediately add to routing table. Blocking"""
+        """This function connects you to a specific node in the overall network.
+        Connecting to one node *should* connect you to the rest of the network,
+        however if you connect to the wrong subnet, the handshake failure involved
+        is silent. You can check this by looking at the truthiness of this objects
+        routing table. Example:
+
+        .. code-block:: python
+
+           >>> conn = mesh.mesh_socket('localhost', 4444)
+           >>> conn.connect('localhost', 5555)
+           >>> # do some other setup for your program
+           >>> if (!conn.routing_table):
+           ...     conn.connect('localhost', 6666)  # any fallback address
+
+        Args:
+           addr: A string address
+           port: A positive, integral port
+           id:   A string-like object which represents the expected ID of this node
+        """
         self.__print__("Attempting connection to %s:%s with id %s" % (addr, port, repr(id)), level=1)
         if socket.getaddrinfo(addr, port)[0] == socket.getaddrinfo(*self.out_addr)[0] or \
                                                             id in self.routing_table:
@@ -379,7 +416,11 @@ class mesh_socket(base_socket):
             self.awaiting_ids.append(handler)
 
     def disconnect(self, handler):
-        """Disconnects a node"""
+        """Closes a given connection, and removes it from your routing tables
+
+        Args:
+            handler: the connection you would like to close
+        """
         node_id = handler.id
         if not node_id:
             node_id = repr(handler)
