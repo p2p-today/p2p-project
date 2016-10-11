@@ -46,7 +46,6 @@ environment:
     - NODE: "4"
     - NODE: "5"
     - NODE: "6"
-    - NODE: "1" # iojs
 
 matrix:
   allow_failures:
