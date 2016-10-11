@@ -203,12 +203,16 @@ class mesh_socket(base_socket):
         This function applies a heuristic to try and organize the fallout from
         that race condition. While it isn't perfect, it seems to have increased
         connection recovery rate from ~20% to ~75%. This statistic is from memory
-        on passed tests. Much improvement can be made here, but this statistic
-        can likely never be brought to 100%.
+        on past tests. Much improvement can be made here, but this statistic can
+        likely never be brought to 100%.
 
         In the failure condition, the overall network is unaffacted *for large
         networks*. In small networks this failure condition causes a fork, usually
         where an individual node is kicked out.
+
+        Args:
+            handler: The handler with whom you have a connection conflict
+            h_id:    The id of this handler
         """
         self.__print__("Resolving peer conflict on id %s" % repr(h_id), level=1)
         to_keep, to_kill = None, None
