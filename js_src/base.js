@@ -13,6 +13,7 @@ var BigInt = require('big-integer');
 var SHA = require('jssha');
 var zlib = require('zlibjs');
 var assert = require('assert');
+var net = require('net');
 
 /**
 * .. note::
