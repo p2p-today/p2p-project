@@ -899,7 +899,7 @@ class message(object):
         Args:
             *args: Each argument given is a packet you wish to send. This is
                 prefixed with base.flags.whisper, so the other end will receive
-                [base.flags.whisper, *args]
+                ``[base.flags.whisper, *args]``
         """
         if self.server.routing_table.get(self.sender):
             self.server.routing_table.get(self.sender).send(flags.whisper, flags.whisper, *args)

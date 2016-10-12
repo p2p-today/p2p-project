@@ -389,7 +389,7 @@ class mesh_socket(base_socket):
         is silent. You can check this by looking at the truthiness of this objects
         routing table. Example:
 
-        .. code-block:: python
+        .. code:: python
 
            >>> conn = mesh.mesh_socket('localhost', 4444)
            >>> conn.connect('localhost', 5555)

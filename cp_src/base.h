@@ -95,7 +95,7 @@ namespace flags {
     *
     *     .. note::
     *
-    *         This will be refactored later to an array of unsigned char *s, but for know just know that all flags are one char long.
+    *         This will be refactored later to an array of :c:type:`unsigned char *` s, but for know just know that all flags are one char long.
     *
     * .. cpp:var:: static const size_t flags::reserved_len
     *
@@ -107,7 +107,7 @@ namespace flags {
     *
     *     .. note::
     *
-    *         This will be refactored later to an array of unsigned char *s, but for know just know that all flags are one char long.
+    *         This will be refactored later to an array of :c:type:`unsigned char *` s, but for know just know that all flags are one char long.
     *
     * .. cpp:var:: static const size_t flags::compression_len
     *
@@ -119,7 +119,7 @@ namespace flags {
     *
     *     .. note::
     *
-    *         This will be refactored later to an array of unsigned char *s, but for know just know that all flags are one char long.
+    *         This will be refactored later to an array of :c:type:`unsigned char *` s, but for know just know that all flags are one char long.
     */
 
     static const unsigned char\
@@ -314,7 +314,10 @@ class pathfinding_message   {
         pathfinding_message(string msg_type, string sender, vector<string> payload);
         pathfinding_message(string msg_type, string sender, vector<string> payload, vector<string> compressions);
         /**
-        *     .. cpp:function:: pathfinding_message::pathfinding_message(std::string msg_type, std::string sender, std::vector<std::string> payload [, std::vector<std::string> compressions])
+        *     .. cpp:function:: pathfinding_message::pathfinding_message(std::string msg_type, std::string sender, std::vector<std::string> payload)
+        *
+        *     .. cpp:function:: pathfinding_message::pathfinding_message(std::string msg_type, std::string sender, std::vector<std::string> payload, std::vector<std::string> compressions)
+        *
         *
         *         :param msg_type:      This is the main flag checked by nodes, used for routing information
         *         :param sender:        The ID of the person sending the message
@@ -356,7 +359,13 @@ class pathfinding_message   {
             compressions);
         };
         /**
-        *     .. cpp:function:: static pathfinding_message *pathfinding_message::feed_string(std::string msg [, bool sizeless] [, std::vector<std::string> compressions])
+        *     .. cpp:function:: static pathfinding_message *pathfinding_message::feed_string(std::string msg)
+        *
+        *     .. cpp:function:: static pathfinding_message *pathfinding_message::feed_string(std::string msg, bool sizeless)
+        *
+        *     .. cpp:function:: static pathfinding_message *pathfinding_message::feed_string(std::string msg, std::vector<std::string> compressions)
+        *
+        *     .. cpp:function:: static pathfinding_message *pathfinding_message::feed_string(std::string msg, bool sizeless, std::vector<std::string> compressions)
         *
         *         :param msg:           A :cpp:class:`std::string` which contains the serialized message
         *         :param sizeless:      A :c:type:`bool` which indicates if the message has a size header attached (default: it does)
@@ -414,8 +423,8 @@ class pathfinding_message   {
         *
         *         0. :cpp:var:`pathfinding_message::msg_type`
         *         #. :cpp:var:`pathfinding_message::sender`
-        *         #. :cpp:var:`pathfinding_message::id()`
-        *         #. :cpp:var:`pathfinding_message::time_58()`
+        *         #. :cpp:func:`pathfinding_message::id()`
+        *         #. :cpp:func:`pathfinding_message::time_58()`
         *         #. :cpp:var:`pathfinding_message::payload` from here on out
         *
         *         :returns: A :cpp:class:`std::vector\<std::string>` in the above format
