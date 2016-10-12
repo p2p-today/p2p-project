@@ -21,9 +21,6 @@ matrix:
     # - python: pypy3
     #   env: pyver=pypy3
     - language: node_js
-      node_js: "3"
-      env: jsver=3
-    - language: node_js
       node_js: "4"
       env: jsver=4
     - language: node_js
@@ -32,12 +29,6 @@ matrix:
     - language: node_js
       node_js: "6"
       env: jsver=6
-    - language: node_js
-      node_js: "iojs"
-      env: jsver=iojs
-    - language: node_js
-      node_js: "iojs-v2"
-      env: jsver=iojs-v2
   allow_failures:
     - python: pypy
     - python: pypy3

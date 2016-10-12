@@ -49,15 +49,6 @@ matrix:
     - language: node_js
       node_js: "4"
       os: osx
-    - language: node_js
-      node_js: "3"
-      os: osx
-    - language: node_js
-      node_js: "iojs"
-      os: osx
-    - language: node_js
-      node_js: "iojs-v2"
-      os: osx
 
 script:
   - sh ./.scripts/travis_script.sh
