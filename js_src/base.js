@@ -14,6 +14,7 @@ var SHA = require('jssha');
 var zlib = require('zlibjs');
 var assert = require('assert');
 var net = require('net');
+var util = require('util');
 
 /**
 * .. note::
@@ -945,14 +946,17 @@ base.base_socket = class base_socket   {
     }
 
     handle_msg(msg, conn) {
+        var ret = false;
         this.__handlers.some(function(handler)  {
             // self.__print__("Checking handler: %s" % handler.__name__, level=4)
-            //console.log(`Entering handler ${handler.name}`);
+            // console.log(`Entering handler ${handler.name}`);
             if (handler(msg, conn)) {
                 // self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
-                //console.log(`breaking from ${handler.name}`);
+                // console.log(`breaking from ${handler.name}`);
+                ret = true;
                 return true
             }
         });
+        return ret;
     }
 };
