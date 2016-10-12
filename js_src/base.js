@@ -64,7 +64,7 @@ else {
 *     This is :js:data:`~js2p.base.version_info` joined in the format ``'a.b.c'``
 */
 
-base.version_info = [0, 4, 319];
+base.version_info = [0, 4, 467];
 base.node_policy_version = base.version_info[2].toString();
 base.protocol_version = base.version_info.slice(0, 2).join(".");
 base.version = base.version_info.join('.');
