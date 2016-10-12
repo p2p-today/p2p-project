@@ -3,25 +3,7 @@
 var assert = require('assert');
 var base = require('../base.js');
 var mesh = require('../mesh.js');
-var BigInt = require('big-integer');
-var util = require('util');
 var start_port = 44565;
-
-function get_random_buffer(len) {
-    var pre_buffer = [];
-    for (var j = 0; j < len; j++)   {
-        pre_buffer.push(Math.floor(Math.random() * 256));
-    }
-    return new Buffer(pre_buffer);
-}
-
-function get_random_array(len)  {
-    var ret = [];
-    for (var i = 0; i < len; i++)   {
-        ret.push(get_random_buffer(Math.floor(Math.random() * 20)));
-    }
-    return ret;
-}
 
 describe('mesh', function() {
 
