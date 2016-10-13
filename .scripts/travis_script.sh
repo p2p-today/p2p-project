@@ -1,3 +1,4 @@
+set -e;
 if [ $pyver ]; then
     if [ $pyver != pypy ] && [ $pyver != pypy3 ]; then
         git clone https://github.com/gappleto97/terryfy;

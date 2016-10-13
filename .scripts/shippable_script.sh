@@ -1,3 +1,4 @@
+set -e;
 if [ $pyver ]; then
     pip install codecov
     make cpython pytestdeps
