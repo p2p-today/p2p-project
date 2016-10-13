@@ -119,7 +119,7 @@ class chord_socket(base_socket):
         self.limit = 2**k
         self.id_10 = from_base_58(self.id) % self.limit
         self.id = to_base_58(self.id_10)
-        self.data = dict(((method, file_dict()) for method in hashes))
+        self.data = dict(((method, dict()) for method in hashes))
         self.daemon = chord_daemon(addr, port, self)
         self.requests = {}
         self.predecessors = []

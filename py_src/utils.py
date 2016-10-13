@@ -87,6 +87,7 @@ class awaiting_value(object):
         self.callback = False
 
     def callback_method(self, method, key):
+        from .base import flags
         self.callback.send(flags.whisper, flags.response, method, key, self.value)
 
     def __repr__(self):
