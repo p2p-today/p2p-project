@@ -48,7 +48,7 @@ def test_size_rejection_SSL(iters=3):
 
 
 def gen_connected_list(start_port, encryption, k=2):
-    nodes = [chord.chord_socket('localhost', start_port + x, k=k, debug_level=5) for x in xrange(2**k)]
+    nodes = [chord.chord_socket('localhost', start_port + x, k=k, debug_level=0) for x in xrange(2**k)]
 
     for index, node in enumerate(nodes):
         node.id_10 = index
