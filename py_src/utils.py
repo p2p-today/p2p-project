@@ -112,6 +112,8 @@ def most_common(tmp):
         else:
             lst.append(item)
     ret = max(set(lst), key=lst.count)
+    if lst.count(ret) == lst.count(-1):
+        return -1, lst.count(ret)
     return ret, lst.count(ret)
 
 

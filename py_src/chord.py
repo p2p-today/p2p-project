@@ -335,13 +335,17 @@ class chord_socket(base_socket):
         keys = [int(hashlib.new(algo, key).hexdigest(), 16) for algo in hashes]
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
         common, count = most_common(vals)
-        while common == -1:
+        iters = 0
+        while common == -1 and iters < 10:
             time.sleep(1)
             print('loop')
             print(vals)
+            iters += 1
             common, count = most_common(vals)
         if common not in (None, '') and count > len(hashes) // 2:
             return common
+        elif iters == 10:
+            raise socket.timeout()
         raise KeyError("This key does not have an agreed-upon value", vals)
 
     def __getitem__(self, key):

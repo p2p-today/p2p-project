@@ -48,7 +48,7 @@ def test_size_rejection_SSL(iters=3):
 
 
 def gen_connected_list(start_port, encryption, k=2):
-    nodes = [chord.chord_socket('localhost', start_port + x, k=k, debug_level=0) for x in xrange(2**k)]
+    nodes = [chord.chord_socket('localhost', start_port + x, k=k, debug_level=5) for x in xrange(2**k)]
 
     for index, node in enumerate(nodes):
         node.id_10 = index
@@ -87,7 +87,30 @@ def test_routing_SSL(iters=1):
     routing_validation(iters, 6500, 'SSL', k=3)
 
 
-def storage_retrieval_validation(iters, start_port, encryption, k=2):
+def storage_validation(iters, start_port, encryption, k=2):
+    for i in xrange(iters):
+        nodes = gen_connected_list(start_port + i * 2**k, encryption, k)
+
+        test_key = str(uuid.uuid4())
+        test_data = str(uuid.uuid4())
+
+        nodes[0][test_key] = test_data
+
+        time.sleep(2*k)
+
+        for meth in chord.hashes:
+            assert any((bool(node.data[meth]) for node in nodes))
+
+
+def test_storage_Plaintext(iters=1):
+    storage_validation(iters, 6600, 'Plaintext')
+
+
+def test_storage_SSL(iters=1):
+    storage_validation(iters, 6700, 'SSL')
+
+
+def retrieval_validation(iters, start_port, encryption, k=2):
     for i in xrange(iters):
         nodes = gen_connected_list(start_port + i * 2**k, encryption, k)
 
@@ -100,13 +123,13 @@ def storage_retrieval_validation(iters, start_port, encryption, k=2):
 
         for node in nodes:
             assert node[test_key] == test_data
-            with pytest.raises(Exception):
+            with pytest.raises(KeyError):
                 node[test_data]
 
 
-def test_storage_retrieval_Plaintext(iters=1):
-    storage_retrieval_validation(iters, 6600, 'Plaintext')
+def test_retrieval_Plaintext(iters=1):
+    retrieval_validation(iters, 6800, 'Plaintext')
 
 
-def test_storage_retrieval_SSL(iters=1):
-    storage_retrieval_validation(iters, 6700, 'SSL')
+def test_retrieval_SSL(iters=1):
+    retrieval_validation(iters, 6900, 'SSL')
