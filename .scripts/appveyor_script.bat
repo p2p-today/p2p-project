@@ -8,7 +8,7 @@ IF DEFINED PIP (
     %RUN% setup.py sdist --universal
     %PIP% install --no-index --find-links=.\\dist\\ py2p
     %RUN% setup.py build
-    FOR /F %%v IN (%RUN% -c "import sys, sysconfig; print('{}.{}-{v[0]}.{v[1]}'.format('lib', sysconfig.get_platform(), v=sys.version_info))") DO SET BUILD_DIR=%%v
+    FOR /F %%v IN ('%RUN% -c "import sys, sysconfig; print(\"{}.{}-{v[0]}.{v[1]}\".format(\"lib\", sysconfig.get_platform(), v=sys.version_info))"') DO SET BUILD_DIR=%%v
     ren .coverage .covvv
     %RUN% -m pytest -c setup.cfg --cov=build\\%BUILD_DIR% build\\%BUILD_DIR% || goto :error
     ren .covvv .coverage.1
