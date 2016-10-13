@@ -4,12 +4,16 @@ from __future__ import absolute_import
 import random
 import sys
 import time
+import uuid
+
+import pytest
 
 from .. import chord
 from .test_mesh import close_all_nodes
 
 if sys.version_info >= (3, ):
     xrange = range
+
 
 def protocol_rejection_validation(iters, start_port, encryption, k=4, name='test'):
     for i in xrange(iters):
@@ -26,47 +30,83 @@ def protocol_rejection_validation(iters, start_port, encryption, k=4, name='test
         print(g.status)
         close_all_nodes([f, g])
 
+
 def test_protocol_rejection_Plaintext(iters=3):
     protocol_rejection_validation(iters, 6000, 'Plaintext', name='test2')
+
 
 def test_protocol_rejection_SSL(iters=3):
     protocol_rejection_validation(iters, 6100, 'SSL', name='test2')
 
+
 def test_size_rejection_Plaintext(iters=3):
     protocol_rejection_validation(iters, 6200, 'Plaintext', k=5)
+
 
 def test_size_rejection_SSL(iters=3):
     protocol_rejection_validation(iters, 6300, 'SSL', k=3)
 
-# def routing_validation(iters, start_port, encryption, k=4):
-#     for i in xrange(iters):
-#         print("----------------------Test start----------------------")
-#         nodes = [chord.chord_socket('localhost', 
-#                                     start_port + j + (2**k) * i,
-#                                     k=k, 
-#                                     prot=chord.protocol('chord', encryption),
-#                                     debug_level=4)
-#                     for j in xrange(2**k)]
-#         ids = []
-#         for node in nodes:
-#             while node.id_10 in ids:
-#                 node.id_10 = random.randint(0, 2**k-1)
-#                 node.id = chord.to_base_58(node.id_10)
-#             ids.append(node.id_10)
-#             print(node.id_10)
-#         print("----------------------Test event----------------------")
-#         for j in xrange(2**k):
-#             nodes[j].connect(*nodes[(j+1) % (2**k)].out_addr)
-#             time.sleep(4)
-#         for node in nodes:
-#             print(node.status)
-#         print("----------------------Test ended----------------------")
-#         assertion_list = list(map(len, [node.routing_table for node in nodes]))
-#         close_all_nodes(nodes)
-#         assert min(assertion_list) >= 1
 
-# def test_routing_Plaintext(iters=3):
-#     routing_validation(iters, 6400, 'Plaintext', k=2)
+def gen_connected_list(start_port, encryption, k=2):
+    nodes = [chord.chord_socket('localhost', start_port + x, k=k, debug_level=0) for x in xrange(2**k)]
 
-# def test_routing_SSL(iters=1):
-#     routing_validation(iters, 6500, 'SSL', k=2)
+    for index, node in enumerate(nodes):
+        node.id_10 = index
+        node.id = chord.to_base_58(index)
+        node.connect(*nodes[(index - 1) % len(nodes)].addr)
+        time.sleep(0.1)
+
+    for node in nodes:
+        node.join()
+
+    time.sleep(3 * k)
+
+    for node in nodes:
+        print("%s:" % node.id)
+        for key in node.routing_table:
+            print("entry %i: %s" % (key, node.routing_table[key].id))
+
+    return nodes
+
+
+def routing_validation(iters, start_port, encryption, k=3):
+    for i in xrange(iters):
+        nodes = gen_connected_list(start_port + i * 2**k, encryption, k)
+
+        assertion_list = list(map(len, [node.routing_table for node in nodes]))
+        print(assertion_list)
+        close_all_nodes(nodes)
+        assert min(assertion_list) >= 1
+
+
+def test_routing_Plaintext(iters=3):
+    routing_validation(iters, 6400, 'Plaintext', k=3)
+
+
+def test_routing_SSL(iters=1):
+    routing_validation(iters, 6500, 'SSL', k=3)
+
+
+def storage_retrieval_validation(iters, start_port, encryption, k=2):
+    for i in xrange(iters):
+        nodes = gen_connected_list(start_port + i * 2**k, encryption, k)
+
+        test_key = str(uuid.uuid4())
+        test_data = str(uuid.uuid4())
+
+        nodes[0][test_key] = test_data
+
+        time.sleep(2*k)
+
+        for node in nodes:
+            assert node[test_key] == test_data
+            with pytest.raises(Exception):
+                node[test_data]
+
+
+def test_storage_retrieval_Plaintext(iters=1):
+    storage_retrieval_validation(iters, 6600, 'Plaintext')
+
+
+def test_storage_retrieval_SSL(iters=1):
+    storage_retrieval_validation(iters, 6700, 'SSL')

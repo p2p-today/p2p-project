@@ -29,11 +29,13 @@ hashes = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512']
 if sys.version_info >= (3,):
     xrange = range
 
+
 def distance(a, b, limit):
     """This is a clockwise ring distance function.
     It depends on a globally defined k, the key size.
     The largest possible node id is 2**k (or self.limit)."""
     return (b - a) % limit
+
 
 class chord_connection(base_connection):
     def found_terminator(self):
@@ -57,6 +59,7 @@ class chord_connection(base_connection):
 
     def __hash__(self):
         return self.id_10 or id(self)
+
 
 class chord_daemon(base_daemon):
     def mainloop(self):
@@ -107,6 +110,7 @@ class chord_daemon(base_daemon):
                 self.__print__("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to github.com/gappleto97/p2p-project/issues." % handler.id, level=0)
                 self.exceptions.append((e, traceback.format_exc()))
             self.server.disconnect(handler)
+
 
 class chord_socket(base_socket):
     def __init__(self, addr, port, k=6, prot=default_protocol, out_addr=None, debug_level=0):
@@ -316,7 +320,7 @@ class chord_socket(base_socket):
         else:
             node = random.choice(self.awaiting_ids)
         if node in (self, None):
-            return awaiting_value(self.data[method][key])
+            return awaiting_value(self.data[method].get(key, ''))
         else:
             node.send(flags.whisper, flags.retrieve, method, to_base_58(key))
             ret = awaiting_value()
@@ -336,7 +340,7 @@ class chord_socket(base_socket):
             print('loop')
             print(vals)
             common, count = most_common(vals)
-        if common is not None and count > len(hashes) // 2:
+        if common not in (None, '') and count > len(hashes) // 2:
             return common
         raise KeyError("This key does not have an agreed-upon value", vals)
 
