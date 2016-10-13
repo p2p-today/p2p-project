@@ -64,8 +64,6 @@
 #endif
 //End macro
 
-#define SHA2_USE_INTTYPES_H
-
 #include <string>
 #include <sstream>
 #include <iostream>
