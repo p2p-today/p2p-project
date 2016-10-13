@@ -6,6 +6,7 @@
 "use strict";
 
 var base = require('./base.js');
+var net = require('net');
 
 var m;
 

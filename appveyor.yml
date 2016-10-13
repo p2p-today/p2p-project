@@ -42,7 +42,6 @@ environment:
     #   PYPY: "powershell.exe %APPVEYOR_BUILD_FOLDER%\\.scripts\\installpypy3.ps1"
     #   COV: "%RUN% -m coverage"
 
-    - NODE: "3"
     - NODE: "4"
     - NODE: "5"
     - NODE: "6"
