@@ -16,7 +16,6 @@ IF DEFINED PIP (
     %COV% combine
     %COV% xml
     %RUN% -c "import codecov; codecov.main('--token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5', '--file=coverage.xml')"
-    goto :EOF
 ) ELSE (
     dir C:\avvm\node
     powershell -Command "Install-Product node $env:NODE"
@@ -25,8 +24,8 @@ IF DEFINED PIP (
     mocha js_src\\test\\* || goto :error
     babel js_src --out-dir build\\es5
     mocha build\\es5\\test\\* || goto :error
-    goto :EOF
 )
+goto :EOF
 
 :error
 ECHO Failed with error #%errorlevel%.
