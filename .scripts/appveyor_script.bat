@@ -7,6 +7,7 @@ IF DEFINED PIP (
     %RUN% -m pytest -c setup.cfg --cov=./py_src/ ./py_src/ || goto :error
     %RUN% setup.py sdist --universal
     %PIP% install --no-index --find-links=.\\dist\\ py2p
+    %RUN% setup.py bdist_wheel
     %RUN% setup.py build
     FOR /F %%v IN ('%RUN% -c "import sys, sysconfig; print(\"{}.{}-{v[0]}.{v[1]}\".format(\"lib\", sysconfig.get_platform(), v=sys.version_info))"') DO SET BUILD_DIR=%%v
     ren .coverage .covvv
