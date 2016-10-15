@@ -2,7 +2,7 @@ IF DEFINED PIP (
     ECHO %PYTHON% %PYTHON_VERSION%%APPVEYOR_BUILD_FOLDER%
     set HOME=%APPVEYOR_BUILD_FOLDER%
     %PYPY%
-    %PIP% install pytest-coverage codecov cryptography
+    %PIP% install pytest-coverage codecov cryptography wheel
     cd %HOME%
     %RUN% -m pytest -c setup.cfg --cov=./py_src/ ./py_src/ || goto :error
     %RUN% setup.py sdist --universal
