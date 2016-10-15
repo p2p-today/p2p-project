@@ -12,6 +12,12 @@ environment:
       PIP: "%PYTHON%\\Scripts\\pip"
       COV: "%PYTHON%\\Scripts\\coverage"
 
+    - PYTHON: "C:\\Python27_64"
+      PYTHON_VERSION: "2.7"
+      RUN: "%PYTHON%\\python"
+      PIP: "%PYTHON%\\Scripts\\pip"
+      COV: "%PYTHON%\\Scripts\\coverage"
+
     - PYTHON: "C:\\Python33"
       PYTHON_VERSION: "3.3"
       RUN: "%PYTHON%\\python"
