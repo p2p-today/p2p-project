@@ -24,13 +24,31 @@ environment:
       PIP: "%PYTHON%\\Scripts\\pip"
       COV: "%PYTHON%\\Scripts\\coverage"
 
+    - PYTHON: "C:\\Python33-x64"
+      PYTHON_VERSION: "3.3"
+      RUN: "%PYTHON%\\python"
+      PIP: "%PYTHON%\\Scripts\\pip"
+      COV: "%PYTHON%\\Scripts\\coverage"
+
     - PYTHON: "C:\\Python34"
       PYTHON_VERSION: "3.4"
       RUN: "%PYTHON%\\python"
       PIP: "%PYTHON%\\Scripts\\pip"
       COV: "%PYTHON%\\Scripts\\coverage"
 
+    - PYTHON: "C:\\Python34-x64"
+      PYTHON_VERSION: "3.4"
+      RUN: "%PYTHON%\\python"
+      PIP: "%PYTHON%\\Scripts\\pip"
+      COV: "%PYTHON%\\Scripts\\coverage"
+
     - PYTHON: "C:\\Python35"
+      PYTHON_VERSION: "3.5"
+      RUN: "%PYTHON%\\python"
+      PIP: "%PYTHON%\\Scripts\\pip"
+      COV: "%PYTHON%\\Scripts\\coverage"
+
+    - PYTHON: "C:\\Python35-x64"
       PYTHON_VERSION: "3.5"
       RUN: "%PYTHON%\\python"
       PIP: "%PYTHON%\\Scripts\\pip"
