@@ -55,3 +55,7 @@ test: off
 
 build_script:
   - .scripts\\appveyor_script.bat
+
+artifacts:
+  - path: '**\*.whl'
+    name: Wheel
