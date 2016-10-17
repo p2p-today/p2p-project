@@ -40,7 +40,7 @@ endif
 #End python setup section
 
 jsdeps: LICENSE
-	npm install
+	yarn || npm install
 
 ES5: LICENSE jsdeps
 	node node_modules/babel-cli/bin/babel.js --presets es2015 js_src --out-dir build/es5

@@ -15,9 +15,10 @@ if [ $pyver ]; then
     virtualenv -p $PYTHON_EXE venv;
     source venv/bin/activate;
     make cpython;
-    pip install pytest-coverage codecov
+    pip install pytest-coverage codecov wheel
     py.test -vv --cov=./py_src/ ./py_src/
     python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
+    python setup.py bdist_wheel
     mv .coverage .covvv
     make cpytest cov=true
     mv .covvv .coverage.1

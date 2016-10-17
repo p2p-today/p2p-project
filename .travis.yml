@@ -52,3 +52,8 @@ matrix:
 
 script:
   - sh ./.scripts/travis_script.sh
+
+addons:
+  artifacts:
+    paths:
+    - $(find . -iname *.whl -type f | tr "\n" ":")

@@ -455,14 +455,17 @@ class chord_socket(base_socket):
             addr: the address you want to connect to/handshake
             port: the port you want to connect to/handshake
         """
-        handler = self.connect(addr, port)
-        if handler:
-            self.__send_handshake__(handler)
+        try:
+            handler = self.connect(addr, port)
+            if handler:
+                self.__send_handshake__(handler)
+        except:
+            pass
 
     def join(self):
         """Tells the node to start seeding the chord table"""
         # for handler in self.awaiting_ids:
-        handler = random.choice(self.awaiting_ids)
+        handler = random.choice(self.awaiting_ids or list(self.routing_table.values()))
         self.__send_handshake__(handler)
 
     def __lookup(self, method, key, handler=None):
