@@ -157,7 +157,7 @@ class chord_socket(base_socket):
         self.next = self
         self.prev = self
         self.leeching = True
-        warnings.warn("This network configuration supports %s total nodes and requires a theoretical minimum of %s nodes" % (min(self.limit, 2**160), self.k + 1), RuntimeWarning, stacklevel=2)
+        warnings.warn("This network configuration supports %s total nodes and requires a theoretical minimum of %s nodes" % (min(self.limit, 2**160), self.k), RuntimeWarning, stacklevel=2)
 
     @property
     def addr(self):
