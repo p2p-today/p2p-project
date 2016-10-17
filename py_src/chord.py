@@ -470,6 +470,10 @@ class chord_socket(base_socket):
         handler = random.choice(self.awaiting_ids or list(self.routing_table.values()))
         self.__send_handshake__(handler)
 
+    def unjoin(self):
+        """Tells the node to stop seeding the chord table"""
+        raise NotImplementedError()
+
     def __lookup(self, method, key, handler=None):
         if self.routing_table:
             node = self.__findFinger__(key)
@@ -521,6 +525,9 @@ class chord_socket(base_socket):
     def __getitem__(self, key):
         return self.lookup(key)
 
+    def get(self, key):
+        return self.__getitem__(key)
+
     def __store(self, method, key, value):
         node = self.__findFinger__(key)
         if self.leeching and node is self:
@@ -548,6 +555,12 @@ class chord_socket(base_socket):
         for method, x in zip(hashes, keys):
             self.__store(method, x, value)
 
+    def __setitem__(self, key, value):
+        return self.store(key, value)
+
+    def set(self, key, value):
+        return self.__setitem__(key, value)
+
     def update(self, update_dict):
         """Equivalent to :py:meth:`dict.update`
 
@@ -561,10 +574,7 @@ class chord_socket(base_socket):
         """
         for key in update_dict:
             value = update_dict[key]
-            self.store(key, value)
-
-    def __setitem__(self, key, value):
-        return self.update({key: value})
+            self.__setitem__(key, value)
 
     def disconnect(self, handler):
         """Closes a given connection, and removes it from your routing tables
