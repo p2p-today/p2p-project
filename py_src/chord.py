@@ -156,6 +156,7 @@ class chord_socket(base_socket):
         self.register_handler(self.__handle_store)
         self.next = self
         self.prev = self
+        self.leeching = True
         warnings.warn("This network configuration supports %s total nodes and requires a theoretical minimum of %s nodes" % (min(self.limit, 2**160), self.k + 1), RuntimeWarning, stacklevel=2)
 
     @property
@@ -214,7 +215,7 @@ class chord_socket(base_socket):
 
         Will it be fixed? Yes. See the warning up top.
         """
-        should_request = (not (getUTC() % 5)) and (not self.is_saturated())
+        should_request = (not self.leeching) and (not (getUTC() % 5)) and (not self.is_saturated())
         for handler in list(self.routing_table.values()) + self.awaiting_ids + self.predecessors:
             if handler.id:
                 self.set_fingers(handler)
@@ -457,7 +458,7 @@ class chord_socket(base_socket):
         """
         try:
             handler = self.connect(addr, port)
-            if handler:
+            if handler and not self.leeching:
                 self.__send_handshake__(handler)
         except:
             pass
@@ -465,6 +466,7 @@ class chord_socket(base_socket):
     def join(self):
         """Tells the node to start seeding the chord table"""
         # for handler in self.awaiting_ids:
+        self.leeching = False
         handler = random.choice(self.awaiting_ids or list(self.routing_table.values()))
         self.__send_handshake__(handler)
 
