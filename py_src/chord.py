@@ -508,10 +508,8 @@ class chord_socket(base_socket):
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
         common, count = most_common(vals)
         iters = 0
-        while common == -1 and iters < 10:
-            time.sleep(1)
-            print('loop')
-            print(vals)
+        while common == -1 and iters < 100:
+            time.sleep(0.1)
             iters += 1
             common, count = most_common(vals)
         if common not in (None, '') and count > len(hashes) // 2:
@@ -525,7 +523,9 @@ class chord_socket(base_socket):
 
     def __store(self, method, key, value):
         node = self.__findFinger__(key)
-        if node is self:
+        if self.leeching and node is self:
+            node = random.choice(self.awaiting_ids)
+        if node in (self, None):
             self.data[method].update({key: value})
         else:
             node.send(flags.whisper, flags.store, method, to_base_58(key), value)
