@@ -16,7 +16,7 @@ To connect to a mesh network, use the :py:class:`~py2p.mesh.mesh_socket` object.
     >>> from py2p import mesh
     >>> sock = mesh.mesh_socket('0.0.0.0', 4444)
 
-Using ``'0.0.0.0'`` will automatically grab your LAN address. Using an outward-facing internet connection requires a little more work. First, ensure that you have a port forward set up (NAT busting is not in the scope of this project). Then specify this outward address as follows:
+Using ``'0.0.0.0'`` will automatically grab your LAN address. Using an outbound internet connection requires a little more work. First, ensure that you have a port forward set up (NAT busting is not in the scope of this project). Then specify your outward address as follows:
 
 .. code-block:: python
 
@@ -119,7 +119,7 @@ There are two arguments to explain here.
 
 The keyword ``k`` specifies the maximum number of seeding nodes on the network. In other words, for a given ``k``, you can have up to ``2**k`` nodes storing data, and as few as ``k``. ``k`` is also the maximum number of requests you can expect to issue for a given piece of data. So lookup time will be ``O(k)``.
 
-And like in :py:class:`~py2p.mesh.mesh_socket`, using ``'0.0.0.0'`` will automatically grab your LAN address. Using an outward-facing internet connection requires a little more work. First, ensure that you have a port forward set up (NAT busting is not in the scope of this project). Then specify this outward address as follows:
+And like in :py:class:`~py2p.mesh.mesh_socket`, using ``'0.0.0.0'`` will automatically grab your LAN address. Using an outbound internet connection requires a little more work. First, ensure that you have a port forward set up (NAT busting is not in the scope of this project). Then specify your outward address as follows:
 
 .. code-block:: python
 
