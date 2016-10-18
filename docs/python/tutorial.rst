@@ -136,7 +136,7 @@ In addition, SSL encryption can be enabled if `cryptography <https://cryptograph
 
 Eventually that will be the default, but while things are being tested it will default to plaintext. If `cryptography <https://cryptography.io/en/latest/installation/>`_ is not installed, this will generate an :py:exc:`ImportError`
 
-Specifying a different protocol object will ensure that the node *only* can connect to people who share its object structure. So if someone has ``'chord2'`` instead of ``'chord'``, it will fail to connect. You can see the current default by looking at :py:data:`py2p.mesh.default_protocol`.
+Specifying a different protocol object will ensure that the node *only* can connect to people who share its object structure. So if someone has ``'chord2'`` instead of ``'chord'``, it will fail to connect. You can see the current default by looking at :py:data:`py2p.chord.default_protocol`.
 
 This same check is performed for the ``k`` value provided. The full check which happens is essentially:
 
