@@ -153,7 +153,7 @@ Unfortunately, this failure is currently silent. Because this is asynchronous in
     >>> sock = chord.chord_socket('0.0.0.0', 4444, k=2)
     >>> sock.connect('192.168.1.14', 4567)
     >>> time.sleep(1)
-    >>> assert sock.routing_table
+    >>> assert sock.routing_table or sock.awaiting_ids
 
 Using the constructed table is very easy. Several :py:class:`dict`-like methods have been implemented.
 
