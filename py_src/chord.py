@@ -247,7 +247,7 @@ class chord_socket(base_socket):
                 return True
             if not handler.id:
                 handler.id = packets[1]
-                self.__send_handshake__(handler)
+                self._send_handshake(handler)
                 handler.addr = json.loads(packets[3].decode())
                 handler.compression = json.loads(packets[4].decode())
                 handler.compression = [algo.encode() for algo in handler.compression]
@@ -439,15 +439,16 @@ class chord_socket(base_socket):
         self.awaiting_ids.append(handler)
         return handler
 
-    def __send_handshake__(self, handler):
+    def _send_handshake(self, handler):
         """Shortcut method for sending a handshake to a given handler
 
         Args:
-            handler: A :py:class:`py2p.chord.chord_connection`
+            handler: A :py:class:`~py2p.chord.chord_connection`
         """
+        json_out_addr = '["{}", {}]'.format(*self.out_addr)
         handler.send(flags.whisper, flags.handshake, self.id, \
                      self.protocol.id + to_base_58(self.k), \
-                     json.dumps(self.out_addr), json_compressions)
+                     json_out_addr, json_compressions)
 
     def __connect(self, addr, port):
         """Private API method for connecting and handshaking
@@ -459,7 +460,7 @@ class chord_socket(base_socket):
         try:
             handler = self.connect(addr, port)
             if handler and not self.leeching:
-                self.__send_handshake__(handler)
+                self._send_handshake(handler)
         except:
             pass
 
@@ -468,11 +469,26 @@ class chord_socket(base_socket):
         # for handler in self.awaiting_ids:
         self.leeching = False
         handler = random.choice(self.awaiting_ids or list(self.routing_table.values()))
-        self.__send_handshake__(handler)
+        self._send_handshake(handler)
 
     def unjoin(self):
-        """Tells the node to stop seeding the chord table"""
-        raise NotImplementedError()
+        """Tells the node to stop seeding the chord table, and dumps the data to the proper nodes"""
+        self.leeching = True
+        temp_data = self.data
+        self.data = dict(((method, dict()) for method in hashes))
+
+        peers = self.awaiting_ids + list(self.routing_table.values())
+        addrs = set([tuple(node.addr) for node in peers])
+
+        for node in peers:
+            self.disconnect(node)
+
+        for addr in addrs:
+            self.connect(*addr)
+
+        for algo in temp_data:
+            for key in temp_data[algo]:
+                self.__store(algo, key, temp_data[algo][key])
 
     def __lookup(self, method, key, handler=None):
         if self.routing_table:
@@ -512,13 +528,14 @@ class chord_socket(base_socket):
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
         common, count = most_common(vals)
         iters = 0
-        while common == -1 and iters < 100:
+        limit = 100
+        while common == -1 and iters < limit:
             time.sleep(0.1)
             iters += 1
             common, count = most_common(vals)
         if common not in (None, '') and count > len(hashes) // 2:
             return common
-        elif iters == 10:
+        elif iters == limit:
             raise socket.timeout()
         raise KeyError("This key does not have an agreed-upon value", vals)
 
