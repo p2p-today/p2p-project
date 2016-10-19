@@ -921,6 +921,18 @@ base.base_socket = class base_socket   {
         this.routing_table = {};
         this.id = base.to_base_58(BigInt(base.SHA384(`(${addr}, ${port})${this.protocol.id}${base.user_salt}`), 16));
         this.__handlers = [];
+        this.exceptions = [];
+    }
+
+    get status()    {
+        /**
+        *     .. js:attribute:: js2p.base.base_socket.status
+        *
+        *         This attribute describes whether the socket is operating as expected.
+        *
+        *         It will either return a string ``"Nominal"`` or a list of Error/Traceback pairs
+        */
+        return this.exceptions || "Nominal";
     }
 
     register_handler(callback)  {
