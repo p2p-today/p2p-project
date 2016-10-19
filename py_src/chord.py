@@ -471,8 +471,23 @@ class chord_socket(base_socket):
         self.__send_handshake__(handler)
 
     def unjoin(self):
-        """Tells the node to stop seeding the chord table"""
-        raise NotImplementedError()
+        """Tells the node to stop seeding the chord table, and dumps the data to the proper nodes"""
+        self.leeching = True
+        temp_data = self.data
+        self.data = dict(((method, dict()) for method in hashes))
+
+        peers = self.awaiting_ids + list(self.routing_table.values())
+        addrs = set([tuple(node.addr) for node in peers])
+
+        for node in peers:
+            self.disconnect(node)
+
+        for addr in addrs:
+            self.connect(*addr)
+
+        for algo in temp_data:
+            for key in temp_data[algo]:
+                self.__store(algo, key, temp_data[algo][key])
 
     def __lookup(self, method, key, handler=None):
         if self.routing_table:
