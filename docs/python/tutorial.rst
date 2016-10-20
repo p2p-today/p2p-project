@@ -16,7 +16,7 @@ To connect to a mesh network, use the :py:class:`~py2p.mesh.mesh_socket` object.
     >>> from py2p import mesh
     >>> sock = mesh.mesh_socket('0.0.0.0', 4444)
 
-Using ``'0.0.0.0'`` will automatically grab your LAN address. Using an outward-facing internet connection requires a little more work. First, ensure that you have a port forward set up (NAT busting is not in the scope of this project). Then specify this outward address as follows:
+Using ``'0.0.0.0'`` will automatically grab your LAN address. Using an outbound internet connection requires a little more work. First, ensure that you have a port forward set up (NAT busting is not in the scope of this project). Then specify your outward address as follows:
 
 .. code-block:: python
 
@@ -117,9 +117,9 @@ To connect to a chord network, use the :py:class:`~py2p.chord.chord_socket` obje
 
 There are two arguments to explain here.
 
-The keyword ``k`` specifies the maximum number of seeding nodes on the network. In other words, for a given ``k``, you can have up to ``k**2`` nodes storing data, and as few as ``k``. ``k`` also corresponds to the largest number of requests in a properly set up network, for a given bit of data.
+The keyword ``k`` specifies the maximum number of seeding nodes on the network. In other words, for a given ``k``, you can have up to ``2**k`` nodes storing data, and as few as ``k``. ``k`` is also the maximum number of requests you can expect to issue for a given piece of data. So lookup time will be ``O(k)``.
 
-And like in :py:class:`~py2p.mesh.mesh_socket`, using ``'0.0.0.0'`` will automatically grab your LAN address. Using an outward-facing internet connection requires a little more work. First, ensure that you have a port forward set up (NAT busting is not in the scope of this project). Then specify this outward address as follows:
+And like in :py:class:`~py2p.mesh.mesh_socket`, using ``'0.0.0.0'`` will automatically grab your LAN address. Using an outbound internet connection requires a little more work. First, ensure that you have a port forward set up (NAT busting is not in the scope of this project). Then specify your outward address as follows:
 
 .. code-block:: python
 
@@ -136,7 +136,7 @@ In addition, SSL encryption can be enabled if `cryptography <https://cryptograph
 
 Eventually that will be the default, but while things are being tested it will default to plaintext. If `cryptography <https://cryptography.io/en/latest/installation/>`_ is not installed, this will generate an :py:exc:`ImportError`
 
-Specifying a different protocol object will ensure that the node *only* can connect to people who share its object structure. So if someone has ``'chord2'`` instead of ``'chord'``, it will fail to connect. You can see the current default by looking at :py:data:`py2p.mesh.default_protocol`.
+Specifying a different protocol object will ensure that the node *only* can connect to people who share its object structure. So if someone has ``'chord2'`` instead of ``'chord'``, it will fail to connect. You can see the current default by looking at :py:data:`py2p.chord.default_protocol`.
 
 This same check is performed for the ``k`` value provided. The full check which happens is essentially:
 
@@ -153,7 +153,7 @@ Unfortunately, this failure is currently silent. Because this is asynchronous in
     >>> sock = chord.chord_socket('0.0.0.0', 4444, k=2)
     >>> sock.connect('192.168.1.14', 4567)
     >>> time.sleep(1)
-    >>> assert sock.routing_table
+    >>> assert sock.routing_table or sock.awaiting_ids
 
 Using the constructed table is very easy. Several :py:class:`dict`-like methods have been implemented.
 

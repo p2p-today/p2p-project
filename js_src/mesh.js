@@ -5,8 +5,10 @@
 
 "use strict";
 
-var base = require('./base.js');
-var net = require('net');
+const BigInt = require('big-integer');
+const base = require('./base.js');
+const net = require('net');
+const util = require('util');
 
 var m;
 
@@ -59,8 +61,29 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         */
         // console.log(msg_type);
         // console.log(packs);
-        var msg = super.send(msg_type, packs, id, time);
-        //add msg to waterfall
+        try {
+            var msg = super.send(msg_type, packs, id, time);
+            //add msg to waterfall
+            var contained = false;
+            const mid = msg.id;
+            this.server.waterfalls.some(function(entry)    {
+                if (!BigInt.isInstance(entry[1])) {
+                    entry[1] = new BigInt(entry[1]);
+                }
+                if (entry[0] === mid && entry[1].equals(msg.time))   {
+                    contained = true;
+                    return true;
+                }
+            });
+            if (!contained) {
+                this.server.waterfalls.unshift([mid, msg.time]);
+            }
+        }
+        catch(err)  {
+            console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to http://git.p2p.today/issues`);
+            this.server.exceptions.push([err, err.stack]);
+            this.sock.emit('error');
+        }
     }
 
     found_terminator()  {
@@ -71,15 +94,22 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         :returns: ``undefined``
         */
-        var msg = super.found_terminator();
-        //console.log(msg.packets);
-        if (this.handle_waterfall(msg, msg.packets))   {
-            return true;
+        try {
+            var msg = super.found_terminator();
+            //console.log(msg.packets);
+            if (this.handle_waterfall(msg, msg.packets))   {
+                return true;
+            }
+            else if (this.handle_renegotiate(msg.packets))  {
+                return true;
+            }
+            this.server.handle_msg(new base.message(msg, this.server), this);
         }
-        else if (this.handle_renegotiate(msg.packets))  {
-            return true;
+        catch(err)  {
+            console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to http://git.p2p.today/issues`);
+            this.server.exceptions.push([err, err.stack]);
+            this.sock.emit('error');
         }
-        this.server.handle_msg(new base.message(msg, this.server), this);
     }
 
     handle_waterfall(msg, packets)  {
@@ -499,14 +529,15 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: ``true`` if the message was then forwarded. ``false`` if not.
         */
         var contained = false;
+        const id = msg.id;
         this.waterfalls.some(function(entry)    {
-            if (entry[0] === msg.id && entry[1].equals(msg.time))   {
+            if (entry[0] === id && entry[1].equals(msg.time))   {
                 contained = true;
                 return true;
             }
         });
         if (!contained)  {
-            this.waterfalls.unshift([msg.id, msg.time]);
+            this.waterfalls.unshift([id, msg.time]);
             var self = this;
             Object.keys(this.routing_table).forEach(function(key)   {
                 var handler = self.routing_table[key];
