@@ -102,6 +102,8 @@ def storage_validation(iters, start_port, encryption, k=2):
         for meth in chord.hashes:
             assert any((bool(node.data[meth]) for node in nodes))
 
+        close_all_nodes(nodes)
+
 
 def test_storage_Plaintext(iters=1):
     storage_validation(iters, 6600, 'Plaintext')
