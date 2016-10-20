@@ -56,13 +56,3 @@ def lan_ip_validation_windows():
     output = subprocess.check_output(['test.bat'])
     assert utils.get_lan_ip().encode() in output
     os.remove('test.bat')
-
-def test_file_dict(iters=500):
-    d = utils.file_dict({'a': 'b'})
-    assert d.get('c') == None
-    for _ in xrange(iters):
-        test_key = os.urandom(random.randint(0,17))
-        test_val = os.urandom(random.randint(0,17))
-        d[test_key] = test_val
-        assert d.get(test_key) == test_val
-        assert test_val in d.values()
