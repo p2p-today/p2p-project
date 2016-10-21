@@ -63,6 +63,7 @@ if sys.version_info >= (3, ):
 
 #     for node in nodes:
 #         print("%s:" % node.id)
+#         print(node.status)
 #         for key in node.routing_table:
 #             print("entry %i: %s" % (key, node.routing_table[key].id))
 
@@ -73,7 +74,7 @@ if sys.version_info >= (3, ):
 #     for i in xrange(iters):
 #         nodes = gen_connected_list(start_port + i * 2**k, encryption, k)
 
-#         assertion_list = list(map(len, [node.routing_table for node in nodes]))
+#         assertion_list = list(map(len, (node.routing_table for node in nodes) ))
 #         print(assertion_list)
 #         close_all_nodes(nodes)
 #         assert min(assertion_list) >= 1
@@ -100,6 +101,8 @@ if sys.version_info >= (3, ):
 
 #         for meth in chord.hashes:
 #             assert any((bool(node.data[meth]) for node in nodes))
+
+#         close_all_nodes(nodes)
 
 
 # def test_storage_Plaintext(iters=1):

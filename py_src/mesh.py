@@ -115,8 +115,7 @@ class mesh_daemon(base_daemon):
             conn, addr = self.sock.accept()
             self.__print__('Incoming connection from %s' % repr(addr), level=1)
             handler = mesh_connection(conn, self.server)
-            handler.send(flags.whisper, flags.handshake, self.server.id, self.protocol.id, \
-                            json.dumps(self.server.out_addr), json_compressions)
+            self.server._send_handshake(handler)
             handler.sock.settimeout(1)
             self.server.awaiting_ids.append(handler)
         except exceptions:
@@ -197,6 +196,16 @@ class mesh_socket(base_socket):
         peer_list = [(self.routing_table[key].addr, key.decode()) for key in self.routing_table]
         random.shuffle(peer_list)
         return peer_list
+
+    def _send_handshake(self, handler):
+        """Shortcut method for sending a handshake to a given handler
+
+        Args:
+            handler: A :py:class:`~py2p.mesh.mesh_connection`
+        """
+        json_out_addr = '["{}", {}]'.format(*self.out_addr)
+        handler.send(flags.whisper, flags.handshake, self.id, self.protocol.id, \
+                     json_out_addr, json_compressions)
 
     def __resolve_connection_conflict(self, handler, h_id):
         """Sometimes in trying to recover a network a race condition is created.
@@ -411,9 +420,7 @@ class mesh_socket(base_socket):
         conn.settimeout(1)
         conn.connect((addr, port))
         handler = mesh_connection(conn, self, outgoing=True)
-        handler.id = id
-        handler.send(flags.whisper, flags.handshake, self.id, self.protocol.id, \
-                     json.dumps(self.out_addr), json_compressions)
+        self._send_handshake(handler)
         if id:
             self.routing_table.update({id: handler})
         else:
