@@ -109,8 +109,8 @@ There are three limitations compared to a normal :py:class:`dict`.
 
 The only API differences between this and :py:class:`~py2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
 
-:py:meth:`~py2p.sync.sync_socket.get`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:py:meth:`~py2p.sync.sync_socket.get` / :py:meth:`~py2p.sync.sync_socket.__getitem__`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A value can be retrieved by using the :py:meth:`~py2p.sync.sync_socket.get` method, or alternately with :py:meth:`~py2p.sync.sync_socket.__getitem__`. These calls are both ``O(n)``, as they read from local variables.
 
@@ -122,8 +122,8 @@ A value can be retrieved by using the :py:meth:`~py2p.sync.sync_socket.get` meth
 
 It is important to note that keys are all translated to :py:class:`bytes` before being used, so it is required that you use a :py:class:`bytes`-like object. It is also safer to manually convert :py:class:`unicode` keys to :py:class:`bytes`, as there are sometimes inconsistencies betwen the Javascript and Python implementation. If you notice one of these, please file a bug report.
 
-:py:meth:`~py2p.sync.sync_socket.set`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:py:meth:`~py2p.sync.sync_socket.set` / :py:meth:`~py2p.sync.sync_socket.__setitem__`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A value can be stored by using the :py:meth:`~py2p.sync.sync_socket.set` method, or alternately with :py:meth:`~py2p.chord.chord_socket.__setitem__`.
 
@@ -136,7 +136,16 @@ Like above, keys and values are all translated to :py:class:`bytes` before being
 
 This will raise a :py:class:`KeyError` if another node has set this value already. Their lease will expire one hour after they set it. If two leases are started at the same UTC second, the tie is settled by doing a string compare of their IDs.
 
-Any node which sets a value can delete or change this value as well. Changing the value renews the lease on it.
+Any node which sets a value can change this value as well. Changing the value renews the lease on it.
+
+:py:meth:`~py2p.sync.sync_socket.__delitem__`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value.
+
+.. code-block:: python
+
+    >>> del sock['test']
 
 :py:meth:`~py2p.sync.sync_socket.update`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
