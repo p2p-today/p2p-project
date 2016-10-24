@@ -194,7 +194,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
         this.incoming.on('connection', function onConnection(sock)   {
             var conn = new m.mesh_connection(sock, self, false);
-            conn.send(base.flags.whisper, [base.flags.handshake, self.id, self.protocol.id, JSON.stringify(self.out_addr), base.json_compressions]);
+            conn.send(base.flags.whisper, [base.flags.handshake, self.id, self.protocol.id, `["${self.out_addr[0]}", ${self.out_addr[1]}]`, base.json_compressions]);
             self.awaiting_ids = self.awaiting_ids.concat(conn);
         });
     }
@@ -295,7 +295,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         conn.connect(port, addr);
         var handler = new m.mesh_connection(conn, this, true);
         handler.id = id;
-        handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, JSON.stringify(this.out_addr), base.json_compressions]);
+        handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, `["${self.out_addr[0]}", ${self.out_addr[1]}]`, base.json_compressions]);
         if (id) {
             this.routing_table[id] = handler;
         }
