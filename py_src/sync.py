@@ -73,6 +73,8 @@ class sync_socket(mesh.mesh_socket):
         if packets[0] == flags.store:
             meta = metatuple(msg.sender, msg.time)
             if len(packets) == 5:
+                if self.data.get(packets[1]):
+                    return
                 meta = metatuple(packets[3], from_base_58(packets[4]))
             self.__store(packets[1], packets[2], meta, error=False)
             return True
