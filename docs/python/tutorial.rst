@@ -93,6 +93,67 @@ If this does not take two arguments, :py:meth:`~py2p.base.base_socket.register_h
 
 To help debug these services, you can specify a :py:attr:`~py2p.base.base_socket.debug_level` in the constructor. Using a value of 5, you can see when it enters into each handler, as well as every message which goes in or out.
 
+Sync Socket
+~~~~~~~~~~~
+
+This is an extension of the :py:class:`~py2p.mesh.mesh_socket` which syncronizes a common :py:class:`dict`. It works by providing an extra handler to store data. This does not expose the entire :py:class:`dict` API, but it exposes a substantial subset, and we're working to expose more.
+
+Basic Usage
+-----------
+
+There are three limitations compared to a normal :py:class:`dict`.
+
+1. Keys and values can only be :py:class:`bytes`-like objects
+2. Keys and values are automatically translated to :py:class:`bytes`
+3. A leasing system prevents you from changing values set by others
+
+The only API differences between this and :py:class:`~py2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
+
+:py:meth:`~py2p.sync.sync_socket.get`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A value can be retrieved by using the :py:meth:`~py2p.sync.sync_socket.get` method, or alternately with :py:meth:`~py2p.sync.sync_socket.__getitem__`. These calls are both ``O(n)``, as they read from local variables.
+
+.. code-block:: python
+
+    >>> foo = sock.get('test key', None)        # Returns None if there is nothing at that key
+    >>> bar = sock[b'test key']                 # Raises KeyError if there is nothing at that key
+    >>> assert bar == foo == sock[u'test key']  # Because of the translation mentioned below, these are the same key
+
+It is important to note that keys are all translated to :py:class:`bytes` before being used, so it is required that you use a :py:class:`bytes`-like object. It is also safer to manually convert :py:class:`unicode` keys to :py:class:`bytes`, as there are sometimes inconsistencies betwen the Javascript and Python implementation. If you notice one of these, please file a bug report.
+
+:py:meth:`~py2p.sync.sync_socket.set`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A value can be stored by using the :py:meth:`~py2p.sync.sync_socket.set` method, or alternately with :py:meth:`~py2p.chord.chord_socket.__setitem__`.
+
+.. code-block:: python
+
+    >>> sock.set('test key', 'value')
+    >>> sock[b'test key'] = b'value'
+
+Like above, keys and values are all translated to :py:class:`bytes` before being used, so it is required that you use a :py:class:`bytes`-like object.
+
+This will raise a :py:class:`KeyError` if another node has set this value already. Their lease will expire one hour after they set it. If two leases are started at the same UTC second, the tie is settled by doing a string compare of their IDs.
+
+Any node which sets a value can delete or change this value as well. Changing the value renews the lease on it.
+
+:py:meth:`~py2p.sync.sync_socket.update`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The update method is simply a wrapper which updates based on a fed :py:class:`dict`. Essentially it runs the following:
+
+.. code-block:: python
+
+    >>> for key in update_dict:
+    ...     sock[key] = update_dict[key]
+
+Advanced Usage
+--------------
+
+Refer to `Mesh Socket: Advanced Usage <#advanced-usage>`_
+
+
 Chord Socket
 ~~~~~~~~~~~~
 
@@ -100,7 +161,7 @@ Chord Socket
 
     This module is partly unstable, and should be regarded as "pre-alpha".
 
-    If you're considering using this, please wait until this warning is removed. Expected beta status is by end of October 2016.
+    If you're considering using this, please wait until this warning is removed. Expected beta status is by end of November 2016.
 
 Basic Usage
 -----------
