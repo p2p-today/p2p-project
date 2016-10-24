@@ -98,6 +98,10 @@ Sync Socket
 
 This is an extension of the :py:class:`~py2p.mesh.mesh_socket` which syncronizes a common :py:class:`dict`. It works by providing an extra handler to store data. This does not expose the entire :py:class:`dict` API, but it exposes a substantial subset, and we're working to expose more.
 
+.. note::
+
+    This is fairly inefficient if you plan to be writing data a lot. For cases where you will be reading the majority of the time, or for small networks, this is ideal. For larger networks where a significant portion of your time is writing values, you should wait for the chord socket to come into beta.
+
 Basic Usage
 -----------
 
