@@ -164,8 +164,8 @@ A value can be retrieved by using the :py:meth:`~py2p.chord.chord_socket.get` me
 
 .. code-block:: python
 
-    >>> foo = sock.get('test key')
-    >>> bar = sock[b'test key']
+    >>> foo = sock.get('test key', None)  # Returns None if there is nothing at that key
+    >>> bar = sock[b'test key']           # Raises KeyError if there is nothing at that key
 
 It is important to note that keys are all translated to :py:class:`bytes` before being used, so it is required that you use a :py:class:`bytes`-like object. It is also safer to manually convert :py:class:`unicode` keys to :py:class:`bytes`, as there are sometimes inconsistencies betwen the Javascript and Python implementation. If you notice one of these, please file a bug report.
 

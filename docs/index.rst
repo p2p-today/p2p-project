@@ -9,7 +9,7 @@ Welcome to p2p.today's documentation!
 Goal
 ~~~~
 
-We are trying to make peer-to-peer networking easy. Right now there's very few libraries which allow multiple languages to use the same distributed network.
+We are trying to make peer-to-peer networking easy. Right now there are very few libraries which allow multiple languages to use the same distributed network.
 
 We're aiming to fix that by providing several network models, which you can use simply by creating an object. These objects will have the simplest API possible to do the job, as well as some features under the hood which you can hook into.
 
