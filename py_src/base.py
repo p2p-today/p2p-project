@@ -15,7 +15,7 @@ import traceback
 import uuid
 
 from collections import namedtuple
-from .utils import getUTC, intersect, get_lan_ip, get_socket
+from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet)
 
 protocol_version = "0.4"
 node_policy_version = "470"
@@ -444,15 +444,6 @@ class pathfinding_message(object):
             treated as raw bytes. If you desire a particular codec, encode it yourself
             before feeding it in.
         """
-
-        def sanitize_packet(packet):
-            """Inline function to sanitize a packet"""
-            if isinstance(packet, type(u'')):
-                return packet.encode('utf-8')
-            elif not isinstance(packet, (bytes, bytearray)):
-                return packet.encode('raw_unicode_escape')
-            return packet
-
         self.msg_type = sanitize_packet(msg_type)
         self.sender = sanitize_packet(sender)
         self.__payload = [sanitize_packet(packet) for packet in payload]

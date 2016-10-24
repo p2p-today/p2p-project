@@ -14,6 +14,14 @@ try:
 except ImportError:
     import pickle
 
+def sanitize_packet(packet):
+    """Function to sanitize a packet for pathfinding_message serialization, or dict keying"""
+    if isinstance(packet, type(u'')):
+        return packet.encode('utf-8')
+    elif not isinstance(packet, (bytes, bytearray)):
+        return packet.encode('raw_unicode_escape')
+    return packet
+
 def intersect(*args):  # returns list
     """Finds the intersection of several iterables
 

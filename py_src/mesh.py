@@ -236,6 +236,11 @@ class mesh_socket(base_socket):
         self.disconnect(to_kill)
         self.routing_table.update({h_id: to_keep})
 
+    def _send_handshake_response(self, handler):
+        """Shortcut method to send a handshake response. This method is extracted from :py:meth:`.__handle_handshake`
+        in order to allow cleaner inheritence from :py:class:`py2p.sync.sync_socket`"""
+        handler.send(flags.whisper, flags.peers, json.dumps(self.__get_peer_list()))
+
     def __handle_handshake(self, msg, handler):
         """This callback is used to deal with handshake signals. Its three primary jobs are:
 
@@ -267,7 +272,7 @@ class mesh_socket(base_socket):
             if handler in self.awaiting_ids:
                 self.awaiting_ids.remove(handler)
             self.routing_table.update({packets[1]: handler})
-            handler.send(flags.whisper, flags.peers, json.dumps(self.__get_peer_list()))
+            self._send_handshake_response(handler)
             return True
 
     def __handle_peers(self, msg, handler):

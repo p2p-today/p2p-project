@@ -13,5 +13,6 @@ Contents:
 	python/cbase
 	python/utils
 	python/mesh
+    python/sync
 	python/chord
 	python/kademlia

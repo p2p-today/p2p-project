@@ -16,18 +16,22 @@ from .. import base
 if sys.version_info >= (3, ):
     xrange = range
 
+
 def try_identity(in_func, out_func, data_gen, iters):
     for _ in xrange(iters):
         test = data_gen()
         assert test == out_func(in_func(test))
 
+
 def gen_random_list(item_size, list_size):
     return [os.urandom(item_size) for _ in xrange(list_size)]
+
 
 def test_base_58(iters=1000):
     max_val = 2**32 - 1
     data_gen = partial(random.randint, 0, max_val)
     try_identity(base.to_base_58, base.from_base_58, data_gen, iters)
+
 
 def test_compression(iters=100):
     for method in base.compression:
@@ -35,6 +39,7 @@ def test_compression(iters=100):
         decompress = partial(base.decompress, method=method)
         data_gen = partial(os.urandom, 36)
         try_identity(compress, decompress, data_gen, iters)
+
 
 def test_compression_exceptions(iters=100):
     for _ in xrange(iters):
@@ -45,6 +50,7 @@ def test_compression_exceptions(iters=100):
         with pytest.raises(Exception):
             base.decompress(test, os.urandom(4))
 
+
 def test_pathfinding_message(iters=500, impl=base):
     max_val = 2**8
     for _ in xrange(iters):
@@ -53,12 +59,13 @@ def test_pathfinding_message(iters=500, impl=base):
         pathfinding_message_constructor_validation(array, impl)
         pathfinding_message_exceptions_validiation(array, impl)
 
+
 def pathfinding_message_constructor_validation(array, impl):
     msg = impl.pathfinding_message(base.flags.broadcast, u'\xff', array)
     assert array == msg.payload
     assert msg.packets == [base.flags.broadcast, u'\xff'.encode('utf-8'), msg.id, msg.time_58] + array
     p_hash = hashlib.sha384(b''.join(array + [msg.time_58]))
-    assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id 
+    assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id
     assert impl.pathfinding_message.feed_string(msg.string).id == msg.id
     for method in impl.compression:
         msg.compression = []
@@ -69,28 +76,20 @@ def pathfinding_message_constructor_validation(array, impl):
         comp2 = base.pathfinding_message.feed_string(string, False, [method])
         assert msg.string == string == comp1.string == comp2.string
 
+
 def pathfinding_message_exceptions_validiation(array, impl):
     msg = impl.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
     for method in impl.compression:
         msg.compression = [method]
-        try:
+        with pytest.raises(Exception):
             impl.pathfinding_message.feed_string(msg.string, True, [method])
-        except:
-            pass
-        else:  # pragma: no cover
-            raise Exception("Erroneously parses sized message with sizeless: %s" % string)
-        try:
+
+        with pytest.raises(Exception):
             impl.pathfinding_message.feed_string(msg.string[4:], False, [method])
-        except:
-            pass
-        else:  # pragma: no cover
-            raise Exception("Erroneously parses sizeless message with size %s" % string)
-        try:
+
+        with pytest.raises(Exception):
             impl.pathfinding_message.feed_string(msg.string)
-        except:
-            pass
-        else:  # pragma: no cover
-            raise Exception("Erroneously parses compressed message as plaintext %s" % string)
+
 
 def test_protocol(iters=200, impl=base):
     for _ in range(iters):
@@ -105,6 +104,7 @@ def test_protocol(iters=200, impl=base):
         p_hash = hashlib.sha256(''.join([sub, enc, base.protocol_version]).encode())
         print("testing ID equality")
         assert base.to_base_58(int(p_hash.hexdigest(), 16)) == test.id
+
 
 def test_message_sans_network(iters=1000):
     for _ in range(iters):

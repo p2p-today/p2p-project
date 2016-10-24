@@ -123,10 +123,11 @@ else
 endif
 
 py3test: LICENSE setup.py setup.cfg python3 py3testdeps
+	@echo $(py3libdir)
 ifeq ($(cov), true)
-	$(python3) -m pytest -c ./setup.cfg --cov=build/$(py3libdir) build/$(py3libdir)
+	$(python3) -m pytest -c ./setup.cfg --cov=build/lib build/lib
 else
-	$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
+	$(python3) -m pytest -c ./setup.cfg build/lib
 endif
 
 ifeq ($(pypy), True)
