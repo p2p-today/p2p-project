@@ -87,7 +87,7 @@ class sync_socket(mesh.mesh_socket):
         else:
             self.send(key, data, type=flags.store)
 
-    def store(self, key, data):
+    def set(self, key, data):
         """Updates the value at a given key.
 
         Args:
@@ -101,6 +101,21 @@ class sync_socket(mesh.mesh_socket):
                         automatically for one hour if the slot is open.
         """
         self.__setitem__(key, data)
+
+    def update(self, update_dict):
+        """Equivalent to :py:meth:`dict.update`
+
+        This calls :py:meth:`.sync_socket.__setitem__` for each key/value pair in the
+        given dictionary.
+
+        Args:
+            update_dict: A :py:class:`dict`-like object to extract key/value pairs from.
+                            Key and value be a :py:class:`str` or :py:class:`bytes`-like
+                            object
+        """
+        for key in update_dict:
+            value = update_dict[key]
+            self.__setitem__(key, value)
 
     def __getitem__(self, key):
         key = sanitize_packet(key)
