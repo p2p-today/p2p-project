@@ -172,12 +172,12 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         */
         let new_meta = new m.metatuple(this.id, base.getUTC());
         let s_key = new Buffer(key);
-        let s_data = new Buffer(data);
         this.__store(s_key, s_data, new_meta);
         if (!data)  {
             this.send([s_key, ''], undefined, base.flags.store);
         }
         else    {
+            let s_data = new Buffer(data);
             this.send([s_key, s_data], undefined, base.flags.store);
         }
     }
@@ -195,5 +195,19 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         for (var key in update_dict)    {
             this.set(key, update_dict[key]);
         }
+    }
+
+    del(key)    {
+        /**
+        *     .. js:function:: js2p.sync.sync_socket.del(key)
+        *
+        *         Clears the value at a given key
+        *
+        *         :param key:   The key you wish to look up (must be transformable into a :js:class:`Buffer` )
+        *
+        *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
+        *         :raises:              See :js:func:`~js2p.sync.sync_socket.set`
+        */
+        this.set(key);
     }
 }
