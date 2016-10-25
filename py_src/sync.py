@@ -11,7 +11,9 @@ from collections import namedtuple
 
 default_protocol = protocol('sync', "Plaintext")  # SSL")
 
-class metatuple(namedtuple('meta', ['owner', 'timestamp'])): pass
+class metatuple(namedtuple('meta', ['owner', 'timestamp'])):
+    """This class is used to store metadata for a particular key"""
+    pass
 
 class sync_socket(mesh.mesh_socket):
     """This class is used to sync dictionaries between programs. It extends :py:class:`py2p.mesh.mesh_socket`
