@@ -48,6 +48,15 @@ Using these principles you can create a messaging network which scales linearly 
 
 Currently there is an implementation in :doc:`Python <./python/mesh>` and :doc:`Javascript <./javascript/mesh>`. More tractable documentation can be found in their tutorial sections. For a more in-depth explanation you can see :doc:`it's specifications <./protocol/mesh>` or `this slideshow <http://slides.p2p.today/>`_.
 
+Sync Table
+~~~~~~~~~~
+
+This is an extension of the above network. It inherits all of the message sending properties, while also syncronizing a local dictionary-like object.
+
+The only limitation is that it can only have string-like keys and values. There is also an optional "leasing" system, which is enabled by default. This means that a user can own a particular key for a period of time.
+
+Currently there is an implementation in :doc:`Python <./python/sync>` and :doc:`Javascript <./javascript/sync>`. More tractable documentation can be found in their tutorial sections. Protocol specifications are in progress.
+
 Chord Table
 ~~~~~~~~~~~
 
