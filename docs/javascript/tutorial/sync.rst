@@ -53,8 +53,8 @@ This will raise an :js:class:`Error` if another node has set this value already.
 
 Any node which sets a value can change this value as well. Changing the value renews the lease on it.
 
-:js:func:`~js2p.sync.sync_socket.__delitem__`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:js:func:`~js2p.sync.sync_socket.del`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is ``O(n)``.
 
