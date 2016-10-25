@@ -12,5 +12,6 @@ Contents:
     javascript/base
     javascript/utils
     javascript/mesh
+    javascript/sync
     javascript/chord
     javascript/kademlia

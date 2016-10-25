@@ -932,7 +932,10 @@ base.base_socket = class base_socket   {
         *
         *         It will either return a string ``"Nominal"`` or a list of Error/Traceback pairs
         */
-        return this.exceptions || "Nominal";
+        if (this.exceptions.length) {
+            return this.exceptions;
+        }
+        return "Nominal";
     }
 
     register_handler(callback)  {

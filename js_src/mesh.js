@@ -81,7 +81,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         }
         catch(err)  {
             console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to http://git.p2p.today/issues`);
-            this.server.exceptions.push([err, err.stack]);
+            this.server.exceptions.push(err);
             this.sock.emit('error');
         }
     }
@@ -107,7 +107,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         }
         catch(err)  {
             console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to http://git.p2p.today/issues`);
-            this.server.exceptions.push([err, err.stack]);
+            this.server.exceptions.push(err);
             this.sock.emit('error');
         }
     }
