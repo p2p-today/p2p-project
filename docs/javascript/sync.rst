@@ -81,4 +81,13 @@ Sync Module
 
         :raises: See :js:func:`~js2p.sync.sync_socket.set`
 
+    .. js:function:: js2p.sync.sync_socket.del(key)
+
+        Clears the value at a given key
+
+        :param key:   The key you wish to look up (must be transformable into a :js:class:`Buffer` )
+
+        :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
+        :raises:              See :js:func:`~js2p.sync.sync_socket.set`
+
 
