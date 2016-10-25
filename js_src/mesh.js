@@ -19,7 +19,7 @@ if( typeof exports !== 'undefined' ) {
     m = exports;
 }
 else {
-    root.p2p = {};
+    root.mesh = {};
     m = root;
 }
 
@@ -194,7 +194,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
         this.incoming.on('connection', function onConnection(sock)   {
             var conn = new m.mesh_connection(sock, self, false);
-            conn.send(base.flags.whisper, [base.flags.handshake, self.id, self.protocol.id, `["${self.out_addr[0]}", ${self.out_addr[1]}]`, base.json_compressions]);
+            self._send_handshake_response(conn);
             self.awaiting_ids = self.awaiting_ids.concat(conn);
         });
     }
@@ -240,6 +240,17 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             this.queue = this.queue.slice(1);
         }
         return ret;
+    }
+
+    _send_handshake_response(handler)   {
+        /**
+        *     .. js:function:: js2p.mesh.mesh_socket._send_handshake_response(handler)
+        *
+        *         Shortcut method to send a handshake response. This method is extracted from
+        *         :js:meth:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
+        *         inheritence from :js:class:`js2p.sync.sync_socket`
+        */
+        handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, `["${this.out_addr[0]}", ${this.out_addr[1]}]`, base.json_compressions]);
     }
 
     connect(addr, port, id) {
@@ -295,7 +306,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         conn.connect(port, addr);
         var handler = new m.mesh_connection(conn, this, true);
         handler.id = id;
-        handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, `["${self.out_addr[0]}", ${self.out_addr[1]}]`, base.json_compressions]);
+        this._send_handshake_response(handler);
         if (id) {
             this.routing_table[id] = handler;
         }
