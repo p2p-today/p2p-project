@@ -9,7 +9,7 @@ Basic Usage
 
 The mesh schema is used as an alert and messaging network. Its primary purpose is to ensure message delivery to every participant in the network.
 
-To connect to a mesh network, use the :py:class:`~py2p.mesh.mesh_socket` object. this is instantiated as follows:
+To connect to a mesh network, use the :py:class:`~py2p.mesh.mesh_socket` object. This is instantiated as follows:
 
 .. code-block:: python
 
@@ -45,7 +45,7 @@ Unfortunately, this failure is currently silent. Because this is asynchronous in
     >>> time.sleep(1)
     >>> assert sock.routing_table
 
-To send a message, use the :py:meth:`~py2p.mesh.mesh_socket.send` method. Each argument supplied will correspond to a packet that the peer receives. In addition, there are two keyed arguments you can use. ``flag`` will specify how other nodes relay this. These flags are defined in :py:class:`py2p.base.flags` . ``broadcast`` will indicate that other nodes are supposed to relay it. ``whisper`` will indicate that your peers are *not* supposed to relay it. ``type`` will specify what actions other nodes are supposed to take on it. It defaults to ``broadcast``, which indicates no change from the norm.
+To send a message, use the :py:meth:`~py2p.mesh.mesh_socket.send` method. Each argument supplied will correspond to a packet that the peer receives. In addition, there is a keyed argument you can use. ``flag`` will specify how other nodes relay this. These flags are defined in :py:class:`py2p.base.flags`. ``broadcast`` will indicate that other nodes are supposed to relay it. ``whisper`` will indicate that your peers are *not* supposed to relay it.
 
 .. code-block:: python
 
@@ -100,7 +100,7 @@ This is an extension of the :py:class:`~py2p.mesh.mesh_socket` which syncronizes
 
 .. note::
 
-    This is fairly inefficient if you plan to be writing data a lot. For cases where you will be reading the majority of the time, or for small networks, this is ideal. For larger networks where a significant portion of your time is writing values, you should wait for the chord socket to come into beta.
+    This is a fairly inefficient architecture for write intensive applications. For cases where the majority of access is reading, or for small networks, this is ideal. For larger networks where a significant portion of your operations are writing values, you should wait for the chord socket to come into beta.
 
 Basic Usage
 -----------
@@ -109,7 +109,14 @@ There are three limitations compared to a normal :py:class:`dict`.
 
 1. Keys and values can only be :py:class:`bytes`-like objects
 2. Keys and values are automatically translated to :py:class:`bytes`
-3. A leasing system prevents you from changing values set by others
+3. By default, this implements a leasing system which prevents you from changing values set by others for a certain time
+
+You can override the last restriction by constructing with ``leasing=False``, like so:
+
+.. code-block:: python
+
+    >>> from py2p import sync
+    >>> sock = sync.sync_socket('0.0.0.0', 4444, leasing=False)
 
 The only API differences between this and :py:class:`~py2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
 
@@ -135,6 +142,7 @@ A value can be stored by using the :py:meth:`~py2p.sync.sync_socket.set` method,
 
     >>> sock.set('test key', 'value')
     >>> sock[b'test key'] = b'value'
+    >>> sock[u'测试'] = 'test'
 
 Like above, keys and values are all translated to :py:class:`bytes` before being used, so it is required that you use a :py:class:`bytes`-like object.
 

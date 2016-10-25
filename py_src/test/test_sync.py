@@ -15,15 +15,17 @@ if sys.version_info >= (3, ):
     xrange = range
 
 
-def storage_validation(iters, start_port, num_nodes, encryption):
+def storage_validation(iters, start_port, num_nodes, encryption, leasing):
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         nodes = [sync.sync_socket('localhost', start_port + i*num_nodes,
-                                  prot=sync.protocol('', encryption), debug_level=5)]
+                                  prot=sync.protocol('', encryption),
+                                  debug_level=5, leasing=leasing)]
         nodes[0].set('store', b"store")
         for j in xrange(1, num_nodes):
             new_node = sync.sync_socket('localhost', start_port + i*num_nodes + j,
-                                        prot=sync.protocol('', encryption), debug_level=5)
+                                        prot=sync.protocol('', encryption),
+                                        debug_level=5, leasing=leasing)
             nodes[-1].connect('localhost', start_port + i*num_nodes + j)
             nodes.append(new_node)
             time.sleep(0.5)
@@ -37,17 +39,26 @@ def storage_validation(iters, start_port, num_nodes, encryption):
             print(node.status, len(node.routing_table))
             assert b"store" == node['store']
             assert b"hello" == node['test']
-            with pytest.raises(KeyError):
-                node['test'] = b"This shouldn't work"
+            if leasing:
+                with pytest.raises(KeyError):
+                    node['test'] = b"This shouldn't work"
             with pytest.raises(KeyError):
                 node['test2']
 
         close_all_nodes(nodes)
 
 
-def test_storage_Plaintext(iters=3):
-    storage_validation(iters, 7100, 3, 'Plaintext')
+def test_storage_leasing_Plaintext(iters=2):
+    storage_validation(iters, 7100, 3, 'Plaintext', True)
 
 
-def test_storage_SSL(iters=3):
-    storage_validation(iters, 7200, 3, 'SSL')
+def test_storage_leasing_SSL(iters=2):
+    storage_validation(iters, 7200, 3, 'SSL', True)
+
+
+def test_storage_Plaintext(iters=2):
+    storage_validation(iters, 7300, 3, 'Plaintext', True)
+
+
+def test_storage_SSL(iters=2):
+    storage_validation(iters, 7400, 3, 'SSL', True)

@@ -16,15 +16,27 @@ class metatuple(namedtuple('meta', ['owner', 'timestamp'])): pass
 class sync_socket(mesh.mesh_socket):
     """This class is used to sync dictionaries between programs. It extends :py:class:`py2p.mesh.mesh_socket`
 
-    Because of this inheritence, this can also be used as an alert network"""
-    def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
-        super(sync_socket, self).__init__(addr, port, prot, out_addr, debug_level)
+    Because of this inheritence, this can also be used as an alert network
+
+    This also implements and optional leasing system by default. This leasing system means that
+    if node A sets a key, node B cannot overwrite the value at that key for an hour.
+
+    This may be turned off by adding ``leasing=False`` to the constructor."""
+    def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0, leasing=True):
+        protocol_used = protocol(prot[0] + str(int(leasing)), prot[1])
+        self.__leasing = leasing
+        super(sync_socket, self).__init__(addr, port, protocol_used, out_addr, debug_level)
         self.data = {}
         self.metadata = {}
         self.register_handler(self.__handle_store)
 
     def __store(self, key, new_data, new_meta, error=True):
-        """Private API method for storing data
+        """Private API method for storing data. You have permission to store something if:
+
+        - The network is not enforcing leases, or
+        - There is no value at that key, or
+        - The lease on that key has lapsed (not been set in the last hour), or
+        - You are the owner of that key
 
         Args:
             key:        The key you wish to store data at
@@ -36,7 +48,7 @@ class sync_socket(mesh.mesh_socket):
             KeyError: If someone else has a lease at this value, and ``error`` is ``True``
         """
         meta = self.metadata.get(key, None)
-        if (not meta) or (meta.owner == new_meta.owner) or \
+        if (not meta) or (not self.__leasing) or (meta.owner == new_meta.owner) or \
                 (meta.timestamp > new_meta.timestamp) or (meta.timestamp < getUTC() - 3600) or \
                 (meta.timestamp == new_meta.timestamp and meta.owner > new_meta.owner):
             if new_data not in ('', b''):
