@@ -172,14 +172,9 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         */
         let new_meta = new m.metatuple(this.id, base.getUTC());
         let s_key = new Buffer(key);
+        let s_data = (data) ? new Buffer(data) : new Buffer('')
         this.__store(s_key, s_data, new_meta);
-        if (!data)  {
-            this.send([s_key, ''], undefined, base.flags.store);
-        }
-        else    {
-            let s_data = new Buffer(data);
-            this.send([s_key, s_data], undefined, base.flags.store);
-        }
+        this.send([s_key, s_data], undefined, base.flags.store);
     }
 
     update(update_dict) {
