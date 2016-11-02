@@ -18,7 +18,7 @@ from collections import namedtuple
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet)
 
 protocol_version = "0.4"
-node_policy_version = "470"
+node_policy_version = "516"
 
 version = '.'.join([protocol_version, node_policy_version])
 
