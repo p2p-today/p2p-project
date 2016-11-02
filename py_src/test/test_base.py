@@ -1,74 +1,37 @@
-import datetime, hashlib, os, random, struct, sys, time, uuid
+from __future__ import print_function
+from __future__ import absolute_import
+
+import hashlib
+import os
+import random
+import struct
+import sys
+import uuid
+
+import pytest
+
 from functools import partial
 from .. import base
 
-if sys.version_info[0] > 2:
+if sys.version_info >= (3, ):
     xrange = range
 
+
 def try_identity(in_func, out_func, data_gen, iters):
-    for i in xrange(iters):
+    for _ in xrange(iters):
         test = data_gen()
         assert test == out_func(in_func(test))
 
+
 def gen_random_list(item_size, list_size):
-    return [os.urandom(item_size) for i in xrange(list_size)]
+    return [os.urandom(item_size) for _ in xrange(list_size)]
+
 
 def test_base_58(iters=1000):
     max_val = 2**32 - 1
     data_gen = partial(random.randint, 0, max_val)
     try_identity(base.to_base_58, base.from_base_58, data_gen, iters)
 
-def test_intersect(iters=200):
-    max_val = 2**12 - 1
-    for i in xrange(iters):
-        pair1 = sorted([random.randint(0, max_val), random.randint(0, max_val)])
-        pair2 = sorted([random.randint(0, max_val), random.randint(0, max_val)])
-        cross1 = [pair1[0], pair2[0]]
-        cross2 = [pair1[1], pair2[1]]
-        if max(cross1) < min(cross2):
-            assert base.intersect(range(*pair1), range(*pair2)) == \
-                                list(range(max(cross1), min(cross2)))
-        else:
-            assert base.intersect(range(*pair1), range(*pair2)) == []
-
-def test_getUTC(iters=20):
-    while iters:
-        nowa, nowb = datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1), base.getUTC()
-        assert nowa.days * 86400 + nowa.seconds in xrange(nowb-1, nowb+2)  # 1 second error margin
-        time.sleep(random.random())
-        iters -= 1
-
-def test_lan_ip():
-    if sys.platform[:5] in ('linux', 'darwi'):
-        lan_ip_validation_linux()
-    elif sys.platform[:3] in ('win', 'cyg'):
-        lan_ip_validation_windows()
-    else:  # pragma: no cover
-        raise Exception("Unrecognized patform; don't know what command to test against")
-
-def lan_ip_validation_linux():
-    import subprocess
-    # command pulled from http://stackoverflow.com/a/13322549
-    command = """ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'"""
-    if sys.version_info >= (2, 7):
-        output = subprocess.check_output(command, universal_newlines=True, shell=True)
-    else:  # fix taken from http://stackoverflow.com/a/4814985
-        output = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE).communicate()[0]
-    assert base.get_lan_ip() in output
-
-def lan_ip_validation_windows():
-    import subprocess
-    # command pulled from http://stackoverflow.com/a/17634009
-    command = """for /f "delims=[] tokens=2" %%a in ('ping %computername% -4 -n 1 ^| findstr "["') do (echo %%a)"""
-    test_file = open('test.bat', 'w')
-    test_file.write(command)
-    test_file.close()
-    if sys.version_info >= (2, 7):
-        output = subprocess.check_output(['test.bat'])
-    else:  # fix taken from http://stackoverflow.com/a/4814985
-        output = subprocess.Popen(['test.bat'], stdout=subprocess.PIPE).communicate()[0]
-    assert base.get_lan_ip().encode() in output
-    os.remove('test.bat')
 
 def test_compression(iters=100):
     for method in base.compression:
@@ -77,88 +40,81 @@ def test_compression(iters=100):
         data_gen = partial(os.urandom, 36)
         try_identity(compress, decompress, data_gen, iters)
 
-def test_compression_exceptions(iters=100):
-    for i in xrange(iters):
-        test = os.urandom(36)
-        try:
-            base.compress(test, os.urandom(4))
-        except:
-            pass
-        else:  # pragma: no cover
-            raise Exception("Unknown compression method should raise error")
-        try:
-            base.decompress(test, os.urandom(4))
-        except:
-            pass
-        else:  # pragma: no cover
-            raise Exception("Unknown compression method should raise error")
 
-def test_pathfinding_message(iters=500):
+def test_compression_exceptions(iters=100):
+    for _ in xrange(iters):
+        test = os.urandom(36)
+        with pytest.raises(Exception):
+            base.compress(test, os.urandom(4))
+
+        with pytest.raises(Exception):
+            base.decompress(test, os.urandom(4))
+
+
+def test_pathfinding_message(iters=500, impl=base):
     max_val = 2**8
-    for i in xrange(iters):
+    for _ in xrange(iters):
         length = random.randint(0, max_val)
         array = gen_random_list(36, length)
-        pathfinding_message_constructor_validation(array)
-        pathfinding_message_exceptions_validiation(array)
+        pathfinding_message_constructor_validation(array, impl)
+        pathfinding_message_exceptions_validiation(array, impl)
 
-def pathfinding_message_constructor_validation(array):
-    msg = base.pathfinding_message(base.default_protocol, base.flags.broadcast, 'TEST SENDER', array)
+
+def pathfinding_message_constructor_validation(array, impl):
+    msg = impl.pathfinding_message(base.flags.broadcast, u'\xff', array)
     assert array == msg.payload
-    assert msg.packets == [base.flags.broadcast, 'TEST SENDER'.encode(), msg.id, msg.time_58] + array
-    for method in base.compression:
+    assert msg.packets == [base.flags.broadcast, u'\xff'.encode('utf-8'), msg.id, msg.time_58] + array
+    p_hash = hashlib.sha384(b''.join(array + [msg.time_58]))
+    assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id
+    assert impl.pathfinding_message.feed_string(msg.string).id == msg.id
+    for method in impl.compression:
         msg.compression = []
         string = base.compress(msg.string[4:], method)
         string = struct.pack('!L', len(string)) + string
         msg.compression = [method]
-        comp = base.pathfinding_message.feed_string(base.default_protocol, string, False, [method])
-        assert msg.string == string == comp.string
+        comp1 = impl.pathfinding_message.feed_string(string, False, [method])
+        comp2 = base.pathfinding_message.feed_string(string, False, [method])
+        assert msg.string == string == comp1.string == comp2.string
 
-def pathfinding_message_exceptions_validiation(array):
-    msg = base.pathfinding_message(base.default_protocol, base.flags.broadcast, 'TEST SENDER', array)
-    for method in base.compression:
+
+def pathfinding_message_exceptions_validiation(array, impl):
+    msg = impl.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
+    for method in impl.compression:
         msg.compression = [method]
-        try:
-            base.pathfinding_message.feed_string(base.default_protocol, msg.string, True, [method])
-        except:
-            pass
-        else:  # pragma: no cover
-            raise Exception("Erroneously parses sized message with sizeless: %s" % string)
-        try:
-            base.pathfinding_message.feed_string(base.default_protocol, msg.string[4:], False, [method])
-        except:
-            pass
-        else:  # pragma: no cover
-            raise Exception("Erroneously parses sizeless message with size %s" % string)
-        try:
-            base.pathfinding_message.feed_string(base.default_protocol, msg.string)
-        except:
-            pass
-        else:  # pragma: no cover
-            raise Exception("Erroneously parses compressed message as plaintext %s" % string)
+        with pytest.raises(Exception):
+            impl.pathfinding_message.feed_string(msg.string, True, [method])
 
-def test_protocol(iters=200):
-    for i in range(iters):
+        with pytest.raises(Exception):
+            impl.pathfinding_message.feed_string(msg.string[4:], False, [method])
+
+        with pytest.raises(Exception):
+            impl.pathfinding_message.feed_string(msg.string)
+
+
+def test_protocol(iters=200, impl=base):
+    for _ in range(iters):
         sub = str(uuid.uuid4())
         enc = str(uuid.uuid4())
-        test = base.protocol(sub, enc)
+        print("constructing")
+        test = impl.protocol(sub, enc)
+        print("testing subnet equality")
         assert test.subnet == test[0] == sub
+        print("testing encryption equality")
         assert test.encryption == test[1] == enc
         p_hash = hashlib.sha256(''.join([sub, enc, base.protocol_version]).encode())
-        assert int(p_hash.hexdigest(), 16) == base.from_base_58(test.id)
+        print("testing ID equality")
+        assert base.to_base_58(int(p_hash.hexdigest(), 16)) == test.id
+
 
 def test_message_sans_network(iters=1000):
-    for i in range(iters):
-        sub = str(uuid.uuid4())
-        enc = str(uuid.uuid4())
+    for _ in range(iters):
         sen = str(uuid.uuid4())
         pac = gen_random_list(36, 10)
-        prot = base.protocol(sub, enc)
-        base_msg = base.pathfinding_message(prot, base.flags.broadcast, sen, pac)
+        base_msg = base.pathfinding_message(base.flags.broadcast, sen, pac)
         test = base.message(base_msg, None)
         assert test.packets == pac
         assert test.msg == base_msg
-        assert test.sender == sen
-        assert test.protocol == prot
+        assert test.sender == sen.encode()
         assert test.id == base_msg.id
         assert test.time == base_msg.time == base.from_base_58(test.time_58) == base.from_base_58(base_msg.time_58)
         assert sen in repr(test)

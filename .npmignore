@@ -1,0 +1,14 @@
+js_src/test_doc.js
+c_src/
+cp_src/
+go_src/
+jv_src/
+py_src/
+doc/
+.rst
+.yml
+Makefile
+MANIFEST.in
+.coveragerc
+setup.cfg
+setup.py

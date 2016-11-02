@@ -1,25 +1,38 @@
 language: python
 
 python:
-  - 2.6
-  - 2.7
-  - 3.3
-  - 3.4
   - 3.5
-  - pypy
-#  - pypy3
+env: pyver=3.5
 
 matrix:
+  include:
+    # - python: 2.6
+    #   env: pyver=2.6
+    - python: 2.7
+      env: pyver=2.7
+    - python: 3.3
+      env: pyver=3.3
+    - python: 3.4
+      env: pyver=3.4
+    # - python: 3.5
+    #   env: pyver=3.5
+    - python: pypy
+      env: pyver=pypy
+    # - python: pypy3
+    #   env: pyver=pypy3
+    - language: node_js
+      node_js: "4"
+      env: jsver=4
+    - language: node_js
+      node_js: "5"
+      env: jsver=5
+    - language: node_js
+      node_js: "6"
+      env: jsver=6
   allow_failures:
     - python: pypy
     - python: pypy3
 
 build:
   ci:
-    - pip install pytest-coverage codecov
-    - if [ $(($RANDOM % 2)) == 0 ] || [ $SHIPPABLE_PYTHON_VERSION == pypy ] || [ $SHIPPABLE_PYTHON_VERSION == pypy3 ]; then pip install cryptography; else pip install PyOpenSSL; fi
-    - py.test -vv --cov=./py_src/ ./py_src/
-  on_success:
-    - coverage combine
-    - coverage xml
-    - codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml
+    - sh ./.scripts/shippable_script.sh

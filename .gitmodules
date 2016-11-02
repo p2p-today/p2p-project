@@ -1,12 +1,3 @@
-[submodule "js_src/SHA"]
-	path = js_src/SHA
-	url = https://github.com/Caligatio/jsSHA
-[submodule "js_src/BigInteger"]
-	path = js_src/BigInteger
-	url = https://github.com/peterolson/BigInteger.js
-[submodule "js_src/pack"]
-	path = js_src/pack
-	url = https://github.com/ryanrolds/bufferpack
-[submodule "js_src/zlib"]
-	path = js_src/zlib
-	url = https://github.com/imaya/zlib.js
+[submodule "cp_src/zlib"]
+	path = c_src/zlib
+	url = https://github.com/madler/zlib

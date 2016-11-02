@@ -20,3 +20,8 @@ exclude_lines =
     if 0:
     if False:
     if __name__ == .__main__.:
+
+[paths]
+source =
+    py_src/
+    build/*/py2p/

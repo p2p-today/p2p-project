@@ -14,19 +14,37 @@ engines:
       - 98cf09e372b83a194bdf71107a97074a
       - 2c1611a8d29d03a6f557fc3827aeeca0
       - b084b705606f106fb116029b92e5a6cf
+      - 6672f12d51d66b93d2385affbf929e0a
+      - ebe4b23b4a9a763738af9399771ee5e9
+      - df7560f7cecb58026ae7d8dcd247ffba
+      - 159e8adf8a3e8cd61bb5e9de1c78da33
+      - 0511db0bfd510cdcfb2ecd080cbf8993
+      - 0d6601bfd2a9f00e972db6f0f594fea0
+      - d098e5074e270ba459e0dfb5fee17663
+      - 2d21bc6adeb012585bebc59cdbf51cac
+
   eslint:
     enabled: true
   fixme:
     enabled: true
   radon:
     enabled: true
+  gnu-complexity:
+    enabled: true
+#  nodesecurity:
+#    enabled: true
+  pep8:
+    enabled: true
 ratings:
   paths:
-  - "**.inc"
-  - "**.js"
-  - "**.jsx"
-  - "**.module"
-  - "**.php"
-  - "**.py"
-  - "**.rb"
+    - "**.h"
+    - "**.cpp"
+    - "**.c"
+    - "**.inc"
+    - "**.js"
+    - "**.jsx"
+    - "**.module"
+    - "**.php"
+    - "**.py"
+    - "**.rb"
 exclude_paths: []
