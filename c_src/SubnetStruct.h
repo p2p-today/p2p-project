@@ -8,7 +8,7 @@ extern "C" {
 
 struct SubnetStruct {
     char *subnet, *encryption, *_id;
-    size_t subnetSize, encryptionSize, idSize = 0;
+    size_t subnetSize, encryptionSize, idSize;
 };
 
 static struct SubnetStruct *getSubnet(char *subnet, size_t subnetSize, char *encryption, size_t encryptionSize) {

@@ -122,7 +122,10 @@ static vector<string> vector_string_from_pylist(PyObject *incoming)    {
 
 static PyObject *pylist_from_vector_string(vector<string> lst) {
     PyObject *listObj = PyList_New( lst.size() );
-    if (!listObj) throw logic_error("Unable to allocate memory for Python list");
+    if (!listObj)   {
+        PyErr_SetString(PyExc_MemoryError, "Unable to allocate memory for Python list");
+        return NULL;
+    }
     for (unsigned int i = 0; i < lst.size(); i++) {
         PyList_SET_ITEM(listObj, i, pybytes_from_string(lst[i]));
     }
