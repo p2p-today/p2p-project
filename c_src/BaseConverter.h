@@ -7,6 +7,8 @@
 * This has been heavily modified since copying, has been hardcoded for a specific case, then translated to C.
 */
 
+#ifndef C2P_BASE_CONVERSION
+#define C2P_BASE_CONVERSION
 #include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -313,4 +315,5 @@ static inline string to_base_58(unsigned long long i)   {
     return ret;
 }
 
+#endif
 #endif

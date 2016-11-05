@@ -74,6 +74,7 @@
 #include <string.h>
 #include "../c_src/sha/sha2.h"
 #include "../c_src/BaseConverter.h"
+#include "../c_src/SubnetStruct.h"
 
 using namespace std;
 
@@ -292,16 +293,16 @@ class protocol  {
         *
         *         :returns: A :cpp:class:`std::string` which contains the base_58 encoded, SHA256 based ID of this protocol object
         */
-        string subnet, encryption;
+        string subnet();
         /**
-        *     .. cpp:var:: std::string protocol::subnet
+        *     .. cpp:function:: std::string protocol::subnet
         *
-        *     .. cpp:var:: std::string protocol::encryption
         */
-    private:
-        struct {
-            string id, subnet, encryption;
-        } cache;
+        string encryption();
+        /**
+        *     .. cpp:function:: std::string protocol::encryption
+        */
+        struct SubnetStruct *_base;
 };
 
 class pathfinding_message   {

@@ -1,24 +1,23 @@
 #ifndef CP2P_PROTOCOL_TYPE
 #define CP2P_PROTOCOL_TYPE TRUE
 
+#ifdef _cplusplus
+extern "C"  {
+#endif
+
 #include <Python.h>
 #include <bytesobject.h>
 #include "structmember.h"
 #include "base.h"
-#include <string>
 #include "py_utils.h"
-
-using namespace std;
 
 typedef struct {
     PyObject_HEAD
-    protocol *prot;
-    char *subnet;
-    char *encryption;
+    struct SubnetStruct *sub;
 } protocol_wrapper;
 
 static void protocol_wrapper_dealloc(protocol_wrapper* self)    {
-    delete self->prot;
+    destroySubnet(self->sub);
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -36,57 +35,58 @@ static int protocol_wrapper_init(protocol_wrapper *self, PyObject *args, PyObjec
 
     static char *kwlist[] = {(char*)"subnet", (char*)"encryption", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "s#s#", kwlist, 
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "s#s#", kwlist,
                                       &sub, &sub_size, &enc, &enc_size))
         return -1;
 
-    CP2P_DEBUG("Building subnet flag\n")
-    string sub_str = string(sub, sub_size);
-
-    CP2P_DEBUG("Building encryption flag\n")
-    string enc_str = string(enc, enc_size);
-
     CP2P_DEBUG("Building protocol\n")
-    self->prot = new protocol(sub_str, enc_str);
-    CP2P_DEBUG("Adding subnet shortcut\n")
-    self->subnet = (char*) self->prot->subnet.c_str();
-    CP2P_DEBUG("Adding encryption shortcut\n")
-    self->encryption = (char*) self->prot->encryption.c_str();
+    self->sub = getSubnet((char *)sub, sub_size, (char *)enc, enc_size);
 
     return 0;
 }
 
 static PyObject *protocol_id(protocol_wrapper *self)    {
-    string cp_str = self->prot->id();
-    PyObject *ret = pybytes_from_string(cp_str);
+    CP2P_DEBUG("Entering id getter\n");
+    char *id = subnetID(self->sub);
+    PyObject *ret = pybytes_from_string((unsigned char*)id, self->sub->idSize);
     if (PyErr_Occurred())
         return NULL;
     return ret;
 }
 
-static PyMemberDef protocol_wrapper_members[] = {
-    {(char*)"subnet", T_STRING, 
-        offsetof(protocol_wrapper, subnet),
-        READONLY, (char*)"subnet"},
-    {(char*)"encryption", T_STRING, 
-        offsetof(protocol_wrapper, encryption),
-        READONLY, (char*)"encryption"},
-    {NULL}  /* Sentinel */
-};
+static PyObject *protocol_subnet(protocol_wrapper *self)    {
+    PyObject *ret = Py_BuildValue("s#", self->sub->subnet, self->sub->subnetSize);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;
+}
+
+static PyObject *protocol_encryption(protocol_wrapper *self)    {
+    PyObject *ret = Py_BuildValue("s#", self->sub->encryption, self->sub->encryptionSize);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;
+}
 
 static PyGetSetDef protocol_wrapper_getsets[] = {
+    {(char*)"subnet", (getter)protocol_subnet, NULL,
+        (char*)"Return the protocol subnet name"
+    },
+    {(char*)"encryption", (getter)protocol_encryption, NULL,
+        (char*)"Return the protocol encryption method"
+    },
     {(char*)"id", (getter)protocol_id, NULL,
-        (char*)"Return the message ID"
+        (char*)"Return the protocol ID"
     },
     {NULL}  /* Sentinel */
 };
 
 static PyObject *protocol_getitem(protocol_wrapper *self, Py_ssize_t index)  {
     if (index == 0 || index == -2)
-        return Py_BuildValue("s#", self->subnet, self->prot->subnet.length());
+        return Py_BuildValue("s#", self->sub->subnet, self->sub->subnetSize);
     else if (index == 1 || index == -1)
-        return Py_BuildValue("s#", self->encryption, self->prot->encryption.length());
-    
+        return Py_BuildValue("s#", self->sub->encryption, self->sub->encryptionSize);
+
     PyErr_SetString(PyExc_IndexError, "tuple index out of range");
     return NULL;
 }
@@ -126,7 +126,7 @@ static PyTypeObject protocol_wrapper_type = {
     0,                         /* tp_setattro */
     0,                         /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT,        /* tp_flags */
-    "C++ implementation of the protocol object",/* tp_doc */
+    "C implementation of the protocol object",/* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */
@@ -134,7 +134,7 @@ static PyTypeObject protocol_wrapper_type = {
     0,                         /* tp_iter */
     0,                         /* tp_iternext */
     0,                         /* tp_methods */
-    protocol_wrapper_members,  /* tp_members */
+    0,                         /* tp_members */
     protocol_wrapper_getsets,  /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
@@ -145,5 +145,9 @@ static PyTypeObject protocol_wrapper_type = {
     0,                         /* tp_alloc */
     protocol_wrapper_new,      /* tp_new */
 };
+
+#ifdef _cplusplus
+}
+#endif
 
 #endif

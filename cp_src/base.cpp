@@ -31,33 +31,28 @@ string pack_value(size_t len, unsigned long long i) {
 
 protocol::protocol(string sub, string enc)  {
     CP2P_DEBUG("Defining subnet with length: %i\n", sub.length())
-    subnet = sub;
-    CP2P_DEBUG("Defining encryption with length: %i\n", enc.length())
-    encryption = enc;
+    _base = getSubnet((char *)sub.c_str(), sub.length(), (char *)enc.c_str(), enc.length());
     CP2P_DEBUG("Done defining\n")
 }
 
-protocol::~protocol()   {}
+protocol::~protocol()   {
+    if (_base->_id != NULL) {
+        free(_base->_id);
+    }
+    free(_base);
+}
 
 string protocol::id()  {
-    if (cache.subnet == subnet && cache.encryption == encryption && cache.id != "")
-        return cache.id;
+    char *_id = subnetID(_base);
+    return string(_id, _base->idSize);
+}
 
-    char buffer[5];
-    size_t buff_size = sprintf(buffer, "%llu.%llu", (unsigned long long)CP2P_PROTOCOL_MAJOR_VERSION, (unsigned long long)CP2P_PROTOCOL_MINOR_VERSION);
-    string info = subnet + encryption + string(buffer, buff_size);
+string protocol::subnet()   {
+    return string(_base->subnet, _base->subnetSize);
+}
 
-    unsigned char digest[SHA256_DIGEST_LENGTH];
-    memset(digest, 0, SHA256_DIGEST_LENGTH);
-    SHA256_CTX ctx;
-    SHA256_Init(&ctx);
-    SHA256_Update(&ctx, (unsigned char*)info.c_str(), info.length());
-    SHA256_Final(digest, &ctx);
-
-    cache.subnet = string(subnet);
-    cache.encryption = string(encryption);
-    cache.id = ascii_to_base_58(string((char*)digest, SHA256_DIGEST_LENGTH));
-    return cache.id;
+string protocol::encryption()   {
+    return string(_base->encryption, _base->encryptionSize);
 }
 
 pathfinding_message::pathfinding_message(string type, string sen, vector<string> load) {

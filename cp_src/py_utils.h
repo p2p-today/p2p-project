@@ -3,15 +3,18 @@
 
 #include <Python.h>
 #include <bytesobject.h>
-#include <stdexcept>
 #include <string>
 
-using namespace std;
+#ifdef _cplusplus
 
-static PyObject *pybytes_from_string(string str)   {
-    unsigned char* c_str = (unsigned char*)str.c_str();
+#include <stdexcept>
+
+extern "C"  {
+#endif
+
+static PyObject *pybytes_from_string(unsigned char *str, size_t len)   {
     Py_buffer buffer;
-    int res = PyBuffer_FillInfo(&buffer, 0, c_str, (Py_ssize_t)str.length(), true, PyBUF_CONTIG_RO);
+    int res = PyBuffer_FillInfo(&buffer, 0, str, (Py_ssize_t)len, true, PyBUF_CONTIG_RO);
     if (res == -1) {
         PyErr_SetString(PyExc_RuntimeError, (char*)"Could not reconvert item back to python object");
         return NULL;
@@ -25,9 +28,21 @@ static PyObject *pybytes_from_string(string str)   {
     PyObject *ret = PyObject_CallMethod(memview, (char*)"tobytes", (char*)"");
     Py_XDECREF(memview);
 #else
-    PyObject *ret = PyString_Encode((char*)c_str, (Py_ssize_t)str.length(), (char*)"raw_unicode_escape", (char*)"strict");
+    PyObject *ret = PyString_Encode((char*)str, (Py_ssize_t)len, (char*)"raw_unicode_escape", (char*)"strict");
 #endif
     return ret;
+}
+
+#ifdef _cplusplus
+}
+#endif
+
+using namespace std;
+
+static PyObject *pybytes_from_string(string str)   {
+    unsigned char* c_str = (unsigned char*)str.c_str();
+    size_t len = str.length();
+    return pybytes_from_string(c_str, len);
 }
 
 static string string_from_pybytes(PyObject *bytes)  {
@@ -111,7 +126,7 @@ static PyObject *pylist_from_vector_string(vector<string> lst) {
     for (unsigned int i = 0; i < lst.size(); i++) {
         PyList_SET_ITEM(listObj, i, pybytes_from_string(lst[i]));
     }
-    return listObj;    
+    return listObj;
 }
 
 #endif
