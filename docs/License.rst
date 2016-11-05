@@ -44,3 +44,10 @@ C Literal Assert Macro
     :lines: 43-50
     :language: none
     :linenos:
+
+C SuperFastHash
+~~~~~~~~~~~~~~~
+
+.. literalinclude:: ../c_src/spf/SuperFastHash.license
+    :language: none
+    :linenos:
