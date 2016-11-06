@@ -3,30 +3,14 @@
 
 using namespace std;
 
-unsigned long getUTC() {
-    time_t t;
-    time(&t);
-    return mktime(gmtime(&t));
-}
-
 unsigned long long unpack_value(string str)  {
-    unsigned long long val = 0;
-    for (unsigned int i = 0; i < str.length(); i++)    {
-        val = val << 8;
-        val += (unsigned char)str[i];
-    }
-    return val;
+    return unpack_value(str.c_str(), str.length());
 }
 
 string pack_value(size_t len, unsigned long long i) {
-    vector<unsigned char> arr((size_t)len, 0);
-    for (size_t j = 0; j < len; j++)    {
-        arr[len - j - 1] = i & 0xff;
-        i = i >> 8;
-        if (i == 0)
-            break;
-    }
-    return string(arr.begin(), arr.end());
+    char arr[len] = {};
+    pack_value(len, arr, i);
+    return string(arr, len);
 }
 
 protocol::protocol(string sub, string enc)  {
@@ -36,10 +20,7 @@ protocol::protocol(string sub, string enc)  {
 }
 
 protocol::~protocol()   {
-    if (_base->_id != NULL) {
-        free(_base->_id);
-    }
-    free(_base);
+    destroySubnet(_base);
 }
 
 string protocol::id()  {

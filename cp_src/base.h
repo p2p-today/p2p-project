@@ -75,6 +75,7 @@
 #include "../c_src/sha/sha2.h"
 #include "../c_src/BaseConverter.h"
 #include "../c_src/SubnetStruct.h"
+#include "../c_src/base.h"
 
 using namespace std;
 
@@ -173,17 +174,8 @@ static string get_user_salt()  {
     *
     *     This generates a uuid4 for use in this library
     */
-    srand (time(NULL));
-    CP2P_DEBUG("Building user_salt\n");
-    char temp_user_salt[] = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx";
-    char *temp_hex_set = (char*)"0123456789abcdef";
-    for (size_t i = 0; i < 36; i++) {
-        if (temp_user_salt[i] == 'x')
-            temp_user_salt[i] = temp_hex_set[(rand() % 16)];
-        else if (temp_user_salt[i] == 'y')
-            temp_user_salt[i] = temp_hex_set[((rand() % 16) & 0x3) | 0x8];
-    }
-
+    char temp_user_salt[36];
+    get_user_salt(temp_user_salt);
     const string user_salt = string(temp_user_salt, 36);
 
     return user_salt;
@@ -196,12 +188,6 @@ static string get_user_salt()  {
 */
 const static string user_salt = get_user_salt();
 
-unsigned long getUTC();
-/**
-* .. cpp:function:: unsigned long getUTC()
-*
-*     Returns the current UNIX second in UTC
-*/
 unsigned long long unpack_value(string str);
 /**
 * .. cpp:function:: unsigned long long unpack_value(std::string str)
