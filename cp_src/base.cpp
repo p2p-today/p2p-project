@@ -8,10 +8,10 @@ unsigned long long unpack_value(string str)  {
 }
 
 string pack_value(size_t len, unsigned long long i) {
-    char *arr = (char *) malloc(sizeof(char) * len);
+    char *arr = new char[len];
     pack_value(len, arr, i);
     string ret = string(arr, len);
-    // free(arr);
+    delete[] arr;
     return ret;
 }
 
@@ -75,9 +75,11 @@ vector<string> process_string(string str)   {
 }
 
 string sanitize_string(string str, bool sizeless)    {
-    if (!sizeless)
-        return str.substr(4);
-    return str;
+    size_t len = str.length();
+    char *res = new char[len];
+    memcpy(res, str.c_str(), len);
+    int status = sanitize_string(res, &len, sizeless);
+    return string(res, len);
 }
 
 string decompress_string(string str, vector<string> compressions)   {

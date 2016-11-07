@@ -2,7 +2,7 @@
 extern "C" {
 #endif
 
-static unsigned long getUTC() {
+static unsigned long long getUTC() {
     /**
     * .. c:function:: unsigned long getUTC()
     *
@@ -74,6 +74,49 @@ static void pack_value(size_t len, char *arr, unsigned long long i)  {
         arr[len - j - 1] = i & 0xff;
         i = i >> 8;
     }
+}
+
+static int sanitize_string(char *str, size_t *len, int sizeless)    {
+    /**
+    * .. c:function:: static int sanitize_string(char *str, size_t *len, int sizeless)
+    *
+    *     Mutates str to be clean for processing by process_string.
+    *
+    *     :param str:       The string you wish to mutate
+    *     :param len:       The length of said string
+    *     :param sizeless:  A boolean which indicates whether the string has a standard size header
+    *
+    *     :returns: ``-1`` if str was invalid for processing, ``0`` if all went well
+    */
+    if (!sizeless)  {
+        if (unpack_value(str, 4) != *len - 4)
+            return -1;
+        memmove(str, str + 4, *len - 4);
+        *len -= 4;
+    }
+    return 0;
+}
+
+static int decompress_string(char *str, size_t len, char *result, size_t *res_len, char **compressions, size_t *compression_sizes, size_t num_compressions) {
+    /**
+    * .. c:function:: static int decompress_string(char *str, size_t len, char *result, size_t *res_len, char **compressions, size_t *compression_sizes, size_t num_compressions)
+    *
+    *     Puts a decompressed copy of str into result, and updates res_len to contain its length.
+    *
+    *     :param str:               The string you wish to decompress
+    *     :param len:               The length of this string
+    *     :param result:            The resulting string
+    *     :param res_len:           The length of the result
+    *     :param compressions:      The list of possible compression methods
+    *     :param compression_sizes: The length of each compression method
+    *     :param num_compressions:  The number of compression methods
+    *
+    *     :returns: ``-1`` if decompression failed, ``0`` if all went well
+    */
+    // TODO: Implement zlib/gzip compression
+    memcpy(result, str, len);
+    *res_len = len;
+    return 0;
 }
 
 #ifdef _cplusplus
