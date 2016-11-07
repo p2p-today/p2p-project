@@ -8,9 +8,11 @@ unsigned long long unpack_value(string str)  {
 }
 
 string pack_value(size_t len, unsigned long long i) {
-    char arr[len] = {};
+    char *arr = (char *) malloc(sizeof(char) * len);
     pack_value(len, arr, i);
-    return string(arr, len);
+    string ret = string(arr, len);
+    // free(arr);
+    return ret;
 }
 
 protocol::protocol(string sub, string enc)  {

@@ -13,9 +13,9 @@ static unsigned long getUTC() {
     return mktime(gmtime(&t));
 }
 
-static void get_user_salt(char* result)  {
+static void get_user_salt(char result[36])  {
     /**
-    * .. c:function:: static void get_user_salt(char* result)
+    * .. c:function:: static void get_user_salt(char result[36])
     *
     *     This generates a uuid4 for use in this library. ``result`` should be of length 36
     */
@@ -31,9 +31,9 @@ static void get_user_salt(char* result)  {
     }
 }
 
-static unsigned long long unpack_value(const char str[36], size_t len)   {
+static unsigned long long unpack_value(const char *str, size_t len)   {
     /**
-    * .. c:function:: static unsigned long long unpack_value(const char str[36], size_t len)
+    * .. c:function:: static unsigned long long unpack_value(const char *str, size_t len)
     *
     *     Unpacks a big-endian binary value into an unsigned long long
     *
@@ -48,7 +48,7 @@ static unsigned long long unpack_value(const char str[36], size_t len)   {
     *         Integer overflow will not be accounted for
     */
     unsigned long long val = 0;
-    for (unsigned int i = 0; i < len; i++)    {
+    for (size_t i = 0; i < len; i++)    {
         val = val << 8;
         val += (unsigned char)str[i];
     }
@@ -69,11 +69,10 @@ static void pack_value(size_t len, char *arr, unsigned long long i)  {
     *
     *         Integer overflow will not be accounted for
     */
-    for (size_t j = 0; j < len; j++)    {
+    memset(arr, 0, len);
+    for (size_t j = 0; j < len && i != 0; j++)    {
         arr[len - j - 1] = i & 0xff;
         i = i >> 8;
-        if (i == 0)
-            break;
     }
 }
 
