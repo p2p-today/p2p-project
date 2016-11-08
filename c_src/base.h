@@ -147,9 +147,10 @@ static int process_string(char *str, size_t len, char ***packets, size_t **lens,
     *num_packets = 0;
     CP2P_DEBUG("Entering while loop\n")
     while (processed != expected)   {
+        CP2P_DEBUG("Processing for packet %i\n", *num_packets);
         size_t tmp = unpack_value(str + processed, 4);
         if (*num_packets >= 4)
-            *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets));
+            *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets + 1));
         (*lens)[*num_packets] = tmp;
         processed += 4;
         expected -= tmp;
