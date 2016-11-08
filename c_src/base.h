@@ -156,7 +156,7 @@ static int process_string(char *str, size_t len, char ***packets, size_t **lens,
         *num_packets += 1;
     }
     CP2P_DEBUG("Exited while loop\n")
-    *packets = (char **) malloc(sizeof(char *) * (*num_packets));
+    *packets = (char **) realloc(*packets, sizeof(char *) * (*num_packets));
     CP2P_DEBUG("Entering for loop\n");
     for (size_t i = 0; i < *num_packets; i++)    {
         (*packets)[i] = (char *) malloc(sizeof(char) * (*lens)[i]);

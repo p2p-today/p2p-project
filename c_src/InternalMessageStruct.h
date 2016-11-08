@@ -101,11 +101,12 @@ static struct InternalMessageStruct *deserializeInternalMessage(const char *seri
     char *tmp = (char *) malloc(sizeof(char) * len);
     memcpy(tmp, serialized, len);
     sanitize_string(tmp, &len, sizeless);
-    char **packets;
+    char **packets = (char **) malloc(sizeof(char *) * 4);
     size_t *lens;
     size_t num_packets;
     CP2P_DEBUG("Entering process_string\n");
     process_string(tmp, len, &packets, &lens, &num_packets);
+    CP2P_DEBUG("Exiting process_string\n");
     struct InternalMessageStruct *ret = constructInternalMessage(
         packets[0], lens[0],
         packets[1], lens[1],
