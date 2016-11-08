@@ -17,6 +17,7 @@ typedef struct {
 } pmessage_wrapper;
 
 static void pmessage_wrapper_dealloc(pmessage_wrapper* self)  {
+    delete self->msg;
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 

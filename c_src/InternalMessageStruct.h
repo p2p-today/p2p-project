@@ -35,6 +35,7 @@ static struct InternalMessageStruct *constructInternalMessage(const char *type, 
     memcpy(ret->sender, sender, sender_len);
     ret->sender_len = sender_len;
     ret->timestamp = getUTC();
+    ret->num_payload = num_payload;
     ret->payload = (char **) malloc(sizeof(char *) * num_payload);
     ret->payload_lens = (size_t *) malloc(sizeof(size_t) * num_payload);
     CP2P_DEBUG("At for loop\n");
@@ -42,6 +43,7 @@ static struct InternalMessageStruct *constructInternalMessage(const char *type, 
         ret->payload[i] = (char *) malloc(sizeof(char) * payload_lens[i]);
         ret->payload_lens[i] = payload_lens[i];
         memcpy(ret->payload[i], payload[i], payload_lens[i]);
+        CP2P_DEBUG("%s\n", ret->payload[i]);
     }
     CP2P_DEBUG("Exited for loop\n");
     ret->compression = NULL;
@@ -58,25 +60,36 @@ static struct InternalMessageStruct *constructInternalMessage(const char *type, 
 }
 
 static void destroyInternalMessage(struct InternalMessageStruct *des)    {
+    printf("1\n");
     free(des->msg_type);
+    printf("2\n");
     for (size_t i = 0; i < des->num_payload; i++)   {
         free(des->payload[i]);
     }
+    printf("3\n");
     free(des->payload);
+    printf("4\n");
     free(des->payload_lens);
+    printf("5\n");
     if (des->compression != NULL)   {
+        printf("6\n");
         for (size_t i = 0; i < des->num_compressions; i++)  {
             free(des->compression[i]);
         }
+        printf("7\n");
         free(des->compression);
+        printf("8\n");
         free(des->compression_lens);
     }
+    printf("9\n");
     if (des->id != NULL)    {
         free(des->id);
     }
+    printf("10\n");
     if (des->str != NULL)   {
         free(des->str);
     }
+    printf("11\n");
     free(des);
 }
 

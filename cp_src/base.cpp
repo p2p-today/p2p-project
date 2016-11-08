@@ -162,8 +162,10 @@ string pathfinding_message::time_58()   {
 
 vector<string> pathfinding_message::payload()   {
     vector<string> payload;
+    CP2P_DEBUG("I was called\n");
     payload.reserve(_base->num_payload);
     for (size_t i = 0; i < _base->num_payload; i++) {
+        CP2P_DEBUG("%s\n", _base->payload[i]);
         payload.push_back(string(_base->payload[i], _base->payload_lens[i]));
     }
     return payload;
