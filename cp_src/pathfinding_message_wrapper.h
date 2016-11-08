@@ -12,12 +12,11 @@ using namespace std;
 
 typedef struct {
     PyObject_HEAD
-    pathfinding_message *msg;
+    pathfinding_message msg;
     /* Type-specific fields go here. */
 } pmessage_wrapper;
 
 static void pmessage_wrapper_dealloc(pmessage_wrapper* self)  {
-    delete self->msg;
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -35,8 +34,8 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
 
     static char *kwlist[] = {(char*)"msg_type", (char*)"sender", (char*)"payload", (char*)"compressions", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "OOO|O", kwlist, 
-                                      &py_msg, &py_sender, 
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "OOO|O", kwlist,
+                                      &py_msg, &py_sender,
                                       &payload, &compression))
         return -1;
 
@@ -60,10 +59,10 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
         vector<string> comp = vector_string_from_pylist(compression);
         if (PyErr_Occurred())
             return -1;
-        self->msg = new pathfinding_message(msg_type, sender, load, comp);
+        self->msg = pathfinding_message(msg_type, sender, load, comp);
     }
     else    {
-        self->msg = new pathfinding_message(msg_type, sender, load);
+        self->msg = pathfinding_message(msg_type, sender, load);
     }
 
     CP2P_DEBUG("Returning\n")
@@ -78,7 +77,7 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
 
     static char *kwlist[] = {(char*)"string", (char*)"sizeless", (char*)"compressions", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "O|pO", kwlist, 
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "O|pO", kwlist,
                                       &py_str, &sizeless, &py_compression))
         return NULL;
 
@@ -111,21 +110,21 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
 }
 
 static PyObject *pmessage_payload(pmessage_wrapper *self)    {
-    PyObject *ret = pylist_from_vector_string(self->msg->payload);
+    PyObject *ret = pylist_from_vector_string(self->msg.payload());
     if (PyErr_Occurred())
         return NULL;
     return ret;
 }
 
 static PyObject *pmessage_packets(pmessage_wrapper *self)    {
-    PyObject *ret = pylist_from_vector_string(self->msg->packets());
+    PyObject *ret = pylist_from_vector_string(self->msg.packets());
     if (PyErr_Occurred())
         return NULL;
     return ret;
 }
 
 static PyObject *pmessage_str(pmessage_wrapper *self)    {
-    string cp_str = self->msg->str();
+    string cp_str = self->msg.str();
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -133,7 +132,7 @@ static PyObject *pmessage_str(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_sender(pmessage_wrapper *self)    {
-    string cp_str = self->msg->sender;
+    string cp_str = self->msg.sender();
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -141,7 +140,7 @@ static PyObject *pmessage_sender(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_msg_type(pmessage_wrapper *self)    {
-    string cp_str = self->msg->msg_type;
+    string cp_str = self->msg.msg_type();
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -149,7 +148,7 @@ static PyObject *pmessage_msg_type(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_id(pmessage_wrapper *self)    {
-    string cp_str = self->msg->id();
+    string cp_str = self->msg.id();
     CP2P_DEBUG("I got the id\n");
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
@@ -158,7 +157,7 @@ static PyObject *pmessage_id(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_timestamp_58(pmessage_wrapper *self)    {
-    string cp_str = self->msg->time_58();
+    string cp_str = self->msg.time_58();
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -166,28 +165,28 @@ static PyObject *pmessage_timestamp_58(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_timestamp(pmessage_wrapper *self)    {
-    PyObject *ret = PyLong_FromUnsignedLong(self->msg->timestamp);
+    PyObject *ret = PyLong_FromUnsignedLong(self->msg.timestamp());
     if (PyErr_Occurred())
         return NULL;
     return ret;
 }
 
 static PyObject *pmessage_compression_used(pmessage_wrapper *self)  {
-    string cp_str = self->msg->compression_used();
+    string cp_str = self->msg.compression_used();
     if (cp_str == string(""))
         Py_RETURN_NONE;
 
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
-    return ret;    
+    return ret;
 }
 
 static PyObject *pmessage_compression_get(pmessage_wrapper *self)   {
-    PyObject *ret = pylist_from_vector_string(self->msg->compression);
+    PyObject *ret = pylist_from_vector_string(self->msg.compression());
     if (PyErr_Occurred())
         return NULL;
-    return ret;    
+    return ret;
 }
 
 static int pmessage_compression_set(pmessage_wrapper *self, PyObject *value, void *closure) {
@@ -200,12 +199,12 @@ static int pmessage_compression_set(pmessage_wrapper *self, PyObject *value, voi
     if (PyErr_Occurred())
         return -1;
 
-    self->msg->compression = new_compression;
+    self->msg.setCompression(new_compression);
     return 0;
 }
 
 static unsigned long long pmessage__len__(pmessage_wrapper *self)    {
-    return self->msg->length();
+    return self->msg.length();
 }
 
 static PyMemberDef pmessage_wrapper_members[] = {
@@ -246,7 +245,7 @@ static PyGetSetDef pmessage_wrapper_getsets[] = {
 
 
 static PyMethodDef pmessage_wrapper_methods[] = {
-    {"feed_string", (PyCFunction)pmessage_feed_string, METH_CLASS | METH_KEYWORDS | METH_VARARGS, 
+    {"feed_string", (PyCFunction)pmessage_feed_string, METH_CLASS | METH_KEYWORDS | METH_VARARGS,
         "Constructs a pathfinding_message from a string or bytes object.\n\
 \n\
 Args:\n\

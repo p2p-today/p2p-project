@@ -75,6 +75,7 @@
 #include "../c_src/sha/sha2.h"
 #include "../c_src/BaseConverter.h"
 #include "../c_src/SubnetStruct.h"
+#include "../c_src/InternalMessageStruct.h"
 #include "../c_src/base.h"
 
 using namespace std;
@@ -288,6 +289,7 @@ class protocol  {
         /**
         *     .. cpp:function:: std::string protocol::encryption
         */
+    private:
         struct SubnetStruct *_base;
 };
 
@@ -312,38 +314,34 @@ class pathfinding_message   {
         *         :param compression:   A :cpp:class:`std::vector\<std::string>` of compression methods that the receiver supports
         */
 
-        static pathfinding_message *feed_string(string msg)   {
-#ifdef CP2P_DEBUG_FLAG
-            printf("String fed: \"");
-            for (size_t i = 0; i < msg.length(); i++)   {
-                printf("\\x%02x", msg[i]);
-            }
-            printf("\":\n");
-#endif
-            vector<string> packets = process_string(msg);
-            pathfinding_message *pm = new pathfinding_message(
-                packets[0],
-                packets[1],
-                vector<string>(packets.begin() + 4, packets.end()));
-            CP2P_DEBUG("Setting timestamp as %s (%i)", packets[3].c_str(), from_base_58(packets[3].c_str(), packets[3].length()))
-            pm->timestamp = from_base_58(packets[3].c_str(), packets[3].length());
-            return pm;
+        static pathfinding_message feed_string(string msg)   {
+            return pathfinding_message::feed_string(msg, 0);
         }
 
-        static pathfinding_message *feed_string(string msg, bool sizeless)  {
-            return pathfinding_message::feed_string(
-                sanitize_string(msg, sizeless));
+        static pathfinding_message feed_string(string msg, bool sizeless)  {
+            return pathfinding_message(deserializeInternalMessage(msg.c_str(), msg.length(), sizeless));
         }
 
-        static pathfinding_message *feed_string(string msg, vector<string> compressions)    {
-            return pathfinding_message::feed_string(
-                decompress_string(msg, compressions));
+        static pathfinding_message feed_string(string msg, vector<string> compressions)    {
+            return pathfinding_message::feed_string(msg, 0, compressions);
         };
 
-        static pathfinding_message *feed_string(string msg, bool sizeless, vector<string> compressions) {
-            return pathfinding_message::feed_string(
-                sanitize_string(msg, sizeless),
-            compressions);
+        static pathfinding_message feed_string(string msg, bool sizeless, vector<string> compressions) {
+            size_t num_compression = compressions.size();
+            size_t *compression_len = new size_t[num_compression];
+            char **compression = new char*[num_compression];
+            for (size_t i = 0; i < num_compression; i++)    {
+                compression[i] = (char *) compressions[i].c_str();
+                compression_len[i] = compressions[i].length();
+            }
+            pathfinding_message ret = pathfinding_message(
+                deserializeCompressedInternalMessage(
+                    msg.c_str(), msg.length(), sizeless, compression, compression_len, num_compression
+                )
+            );
+            delete[] compression;
+            delete[] compression_len;
+            return ret;
         };
         /**
         *     .. cpp:function:: static pathfinding_message *pathfinding_message::feed_string(std::string msg)
@@ -363,26 +361,23 @@ class pathfinding_message   {
         ~pathfinding_message();
         /**
         *     .. cpp:function:: pathfinding_message::~pathfinding_message()
-        *
-        *         An empty deconstructor
         */
-        string msg_type, sender;
-        unsigned long timestamp;
-        vector<string> payload;
-        vector<string> compression;
-        bool compression_fail;
+        string msg_type();
+        string sender();
+        unsigned long long timestamp();
+        vector<string> payload();
+        vector<string> compression();
+        void setCompression(vector<string> comp);
         /**
         *     .. cpp:var:: std::string pathfinding_message::msg_type
         *
         *     .. cpp:var:: std::string pathfinding_message::sender
         *
-        *     .. cpp:var:: unsigned long pathfinding_message::timestamp
+        *     .. cpp:var:: unsigned long long pathfinding_message::timestamp
         *
         *     .. cpp:var:: std::vector<std::string> pathfinding_message::payload
         *
         *     .. cpp:var:: std::vector<std::string> pathfinding_message::compression
-        *
-        *     .. cpp:var:: bool pathfinding_message::compression_fail
         */
         string compression_used();
         /**
@@ -441,11 +436,9 @@ class pathfinding_message   {
         *         :returns: the four byte size header at the beginning of the serialized message
         */
     private:
-        struct {
-            string msg_type, sender, id, base_string;
-            unsigned long timestamp;
-            vector<string> payload;
-        } cache;
+        struct InternalMessageStruct *_base;
+        pathfinding_message(struct InternalMessageStruct *base);
+        void init(string msg_type, string sen, vector<string> load);
 };
 
 #endif

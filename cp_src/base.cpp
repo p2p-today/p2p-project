@@ -38,21 +38,48 @@ string protocol::encryption()   {
     return string(_base->encryption, _base->encryptionSize);
 }
 
+pathfinding_message::pathfinding_message(struct InternalMessageStruct *base)  {
+    _base = base;
+}
+
 pathfinding_message::pathfinding_message(string type, string sen, vector<string> load) {
-    msg_type = type;
-    sender = sen;
-    timestamp = getUTC();
-    payload = load;
-    compression = vector<string>();
-    compression_fail = false;
+    init(type, sen, load);
 }
 
 pathfinding_message::pathfinding_message(string type, string sen, vector<string> load, vector<string> comp)   {
-    msg_type = type;
-    sender = sen;
-    timestamp = getUTC();
-    payload = load;
-    compression = comp;
+    init(type, sen, load);
+    setCompression(comp);
+}
+
+void pathfinding_message::init(string type, string sen, vector<string> load)    {
+    CP2P_DEBUG("Entered constructor\n");
+    const size_t num_payload = load.size();
+    size_t *payload_lens = new size_t[num_payload];
+    CP2P_DEBUG("Running suspicious line\n");
+    char **payload = new char*[num_payload];
+    for (size_t i = 0; i < num_payload; i++)    {
+        payload_lens[i] = load[i].length();
+        payload[i] = (char *) load[i].c_str();
+    }
+    CP2P_DEBUG("Real constructor\n");
+    _base = constructInternalMessage(type.c_str(), type.length(),
+                                     sen.c_str(),  sen.length(),
+                                     payload, payload_lens, num_payload);
+    delete[] payload_lens;
+    delete[] payload;
+}
+
+void pathfinding_message::setCompression(vector<string> comp)   {
+    const size_t num_compressions = comp.size();
+    size_t *compression_lens = new size_t[num_compressions];
+    char **compression = new char*[num_compressions];
+    for (size_t i = 0; i < num_compressions; i++)    {
+        compression_lens[i] = comp[i].length();
+        compression[i] = (char *) comp[i].c_str();
+    }
+    setInternalMessageCompressions(_base, compression, compression_lens, num_compressions);
+    delete[] compression_lens;
+    delete[] compression;
 }
 
 vector<string> process_string(string str)   {
@@ -79,6 +106,9 @@ string sanitize_string(string str, bool sizeless)    {
     char *res = new char[len];
     memcpy(res, str.c_str(), len);
     int status = sanitize_string(res, &len, sizeless);
+    if (status) {
+        printf("Bad status returned in sanitize_string\n");
+    }
     return string(res, len);
 }
 
@@ -86,29 +116,66 @@ string decompress_string(string str, vector<string> compressions)   {
     return str;
 }
 
-pathfinding_message::~pathfinding_message()  {}
+pathfinding_message::~pathfinding_message()  {
+    destroyInternalMessage(_base);
+}
+
+string pathfinding_message::msg_type()  {
+    return string(_base->msg_type, _base->msg_type_len);
+}
+
+string pathfinding_message::sender()    {
+    return string(_base->sender, _base->sender_len);
+}
+
+unsigned long long pathfinding_message::timestamp() {
+    return _base->timestamp;
+}
+
+vector<string> pathfinding_message::compression()   {
+    if (_base->compression != NULL) {
+        vector<string> compression;
+        compression.reserve(_base->num_compressions);
+        for (size_t i = 0; i < _base->num_compressions; i++) {
+            compression.push_back(string(_base->compression[i], _base->compression_lens[i]));
+        }
+        return compression;
+    }
+    return vector<string>();
+}
 
 string pathfinding_message::compression_used()  {
-    if (compression.size())
-        return compression[0];
+    if (_base->compression != NULL)
+        return string(_base->compression[0], _base->compression_lens[0]);
     return string("");
 }
 
 string pathfinding_message::time_58()   {
-    return to_base_58(timestamp);
+    return to_base_58(_base->timestamp);
     // size_t i = 0;
     // char *temp = to_base_58(timestamp, i);
     // return string(temp, i);
 }
 
+vector<string> pathfinding_message::payload()   {
+    vector<string> payload;
+    payload.reserve(_base->num_payload);
+    for (size_t i = 0; i < _base->num_payload; i++) {
+        payload.push_back(string(_base->payload[i], _base->payload_lens[i]));
+    }
+    return payload;
+}
+
 string pathfinding_message::id()    {
-    if (cache.timestamp == timestamp && cache.payload == payload && cache.id != "")   {
+    if (_base->id != NULL)   {
         CP2P_DEBUG("Fetching cached ID\n")
-        return string(cache.id); //for copy constructor
+        return string(_base->id, _base->id_len);
     }
 
     string t58 = time_58();
     size_t done = 0, expected = t58.length();
+
+    vector<string> payload = pathfinding_message::payload();
 
     for (unsigned long i = 0; i < payload.size(); i++)
         expected += payload[i].length();
@@ -128,10 +195,6 @@ string pathfinding_message::id()    {
     SHA384_Update(&ctx, (unsigned char*)info, expected);
     SHA384_Final(digest, &ctx);
 
-    cache.payload = vector<string>(payload);
-    cache.timestamp = timestamp;
-    cache.id = ascii_to_base_58(string((char*)digest, SHA384_DIGEST_LENGTH));
-
 #ifdef CP2P_DEBUG_FLAG
     printf("ID for [\"");
     for (size_t i = 0; i < expected; i++)   {
@@ -139,16 +202,21 @@ string pathfinding_message::id()    {
     }
     printf("\"]:\n");
 #endif
-    CP2P_DEBUG("%s\n", cache.id.c_str());
 
-    return string(cache.id);    //for copy constructor
+    string id = ascii_to_base_58(string((char*)digest, SHA384_DIGEST_LENGTH));
+    _base->id_len = id.length();
+    _base->id = (char *) malloc(sizeof(char) * _base->id_len);
+    memcpy(_base->id, id.c_str(), _base->id_len);
+
+    return id;
 }
 
 vector<string> pathfinding_message::packets()   {
     vector<string> packs;
+    vector<string> payload = pathfinding_message::payload();
     packs.reserve(4 + payload.size());
-    packs.push_back(msg_type);
-    packs.push_back(sender);
+    packs.push_back(msg_type());
+    packs.push_back(sender());
     packs.push_back(id());
     packs.push_back(time_58());
     packs.insert(packs.end(), payload.begin(), payload.end());
@@ -156,9 +224,6 @@ vector<string> pathfinding_message::packets()   {
 }
 
 string pathfinding_message::base_string()   {
-    if (cache.timestamp == timestamp && cache.msg_type == msg_type && cache.payload == payload)
-        return string(cache.base_string);   //for copy constructor
-
     string header = "";
     string base = "";
     vector<string> packs = packets();
@@ -167,12 +232,7 @@ string pathfinding_message::base_string()   {
         base += packs[i];
     }
 
-    //cache.timestamp = timestamp;  //implied by call to packets, which calls id
-    //cache.payload = payload;      //implied by call to packets, which calls id
-    cache.msg_type = msg_type;
-    cache.base_string = header + base;
-
-    return string(cache.base_string);   //for copy constructor
+    return header + base;
 }
 
 string pathfinding_message::str()    {
