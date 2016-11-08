@@ -1,3 +1,12 @@
+/**
+* Internal Message Header
+* =======================
+*
+* This header contains the C functions needed for using the message format in the p2p.today project.
+*
+* It automatically includes :doc:`base.h <./base>`.
+*/
+
 #include "./base.h"
 
 #ifdef _cplusplus
@@ -5,6 +14,66 @@ extern "C" {
 #endif
 
 struct InternalMessageStruct    {
+    /**
+    * .. c:type:: struct InternalMessageStruct
+    *
+    *     .. c:member:: char *msg_type
+    *
+    *         The type of message this is. These are described in :doc:`protocol/flags <../../protocol/flags>`.
+    *
+    *     .. c:member:: size_t msg_type_len
+    *
+    *     .. c:member:: char *sender
+    *
+    *         The message sender's ID
+    *
+    *     .. c:member:: size_t sender_len
+    *
+    *     .. c:member:: unsigned long long timestamp
+    *
+    *         The time at which this message was sent, in UTC seconds since 1/1/1970.
+    *
+    *     .. c:member:: char **payload
+    *
+    *         An array of "payload" packets in this message. In other words, every item which *isn't* metadata.
+    *
+    *     .. c:member:: size_t *payload_lens
+    *
+    *         The length of each payload item, in the same order
+    *
+    *     .. c:member:: size_t num_payload
+    *
+    *         The number of payload packets
+    *
+    *     .. note::
+    *
+    *         Members after these are not garunteed to be present. A function to ensure their existence will be
+    *         provided as noted. Otherwise check if their length term is ``0`` to determine existence.
+    *
+    *     .. c:member:: char **compression
+    *
+    *         An array of possible compression algorigthms
+    *
+    *     .. c:member:: size_t *compression_lens
+    *
+    *         The length of each compression string, in the same order
+    *
+    *     .. c:member:: size_t num_compression
+    *
+    *         The number of compression methods
+    *
+    *     .. c:member:: char *id
+    *
+    *         The checksum/ID of this message
+    *
+    *     .. c:member:: size_t id_len
+    *
+    *     .. c:member:: char *str
+    *
+    *         The serialized version of this message
+    *
+    *     .. c:member:: size_t str_len
+    */
     char *msg_type;
     size_t msg_type_len;
     char *sender;
@@ -26,6 +95,25 @@ struct InternalMessageStruct    {
 
 
 static struct InternalMessageStruct *constructInternalMessage(const char *type, size_t type_len, const char *sender, size_t sender_len, char **payload, size_t *payload_lens, size_t num_payload)   {
+    /**
+    * .. c:function:: static struct InternalMessageStruct *constructInternalMessage(const char *type, size_t type_len, const char *sender, size_t sender_len, char **payload, size_t *payload_lens, size_t num_payload)
+    *
+    *     Constructs an InternalMessageStruct. This copies all given data into a struct, then returns this struct's pointer.
+    *
+    *     :param type:          The item to place in :c:member:`InternalMessageStruct.msg_type`
+    *     :param type_len:      The length of the above
+    *     :param sender:        The item to place in :c:member:`InternalMessageStruct.sender`
+    *     :param sender_len:    The length of the above
+    *     :param payload:       The array to place in :c:member:`InternalMessageStruct.payload`
+    *     :param payload_lens:  The length for each string in the above
+    *     :param num_payload:   The number of items in the above
+    *
+    *     :returns: A pointer to the resulting :c:type:`InternalMessageStruct`
+    *
+    *     .. warning::
+    *
+    *          You must use :c:func:`destroyInternalMessage` on the resulting object, or you will develop a memory leak
+    */
     CP2P_DEBUG("Inside real constructor. num_payload=%i\n", num_payload);
     struct InternalMessageStruct *ret = (struct InternalMessageStruct *) malloc(sizeof(InternalMessageStruct));
     ret->msg_type = (char *) malloc(sizeof(char) * type_len);
@@ -60,6 +148,13 @@ static struct InternalMessageStruct *constructInternalMessage(const char *type, 
 }
 
 static void destroyInternalMessage(struct InternalMessageStruct *des)    {
+    /**
+    * .. c:function:: static void destroyInternalMessage(struct InternalMessageStruct *des)
+    *
+    *     :c:func:`free`s an :c:type:`InteralMessageStruct` and its members
+    *
+    *     :param des: A pointer to the InternalMessageStruct you wish to destroy
+    */
     CP2P_DEBUG("1\n");
     free(des->msg_type);
     CP2P_DEBUG("2\n");
@@ -95,6 +190,17 @@ static void destroyInternalMessage(struct InternalMessageStruct *des)    {
 
 
 static void setInternalMessageCompressions(struct InternalMessageStruct *des, char **compression, size_t *compression_lens, size_t num_compressions)   {
+    /**
+    * .. c:function:: static void setInternalMessageCompressions(struct InternalMessageStruct *des, char **compression, size_t *compression_lens, size_t num_compressions)
+    *
+    *     Sets the compression methods for a particular :c:type:`InternalMessageStruct`. These methods are formatted as an array of strings, an array of lengths, and a
+    *     number of methods. The data is copied, so you inputs can be local variables.
+    *
+    *     :param des:
+    *     :param compression:
+    *     :param compression_lens:
+    *     :param num_compressions:
+    */
     if (des->compression != NULL)   {
         for (size_t i = 0; i < des->num_compressions; i++)  {
             free(des->compression[i]);
@@ -111,6 +217,18 @@ static void setInternalMessageCompressions(struct InternalMessageStruct *des, ch
 }
 
 static struct InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless)  {
+    /**
+    * .. c:function:: static struct InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless)
+    *
+    *     Deserializes an uncompressed :c:type:`InternalMessageStruct`. The ``sizeless`` parameter indicates whether the network size
+    *     header is still present on the given string.
+    *
+    *     :param serialized:    The serialized message
+    *     :param len:           The length of the serialized message
+    *     :param sizeless:      A boolean which indicates whether the network size header is still present on the given string
+    *
+    *     :returns: An equivalent :c:type:`InternalMessageStruct`
+    */
     char *tmp = (char *) malloc(sizeof(char) * len);
     memcpy(tmp, serialized, len);
     sanitize_string(tmp, &len, sizeless);
@@ -129,6 +247,21 @@ static struct InternalMessageStruct *deserializeInternalMessage(const char *seri
 }
 
 static struct InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, char **compression, size_t *compression_lens, size_t num_compressions)    {
+    /**
+    * .. c:function:: static struct InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, char **compression, size_t *compression_lens, size_t num_compressions)
+    *
+    *     Deserializes a compressed :c:type:`InternalMessageStruct`. The ``sizeless`` parameter indicates whether the network size
+    *     header is still present on the given string.
+    *
+    *     :param serialized:        See :c:func:`deserializeInternalMessage`
+    *     :param len:               See :c:func:`deserializeInternalMessage`
+    *     :param sizeless:          See :c:func:`deserializeInternalMessage`
+    *     :param compression:       See :c:func:`setInternalMessageCompressions`
+    *     :param compression_lens:  See :c:func:`setInternalMessageCompressions`
+    *     :param num_compressions:  See :c:func:`setInternalMessageCompressions`
+    *
+    *     :returns: An equivalent :c:type:`InternalMessageStruct`
+    */
     char *tmp = (char *) malloc(sizeof(char) * len);
     memcpy(tmp, serialized, len);
     sanitize_string(tmp, &len, sizeless);

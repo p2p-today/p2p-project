@@ -1,3 +1,8 @@
+/**
+* Base Module
+* ===========
+*/
+
 #ifndef C2P_BASE
 #define C2P_BASE
 
@@ -116,9 +121,9 @@ static int decompress_string(char *str, size_t len, char **result, size_t *res_l
     *
     *     :returns: ``-1`` if decompression failed, ``0`` if all went well
     *
-    *     .. note::
+    *     .. warning::
     *
-    *         You must :c:func:`free` ``result`` or you will develop a memory leak
+    *         If you do not :c:func:`free` ``result`` you will develop a memory leak
     */
     // TODO: Implement zlib/gzip compression
     *result = (char *) malloc(sizeof(char) * len);
@@ -130,6 +135,9 @@ static int decompress_string(char *str, size_t len, char **result, size_t *res_l
 static int process_string(char *str, size_t len, char ***packets, size_t **lens, size_t *num_packets)  {
     /**
     * .. c:function:: static int process_string(char *str, size_t len, char **packets, size_t **lens, size_t *num_packets)
+    *
+    *     Transforms a serialized string into an array of packets. This is formatted as an array of strings, an array of lengths,
+    *     and a number of packets. You must provide a pointer to these. Packets must be initialized as an array of :c:type:`char *`.
     *
     *     :param str:       The string to deserialize
     *     :param len:       The length of this string
