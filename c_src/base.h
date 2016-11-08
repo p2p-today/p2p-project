@@ -145,20 +145,23 @@ static int process_string(char *str, size_t len, char ***packets, size_t **lens,
     size_t expected = len;
     *lens = (size_t *) malloc(sizeof(size_t) * 4);
     *num_packets = 0;
+    CP2P_DEBUG("Entering while loop\n")
     while (processed != expected)   {
         size_t tmp = unpack_value(str + processed, 4);
         if (*num_packets >= 4)
             *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets));
-        *lens[*num_packets] = tmp;
+        (*lens)[*num_packets] = tmp;
         processed += 4;
         expected -= tmp;
         *num_packets += 1;
     }
+    CP2P_DEBUG("Exited while loop\n")
     *packets = (char **) malloc(sizeof(char *) * (*num_packets));
+    CP2P_DEBUG("Entering for loop\n");
     for (size_t i = 0; i < *num_packets; i++)    {
-        *packets[i] = (char *) malloc(sizeof(char) * (*lens[i]));
-        memcpy(*packets[i], str + processed, *lens[i]);
-        processed += *lens[i];
+        (*packets)[i] = (char *) malloc(sizeof(char) * (*lens)[i]);
+        memcpy((*packets)[i], str + processed, (*lens)[i]);
+        processed += (*lens)[i];
     }
     return 0;
 }

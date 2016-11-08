@@ -65,8 +65,10 @@ void pathfinding_message::init(string type, string sen, vector<string> load)    
     _base = constructInternalMessage(type.c_str(), type.length(),
                                      sen.c_str(),  sen.length(),
                                      payload, payload_lens, num_payload);
+    CP2P_DEBUG("Exited real constructor\n");
     delete[] payload_lens;
     delete[] payload;
+    CP2P_DEBUG("delete[] doesn't hate you\n");
 }
 
 void pathfinding_message::setCompression(vector<string> comp)   {
@@ -125,6 +127,7 @@ string pathfinding_message::msg_type()  {
 }
 
 string pathfinding_message::sender()    {
+    CP2P_DEBUG("%s\n", _base->sender);
     return string(_base->sender, _base->sender_len);
 }
 

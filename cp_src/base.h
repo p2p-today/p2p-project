@@ -314,19 +314,20 @@ class pathfinding_message   {
         *         :param compression:   A :cpp:class:`std::vector\<std::string>` of compression methods that the receiver supports
         */
 
-        static pathfinding_message feed_string(string msg)   {
+        static pathfinding_message *feed_string(string msg)   {
             return pathfinding_message::feed_string(msg, 0);
         }
 
-        static pathfinding_message feed_string(string msg, bool sizeless)  {
-            return pathfinding_message(deserializeInternalMessage(msg.c_str(), msg.length(), sizeless));
+        static pathfinding_message *feed_string(string msg, bool sizeless)  {
+            CP2P_DEBUG("Entering deserialization\n");
+            return new pathfinding_message(deserializeInternalMessage(msg.c_str(), msg.length(), sizeless));
         }
 
-        static pathfinding_message feed_string(string msg, vector<string> compressions)    {
+        static pathfinding_message *feed_string(string msg, vector<string> compressions)    {
             return pathfinding_message::feed_string(msg, 0, compressions);
         };
 
-        static pathfinding_message feed_string(string msg, bool sizeless, vector<string> compressions) {
+        static pathfinding_message *feed_string(string msg, bool sizeless, vector<string> compressions) {
             size_t num_compression = compressions.size();
             size_t *compression_len = new size_t[num_compression];
             char **compression = new char*[num_compression];
@@ -334,7 +335,7 @@ class pathfinding_message   {
                 compression[i] = (char *) compressions[i].c_str();
                 compression_len[i] = compressions[i].length();
             }
-            pathfinding_message ret = pathfinding_message(
+            pathfinding_message *ret = new pathfinding_message(
                 deserializeCompressedInternalMessage(
                     msg.c_str(), msg.length(), sizeless, compression, compression_len, num_compression
                 )
