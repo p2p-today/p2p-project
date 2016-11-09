@@ -320,7 +320,8 @@ class pathfinding_message   {
 
         static pathfinding_message *feed_string(string msg, bool sizeless)  {
             CP2P_DEBUG("Entering deserialization\n");
-            return new pathfinding_message(deserializeInternalMessage(msg.c_str(), msg.length(), sizeless));
+            int error = 0;
+            return new pathfinding_message(deserializeInternalMessage(msg.c_str(), msg.length(), sizeless, &error));
         }
 
         static pathfinding_message *feed_string(string msg, vector<string> compressions)    {
@@ -335,9 +336,10 @@ class pathfinding_message   {
                 compression[i] = (char *) compressions[i].c_str();
                 compression_len[i] = compressions[i].length();
             }
+            int error = 0;
             pathfinding_message *ret = new pathfinding_message(
                 deserializeCompressedInternalMessage(
-                    msg.c_str(), msg.length(), sizeless, compression, compression_len, num_compression
+                    msg.c_str(), msg.length(), sizeless, &error, compression, compression_len, num_compression
                 )
             );
             delete[] compression;

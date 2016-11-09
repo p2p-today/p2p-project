@@ -219,51 +219,36 @@ static void setInternalMessageCompressions(struct InternalMessageStruct *des, ch
     }
 }
 
-static void ensureInternalMessageID(struct InternalMessageStruct *_base)  {
-    if (_base->id != NULL)   {
-        CP2P_DEBUG("Fetching cached ID\n")
+static void ensureInternalMessageID(struct InternalMessageStruct *des)  {
+    /**
+    * .. c:function:: static void ensureInternalMessageID(struct InternalMessageStruct *des)
+    *
+    *     Ensures that the InternalMessageStruct has an ID calculated and assigned
+    *
+    *     :param des: A pointer to the relevant InternalMessageStruct
+    */
+    if (des->id != NULL)   {
+        CP2P_DEBUG("ID already exists\n")
         return;
     }
-
-    size_t t58_len = 0;
-    char *t58 = to_base_58(_base->timestamp, &t58_len);
-    size_t done = 0;
-    size_t expected = t58_len;
-
-    for (size_t i = 0; i < _base->num_payload; i++)
-        expected += _base->payload_lens[i];
-
-    unsigned char *info = new unsigned char[expected];
-
-    for (unsigned long i = 0; i < _base->num_payload; i++)  {
-        memcpy(info + done, _base->payload[i], _base->payload_lens[i]);
-        done += _base->payload_lens[i];
-    }
-    memcpy(info + done, t58, t58_len);
-    free(t58);
 
     unsigned char digest[SHA384_DIGEST_LENGTH];
     memset(digest, 0, SHA384_DIGEST_LENGTH);
     SHA384_CTX ctx;
     SHA384_Init(&ctx);
-    SHA384_Update(&ctx, (unsigned char*)info, expected);
+
+    for (size_t i = 0; i < des->num_payload; i++)
+        SHA384_Update(&ctx, (const unsigned char *) des->payload[i], des->payload_lens[i]);
+
+    size_t t58_len = 0;
+    char *t58 = to_base_58(des->timestamp, &t58_len);
+    SHA384_Update(&ctx, (const unsigned char *) t58, t58_len);
+    free(t58);
     SHA384_Final(digest, &ctx);
-
-#ifdef CP2P_DEBUG_FLAG
-    printf("ID for [\"");
-    for (size_t i = 0; i < expected; i++)   {
-        printf("\\x%02x", info[i]);
-    }
-    printf("\"]:\n");
-#endif
-
-    char *id = ascii_to_base_58((const char *)digest, (size_t) SHA384_DIGEST_LENGTH, &(_base->id_len), 1);
-    _base->id = (char *) malloc(sizeof(char) * _base->id_len);
-    memcpy(_base->id, id, _base->id_len);
-    free(id);
+    des->id = ascii_to_base_58((const char *)digest, (size_t) SHA384_DIGEST_LENGTH, &(des->id_len), 1);
 }
 
-static struct InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless)  {
+static struct InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless, int *errored)  {
     /**
     * .. c:function:: static struct InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless)
     *
@@ -273,6 +258,7 @@ static struct InternalMessageStruct *deserializeInternalMessage(const char *seri
     *     :param serialized:    The serialized message
     *     :param len:           The length of the serialized message
     *     :param sizeless:      A boolean which indicates whether the network size header is still present on the given string
+    *     :param errored:       A pointer to a boolean. If this is set with a non-zero value, it indicates that the checksum test failed
     *
     *     :returns: An equivalent :c:type:`InternalMessageStruct`
     */
@@ -290,10 +276,14 @@ static struct InternalMessageStruct *deserializeInternalMessage(const char *seri
         packets[1], lens[1],
         packets + 4, lens + 4, num_packets - 4);
     ret->timestamp = from_base_58(packets[3], lens[3]);
+
+    ensureInternalMessageID(ret);
+    *errored = memcmp(ret->id, packets[2], ret->id_len);
+
     return ret;
 }
 
-static struct InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, char **compression, size_t *compression_lens, size_t num_compressions)    {
+static struct InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, int *errored, char **compression, size_t *compression_lens, size_t num_compressions)    {
     /**
     * .. c:function:: static struct InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, char **compression, size_t *compression_lens, size_t num_compressions)
     *
@@ -303,6 +293,7 @@ static struct InternalMessageStruct *deserializeCompressedInternalMessage(const 
     *     :param serialized:        See :c:func:`deserializeInternalMessage`
     *     :param len:               See :c:func:`deserializeInternalMessage`
     *     :param sizeless:          See :c:func:`deserializeInternalMessage`
+    *     :param errored:           See :c:func:`deserializeInternalMessage`
     *     :param compression:       See :c:func:`setInternalMessageCompressions`
     *     :param compression_lens:  See :c:func:`setInternalMessageCompressions`
     *     :param num_compressions:  See :c:func:`setInternalMessageCompressions`
@@ -315,7 +306,7 @@ static struct InternalMessageStruct *deserializeCompressedInternalMessage(const 
     char *result;
     size_t res_len;
     decompress_string(tmp, len, &result, &res_len, compression, compression_lens, num_compressions);
-    struct InternalMessageStruct *ret = deserializeInternalMessage(result, res_len, 0);
+    struct InternalMessageStruct *ret = deserializeInternalMessage(result, res_len, 0, errored);
     setInternalMessageCompressions(ret, compression, compression_lens, num_compressions);
     return ret;
 }
