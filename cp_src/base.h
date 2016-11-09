@@ -177,9 +177,7 @@ static string get_user_salt()  {
     */
     char temp_user_salt[36];
     get_user_salt(temp_user_salt);
-    const string user_salt = string(temp_user_salt, 36);
-
-    return user_salt;
+    return string(temp_user_salt, 36);
 }
 
 /**
@@ -298,6 +296,10 @@ class pathfinding_message   {
     * .. cpp:class:: pathfinding_message
     *
     *     This is the message serialization/deserialization class.
+    *
+    *     .. note::
+    *
+    *         This is just a wrapper for :c:type:`InternalMessageStruct`. Use that if you prefer efficiency over pleasant APIs.
     */
     public:
         pathfinding_message(string msg_type, string sender, vector<string> payload);
@@ -306,7 +308,6 @@ class pathfinding_message   {
         *     .. cpp:function:: pathfinding_message::pathfinding_message(std::string msg_type, std::string sender, std::vector<std::string> payload)
         *
         *     .. cpp:function:: pathfinding_message::pathfinding_message(std::string msg_type, std::string sender, std::vector<std::string> payload, std::vector<std::string> compressions)
-        *
         *
         *         :param msg_type:      This is the main flag checked by nodes, used for routing information
         *         :param sender:        The ID of the person sending the message
@@ -413,12 +414,6 @@ class pathfinding_message   {
         *         #. :cpp:var:`pathfinding_message::payload` from here on out
         *
         *         :returns: A :cpp:class:`std::vector\<std::string>` in the above format
-        */
-        string base_string();
-        /**
-        *     .. cpp:function:: std::string pathfinding_message::base_string()
-        *
-        *         :returns: the serialized message, excepting the four byte size header at the beginning
         */
         string str();
         /**

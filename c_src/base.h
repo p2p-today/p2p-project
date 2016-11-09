@@ -132,9 +132,9 @@ static int decompress_string(char *str, size_t len, char **result, size_t *res_l
     return 0;
 }
 
-static int process_string(char *str, size_t len, char ***packets, size_t **lens, size_t *num_packets)  {
+static int process_string(const char *str, size_t len, char ***packets, size_t **lens, size_t *num_packets)  {
     /**
-    * .. c:function:: static int process_string(char *str, size_t len, char **packets, size_t **lens, size_t *num_packets)
+    * .. c:function:: static int process_string(const char *str, size_t len, char **packets, size_t **lens, size_t *num_packets)
     *
     *     Transforms a serialized string into an array of packets. This is formatted as an array of strings, an array of lengths,
     *     and a number of packets. You must provide a pointer to these. Packets must be initialized as an array of :c:type:`char *`.

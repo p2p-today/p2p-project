@@ -85,22 +85,22 @@ void pathfinding_message::setCompression(vector<string> comp)   {
 }
 
 vector<string> process_string(string str)   {
-    unsigned long processed = 0;
-    unsigned long expected = str.length();
-    vector<unsigned long> pack_lens;
-    vector<string> packets;
-    while (processed != expected)   {
-        unsigned long tmp = unpack_value(str.substr(processed, 4));
-        pack_lens.push_back(tmp);
-        processed += 4;
-        expected -= pack_lens.back();
+    char **packets;
+    size_t *pack_lens;
+    size_t num_packets;
+
+    process_string(str.c_str(), str.length(), &packets, &pack_lens, &num_packets);
+
+    vector<string> packs;
+    packs.reserve(num_packets);
+    for (size_t i = 0; i < num_packets; i++)    {
+        packs.push_back(string(packets[i], pack_lens[i]));
+        free(packets[i]);
     }
-    // Then reconstruct the packets
-    for (unsigned long i = 0; i < pack_lens.size(); i++)    {
-        packets.push_back(str.substr(processed, pack_lens[i]));
-        processed += pack_lens[i];
-    }
-    return packets;
+    free(packets);
+    free(pack_lens);
+
+    return packs;
 }
 
 string sanitize_string(string str, bool sizeless)    {
@@ -188,25 +188,13 @@ vector<string> pathfinding_message::packets()   {
     return packs;
 }
 
-string pathfinding_message::base_string()   {
-    string header = "";
-    string base = "";
-    vector<string> packs = packets();
-    for (unsigned long i = 0; i < packs.size(); i++)    {
-        header += pack_value(4, (unsigned long long)packs[i].size());
-        base += packs[i];
-    }
-
-    return header + base;
-}
-
 string pathfinding_message::str()    {
     ensureInternalMessageStr(_base);
     return string(_base->str, _base->str_len);
 }
 
 unsigned long long pathfinding_message::length()    {
-    return base_string().length();
+    return _base->str_len - 4;
 }
 
 string pathfinding_message::header()    {
