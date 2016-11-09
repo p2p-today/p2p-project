@@ -155,7 +155,7 @@ static void destroyInternalMessage(struct InternalMessageStruct *des)    {
     /**
     * .. c:function:: static void destroyInternalMessage(struct InternalMessageStruct *des)
     *
-    *     :c:func:`free`s an :c:type:`InteralMessageStruct` and its members
+    *     :c:func:`free` an :c:type:`InteralMessageStruct` and its members
     *
     *     :param des: A pointer to the InternalMessageStruct you wish to destroy
     */
@@ -199,10 +199,10 @@ static void setInternalMessageCompressions(struct InternalMessageStruct *des, ch
     *     Sets the compression methods for a particular :c:type:`InternalMessageStruct`. These methods are formatted as an array of strings, an array of lengths, and a
     *     number of methods. The data is copied, so you inputs can be local variables.
     *
-    *     :param des:
-    *     :param compression:
-    *     :param compression_lens:
-    *     :param num_compressions:
+    *     :param des:               A pointer to the relevant InternalMessageStruct
+    *     :param compression:       An array of compression methods
+    *     :param compression_lens:  An array of lengths for each compression method
+    *     :param num_compressions:  The number of compression methods
     */
     if (des->compression != NULL)   {
         for (size_t i = 0; i < des->num_compressions; i++)  {
