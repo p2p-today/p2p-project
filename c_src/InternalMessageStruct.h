@@ -54,6 +54,8 @@ struct InternalMessageStruct    {
     *
     *         An array of possible compression algorigthms
     *
+    *         This can be initialized with :c:func:`setInternalMessageCompressions`
+    *
     *     .. c:member:: size_t *compression_lens
     *
     *         The length of each compression string, in the same order
@@ -65,6 +67,8 @@ struct InternalMessageStruct    {
     *     .. c:member:: char *id
     *
     *         The checksum/ID of this message
+    *
+    *         To ensure this value is set, call :c:func:`ensureInternalMessageID`
     *
     *     .. c:member:: size_t id_len
     *
@@ -188,7 +192,6 @@ static void destroyInternalMessage(struct InternalMessageStruct *des)    {
     free(des);
 }
 
-
 static void setInternalMessageCompressions(struct InternalMessageStruct *des, char **compression, size_t *compression_lens, size_t num_compressions)   {
     /**
     * .. c:function:: static void setInternalMessageCompressions(struct InternalMessageStruct *des, char **compression, size_t *compression_lens, size_t num_compressions)
@@ -214,6 +217,50 @@ static void setInternalMessageCompressions(struct InternalMessageStruct *des, ch
         des->compression[i] = (char *) malloc(sizeof(char) * compression_lens[i]);
         memcpy(des->compression[i], compression[i], compression_lens[i]);
     }
+}
+
+static void ensureInternalMessageID(struct InternalMessageStruct *_base)  {
+    if (_base->id != NULL)   {
+        CP2P_DEBUG("Fetching cached ID\n")
+        return;
+    }
+
+    size_t t58_len = 0;
+    char *t58 = to_base_58(_base->timestamp, &t58_len);
+    size_t done = 0;
+    size_t expected = t58_len;
+
+    for (size_t i = 0; i < _base->num_payload; i++)
+        expected += _base->payload_lens[i];
+
+    unsigned char *info = new unsigned char[expected];
+
+    for (unsigned long i = 0; i < _base->num_payload; i++)  {
+        memcpy(info + done, _base->payload[i], _base->payload_lens[i]);
+        done += _base->payload_lens[i];
+    }
+    memcpy(info + done, t58, t58_len);
+    free(t58);
+
+    unsigned char digest[SHA384_DIGEST_LENGTH];
+    memset(digest, 0, SHA384_DIGEST_LENGTH);
+    SHA384_CTX ctx;
+    SHA384_Init(&ctx);
+    SHA384_Update(&ctx, (unsigned char*)info, expected);
+    SHA384_Final(digest, &ctx);
+
+#ifdef CP2P_DEBUG_FLAG
+    printf("ID for [\"");
+    for (size_t i = 0; i < expected; i++)   {
+        printf("\\x%02x", info[i]);
+    }
+    printf("\"]:\n");
+#endif
+
+    char *id = ascii_to_base_58((const char *)digest, (size_t) SHA384_DIGEST_LENGTH, &(_base->id_len), 1);
+    _base->id = (char *) malloc(sizeof(char) * _base->id_len);
+    memcpy(_base->id, id, _base->id_len);
+    free(id);
 }
 
 static struct InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless)  {

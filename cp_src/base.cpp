@@ -172,48 +172,8 @@ vector<string> pathfinding_message::payload()   {
 }
 
 string pathfinding_message::id()    {
-    if (_base->id != NULL)   {
-        CP2P_DEBUG("Fetching cached ID\n")
-        return string(_base->id, _base->id_len);
-    }
-
-    string t58 = time_58();
-    size_t done = 0, expected = t58.length();
-
-    vector<string> payload = pathfinding_message::payload();
-
-    for (unsigned long i = 0; i < payload.size(); i++)
-        expected += payload[i].length();
-
-    unsigned char *info = new unsigned char[expected];
-
-    for (unsigned long i = 0; i < payload.size(); i++)  {
-        memcpy(info + done, payload[i].c_str(), payload[i].length());
-        done += payload[i].length();
-    }
-    memcpy(info + done, t58.c_str(), t58.length());
-
-    unsigned char digest[SHA384_DIGEST_LENGTH];
-    memset(digest, 0, SHA384_DIGEST_LENGTH);
-    SHA384_CTX ctx;
-    SHA384_Init(&ctx);
-    SHA384_Update(&ctx, (unsigned char*)info, expected);
-    SHA384_Final(digest, &ctx);
-
-#ifdef CP2P_DEBUG_FLAG
-    printf("ID for [\"");
-    for (size_t i = 0; i < expected; i++)   {
-        printf("\\x%02x", info[i]);
-    }
-    printf("\"]:\n");
-#endif
-
-    string id = ascii_to_base_58(string((char*)digest, SHA384_DIGEST_LENGTH));
-    _base->id_len = id.length();
-    _base->id = (char *) malloc(sizeof(char) * _base->id_len);
-    memcpy(_base->id, id.c_str(), _base->id_len);
-
-    return id;
+    ensureInternalMessageID(_base);
+    return string(_base->id, _base->id_len);
 }
 
 vector<string> pathfinding_message::packets()   {
