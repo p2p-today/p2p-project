@@ -17,7 +17,9 @@ typedef struct {
 } protocol_wrapper;
 
 static void protocol_wrapper_dealloc(protocol_wrapper* self)    {
+    Py_BEGIN_ALLOW_THREADS
     destroySubnet(self->sub);
+    Py_END_ALLOW_THREADS
     Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -39,15 +41,20 @@ static int protocol_wrapper_init(protocol_wrapper *self, PyObject *args, PyObjec
                                       &sub, &sub_size, &enc, &enc_size))
         return -1;
 
+    Py_BEGIN_ALLOW_THREADS
     CP2P_DEBUG("Building protocol\n")
     self->sub = getSubnet((char *)sub, sub_size, (char *)enc, enc_size);
+    Py_END_ALLOW_THREADS
 
     return 0;
 }
 
 static PyObject *protocol_id(protocol_wrapper *self)    {
+    char * id;
+    Py_BEGIN_ALLOW_THREADS
     CP2P_DEBUG("Entering id getter\n");
-    char *id = subnetID(self->sub);
+    id = subnetID(self->sub);
+    Py_END_ALLOW_THREADS
     PyObject *ret = pybytes_from_string((unsigned char*)id, self->sub->idSize);
     if (PyErr_Occurred())
         return NULL;

@@ -55,19 +55,25 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
     if (PyErr_Occurred())
         return -1;
 
-    CP2P_DEBUG("Parsing compression list\n")
+    vector<string> comp;
     if (compression)    {
-        vector<string> comp = vector_string_from_pylist(compression);
+        comp = vector_string_from_pylist(compression);
         if (PyErr_Occurred())
             return -1;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    CP2P_DEBUG("Parsing compression list\n")
+    if (compression)    {
         self->msg = new pathfinding_message(msg_type, sender, load, comp);
     }
     else    {
         self->msg = new pathfinding_message(msg_type, sender, load);
-        CP2P_DEBUG("pmessage_wrapper variable assigned\n");
     }
+    CP2P_DEBUG("pmessage_wrapper variable assigned\n");
 
     CP2P_DEBUG("Returning\n")
+    Py_END_ALLOW_THREADS
     return 0;
 }
 
@@ -95,6 +101,7 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
         if (PyErr_Occurred())
             return NULL;
 
+        Py_BEGIN_ALLOW_THREADS
         if (sizeless && py_compression)
             ret->msg = pathfinding_message::feed_string(str, sizeless, compression);
         else if (py_compression)
@@ -103,6 +110,7 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
             ret->msg = pathfinding_message::feed_string(str, sizeless);
         else
             ret->msg = pathfinding_message::feed_string(str.substr(4));
+        Py_END_ALLOW_THREADS
     }
 
     if (PyErr_Occurred())
@@ -112,21 +120,32 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
 }
 
 static PyObject *pmessage_payload(pmessage_wrapper *self)    {
-    PyObject *ret = pylist_from_vector_string(self->msg->payload());
+    vector<string> payload;
+    Py_BEGIN_ALLOW_THREADS
+    payload = self->msg->payload();
+    Py_END_ALLOW_THREADS
+    PyObject *ret = pylist_from_vector_string(payload);
     if (PyErr_Occurred())
         return NULL;
     return ret;
 }
 
 static PyObject *pmessage_packets(pmessage_wrapper *self)    {
-    PyObject *ret = pylist_from_vector_string(self->msg->packets());
+    vector<string> packets;
+    Py_BEGIN_ALLOW_THREADS
+    packets = self->msg->packets();
+    Py_END_ALLOW_THREADS
+    PyObject *ret = pylist_from_vector_string(packets);
     if (PyErr_Occurred())
         return NULL;
     return ret;
 }
 
 static PyObject *pmessage_str(pmessage_wrapper *self)    {
-    string cp_str = self->msg->str();
+    string cp_str;
+    Py_BEGIN_ALLOW_THREADS
+    cp_str = self->msg->str();
+    Py_END_ALLOW_THREADS
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -150,8 +169,11 @@ static PyObject *pmessage_msg_type(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_id(pmessage_wrapper *self)    {
-    string cp_str = self->msg->id();
+    string cp_str;
+    Py_BEGIN_ALLOW_THREADS
+    cp_str = self->msg->id();
     CP2P_DEBUG("I got the id\n");
+    Py_END_ALLOW_THREADS
     PyObject *ret = pybytes_from_string(cp_str);
     if (PyErr_Occurred())
         return NULL;
@@ -185,7 +207,11 @@ static PyObject *pmessage_compression_used(pmessage_wrapper *self)  {
 }
 
 static PyObject *pmessage_compression_get(pmessage_wrapper *self)   {
-    PyObject *ret = pylist_from_vector_string(self->msg->compression());
+    vector<string> compression;
+    Py_BEGIN_ALLOW_THREADS
+    compression = self->msg->compression();
+    Py_END_ALLOW_THREADS
+    PyObject *ret = pylist_from_vector_string(compression);
     if (PyErr_Occurred())
         return NULL;
     return ret;
@@ -201,7 +227,9 @@ static int pmessage_compression_set(pmessage_wrapper *self, PyObject *value, voi
     if (PyErr_Occurred())
         return -1;
 
+    Py_BEGIN_ALLOW_THREADS
     self->msg->setCompression(new_compression);
+    Py_END_ALLOW_THREADS
     return 0;
 }
 
