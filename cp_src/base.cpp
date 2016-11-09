@@ -201,9 +201,8 @@ string pathfinding_message::base_string()   {
 }
 
 string pathfinding_message::str()    {
-    string base = base_string();
-    string header = pack_value(4, (unsigned long long)base.length());
-    return header + base;
+    ensureInternalMessageStr(_base);
+    return string(_base->str, _base->str_len);
 }
 
 unsigned long long pathfinding_message::length()    {

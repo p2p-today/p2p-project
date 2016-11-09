@@ -248,6 +248,59 @@ static void ensureInternalMessageID(struct InternalMessageStruct *des)  {
     des->id = ascii_to_base_58((const char *)digest, (size_t) SHA384_DIGEST_LENGTH, &(des->id_len), 1);
 }
 
+static void ensureInternalMessageStr(struct InternalMessageStruct *des) {
+    /**
+    * .. c:function:: static void ensureInternalMessageStr(struct InternalMessageStruct *des)
+    *
+    *     Ensures that the InternalMessageStruct has a serialized string calculated and assigned
+    *
+    *     :param des: A pointer to the relevant InternalMessageStruct
+    */
+    if (des->str != NULL)   {
+        CP2P_DEBUG("str already exists\n")
+        return;
+    }
+
+    ensureInternalMessageID(des);
+    size_t num_packets = 5 + des->num_payload;
+    size_t expected = des->msg_type_len + des->sender_len + des->id_len;
+    char *str = (char *) malloc(sizeof(char) * 4 * num_packets);
+    pack_value(4, str + 4, des->msg_type_len);
+    pack_value(4, str + 8, des->sender_len);
+    pack_value(4, str + 12, des->id_len);
+
+    size_t t58_len = 0;
+    char *t58 = to_base_58(des->timestamp, &t58_len);
+    pack_value(4, str + 16, t58_len);
+    expected += t58_len;
+
+    for (size_t i = 0; i < des->num_payload; i++)   {
+        pack_value(4, str + 20 + 4 * i, des->payload_lens[i]);
+        expected += des->payload_lens[i];
+    }
+
+    size_t processed = 4 * num_packets;
+    str = (char *) realloc(str, sizeof(char) * (processed + expected));
+
+    memcpy(str + processed, des->msg_type, des->msg_type_len);
+    processed += des->msg_type_len;
+    memcpy(str + processed, des->sender, des->sender_len);
+    processed += des->sender_len;
+    memcpy(str + processed, des->id, des->id_len);
+    processed += des->id_len;
+    memcpy(str + processed, t58, t58_len);
+    processed += t58_len;
+    free(t58);
+
+    for (size_t i = 0; i < des->num_payload; i++)   {
+        memcpy(str + processed, des->payload[i], des->payload_lens[i]);
+        processed += des->payload_lens[i];
+    }
+    des->str_len = processed;
+    pack_value(4, str, processed - 4);
+    des->str = str;
+}
+
 static struct InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless, int *errored)  {
     /**
     * .. c:function:: static struct InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless)
@@ -276,6 +329,9 @@ static struct InternalMessageStruct *deserializeInternalMessage(const char *seri
         packets[1], lens[1],
         packets + 4, lens + 4, num_packets - 4);
     ret->timestamp = from_base_58(packets[3], lens[3]);
+    ret->str_len = len;
+    ret->str = (char *) malloc(sizeof(char) * len);
+    memcpy(ret->str, serialized, len);
 
     ensureInternalMessageID(ret);
     *errored = memcmp(ret->id, packets[2], ret->id_len);
