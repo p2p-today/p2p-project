@@ -39,7 +39,7 @@ C Implementation's SHA2 Code
 C Literal Assert Macro
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. literalinclude:: ../cp_src/base.h
+.. literalinclude:: ../c_src/base.h
     :dedent: 2
     :lines: 43-50
     :language: none
