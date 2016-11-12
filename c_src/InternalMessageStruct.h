@@ -13,9 +13,9 @@
 extern "C" {
 #endif
 
-struct InternalMessageStruct    {
+typedef struct  {
     /**
-    * .. c:type:: struct InternalMessageStruct
+    * .. c:type:: typedef struct InternalMessageStruct
     *
     *     .. c:member:: char *msg_type
     *
@@ -95,12 +95,12 @@ struct InternalMessageStruct    {
     size_t id_len;
     char *str;
     size_t str_len;
-};
+} InternalMessageStruct;
 
 
-static struct InternalMessageStruct *constructInternalMessage(const char *type, size_t type_len, const char *sender, size_t sender_len, char **payload, size_t *payload_lens, size_t num_payload)   {
+static InternalMessageStruct *constructInternalMessage(const char *type, size_t type_len, const char *sender, size_t sender_len, char **payload, size_t *payload_lens, size_t num_payload)   {
     /**
-    * .. c:function:: static struct InternalMessageStruct *constructInternalMessage(const char *type, size_t type_len, const char *sender, size_t sender_len, char **payload, size_t *payload_lens, size_t num_payload)
+    * .. c:function:: static InternalMessageStruct *constructInternalMessage(const char *type, size_t type_len, const char *sender, size_t sender_len, char **payload, size_t *payload_lens, size_t num_payload)
     *
     *     Constructs an InternalMessageStruct. This copies all given data into a struct, then returns this struct's pointer.
     *
@@ -119,7 +119,7 @@ static struct InternalMessageStruct *constructInternalMessage(const char *type, 
     *          You must use :c:func:`destroyInternalMessage` on the resulting object, or you will develop a memory leak
     */
     CP2P_DEBUG("Inside real constructor. num_payload=%i\n", num_payload);
-    struct InternalMessageStruct *ret = (struct InternalMessageStruct *) malloc(sizeof(InternalMessageStruct));
+    InternalMessageStruct *ret = (InternalMessageStruct *) malloc(sizeof(InternalMessageStruct));
     ret->msg_type = (char *) malloc(sizeof(char) * type_len);
     memcpy(ret->msg_type, type, type_len);
     ret->msg_type_len = type_len;
@@ -151,9 +151,9 @@ static struct InternalMessageStruct *constructInternalMessage(const char *type, 
     return ret;
 }
 
-static void destroyInternalMessage(struct InternalMessageStruct *des)    {
+static void destroyInternalMessage(InternalMessageStruct *des)    {
     /**
-    * .. c:function:: static void destroyInternalMessage(struct InternalMessageStruct *des)
+    * .. c:function:: static void destroyInternalMessage(InternalMessageStruct *des)
     *
     *     :c:func:`free` an :c:type:`InteralMessageStruct` and its members
     *
@@ -192,9 +192,9 @@ static void destroyInternalMessage(struct InternalMessageStruct *des)    {
     free(des);
 }
 
-static void setInternalMessageCompressions(struct InternalMessageStruct *des, char **compression, size_t *compression_lens, size_t num_compressions)   {
+static void setInternalMessageCompressions(InternalMessageStruct *des, char **compression, size_t *compression_lens, size_t num_compressions)   {
     /**
-    * .. c:function:: static void setInternalMessageCompressions(struct InternalMessageStruct *des, char **compression, size_t *compression_lens, size_t num_compressions)
+    * .. c:function:: static void setInternalMessageCompressions(InternalMessageStruct *des, char **compression, size_t *compression_lens, size_t num_compressions)
     *
     *     Sets the compression methods for a particular :c:type:`InternalMessageStruct`. These methods are formatted as an array of strings, an array of lengths, and a
     *     number of methods. The data is copied, so you inputs can be local variables.
@@ -219,9 +219,9 @@ static void setInternalMessageCompressions(struct InternalMessageStruct *des, ch
     }
 }
 
-static void ensureInternalMessageID(struct InternalMessageStruct *des)  {
+static void ensureInternalMessageID(InternalMessageStruct *des)  {
     /**
-    * .. c:function:: static void ensureInternalMessageID(struct InternalMessageStruct *des)
+    * .. c:function:: static void ensureInternalMessageID(InternalMessageStruct *des)
     *
     *     Ensures that the InternalMessageStruct has an ID calculated and assigned
     *
@@ -248,9 +248,9 @@ static void ensureInternalMessageID(struct InternalMessageStruct *des)  {
     des->id = ascii_to_base_58((const char *)digest, (size_t) SHA384_DIGEST_LENGTH, &(des->id_len), 1);
 }
 
-static void ensureInternalMessageStr(struct InternalMessageStruct *des) {
+static void ensureInternalMessageStr(InternalMessageStruct *des) {
     /**
-    * .. c:function:: static void ensureInternalMessageStr(struct InternalMessageStruct *des)
+    * .. c:function:: static void ensureInternalMessageStr(InternalMessageStruct *des)
     *
     *     Ensures that the InternalMessageStruct has a serialized string calculated and assigned
     *
@@ -301,9 +301,9 @@ static void ensureInternalMessageStr(struct InternalMessageStruct *des) {
     des->str = str;
 }
 
-static struct InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless, int *errored)  {
+static InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless, int *errored)  {
     /**
-    * .. c:function:: static struct InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless)
+    * .. c:function:: static InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless)
     *
     *     Deserializes an uncompressed :c:type:`InternalMessageStruct`. The ``sizeless`` parameter indicates whether the network size
     *     header is still present on the given string.
@@ -324,7 +324,7 @@ static struct InternalMessageStruct *deserializeInternalMessage(const char *seri
     CP2P_DEBUG("Entering process_string\n");
     process_string(tmp, len, &packets, &lens, &num_packets);
     CP2P_DEBUG("Exiting process_string\n");
-    struct InternalMessageStruct *ret = constructInternalMessage(
+    InternalMessageStruct *ret = constructInternalMessage(
         packets[0], lens[0],
         packets[1], lens[1],
         packets + 4, lens + 4, num_packets - 4);
@@ -339,9 +339,9 @@ static struct InternalMessageStruct *deserializeInternalMessage(const char *seri
     return ret;
 }
 
-static struct InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, int *errored, char **compression, size_t *compression_lens, size_t num_compressions)    {
+static InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, int *errored, char **compression, size_t *compression_lens, size_t num_compressions)    {
     /**
-    * .. c:function:: static struct InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, char **compression, size_t *compression_lens, size_t num_compressions)
+    * .. c:function:: static InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, char **compression, size_t *compression_lens, size_t num_compressions)
     *
     *     Deserializes a compressed :c:type:`InternalMessageStruct`. The ``sizeless`` parameter indicates whether the network size
     *     header is still present on the given string.
@@ -362,7 +362,7 @@ static struct InternalMessageStruct *deserializeCompressedInternalMessage(const 
     char *result;
     size_t res_len;
     decompress_string(tmp, len, &result, &res_len, compression, compression_lens, num_compressions);
-    struct InternalMessageStruct *ret = deserializeInternalMessage(result, res_len, 0, errored);
+    InternalMessageStruct *ret = deserializeInternalMessage(result, res_len, 0, errored);
     setInternalMessageCompressions(ret, compression, compression_lens, num_compressions);
     return ret;
 }

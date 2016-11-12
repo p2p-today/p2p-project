@@ -5,14 +5,16 @@
 #include <Python.h>
 #include <bytesobject.h>
 #include "structmember.h"
+#include <string.h>
 #include "base.h"
-#include <string>
 #include "py_utils.h"
 #include "protocol_wrapper.h"
 #include "pathfinding_message_wrapper.h"
 #include "flags_wrapper.h"
 
-using namespace std;
+#ifdef _cplusplus
+extern "C" {
+#endif
 
 static PyMethodDef BaseMethods[] = {
     {NULL, NULL, 0, NULL}        /* Sentinel */
@@ -80,7 +82,7 @@ static PyMethodDef BaseMethods[] = {
     #if PY_MINOR_VERSION >= 5
             PyMem_RawFree(program);
     #else
-            delete[] program;
+            free(program);
     #endif
             return 0;
         }
@@ -122,5 +124,9 @@ static PyMethodDef BaseMethods[] = {
         initcbase();
         return 0;
     }
+
+#ifdef _cplusplus
+}
+#endif
 
 #endif

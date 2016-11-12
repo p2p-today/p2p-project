@@ -3,18 +3,16 @@
 
 #include <Python.h>
 #include <bytesobject.h>
-#include <string>
+#include <string.h>
 
 #ifdef _cplusplus
-
-#include <stdexcept>
 
 extern "C"  {
 #endif
 
 static PyObject *pybytes_from_chars(const unsigned char *str, size_t len)   {
     Py_buffer buffer;
-    int res = PyBuffer_FillInfo(&buffer, 0, (void *)str, (Py_ssize_t)len, true, PyBUF_CONTIG_RO);
+    int res = PyBuffer_FillInfo(&buffer, 0, (void *)str, (Py_ssize_t)len, 1, PyBUF_CONTIG_RO);
     if (res == -1) {
         PyErr_SetString(PyExc_RuntimeError, (char*)"Could not reconvert item back to python object");
         return NULL;
@@ -35,7 +33,7 @@ static PyObject *pybytes_from_chars(const unsigned char *str, size_t len)   {
 
 static char *chars_from_pybytes(PyObject *bytes, size_t *len)  {
     if (PyBytes_Check(bytes))   {
-        CP2P_DEBUG("Decoding as bytes\n")
+        CP2P_DEBUG("Decoding as bytes\n");
         char *buff = NULL;
         PyBytes_AsStringAndSize(bytes, &buff, (Py_ssize_t *)len);
         char *ret = (char *) malloc(sizeof(char) * (*len));
@@ -52,7 +50,7 @@ static char *chars_from_pybytes(PyObject *bytes, size_t *len)  {
     }
 #else
     else if (PyByteArray_Check(bytes))  {
-        CP2P_DEBUG("Decoding as bytearray\n")
+        CP2P_DEBUG("Decoding as bytearray\n");
         char *buff = PyByteArray_AS_STRING(bytes);
         *len = PyByteArray_GET_SIZE(bytes);
         char *ret = (char *) malloc(sizeof(char) * (*len));
@@ -61,7 +59,7 @@ static char *chars_from_pybytes(PyObject *bytes, size_t *len)  {
     }
 #endif
     else if (PyUnicode_Check(bytes))    {
-        CP2P_DEBUG("Decoding as unicode (incoming recursion)\n")
+        CP2P_DEBUG("Decoding as unicode (incoming recursion)\n");
         PyObject *tmp = PyUnicode_AsEncodedString(bytes, (char*)"utf-8", (char*)"strict");
         char *ret = chars_from_pybytes(tmp, len);
         Py_XDECREF(tmp);

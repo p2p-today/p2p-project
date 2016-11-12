@@ -5,14 +5,17 @@
 #include <bytesobject.h>
 #include "structmember.h"
 #include "base.h"
-#include <string>
+#include "InternalMessageStruct.h"
+#include <string.h>
 #include "py_utils.h"
 
-using namespace std;
+#ifdef _cplusplus
+extern "C" {
+#endif
 
 typedef struct {
     PyObject_HEAD
-    struct InternalMessageStruct *msg;
+    InternalMessageStruct *msg;
     /* Type-specific fields go here. */
 } pmessage_wrapper;
 
@@ -378,5 +381,9 @@ static PyTypeObject pmessage_wrapper_type = {
     0,                         /* tp_alloc */
     pmessage_wrapper_new,   /* tp_new */
 };
+
+#ifdef _cplusplus
+}
+#endif
 
 #endif

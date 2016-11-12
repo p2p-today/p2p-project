@@ -9,7 +9,7 @@ extern "C" {
 #include <bytesobject.h>
 #include "structmember.h"
 #include "base.h"
-#include <string>
+#include <string.h>
 #include "py_utils.h"
 
 static PyMethodDef FlagsMethods[] = {
@@ -18,7 +18,7 @@ static PyMethodDef FlagsMethods[] = {
 
 static void addConstants(PyObject *cbase, PyObject *flags_wrapper)  {
     PyModule_AddObject(cbase, "compression", pylist_from_array_string((char **)COMPRESSION_FLAGS, COMPRESSION_LENS, NUM_COMPRESSIONS));
-    PyModule_AddObject(cbase, "version", pybytes_from_chars((unsigned char *) CP2P_VERSION, strlen(CP2P_VERSION)));
+    PyModule_AddObject(cbase, "version", pybytes_from_chars((unsigned char *) C2P_VERSION, strlen(C2P_VERSION)));
     char user_salt[36];
     get_user_salt(user_salt);
     PyModule_AddObject(cbase, "user_salt", pybytes_from_chars((unsigned char *)user_salt, 36));

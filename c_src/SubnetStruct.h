@@ -6,13 +6,13 @@
 extern "C" {
 #endif
 
-struct SubnetStruct {
+typedef struct  {
     char *subnet, *encryption, *_id;
     size_t subnetSize, encryptionSize, idSize;
-};
+} SubnetStruct;
 
-static struct SubnetStruct *getSubnet(char *subnet, size_t subnetSize, char *encryption, size_t encryptionSize) {
-    struct SubnetStruct *ret = (struct SubnetStruct *) malloc(sizeof(SubnetStruct));
+static SubnetStruct *getSubnet(char *subnet, size_t subnetSize, char *encryption, size_t encryptionSize) {
+    SubnetStruct *ret = (SubnetStruct *) malloc(sizeof(SubnetStruct));
     ret->subnetSize = subnetSize;
     ret->encryptionSize = encryptionSize;
     ret->subnet = (char *) malloc(sizeof(char) * subnetSize);
@@ -24,7 +24,7 @@ static struct SubnetStruct *getSubnet(char *subnet, size_t subnetSize, char *enc
     return ret;
 }
 
-static void destroySubnet(struct SubnetStruct *sub)    {
+static void destroySubnet(SubnetStruct *sub)    {
     free(sub->subnet);
     free(sub->encryption);
     if (sub->_id != NULL)
@@ -32,10 +32,10 @@ static void destroySubnet(struct SubnetStruct *sub)    {
     free(sub);
 }
 
-static char *subnetID(struct SubnetStruct *sub) {
+static char *subnetID(SubnetStruct *sub) {
     if (sub->_id == NULL)   {
         char buffer[6];
-        size_t buffSize = sprintf(buffer, "%llu.%llu", (unsigned long long)CP2P_PROTOCOL_MAJOR_VERSION, (unsigned long long)CP2P_PROTOCOL_MINOR_VERSION);
+        size_t buffSize = sprintf(buffer, "%llu.%llu", (unsigned long long)C2P_PROTOCOL_MAJOR_VERSION, (unsigned long long)C2P_PROTOCOL_MINOR_VERSION);
         size_t infoSize = buffSize + sub->subnetSize + sub->encryptionSize;
         char *info = (char *) malloc(sizeof(char) * infoSize);
         memcpy(info, sub->subnet, sub->subnetSize);

@@ -4,65 +4,6 @@
 *
 * This module contains common functions and classes used throughout the rest of the library
 */
-#ifndef CP2P_PROTOCOL_MAJOR_VERSION
-#define CP2P__STR( ARG ) #ARG
-#define CP2P__STR__( ARG ) CP2P__STR(ARG)
-
-#define CP2P_PROTOCOL_MAJOR_VERSION 0
-#define CP2P_PROTOCOL_MINOR_VERSION 4
-#define CP2P_NODE_VERSION 516
-#define CP2P_VERSION CP2P__STR__(CP2P_PROTOCOL_MAJOR_VERSION) "." CP2P__STR__(CP2P_PROTOCOL_MINOR_VERSION) "." CP2P__STR__(CP2P_NODE_VERSION)
-/**
-* .. c:macro:: CP2P_PROTOCOL_MAJOR_VERSION
-*
-*     This macro defines the major version number. A change here indicates a major change or release, and may be breaking. In a scheme x.y.z, it would be x
-*
-* .. c:macro:: CP2P_PROTOCOL_MINOR_VERSION
-*
-*     This macro defines the minor version number. It refers specifically to minor protocol revisions, and all changes here are API compatible (after 1.0), but not compatbile with other nodes. In a scheme x.y.z, it would be y
-*
-* .. c:macro:: CP2P_NODE_VERSION
-*
-*     This macro defines the patch version number. It refers specifically to node policies, and all changes here are backwards compatible. In a scheme x.y.z, it would be z
-*
-* .. c:macro:: CP2P_VERSION
-*
-*     This macro is a string literal. It combines all the above macros into a single string. It will generate whatever a string literal would normally be interpreted as in that context.
-*
-* .. c:macro:: CP2P_DEBUG_FLAG
-*
-*     This macro indicates whether cp2p should generate debug prints. If you define this as anything it will print
-*/
-
-#ifdef CP2P_DEBUG_FLAG
-    #define CP2P_DEBUG(...) printf(__VA_ARGS__);
-#else
-    #define CP2P_DEBUG(...)
-#endif
-
-//This macro was taken from:
-//http://www.pixelbeat.org/programming/gcc/static_assert.html
-//under the GNU All-Permissive License, which is included below:
-//Copyright © Pádraig Brady 2008
-//
-//Copying and distribution of this file, with or without modification,
-//are permitted in any medium without royalty provided the copyright
-//notice and this notice are preserved.
-#define ASSERT_CONCAT_(a, b) a##b
-#define ASSERT_CONCAT(a, b) ASSERT_CONCAT_(a, b)
-/* These can't be used after statements in c89. */
-#ifdef __COUNTER__
-  #define STATIC_ASSERT(e,m) \
-    ;enum { ASSERT_CONCAT(static_assert_, __COUNTER__) = 1/(int)(!!(e)) }
-#else
-  /* This can't be used twice on the same line so ensure if using in headers
-   * that the headers are not included twice (by wrapping in #ifndef...#endif)
-   * Note it doesn't cause an issue when used on same line of separate modules
-   * compiled with gcc -combine -fwhole-program.  */
-  #define STATIC_ASSERT(e,m) \
-    ;enum { ASSERT_CONCAT(assert_line_, __LINE__) = 1/(int)(!!(e)) }
-#endif
-//End macro
 
 #include <string>
 #include <sstream>
@@ -79,44 +20,6 @@
 #include "../c_src/base.h"
 
 using namespace std;
-
-STATIC_ASSERT(sizeof(size_t) >= 4, "Size of strings is too small to easily meet protocol specs");
-
-namespace flags {
-    static const unsigned char\
-    *reserved = (unsigned char*)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F",
-    *implemented_compressions = (unsigned char*)"";
-
-    static const size_t\
-    reserved_len = 0x20,
-    compression_len = 0x00;
-
-    /**
-    * .. cpp:var:: static const unsigned char *flags::reserved_cstr
-    *
-    *     This binary data string contains every reserved flag.
-    *
-    *     .. note::
-    *
-    *         This will be refactored later to an array of :c:type:`unsigned char *` s, but for know just know that all flags are one char long.
-    *
-    * .. cpp:var:: static const size_t flags::reserved_len
-    *
-    *     The length of the above string
-    *
-    * .. cpp:var:: static const unsigned char *flags::implemented_compressions_cstr
-    *
-    *     This binary data string contains the flag of every implemented compression methods.
-    *
-    *     .. note::
-    *
-    *         This will be refactored later to an array of :c:type:`unsigned char *` s, but for know just know that all flags are one char long.
-    *
-    * .. cpp:var:: static const size_t flags::compression_len
-    *
-    *     The length of the above string
-    */
-}
 
 static string get_user_salt()  {
     /**
@@ -237,7 +140,7 @@ class protocol  {
         *     .. cpp:function:: std::string protocol::encryption
         */
     private:
-        struct SubnetStruct *_base;
+        SubnetStruct *_base;
 };
 
 class pathfinding_message   {
@@ -383,8 +286,8 @@ class pathfinding_message   {
         *         :returns: the four byte size header at the beginning of the serialized message
         */
     private:
-        struct InternalMessageStruct *_base;
-        pathfinding_message(struct InternalMessageStruct *base);
+        InternalMessageStruct *_base;
+        pathfinding_message(InternalMessageStruct *base);
         void init(string msg_type, string sen, vector<string> load);
 };
 

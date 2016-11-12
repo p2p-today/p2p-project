@@ -75,8 +75,7 @@ def main():
         ext_modules.append(
             Extension(
                 'py2p.cbase',
-                sources=[os.path.join(loc, 'cp_src', 'base_wrapper.cpp'),
-                         os.path.join(loc, 'cp_src', 'base.cpp'),
+                sources=[os.path.join(loc, 'c_src', 'base_wrapper.c'),
                          os.path.join(loc, 'c_src', 'sha', 'sha2.c')],
                 define_macros=__DEBUG__))
 

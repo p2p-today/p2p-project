@@ -8,12 +8,13 @@ extern "C"  {
 #include <Python.h>
 #include <bytesobject.h>
 #include "structmember.h"
+#include "SubnetStruct.h"
 #include "base.h"
 #include "py_utils.h"
 
 typedef struct {
     PyObject_HEAD
-    struct SubnetStruct *sub;
+    SubnetStruct *sub;
 } protocol_wrapper;
 
 static void protocol_wrapper_dealloc(protocol_wrapper* self)    {
@@ -42,7 +43,7 @@ static int protocol_wrapper_init(protocol_wrapper *self, PyObject *args, PyObjec
         return -1;
 
     Py_BEGIN_ALLOW_THREADS
-    CP2P_DEBUG("Building protocol\n")
+    CP2P_DEBUG("Building protocol\n");
     self->sub = getSubnet((char *)sub, sub_size, (char *)enc, enc_size);
     Py_END_ALLOW_THREADS
 
