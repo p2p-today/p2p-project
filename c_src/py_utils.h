@@ -77,7 +77,8 @@ static char **array_string_from_pylist(PyObject *incoming, size_t **arr_lens, si
         *num_objects = (size_t) PyList_Size(incoming);
         out = (char **) malloc(sizeof(char *) * (*num_objects));
         *arr_lens = (size_t *) malloc(sizeof(size_t) * (*num_objects));
-        for(size_t i = 0; i < *num_objects; i++) {
+        size_t i;
+        for(i = 0; i < *num_objects; i++) {
             PyObject *value = PyList_GetItem(incoming, (Py_ssize_t) i);
             out[i] = chars_from_pybytes(value, &((*arr_lens)[i]));
             if (PyErr_Occurred())
@@ -88,7 +89,8 @@ static char **array_string_from_pylist(PyObject *incoming, size_t **arr_lens, si
         *num_objects = (size_t) PyTuple_Size(incoming);
         out = (char **) malloc(sizeof(char *) * (*num_objects));
         *arr_lens = (size_t *) malloc(sizeof(size_t) * (*num_objects));
-        for(size_t i = 0; i < *num_objects; i++) {
+        size_t i;
+        for(i = 0; i < *num_objects; i++) {
             PyObject *value = PyTuple_GetItem(incoming, (Py_ssize_t) i);
             out[i] = chars_from_pybytes(value, &((*arr_lens)[i]));
             if (PyErr_Occurred())
@@ -115,7 +117,8 @@ static PyObject *pylist_from_array_string(char **lst, size_t *lens, size_t num) 
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate memory for Python list");
         return NULL;
     }
-    for (size_t i = 0; i < num; i++) {
+    size_t i;
+    for (i = 0; i < num; i++) {
         PyList_SET_ITEM(listObj, i, pybytes_from_chars((unsigned char*)lst[i], lens[i]));
     }
     return listObj;

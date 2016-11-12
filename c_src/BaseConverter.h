@@ -48,7 +48,8 @@ const static char *ascii   = (char *)"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x
 */
 
 static inline size_t find_base_58(const char search)  {
-    for (size_t i = 0; i < 58; i++) {
+    size_t i;
+    for (i = 0; i < 58; i++) {
         if (base_58[i] == search)
             return i;
     }
@@ -88,7 +89,8 @@ static inline unsigned long long from_base_58(const char *str, const size_t len)
 
 static inline unsigned int base2dec(const char *value, const size_t len)  {
     unsigned int result = 0;
-    for (size_t i = 0; i < len; ++i) {
+    size_t i;
+    for (i = 0; i < len; ++i) {
         result <<= 8;
         result += (unsigned char)value[i];
     }
@@ -178,7 +180,8 @@ static unsigned int divide_58(char *x, size_t *length)  {
     size_t len = 4;
     char dec2base_str[4] = {};
 
-    for (size_t i = 0; i < const_length; ++i) {
+    size_t i;
+    for (i = 0; i < const_length; ++i) {
         const size_t j = i + 1 + (*length) - const_length;
         if (*length < j)
             break;

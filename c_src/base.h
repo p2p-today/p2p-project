@@ -234,7 +234,8 @@ static void get_user_salt(char result[36])  {
     CP2P_DEBUG("Building user_salt\n");
     strncpy(result, "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx", 36);
     char *temp_hex_set = (char*)"0123456789abcdef";
-    for (size_t i = 0; i < 36; i++) {
+    size_t i;
+    for (i = 0; i < 36; i++) {
         if (result[i] == 'x')
             result[i] = temp_hex_set[(rand() % 16)];
         else if (result[i] == 'y')
@@ -259,7 +260,8 @@ static unsigned long long unpack_value(const char *str, size_t len)   {
     *         Integer overflow will not be accounted for
     */
     unsigned long long val = 0;
-    for (size_t i = 0; i < len; i++)    {
+    size_t i;
+    for (i = 0; i < len; i++)    {
         val = val << 8;
         val += (unsigned char)str[i];
     }
@@ -281,7 +283,8 @@ static void pack_value(size_t len, char *arr, unsigned long long i)  {
     *         Integer overflow will not be accounted for
     */
     memset(arr, 0, len);
-    for (size_t j = 0; j < len && i != 0; j++)    {
+    size_t j;
+    for (j = 0; j < len && i != 0; j++)    {
         arr[len - j - 1] = i & 0xff;
         i = i >> 8;
     }
@@ -370,7 +373,8 @@ static int process_string(const char *str, size_t len, char ***packets, size_t *
     CP2P_DEBUG("Exited while loop\n");
     *packets = (char **) realloc(*packets, sizeof(char *) * (*num_packets));
     CP2P_DEBUG("Entering for loop\n");
-    for (size_t i = 0; i < *num_packets; i++)    {
+    size_t i;
+    for (i = 0; i < *num_packets; i++)    {
         (*packets)[i] = (char *) malloc(sizeof(char) * (*lens)[i]);
         memcpy((*packets)[i], str + processed, (*lens)[i]);
         processed += (*lens)[i];

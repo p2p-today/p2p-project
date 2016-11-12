@@ -67,7 +67,8 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
 
     Py_BEGIN_ALLOW_THREADS
     self->msg = constructInternalMessage(msg_type, type_len, sender, sender_len, load, load_lens, num_load);
-    for (size_t i = 0; i < num_load; i++)
+    size_t i;
+    for (i = 0; i < num_load; i++)
         free(load[i]);
     free(msg_type);
     free(sender);
@@ -75,7 +76,7 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
     CP2P_DEBUG("Parsing compression list\n")
     if (compression)    {
         setInternalMessageCompressions(self->msg, comp, comp_lens, num_comp);
-        for (size_t i = 0; i < num_comp; i++)
+        for (i = 0; i < num_comp; i++)
             free(comp[i]);
         free(comp_lens);
         free(comp);
@@ -115,7 +116,8 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
         Py_BEGIN_ALLOW_THREADS
         if (py_compression) {
             ret->msg = deserializeCompressedInternalMessage(str, str_len, sizeless, &err, comp, comp_lens, num_comp);
-            for (size_t i = 0; i < num_comp; i++)
+            size_t i;
+            for (i = 0; i < num_comp; i++)
                 free(comp[i]);
             free(comp);
             free(comp_lens);
@@ -156,7 +158,8 @@ static PyObject *pmessage_packets(pmessage_wrapper *self)    {
     packets[2] = self->msg->id;
     lens[2] = self->msg->id_len;
     packets[3] = to_base_58(self->msg->timestamp, lens + 3);
-    for (size_t i = 0; i < self->msg->num_payload; i++) {
+    size_t i;
+    for (i = 0; i < self->msg->num_payload; i++) {
         packets[4+i] = self->msg->payload[i];
         lens[4+i] = self->msg->payload_lens[i];
     }

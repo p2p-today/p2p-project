@@ -131,7 +131,8 @@ static InternalMessageStruct *constructInternalMessage(const char *type, size_t 
     ret->payload = (char **) malloc(sizeof(char *) * num_payload);
     ret->payload_lens = (size_t *) malloc(sizeof(size_t) * num_payload);
     CP2P_DEBUG("At for loop\n");
-    for (size_t i = 0; i < num_payload; i++)    {
+    size_t i;
+    for (i = 0; i < num_payload; i++)    {
         ret->payload[i] = (char *) malloc(sizeof(char) * payload_lens[i]);
         ret->payload_lens[i] = payload_lens[i];
         memcpy(ret->payload[i], payload[i], payload_lens[i]);
@@ -162,7 +163,8 @@ static void destroyInternalMessage(InternalMessageStruct *des)    {
     CP2P_DEBUG("1\n");
     free(des->msg_type);
     CP2P_DEBUG("2\n");
-    for (size_t i = 0; i < des->num_payload; i++)   {
+    size_t i;
+    for (i = 0; i < des->num_payload; i++)   {
         free(des->payload[i]);
     }
     CP2P_DEBUG("3\n");
@@ -172,7 +174,7 @@ static void destroyInternalMessage(InternalMessageStruct *des)    {
     CP2P_DEBUG("5\n");
     if (des->compression != NULL)   {
         CP2P_DEBUG("6\n");
-        for (size_t i = 0; i < des->num_compressions; i++)  {
+        for (i = 0; i < des->num_compressions; i++)  {
             free(des->compression[i]);
         }
         CP2P_DEBUG("7\n");
@@ -204,8 +206,9 @@ static void setInternalMessageCompressions(InternalMessageStruct *des, char **co
     *     :param compression_lens:  An array of lengths for each compression method
     *     :param num_compressions:  The number of compression methods
     */
+    size_t i;
     if (des->compression != NULL)   {
-        for (size_t i = 0; i < des->num_compressions; i++)  {
+        for (i = 0; i < des->num_compressions; i++)  {
             free(des->compression[i]);
         }
         free(des->compression);
@@ -213,7 +216,7 @@ static void setInternalMessageCompressions(InternalMessageStruct *des, char **co
     }
     des->compression = (char **) malloc(sizeof(char *) * num_compressions);
     des->compression_lens = (size_t *) malloc(sizeof(size_t) * num_compressions);
-    for (size_t i = 0; i < des->num_compressions; i++)  {
+    for (i = 0; i < des->num_compressions; i++)  {
         des->compression[i] = (char *) malloc(sizeof(char) * compression_lens[i]);
         memcpy(des->compression[i], compression[i], compression_lens[i]);
     }
@@ -237,7 +240,8 @@ static void ensureInternalMessageID(InternalMessageStruct *des)  {
     SHA384_CTX ctx;
     SHA384_Init(&ctx);
 
-    for (size_t i = 0; i < des->num_payload; i++)
+    size_t i;
+    for (i = 0; i < des->num_payload; i++)
         SHA384_Update(&ctx, (const unsigned char *) des->payload[i], des->payload_lens[i]);
 
     size_t t58_len = 0;
@@ -274,7 +278,8 @@ static void ensureInternalMessageStr(InternalMessageStruct *des) {
     pack_value(4, str + 16, t58_len);
     expected += t58_len;
 
-    for (size_t i = 0; i < des->num_payload; i++)   {
+    size_t i;
+    for (i = 0; i < des->num_payload; i++)   {
         pack_value(4, str + 20 + 4 * i, des->payload_lens[i]);
         expected += des->payload_lens[i];
     }
@@ -292,7 +297,7 @@ static void ensureInternalMessageStr(InternalMessageStruct *des) {
     processed += t58_len;
     free(t58);
 
-    for (size_t i = 0; i < des->num_payload; i++)   {
+    for (i = 0; i < des->num_payload; i++)   {
         memcpy(str + processed, des->payload[i], des->payload_lens[i]);
         processed += des->payload_lens[i];
     }
