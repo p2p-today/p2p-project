@@ -69,7 +69,8 @@ static inline size_t find_base_58(const char search)  {
 
 static inline unsigned long long from_base_58(const char *str, const size_t len) {
     unsigned long long ret = 0;
-    for (unsigned int i = 0; i < len; i++)    {
+    unsigned int i;
+    for (i = 0; i < len; i++)    {
         ret *= (unsigned long long) 58;
         ret += (unsigned long long) find_base_58(str[i]);
     }
@@ -152,7 +153,8 @@ static char *to_base_58(unsigned long long i, size_t *len) {
         str[0] = base_58[0];
     else    {
         const size_t lim = pos - 1;
-        for (size_t i = 0; i < lim - i; i++)    {
+        size_t i;
+        for (i = 0; i < lim - i; i++)    {
             str[i] ^= str[lim - i];
             str[lim - i] ^= str[i];
             str[i] ^= str[lim - i];

@@ -66,7 +66,7 @@ static PyMethodDef BaseMethods[] = {
             wchar_t *program = Py_DecodeLocale(argv[0], NULL);
     #else
             size_t size = strlen(argv[0]) + 1;
-            wchar_t* program[size] = {};
+            wchar_t program[size];
             mbstowcs(program, argv[0], size);
     #endif
 
