@@ -10,6 +10,149 @@
 extern "C" {
 #endif
 
+#define BROADCAST_FLAG (unsigned char *) "\x00"
+#define BROADCAST_LEN (size_t) 1
+#define WATERFALL_FLAG (unsigned char *) "\x01"
+#define WATERFALL_LEN (size_t) 1
+#define WHISPER_FLAG (unsigned char *) "\x02"
+#define WHISPER_LEN (size_t) 1
+#define RENEGOTIATE_FLAG (unsigned char *) "\x03"
+#define RENEGOTIATE_LEN (size_t) 1
+#define PING_FLAG (unsigned char *) "\x04"
+#define PING_LEN (size_t) 1
+#define PONG_FLAG (unsigned char *) "\x05"
+#define PONG_LEN (size_t) 1
+#define COMPRESSION_FLAG (unsigned char *) "\x01"
+#define COMPRESSION_LEN (size_t) 1
+#define HANDSHAKE_FLAG (unsigned char *) "\x03"
+#define HANDSHAKE_LEN (size_t) 1
+#define NOTIFY_FLAG (unsigned char *) "\x06"
+#define NOTIFY_LEN (size_t) 1
+#define PEERS_FLAG (unsigned char *) "\x07"
+#define PEERS_LEN (size_t) 1
+#define REQUEST_FLAG (unsigned char *) "\x08"
+#define REQUEST_LEN (size_t) 1
+#define RESEND_FLAG (unsigned char *) "\x09"
+#define RESEND_LEN (size_t) 1
+#define RESPONSE_FLAG (unsigned char *) "\x0A"
+#define RESPONSE_LEN (size_t) 1
+#define STORE_FLAG (unsigned char *) "\x0B"
+#define STORE_LEN (size_t) 1
+#define RETRIEVE_FLAG (unsigned char *) "\x0C"
+#define RETRIEVE_LEN (size_t) 1
+#define BZ2_FLAG (unsigned char *) "\x10"
+#define BZ2_LEN (size_t) 1
+#define GZIP_FLAG (unsigned char *) "\x11"
+#define GZIP_LEN (size_t) 1
+#define LZMA_FLAG (unsigned char *) "\x12"
+#define LZMA_LEN (size_t) 1
+#define ZLIB_FLAG (unsigned char *) "\x13"
+#define ZLIB_LEN (size_t) 1
+#define BWTC_FLAG (unsigned char *) "\x14"
+#define BWTC_LEN (size_t) 1
+#define CONTEXT1_FLAG (unsigned char *) "\x15"
+#define CONTEXT1_LEN (size_t) 1
+#define DEFSUM_FLAG (unsigned char *) "\x16"
+#define DEFSUM_LEN (size_t) 1
+#define DMC_FLAG (unsigned char *) "\x17"
+#define DMC_LEN (size_t) 1
+#define FENWICK_FLAG (unsigned char *) "\x18"
+#define FENWICK_LEN (size_t) 1
+#define HUFFMAN_FLAG (unsigned char *) "\x19"
+#define HUFFMAN_LEN (size_t) 1
+#define LZJB_FLAG (unsigned char *) "\x1A"
+#define LZJB_LEN (size_t) 1
+#define LZJBR_FLAG (unsigned char *) "\x1B"
+#define LZJBR_LEN (size_t) 1
+#define LZP3_FLAG (unsigned char *) "\x1C"
+#define LZP3_LEN (size_t) 1
+#define MTF_FLAG (unsigned char *) "\x1D"
+#define MTF_LEN (size_t) 1
+#define PPMD_FLAG (unsigned char *) "\x1E"
+#define PPMD_LEN (size_t) 1
+#define SIMPLE_FLAG (unsigned char *) "\x1F"
+#define SIMPLE_LEN (size_t) 1
+
+static size_t NUM_RESERVED = 0x20;
+
+static unsigned char *RESERVED_FLAGS[] = {
+    BROADCAST_FLAG,
+    WATERFALL_FLAG,
+    WHISPER_FLAG,
+    RENEGOTIATE_FLAG,
+    PING_FLAG,
+    PONG_FLAG,
+    NOTIFY_FLAG,
+    PEERS_FLAG,
+    REQUEST_FLAG,
+    RESEND_FLAG,
+    RESPONSE_FLAG,
+    STORE_FLAG,
+    RETRIEVE_FLAG,
+    (unsigned char *) "\x0D",
+    (unsigned char *) "\x0E",
+    (unsigned char *) "\x0F",
+    BZ2_FLAG,
+    GZIP_FLAG,
+    LZMA_FLAG,
+    ZLIB_FLAG,
+    BWTC_FLAG,
+    CONTEXT1_FLAG,
+    DEFSUM_FLAG,
+    DMC_FLAG,
+    FENWICK_FLAG,
+    HUFFMAN_FLAG,
+    LZJB_FLAG,
+    LZJBR_FLAG,
+    LZP3_FLAG,
+    MTF_FLAG,
+    PPMD_FLAG,
+    SIMPLE_FLAG
+};
+
+static size_t RESERVED_LENS[] = {
+    BROADCAST_LEN,
+    WATERFALL_LEN,
+    WHISPER_LEN,
+    RENEGOTIATE_LEN,
+    PING_LEN,
+    PONG_LEN,
+    NOTIFY_LEN,
+    PEERS_LEN,
+    REQUEST_LEN,
+    RESEND_LEN,
+    RESPONSE_LEN,
+    STORE_LEN,
+    RETRIEVE_LEN,
+    1,
+    1,
+    1,
+    BZ2_LEN,
+    GZIP_LEN,
+    LZMA_LEN,
+    ZLIB_LEN,
+    BWTC_LEN,
+    CONTEXT1_LEN,
+    DEFSUM_LEN,
+    DMC_LEN,
+    FENWICK_LEN,
+    HUFFMAN_LEN,
+    LZJB_LEN,
+    LZJBR_LEN,
+    LZP3_LEN,
+    MTF_LEN,
+    PPMD_LEN,
+    SIMPLE_LEN
+};
+
+static size_t NUM_COMPRESSIONS = 0;
+
+static unsigned char *COMPRESSION_FLAGS[] = {
+};
+
+static size_t COMPRESSION_LENS[] = {
+};
+
 static unsigned long long getUTC() {
     /**
     * .. c:function:: unsigned long getUTC()

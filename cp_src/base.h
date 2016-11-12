@@ -115,58 +115,7 @@ namespace flags {
     * .. cpp:var:: static const size_t flags::compression_len
     *
     *     The length of the above string
-    *
-    * .. cpp:var:: static const unsigned char flags::other_flags
-    *
-    *     These are the flags currently reserved. They are guarunteed to be the same names and values as the flags within :py:class:`py2p.base.flags`.
-    *
-    *     .. note::
-    *
-    *         This will be refactored later to an array of :c:type:`unsigned char *` s, but for know just know that all flags are one char long.
     */
-
-    static const unsigned char\
-    broadcast   =  0x00,  // also sub-flag
-    waterfall   =  0x01,
-    whisper     =  0x02,  // also sub-flag
-    renegotiate =  0x03,
-    ping        =  0x04,  // Unused, but reserved
-    pong        =  0x05,  // Unused, but reserved
-
-    // sub-flags
-    //broadcast   =  0x00,
-    compression =  0x01,
-    //whisper     =  0x02,
-    handshake   =  0x03,
-    //ping        =  0x04,
-    //pong        =  0x05,
-    notify      =  0x06,
-    peers       =  0x07,
-    request     =  0x08,
-    resend      =  0x09,
-    response    =  0x0A,
-    store       =  0x0B,
-    retrieve    =  0x0C,
-
-    // implemented compression methods
-    gzip    =  0x11,
-    zlib    =  0x13,
-
-    // non-implemented compression methods (based on list from compressjs):
-    bwtc    =  0x14,
-    bz2     =  0x10,
-    context1=  0x15,
-    defsum  =  0x16,
-    dmc     =  0x17,
-    fenwick =  0x18,
-    huffman =  0x19,
-    lzjb    =  0x1A,
-    lzjbr   =  0x1B,
-    lzma    =  0x12,
-    lzp3    =  0x1C,
-    mtf     =  0x1D,
-    ppmd    =  0x1E,
-    simple  =  0x1F;
 }
 
 static string get_user_salt()  {

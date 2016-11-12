@@ -12,9 +12,9 @@
 extern "C"  {
 #endif
 
-static PyObject *pybytes_from_string(unsigned char *str, size_t len)   {
+static PyObject *pybytes_from_chars(const unsigned char *str, size_t len)   {
     Py_buffer buffer;
-    int res = PyBuffer_FillInfo(&buffer, 0, str, (Py_ssize_t)len, true, PyBUF_CONTIG_RO);
+    int res = PyBuffer_FillInfo(&buffer, 0, (void *)str, (Py_ssize_t)len, true, PyBUF_CONTIG_RO);
     if (res == -1) {
         PyErr_SetString(PyExc_RuntimeError, (char*)"Could not reconvert item back to python object");
         return NULL;
@@ -33,31 +33,20 @@ static PyObject *pybytes_from_string(unsigned char *str, size_t len)   {
     return ret;
 }
 
-#ifdef _cplusplus
-}
-#endif
-
-using namespace std;
-
-static PyObject *pybytes_from_string(string str)   {
-    unsigned char* c_str = (unsigned char*)str.c_str();
-    size_t len = str.length();
-    return pybytes_from_string(c_str, len);
-}
-
-static string string_from_pybytes(PyObject *bytes)  {
+static char *chars_from_pybytes(PyObject *bytes, size_t *len)  {
     if (PyBytes_Check(bytes))   {
         CP2P_DEBUG("Decoding as bytes\n")
         char *buff = NULL;
-        Py_ssize_t len = 0;
-        PyBytes_AsStringAndSize(bytes, &buff, &len);
-        return string(buff, len);
+        PyBytes_AsStringAndSize(bytes, &buff, (Py_ssize_t *)len);
+        char *ret = (char *) malloc(sizeof(char) * (*len));
+        memcpy(ret, buff, *len);
+        return ret;
     }
 #if PY_MAJOR_VERSION >= 3
     else if (PyObject_CheckBuffer(bytes))   {
-        CP2P_DEBUG("Decoding as buffer\n")
+        CP2P_DEBUG("Decoding as buffer (incoming recursion)\n")
         PyObject *tmp = PyBytes_FromObject(bytes);
-        string ret = string_from_pybytes(tmp);
+        char *ret = chars_from_pybytes(tmp, len);
         Py_XDECREF(tmp);
         return ret;
     }
@@ -65,71 +54,78 @@ static string string_from_pybytes(PyObject *bytes)  {
     else if (PyByteArray_Check(bytes))  {
         CP2P_DEBUG("Decoding as bytearray\n")
         char *buff = PyByteArray_AS_STRING(bytes);
-        Py_ssize_t len = PyByteArray_GET_SIZE(bytes);
-        return string(buff, len);
+        *len = PyByteArray_GET_SIZE(bytes);
+        char *ret = (char *) malloc(sizeof(char) * (*len));
+        memcpy(ret, buff, *len);
+        return ret;
     }
 #endif
     else if (PyUnicode_Check(bytes))    {
         CP2P_DEBUG("Decoding as unicode (incoming recursion)\n")
         PyObject *tmp = PyUnicode_AsEncodedString(bytes, (char*)"utf-8", (char*)"strict");
-        string ret = string_from_pybytes(tmp);
+        char *ret = chars_from_pybytes(tmp, len);
         Py_XDECREF(tmp);
         return ret;
     }
     else    {
         PyErr_SetObject(PyExc_TypeError, bytes);
-        return string();
+        return NULL;
     }
 }
 
-static vector<string> vector_string_from_pylist(PyObject *incoming)    {
-    vector<string> out;
+static char **array_string_from_pylist(PyObject *incoming, size_t **arr_lens, size_t *num_objects)    {
+    char **out;
     if (PyList_Check(incoming)) {
-        for(Py_ssize_t i = 0; i < PyList_Size(incoming); i++) {
-            PyObject *value = PyList_GetItem(incoming, i);
-            out.push_back(string_from_pybytes(value));
+        *num_objects = (size_t) PyList_Size(incoming);
+        out = (char **) malloc(sizeof(char *) * (*num_objects));
+        *arr_lens = (size_t *) malloc(sizeof(size_t) * (*num_objects));
+        for(size_t i = 0; i < *num_objects; i++) {
+            PyObject *value = PyList_GetItem(incoming, (Py_ssize_t) i);
+            out[i] = chars_from_pybytes(value, &((*arr_lens)[i]));
             if (PyErr_Occurred())
                 return out;
         }
     }
     else if (PyTuple_Check(incoming)) {
-        for(Py_ssize_t i = 0; i < PyTuple_Size(incoming); i++) {
-            PyObject *value = PyTuple_GetItem(incoming, i);
-            out.push_back(string_from_pybytes(value));
+        *num_objects = (size_t) PyTuple_Size(incoming);
+        out = (char **) malloc(sizeof(char *) * (*num_objects));
+        *arr_lens = (size_t *) malloc(sizeof(size_t) * (*num_objects));
+        for(size_t i = 0; i < *num_objects; i++) {
+            PyObject *value = PyTuple_GetItem(incoming, (Py_ssize_t) i);
+            out[i] = chars_from_pybytes(value, &((*arr_lens)[i]));
             if (PyErr_Occurred())
                 return out;
         }
     }
     else {
         PyObject *iter = PyObject_GetIter(incoming);
+        PyObject *tup = PySequence_Tuple(iter);
         if (PyErr_Occurred())
             PyErr_SetObject(PyExc_TypeError, incoming);
         else    {
-            PyObject *item;
-            while ((item = PyIter_Next(iter)) != NULL)  {
-                out.push_back(string_from_pybytes(item));
-                Py_DECREF(item);
-                if (PyErr_Occurred())   {
-                    Py_DECREF(iter);
-                    return out;
-                }
-            }
+            out = array_string_from_pylist(tup, arr_lens, num_objects);
             Py_DECREF(iter);
+            Py_DECREF(tup);
         }
     }
     return out;
 }
 
-static PyObject *pylist_from_vector_string(vector<string> lst) {
-    PyObject *listObj = PyList_New( lst.size() );
+static PyObject *pylist_from_array_string(char **lst, size_t *lens, size_t num) {
+    PyObject *listObj = PyList_New(num);
     if (!listObj)   {
         PyErr_SetString(PyExc_MemoryError, "Unable to allocate memory for Python list");
         return NULL;
     }
-    for (unsigned int i = 0; i < lst.size(); i++) {
-        PyList_SET_ITEM(listObj, i, pybytes_from_string(lst[i]));
+    for (size_t i = 0; i < num; i++) {
+        PyList_SET_ITEM(listObj, i, pybytes_from_chars((unsigned char*)lst[i], lens[i]));
     }
     return listObj;
 }
+
+#ifdef _cplusplus
+}
+
+#endif
 
 #endif
