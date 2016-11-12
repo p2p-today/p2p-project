@@ -133,9 +133,9 @@ STATIC_ASSERT(sizeof(size_t) >= 4, "Size of strings is too small to easily meet 
 #define SIMPLE_FLAG (unsigned char *) "\x1F"
 #define SIMPLE_LEN (size_t) 1
 
-#define NUM_RESERVED 0x20
+static size_t NUM_RESERVED = 0x20;
 
-static unsigned char *RESERVED_FLAGS[NUM_RESERVED] = {
+static unsigned char *RESERVED_FLAGS[] = {
     BROADCAST_FLAG,
     WATERFALL_FLAG,
     WHISPER_FLAG,
@@ -170,7 +170,7 @@ static unsigned char *RESERVED_FLAGS[NUM_RESERVED] = {
     SIMPLE_FLAG
 };
 
-static size_t RESERVED_LENS[NUM_RESERVED] = {
+static size_t RESERVED_LENS[] = {
     BROADCAST_LEN,
     WATERFALL_LEN,
     WHISPER_LEN,
@@ -205,12 +205,12 @@ static size_t RESERVED_LENS[NUM_RESERVED] = {
     SIMPLE_LEN
 };
 
-#define NUM_COMPRESSIONS 0;
+static size_t NUM_COMPRESSIONS = 0;
 
-static unsigned char *COMPRESSION_FLAGS[NUM_COMPRESSIONS] = {
+static unsigned char *COMPRESSION_FLAGS[] = {
 };
 
-static size_t COMPRESSION_LENS[NUM_COMPRESSIONS] = {
+static size_t COMPRESSION_LENS[] = {
 };
 
 static unsigned long long getUTC() {
