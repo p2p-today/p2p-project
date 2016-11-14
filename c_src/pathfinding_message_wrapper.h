@@ -34,7 +34,7 @@ static PyObject *pmessage_wrapper_new(PyTypeObject *type, PyObject *args, PyObje
 
 static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObject *kwds)  {
     char *msg_type, *sender, **load, **comp;
-    size_t type_len, sender_len, num_load, *load_lens, num_comp, *comp_lens;
+    size_t i, type_len, sender_len, num_load, *load_lens, num_comp, *comp_lens;
     PyObject *py_msg=NULL, *py_sender=NULL, *payload=NULL, *compression=NULL;
 
     static char *kwlist[] = {(char*)"msg_type", (char*)"sender", (char*)"payload", (char*)"compressions", NULL};
@@ -67,7 +67,6 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
 
     Py_BEGIN_ALLOW_THREADS
     self->msg = constructInternalMessage(msg_type, type_len, sender, sender_len, load, load_lens, num_load);
-    size_t i;
     for (i = 0; i < num_load; i++)
         free(load[i]);
     free(msg_type);
@@ -90,9 +89,10 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
 
 static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args, PyObject *kwds)    {
     char *str, **comp;
-    size_t str_len, *comp_lens, num_comp;
-    int sizeless = 0;
+    size_t i, str_len, *comp_lens, num_comp;
+    int err, sizeless = 0;
     PyObject *py_compression=NULL, *py_str=NULL;
+    pmessage_wrapper *ret;
 
     static char *kwlist[] = {(char*)"string", (char*)"sizeless", (char*)"compressions", NULL};
 
@@ -104,8 +104,7 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
     if (PyErr_Occurred())
         return NULL;
 
-    pmessage_wrapper *ret = (pmessage_wrapper *)type->tp_alloc(type, 0);
-    int err;
+    ret = (pmessage_wrapper *)type->tp_alloc(type, 0);
 
     if (ret != NULL)    {
         if (py_compression)
@@ -116,7 +115,6 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
         Py_BEGIN_ALLOW_THREADS
         if (py_compression) {
             ret->msg = deserializeCompressedInternalMessage(str, str_len, sizeless, &err, comp, comp_lens, num_comp);
-            size_t i;
             for (i = 0; i < num_comp; i++)
                 free(comp[i]);
             free(comp);
@@ -144,8 +142,8 @@ static PyObject *pmessage_payload(pmessage_wrapper *self)    {
 
 static PyObject *pmessage_packets(pmessage_wrapper *self)    {
     char **packets;
-    size_t *lens;
-    size_t num;
+    size_t i, num, *lens;
+    PyObject *ret;
     Py_BEGIN_ALLOW_THREADS
     num = 4 + self->msg->num_payload;
     packets = (char **) malloc(sizeof(char *) * num);
@@ -158,13 +156,12 @@ static PyObject *pmessage_packets(pmessage_wrapper *self)    {
     packets[2] = self->msg->id;
     lens[2] = self->msg->id_len;
     packets[3] = to_base_58(self->msg->timestamp, lens + 3);
-    size_t i;
     for (i = 0; i < self->msg->num_payload; i++) {
         packets[4+i] = self->msg->payload[i];
         lens[4+i] = self->msg->payload_lens[i];
     }
     Py_END_ALLOW_THREADS
-    PyObject *ret = pylist_from_array_string(packets, lens, num);
+    ret = pylist_from_array_string(packets, lens, num);
     free(packets[3]);
     free(packets);
     free(lens);
@@ -174,12 +171,13 @@ static PyObject *pmessage_packets(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_str(pmessage_wrapper *self)    {
+    PyObject *ret;
     if (self->msg->str_len == 0)    {
         Py_BEGIN_ALLOW_THREADS
         ensureInternalMessageStr(self->msg);
         Py_END_ALLOW_THREADS
     }
-    PyObject *ret = pybytes_from_chars((unsigned char*) self->msg->str, self->msg->str_len);
+    ret = pybytes_from_chars((unsigned char*) self->msg->str, self->msg->str_len);
     if (PyErr_Occurred())
         return NULL;
     return ret;
@@ -200,12 +198,13 @@ static PyObject *pmessage_msg_type(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_id(pmessage_wrapper *self)    {
+    PyObject *ret;
     if (self->msg->id_len == 0) {
         Py_BEGIN_ALLOW_THREADS
         ensureInternalMessageID(self->msg);
         Py_END_ALLOW_THREADS
     }
-    PyObject *ret = pybytes_from_chars((unsigned char*) self->msg->id, self->msg->id_len);
+    ret = pybytes_from_chars((unsigned char*) self->msg->id, self->msg->id_len);
     if (PyErr_Occurred())
         return NULL;
     return ret;
@@ -229,10 +228,11 @@ static PyObject *pmessage_timestamp(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_compression_used(pmessage_wrapper *self)  {
+    PyObject *ret;
     if (self->msg->num_compressions == 0)
         Py_RETURN_NONE;
 
-    PyObject *ret = pybytes_from_chars((unsigned char*) self->msg->compression[0], self->msg->compression_lens[0]);  // TODO: Do this in a method
+    ret = pybytes_from_chars((unsigned char*) self->msg->compression[0], self->msg->compression_lens[0]);  // TODO: Do this in a method
     if (PyErr_Occurred())
         return NULL;
     return ret;
@@ -246,13 +246,14 @@ static PyObject *pmessage_compression_get(pmessage_wrapper *self)   {
 }
 
 static int pmessage_compression_set(pmessage_wrapper *self, PyObject *value, void *closure) {
+    size_t num_compression, *compression_lens;
+    char **new_compression;
     if (value == NULL)  {
         PyErr_SetString(PyExc_AttributeError, "Cannot delete compression attribute");
         return -1;
     }
 
-    size_t num_compression, *compression_lens;
-    char **new_compression = array_string_from_pylist(value, &compression_lens, &num_compression);
+    new_compression = array_string_from_pylist(value, &compression_lens, &num_compression);
     if (PyErr_Occurred())
         return -1;
 

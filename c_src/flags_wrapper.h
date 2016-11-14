@@ -17,9 +17,10 @@ static PyMethodDef FlagsMethods[] = {
 };
 
 static void addConstants(PyObject *cbase, PyObject *flags_wrapper)  {
+    char user_salt[36];
+    PyObject *cbase_dict;
     PyModule_AddObject(cbase, "compression", pylist_from_array_string((char **)COMPRESSION_FLAGS, COMPRESSION_LENS, NUM_COMPRESSIONS));
     PyModule_AddObject(cbase, "version", pybytes_from_chars((unsigned char *) C2P_VERSION, strlen(C2P_VERSION)));
-    char user_salt[36];
     get_user_salt(user_salt);
     PyModule_AddObject(cbase, "user_salt", pybytes_from_chars((unsigned char *)user_salt, 36));
 
@@ -70,7 +71,7 @@ static void addConstants(PyObject *cbase, PyObject *flags_wrapper)  {
     PyModule_AddObject(flags_wrapper, "simple",   pybytes_from_chars(SIMPLE_FLAG, SIMPLE_LEN));
 
 
-    PyObject *cbase_dict = PyModule_GetDict(cbase);
+    cbase_dict = PyModule_GetDict(cbase);
     PyDict_SetItemString(cbase_dict, "flags", flags_wrapper);
 }
 
