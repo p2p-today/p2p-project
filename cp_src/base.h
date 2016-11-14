@@ -132,12 +132,12 @@ class protocol  {
         */
         string subnet();
         /**
-        *     .. cpp:function:: std::string protocol::subnet
+        *     .. cpp:function:: std::string protocol::subnet()
         *
         */
         string encryption();
         /**
-        *     .. cpp:function:: std::string protocol::encryption
+        *     .. cpp:function:: std::string protocol::encryption()
         */
     private:
         SubnetStruct *_base;
@@ -225,15 +225,15 @@ class pathfinding_message   {
         vector<string> compression();
         void setCompression(vector<string> comp);
         /**
-        *     .. cpp:var:: std::string pathfinding_message::msg_type
+        *     .. cpp:var:: std::string pathfinding_message::msg_type()
         *
-        *     .. cpp:var:: std::string pathfinding_message::sender
+        *     .. cpp:var:: std::string pathfinding_message::sender()
         *
-        *     .. cpp:var:: unsigned long long pathfinding_message::timestamp
+        *     .. cpp:var:: unsigned long long pathfinding_message::timestamp()
         *
-        *     .. cpp:var:: std::vector<std::string> pathfinding_message::payload
+        *     .. cpp:var:: std::vector<std::string> pathfinding_message::payload()
         *
-        *     .. cpp:var:: std::vector<std::string> pathfinding_message::compression
+        *     .. cpp:var:: std::vector<std::string> pathfinding_message::compression()
         */
         string compression_used();
         /**

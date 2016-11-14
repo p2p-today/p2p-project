@@ -63,3 +63,8 @@ Contributing, Credits, and Licenses
 Contributors are always welcome! Information on how you can help is located on the [Contributing page](./CONTRIBUTING.rst).
 
 Credits and License are located on [their own page](./docs/License.rst).
+
+Donate
+======
+
+Bitcoin: [1BwVXxPj9JSEUoAx3HvcNjjJTHb2qsyjUr](https://blockchain.info/address/1BwVXxPj9JSEUoAx3HvcNjjJTHb2qsyjUr)

@@ -73,6 +73,12 @@ Contributors are always welcome! Information on how you can help is located on t
 
 Credits and License are located on :doc:`their own page <./License>`.
 
+Donate
+~~~~~~
+
+Bitcoin: `1BwVXxPj9JSEUoAx3HvcNjjJTHb2qsyjUr <https://blockchain.info/address/1BwVXxPj9JSEUoAx3HvcNjjJTHb2qsyjUr>`_
+
+
 Contents
 ========
 
