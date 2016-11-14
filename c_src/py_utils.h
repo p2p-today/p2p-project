@@ -91,7 +91,7 @@ static char **array_string_from_pylist(PyObject *incoming, size_t **arr_lens, si
             PyObject *value = PyList_GetItem(incoming, (Py_ssize_t) i);
             out[i] = chars_from_pybytes(value, &((*arr_lens)[i]));
             if (PyErr_Occurred())
-                return out;
+                return NULL;
         }
     }
     else if (PyTuple_Check(incoming)) {
@@ -103,14 +103,16 @@ static char **array_string_from_pylist(PyObject *incoming, size_t **arr_lens, si
             PyObject *value = PyTuple_GetItem(incoming, (Py_ssize_t) i);
             out[i] = chars_from_pybytes(value, &((*arr_lens)[i]));
             if (PyErr_Occurred())
-                return out;
+                return NULL;
         }
     }
     else {
         PyObject *iter = PyObject_GetIter(incoming);
         PyObject *tup = PySequence_Tuple(iter);
-        if (PyErr_Occurred())
+        if (PyErr_Occurred())   {
             PyErr_SetObject(PyExc_TypeError, incoming);
+            return NULL;
+        }
         else    {
             out = array_string_from_pylist(tup, arr_lens, num_objects);
             Py_DECREF(iter);
