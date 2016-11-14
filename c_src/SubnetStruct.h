@@ -35,16 +35,17 @@ static void destroySubnet(SubnetStruct *sub)    {
 static char *subnetID(SubnetStruct *sub) {
     if (sub->_id == NULL)   {
         char buffer[6];
+        unsigned char digest[SHA256_DIGEST_LENGTH];
+        SHA256_CTX ctx;
         size_t buffSize = sprintf(buffer, "%llu.%llu", (unsigned long long)C2P_PROTOCOL_MAJOR_VERSION, (unsigned long long)C2P_PROTOCOL_MINOR_VERSION);
         size_t infoSize = buffSize + sub->subnetSize + sub->encryptionSize;
         char *info = (char *) malloc(sizeof(char) * infoSize);
+
         memcpy(info, sub->subnet, sub->subnetSize);
         memcpy(info + sub->subnetSize, sub->encryption, sub->encryptionSize);
         memcpy(info + sub->subnetSize + sub->encryptionSize, buffer, buffSize);
 
-        unsigned char digest[SHA256_DIGEST_LENGTH];
         memset(digest, 0, SHA256_DIGEST_LENGTH);
-        SHA256_CTX ctx;
         SHA256_Init(&ctx);
         SHA256_Update(&ctx, (unsigned char*)info, infoSize);
         SHA256_Final(digest, &ctx);

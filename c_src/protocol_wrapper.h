@@ -52,11 +52,12 @@ static int protocol_wrapper_init(protocol_wrapper *self, PyObject *args, PyObjec
 
 static PyObject *protocol_id(protocol_wrapper *self)    {
     char * id;
+    PyObject *ret;
     Py_BEGIN_ALLOW_THREADS
     CP2P_DEBUG("Entering id getter\n");
     id = subnetID(self->sub);
     Py_END_ALLOW_THREADS
-    PyObject *ret = pybytes_from_chars((unsigned char*)id, self->sub->idSize);
+    ret = pybytes_from_chars((unsigned char*)id, self->sub->idSize);
     if (PyErr_Occurred())
         return NULL;
     return ret;
