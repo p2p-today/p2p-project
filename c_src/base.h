@@ -286,9 +286,9 @@ static void pack_value(size_t len, char *arr, unsigned long long i)  {
     *
     *         Integer overflow will not be accounted for
     */
+    size_t j = 0;
     memset(arr, 0, len);
-    size_t j;
-    for (j = 0; j < len && i != 0; j++)    {
+    for (; j < len && i != 0; j++)    {
         arr[len - j - 1] = i & 0xff;
         i = i >> 8;
     }
@@ -361,12 +361,14 @@ static int process_string(const char *str, size_t len, char ***packets, size_t *
     */
     size_t processed = 0;
     size_t expected = len;
+    size_t i;
     *lens = (size_t *) malloc(sizeof(size_t) * 4);
     *num_packets = 0;
     CP2P_DEBUG("Entering while loop\n");
     while (processed != expected)   {
+        size_t tmp;
         CP2P_DEBUG("Processing for packet %i\n", *num_packets);
-        size_t tmp = unpack_value(str + processed, 4);
+        tmp = unpack_value(str + processed, 4);
         if (*num_packets >= 4)
             *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets + 1));
         (*lens)[*num_packets] = tmp;
@@ -377,8 +379,7 @@ static int process_string(const char *str, size_t len, char ***packets, size_t *
     CP2P_DEBUG("Exited while loop\n");
     *packets = (char **) realloc(*packets, sizeof(char *) * (*num_packets));
     CP2P_DEBUG("Entering for loop\n");
-    size_t i = 0;
-    for (; i < *num_packets; i++)    {
+    for (i = 0; i < *num_packets; i++)    {
         (*packets)[i] = (char *) malloc(sizeof(char) * (*lens)[i]);
         memcpy((*packets)[i], str + processed, (*lens)[i]);
         processed += (*lens)[i];
