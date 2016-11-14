@@ -234,11 +234,11 @@ static void get_user_salt(char result[36])  {
     *
     *     This generates a uuid4 for use in this library. ``result`` should be of length 36
     */
+    size_t i = 0;
+    char *temp_hex_set = (char*)"0123456789abcdef";
     srand(time(NULL));
     CP2P_DEBUG("Building user_salt\n");
     strncpy(result, "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx", 36);
-    char *temp_hex_set = (char*)"0123456789abcdef";
-    size_t i = 0;
     for (; i < 36; i++) {
         if (result[i] == 'x')
             result[i] = temp_hex_set[(rand() % 16)];
