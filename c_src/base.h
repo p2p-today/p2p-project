@@ -167,7 +167,8 @@ static unsigned char *RESERVED_FLAGS[] = {
     LZP3_FLAG,
     MTF_FLAG,
     PPMD_FLAG,
-    SIMPLE_FLAG
+    SIMPLE_FLAG,
+    NULL /* sentinel */
 };
 
 static size_t RESERVED_LENS[] = {
@@ -202,15 +203,18 @@ static size_t RESERVED_LENS[] = {
     LZP3_LEN,
     MTF_LEN,
     PPMD_LEN,
-    SIMPLE_LEN
+    SIMPLE_LEN,
+    0 /* sentinel */
 };
 
 static size_t NUM_COMPRESSIONS = 0;
 
 static unsigned char *COMPRESSION_FLAGS[] = {
+    NULL /* sentinel */
 };
 
 static size_t COMPRESSION_LENS[] = {
+    0 /* sentinel */
 };
 
 static unsigned long long getUTC() {
