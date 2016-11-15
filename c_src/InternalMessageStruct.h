@@ -263,52 +263,47 @@ static void ensureInternalMessageStr(InternalMessageStruct *des) {
     *
     *     :param des: A pointer to the relevant InternalMessageStruct
     */
-    size_t num_packets;
-    size_t expected;
-    size_t processed;
-    size_t t58_len;
+    size_t *lens;
+    size_t processed = 4;
+    size_t size;
+    size_t num;
     size_t i;
     char *t58;
     char *str;
+    char **packets;
     if (des->str != NULL)   {
-        CP2P_DEBUG("str already exists\n")
+        CP2P_DEBUG("str already exists\n");
         return;
     }
 
     ensureInternalMessageID(des);
-    num_packets = 5 + des->num_payload;
-    expected = des->msg_type_len + des->sender_len + des->id_len;
-    str = (char *) malloc(sizeof(char) * 4 * num_packets);
-    pack_value(4, str + 4, des->msg_type_len);
-    pack_value(4, str + 8, des->sender_len);
-    pack_value(4, str + 12, des->id_len);
+    num = 4 + des->num_payload;
+    packets = (char **) malloc(sizeof(char *) * num);
+    lens = (size_t *) malloc(sizeof(size_t) * num);
+    packets[0] = des->msg_type;
+    lens[0] = des->msg_type_len;
+    packets[1] = des->sender;
+    lens[1] = des->sender_len;
+    packets[2] = des->id;
+    lens[2] = des->id_len;
+    packets[3] = to_base_58(des->timestamp, lens + 3);
+    size = lens[0] + lens[1] + lens[2] + lens[3];
+    for (i = 0; i < des->num_payload; i++) {
+        packets[4+i] = des->payload[i];
+        lens[4+i] = des->payload_lens[i];
+        size += lens[4+i];
+    }
+    size += 4 * (num + 1);
 
-    t58 = to_base_58(des->timestamp, &t58_len);
-    pack_value(4, str + 16, t58_len);
-    expected += t58_len;
+    str = (char *) malloc(sizeof(char) * size);
 
-    for (i = 0; i < des->num_payload; i++)   {
-        pack_value(4, str + 20 + 4 * i, des->payload_lens[i]);
-        expected += des->payload_lens[i];
+    for (i = 0; i < num; i++)   {
+        pack_value(4, str + processed, lens[i]);
+        processed += 4;
+        memcpy(str + processed, packets[i], lens[i]);
+        processed += lens[i];
     }
 
-    processed = 4 * num_packets;
-    str = (char *) realloc(str, sizeof(char) * (processed + expected));
-
-    memcpy(str + processed, des->msg_type, des->msg_type_len);
-    processed += des->msg_type_len;
-    memcpy(str + processed, des->sender, des->sender_len);
-    processed += des->sender_len;
-    memcpy(str + processed, des->id, des->id_len);
-    processed += des->id_len;
-    memcpy(str + processed, t58, t58_len);
-    processed += t58_len;
-    free(t58);
-
-    for (i = 0; i < des->num_payload; i++)   {
-        memcpy(str + processed, des->payload[i], des->payload_lens[i]);
-        processed += des->payload_lens[i];
-    }
     des->str_len = processed;
     pack_value(4, str, processed - 4);
     des->str = str;
@@ -342,13 +337,16 @@ static InternalMessageStruct *deserializeInternalMessage(const char *serialized,
         packets[0], lens[0],
         packets[1], lens[1],
         packets + 4, lens + 4, num_packets - 4);
+    CP2P_DEBUG("Message deserialized\n");
     ret->timestamp = from_base_58(packets[3], lens[3]);
     ret->str_len = len;
     ret->str = (char *) malloc(sizeof(char) * len);
     memcpy(ret->str, serialized, len);
+    CP2P_DEBUG("Known attributes cached\n");
 
     ensureInternalMessageID(ret);
     *errored = memcmp(ret->id, packets[2], ret->id_len);
+    CP2P_DEBUG("Error attribute set\n");
 
     return ret;
 }
