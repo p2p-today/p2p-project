@@ -64,6 +64,8 @@
 #endif
 //End macro
 
+#include <time.h>
+
 #ifdef _cplusplus
 extern "C" {
 #endif
@@ -361,21 +363,24 @@ static int process_string(const char *str, size_t len, char ***packets, size_t *
     */
     size_t processed = 0;
     size_t i;
-    *lens = (size_t *) malloc(sizeof(size_t) * 4);
     *num_packets = 0;
     CP2P_DEBUG("Entering while loop\n");
     while (processed < len)   {
         size_t tmp;
         CP2P_DEBUG("Processing for packet %i\n", *num_packets);
         tmp = unpack_value(str + processed, 4);
-        if (*num_packets >= 4)
-            *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets + 1));
+        if (!(*num_packets % factor))    {
+            factor *= 2;
+            *lens = (size_t *) realloc(*lens, sizeof(size_t) * factor);
+            *packets = (char **) realloc(*packets, sizeof(char *) * factor);
+        }
         (*lens)[*num_packets] = tmp;
         processed += 4;
         processed += tmp;
         *num_packets += 1;
     }
     CP2P_DEBUG("Exited while loop\n");
+    *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets));
     *packets = (char **) realloc(*packets, sizeof(char *) * (*num_packets));
     processed = 0;
     CP2P_DEBUG("Entering for loop\n");
