@@ -64,6 +64,8 @@
 #endif
 //End macro
 
+#include <time.h>
+
 #ifdef _cplusplus
 extern "C" {
 #endif
@@ -360,30 +362,29 @@ static int process_string(const char *str, size_t len, char ***packets, size_t *
     *         If you do not :c:func:`free` ``packets`` and ``lens`` you will develop a memory leak
     */
     size_t processed = 0;
-    size_t expected = len;
+    size_t factor = 16;
     size_t i;
-    *lens = (size_t *) malloc(sizeof(size_t) * 4);
     *num_packets = 0;
     CP2P_DEBUG("Entering while loop\n");
-    while (processed != expected)   {
+    while (processed < len)   {
         size_t tmp;
         CP2P_DEBUG("Processing for packet %i\n", *num_packets);
         tmp = unpack_value(str + processed, 4);
-        if (*num_packets >= 4)
-            *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets + 1));
+        if (!(*num_packets % factor))    {
+            factor *= 2;
+            *lens = (size_t *) realloc(*lens, sizeof(size_t) * factor);
+            *packets = (char **) realloc(*packets, sizeof(char *) * factor);
+        }
         (*lens)[*num_packets] = tmp;
         processed += 4;
-        expected -= tmp;
+        (*packets)[*num_packets] = (char *) malloc(sizeof(char) * (*lens)[*num_packets]);
+        memcpy((*packets)[*num_packets], str + processed, (*lens)[*num_packets]);
+        processed += (*lens)[*num_packets];
         *num_packets += 1;
     }
     CP2P_DEBUG("Exited while loop\n");
+    *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets));
     *packets = (char **) realloc(*packets, sizeof(char *) * (*num_packets));
-    CP2P_DEBUG("Entering for loop\n");
-    for (i = 0; i < *num_packets; i++)    {
-        (*packets)[i] = (char *) malloc(sizeof(char) * (*lens)[i]);
-        memcpy((*packets)[i], str + processed, (*lens)[i]);
-        processed += (*lens)[i];
-    }
     return 0;
 }
 

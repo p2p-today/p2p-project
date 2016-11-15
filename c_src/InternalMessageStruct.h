@@ -8,6 +8,8 @@
 */
 
 #include "./base.h"
+#include "./sha/sha2.h"
+#include "./BaseConverter.h"
 
 #ifdef _cplusplus
 extern "C" {
@@ -275,6 +277,7 @@ static void ensureInternalMessageStr(InternalMessageStruct *des) {
         CP2P_DEBUG("str already exists\n");
         return;
     }
+    CP2P_DEBUG("Building str\n");
 
     ensureInternalMessageID(des);
     num = 4 + des->num_payload;

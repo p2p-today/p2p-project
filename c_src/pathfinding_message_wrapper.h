@@ -90,7 +90,7 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
 static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args, PyObject *kwds)    {
     char *str, **comp;
     size_t i, str_len, *comp_lens, num_comp;
-    int err, sizeless = 0;
+    int err = 0, sizeless = 0;
     PyObject *py_compression=NULL, *py_str=NULL;
     pmessage_wrapper *ret;
 
@@ -123,12 +123,17 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
         else    {
             ret->msg = deserializeInternalMessage(str, str_len, sizeless, &err);
         }
+        CP2P_DEBUG("pmessage was returned\n");
         free(str);
         Py_END_ALLOW_THREADS
+        CP2P_DEBUG("Python GIL re-obtained\n");
     }
 
-    if (PyErr_Occurred() || err)
+    if (PyErr_Occurred() || err)    {
+        CP2P_DEBUG("Returning NULL (that's bad)\n");
         return NULL;
+    }
+    CP2P_DEBUG("Returning normally: %p\n", ret);
 
     return ret;
 }
