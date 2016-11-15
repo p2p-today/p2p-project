@@ -362,8 +362,10 @@ static int process_string(const char *str, size_t len, char ***packets, size_t *
     *         If you do not :c:func:`free` ``packets`` and ``lens`` you will develop a memory leak
     */
     size_t processed = 0;
+    size_t factor = 16;
     size_t i;
     *num_packets = 0;
+    *lens = (size_t *) malloc(sizeof(size_t) * factor);
     CP2P_DEBUG("Entering while loop\n");
     while (processed < len)   {
         size_t tmp;
@@ -372,7 +374,6 @@ static int process_string(const char *str, size_t len, char ***packets, size_t *
         if (!(*num_packets % factor))    {
             factor *= 2;
             *lens = (size_t *) realloc(*lens, sizeof(size_t) * factor);
-            *packets = (char **) realloc(*packets, sizeof(char *) * factor);
         }
         (*lens)[*num_packets] = tmp;
         processed += 4;
