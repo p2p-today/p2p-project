@@ -96,7 +96,7 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
 
     static char *kwlist[] = {(char*)"string", (char*)"sizeless", (char*)"compressions", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "O|pO", kwlist,
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "O|iO", kwlist,
                                       &py_str, &sizeless, &py_compression))
         return NULL;
 
