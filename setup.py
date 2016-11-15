@@ -34,6 +34,7 @@ classifiers = ['Development Status :: 3 - Alpha',
                'Operating System :: OS Independent',
                'Topic :: Communications',
                'Topic :: Internet',
+               'Programming Language :: C',
                'Programming Language :: C++',
                'Programming Language :: JavaScript',
                'Programming Language :: Other',
@@ -96,7 +97,7 @@ def main():
               extras_require=extras_require
         )
     except:
-        print("Not building C++ code due to errors")
+        print("Not building C code due to errors")
         setup(name='py2p',
               description='A python library for peer-to-peer networking',
               long_description=long_description,
