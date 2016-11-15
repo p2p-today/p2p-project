@@ -17,8 +17,8 @@ import uuid
 from collections import namedtuple
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet)
 
-protocol_version = "0.4"
-node_policy_version = "516"
+protocol_version = "0.5"
+node_policy_version = "551"
 
 version = '.'.join([protocol_version, node_policy_version])
 
@@ -382,15 +382,12 @@ class pathfinding_message(object):
         Warning:
             Do not feed a message with the size header. Do not feed a compressed message.
         """
-        processed, expected = 0, len(string)
+        processed = 0
         pack_lens, packets = [], []
-        while processed != expected:
+        while processed < len(string):
             pack_lens.extend(struct.unpack("!L", string[processed:processed+4]))
             processed += 4
-            expected -= pack_lens[-1]
-        # Then reconstruct the packets
-        for length in pack_lens:
-            end = processed + length
+            end = processed + pack_lens[-1]
             packets.append(string[processed:end])
             processed = end
         return packets
@@ -488,8 +485,8 @@ class pathfinding_message(object):
     def __non_len_string(self):
         """Returns a bytes object containing the entire message, excepting the total length header"""
         packets = self.packets
-        header = [pack_value(4, len(x)) for x in packets]
-        string = b''.join((bytes(pac) for pac in header + packets))
+        headers = [pack_value(4, len(x)) for x in packets]
+        string = b''.join((bytes(head) + bytes(pack) for head, pack in zip(headers, packets)))
         if self.compression_used:
             string = compress(string, self.compression_used)
         return string
