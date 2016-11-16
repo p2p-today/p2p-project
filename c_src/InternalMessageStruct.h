@@ -270,7 +270,6 @@ static void ensureInternalMessageStr(InternalMessageStruct *des) {
     size_t size;
     size_t num;
     size_t i;
-    char *t58;
     char *str;
     char **packets;
     if (des->str != NULL)   {
