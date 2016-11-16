@@ -97,8 +97,7 @@ Message Propagation
 A message is initially broadcast with the ``broadcast`` flag. The
 broadcasting node, as well as all receivers, store this message’s ID
 and timestamp in their waterfall queue. The reciving nodes then
-re-broadcast this message to each of their peers, but changing the
-flag to ``waterfall``.
+re-broadcast this message to each of their peers.
 
 A node which receives these waterfall packets goes through the
 following steps:

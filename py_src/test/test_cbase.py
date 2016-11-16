@@ -23,9 +23,9 @@ try:
         assert bf.reserved == cf.reserved
 
         #main flags
-        bf_main = (bf.broadcast, bf.waterfall, bf.whisper,
+        bf_main = (bf.broadcast, bf.whisper,
                    bf.renegotiate, bf.ping, bf.pong)
-        cf_main = (cf.broadcast, cf.waterfall, cf.whisper,
+        cf_main = (cf.broadcast, cf.whisper,
                    cf.renegotiate, cf.ping, cf.pong)
         assert bf_main == cf_main
 

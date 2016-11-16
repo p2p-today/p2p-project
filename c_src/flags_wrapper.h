@@ -29,9 +29,8 @@ static void addConstants(PyObject *cbase, PyObject *flags_wrapper)  {
 
     // Main flags
     PyModule_AddObject(flags_wrapper, "broadcast",   pybytes_from_chars(BROADCAST_FLAG, BROADCAST_LEN));
-    PyModule_AddObject(flags_wrapper, "waterfall",   pybytes_from_chars(WATERFALL_FLAG, WATERFALL_LEN));
-    PyModule_AddObject(flags_wrapper, "whisper",     pybytes_from_chars(WHISPER_FLAG, WHISPER_LEN));
     PyModule_AddObject(flags_wrapper, "renegotiate", pybytes_from_chars(RENEGOTIATE_FLAG, RENEGOTIATE_LEN));
+    PyModule_AddObject(flags_wrapper, "whisper",     pybytes_from_chars(WHISPER_FLAG, WHISPER_LEN));
     PyModule_AddObject(flags_wrapper, "ping",        pybytes_from_chars(PING_FLAG, PING_LEN));
     PyModule_AddObject(flags_wrapper, "pong",        pybytes_from_chars(PONG_FLAG, PONG_LEN));
 
@@ -39,9 +38,9 @@ static void addConstants(PyObject *cbase, PyObject *flags_wrapper)  {
     /*PyModule_AddObject(flags_wrapper, "broadcast",   pybytes_from_chars(BROADCAST_FLAG, BROADCAST_LEN));*/
     PyModule_AddObject(flags_wrapper, "compression", pybytes_from_chars(COMPRESSION_FLAG, COMPRESSION_LEN));
     /*PyModule_AddObject(flags_wrapper, "whisper",     pybytes_from_chars(WHISPER_FLAG, WHISPER_LEN));*/
-    PyModule_AddObject(flags_wrapper, "handshake",   pybytes_from_chars(HANDSHAKE_FLAG, HANDSHAKE_LEN));
     /*PyModule_AddObject(flags_wrapper, "ping",        pybytes_from_chars(PING_FLAG, PING_LEN));*/
     /*PyModule_AddObject(flags_wrapper, "pong",        pybytes_from_chars(PONG_FLAG, PONG_LEN));*/
+    PyModule_AddObject(flags_wrapper, "handshake",   pybytes_from_chars(HANDSHAKE_FLAG, HANDSHAKE_LEN));
     PyModule_AddObject(flags_wrapper, "notify",      pybytes_from_chars(NOTIFY_FLAG, NOTIFY_LEN));
     PyModule_AddObject(flags_wrapper, "peers",       pybytes_from_chars(PEERS_FLAG, PEERS_LEN));
     PyModule_AddObject(flags_wrapper, "request",     pybytes_from_chars(REQUEST_FLAG, REQUEST_LEN));

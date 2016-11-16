@@ -126,7 +126,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         :returns: ``true`` or ``undefined``
         */
-        if (packets[0] == base.flags.waterfall || packets[0] == base.flags.broadcast) {
+        if (packets[0] == base.flags.broadcast) {
             if (base.from_base_58(packets[3]) < base.getUTC() - 60) {
                 // this.__print__("Waterfall expired", level=2);
                 return true;
@@ -553,7 +553,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             Object.keys(this.routing_table).forEach(function(key)   {
                 var handler = self.routing_table[key];
                 if (handler.id.toString() !== msg.sender.toString())   {
-                    handler.send(base.flags.waterfall, msg.packets, msg.sender, msg.time);
+                    handler.send_InternalMessage(msg.msg);
                 }
             });
             this.__clean_waterfalls()

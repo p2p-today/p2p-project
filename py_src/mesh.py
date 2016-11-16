@@ -81,7 +81,7 @@ class mesh_connection(base_connection):
         Returns:
             Either ``True`` or ``None``
         """
-        if packets[0] in [flags.waterfall, flags.broadcast]:
+        if packets[0] == flags.broadcast:
             if from_base_58(packets[3]) < getUTC() - 60:
                 self.__print__("Waterfall expired", level=2)
                 return True
@@ -389,7 +389,7 @@ class mesh_socket(base_socket):
             self.waterfalls.appendleft((msg.id, msg.time))
             for handler in self.routing_table.values():
                 if handler.id != msg.sender:
-                    handler.send(flags.waterfall, *msg.packets, time=msg.time, id=msg.sender)
+                    handler.send_InternalMessage(msg.msg)
             self.__clean_waterfalls()
             return True
         else:

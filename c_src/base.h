@@ -74,19 +74,17 @@ STATIC_ASSERT(sizeof(size_t) >= 4, "Size of strings is too small to easily meet 
 
 #define BROADCAST_FLAG (unsigned char *) "\x00"
 #define BROADCAST_LEN (size_t) 1
-#define WATERFALL_FLAG (unsigned char *) "\x01"
-#define WATERFALL_LEN (size_t) 1
+#define RENEGOTIATE_FLAG (unsigned char *) "\x01"
+#define RENEGOTIATE_LEN (size_t) 1
 #define WHISPER_FLAG (unsigned char *) "\x02"
 #define WHISPER_LEN (size_t) 1
-#define RENEGOTIATE_FLAG (unsigned char *) "\x03"
-#define RENEGOTIATE_LEN (size_t) 1
-#define PING_FLAG (unsigned char *) "\x04"
+#define PING_FLAG (unsigned char *) "\x03"
 #define PING_LEN (size_t) 1
-#define PONG_FLAG (unsigned char *) "\x05"
+#define PONG_FLAG (unsigned char *) "\x04"
 #define PONG_LEN (size_t) 1
 #define COMPRESSION_FLAG (unsigned char *) "\x01"
 #define COMPRESSION_LEN (size_t) 1
-#define HANDSHAKE_FLAG (unsigned char *) "\x03"
+#define HANDSHAKE_FLAG (unsigned char *) "\x05"
 #define HANDSHAKE_LEN (size_t) 1
 #define NOTIFY_FLAG (unsigned char *) "\x06"
 #define NOTIFY_LEN (size_t) 1
@@ -139,11 +137,11 @@ static size_t NUM_RESERVED = 0x20;
 
 static unsigned char *RESERVED_FLAGS[] = {
     BROADCAST_FLAG,
-    WATERFALL_FLAG,
-    WHISPER_FLAG,
     RENEGOTIATE_FLAG,
+    WHISPER_FLAG,
     PING_FLAG,
     PONG_FLAG,
+    HANDSHAKE_FLAG,
     NOTIFY_FLAG,
     PEERS_FLAG,
     REQUEST_FLAG,
@@ -175,11 +173,11 @@ static unsigned char *RESERVED_FLAGS[] = {
 
 static size_t RESERVED_LENS[] = {
     BROADCAST_LEN,
-    WATERFALL_LEN,
-    WHISPER_LEN,
     RENEGOTIATE_LEN,
+    WHISPER_LEN,
     PING_LEN,
     PONG_LEN,
+    HANDSHAKE_LEN,
     NOTIFY_LEN,
     PEERS_LEN,
     REQUEST_LEN,

@@ -46,19 +46,18 @@ class flags():
 
     # main flags
     broadcast   = brepr(b'\x00', rep='broadcast')   # also sub-flag
-    waterfall   = brepr(b'\x01', rep='waterfall')
+    renegotiate = brepr(b'\x01', rep='renegotiate')
     whisper     = brepr(b'\x02', rep='whisper')     # also sub-flag
-    renegotiate = brepr(b'\x03', rep='renegotiate')
-    ping        = brepr(b'\x04', rep='ping')        # Unused, but reserved
-    pong        = brepr(b'\x05', rep='pong')        # Unused, but reserved
+    ping        = brepr(b'\x03', rep='ping')        # Unused, but reserved
+    pong        = brepr(b'\x04', rep='pong')        # Unused, but reserved
 
     # sub-flags
     # broadcast = brepr(b'\x00', rep='broadcast')
     compression = brepr(b'\x01', rep='compression')
     # whisper   = brepr(b'\x02', rep='whisper')
-    handshake   = brepr(b'\x03', rep='handshake')
-    # ping      = brepr(b'\x04', rep='ping')
-    # pong      = brepr(b'\x05', rep='pong')
+    # ping      = brepr(b'\x03', rep='ping')
+    # pong      = brepr(b'\x04', rep='pong')
+    handshake   = brepr(b'\x05', rep='handshake')
     notify      = brepr(b'\x06', rep='notify')
     peers       = brepr(b'\x07', rep='peers')
     request     = brepr(b'\x08', rep='request')
@@ -528,6 +527,26 @@ class base_connection(object):
         self.expected = 4
         self.active = False
 
+    def send_InternalMessage(self, msg):
+        """Sends a preconstructed message
+
+        Args:
+            msg: The IntenalMessage you wish to send
+
+        Returns:
+            the pathfinding_message object you just sent, or None if the sending was unsuccessful"""
+        msg.compression = self.compression
+        if msg.msg_type in [flags.whisper, flags.broadcast]:
+            self.last_sent = msg.payload
+        self.__print__("Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)
+        if msg.compression_used: self.__print__("Compressing with %s" % repr(msg.compression_used), level=4)
+        try:
+            self.sock.send(msg.string)
+            return msg
+        except (IOError, socket.error) as e:  # pragma: no cover
+            self.server.daemon.exceptions.append((e, traceback.format_exc()))
+            self.server.disconnect(self)
+
     def send(self, msg_type, *args, **kargs):
         """Sends a message through its connection.
 
@@ -546,16 +565,7 @@ class base_connection(object):
         time = kargs.get('time') or getUTC()
         # Begin real method
         msg = pathfinding_message(msg_type, id, list(args), self.compression, timestamp=time)
-        if msg_type in [flags.whisper, flags.broadcast]:
-            self.last_sent = [msg_type] + list(args)
-        self.__print__("Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)
-        if msg.compression_used: self.__print__("Compressing with %s" % repr(msg.compression_used), level=4)
-        try:
-            self.sock.send(msg.string)
-            return msg
-        except (IOError, socket.error) as e:  # pragma: no cover
-            self.server.daemon.exceptions.append((e, traceback.format_exc()))
-            self.server.disconnect(self)
+        return self.send_InternalMessage(msg)
 
     @property
     def protocol(self):

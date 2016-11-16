@@ -7,11 +7,10 @@ Main Flags
 These flags will denote the primary purpose of a message.
 
 - broadcast     = ``"\x00"``
-- waterfall     = ``"\x01"``
+- renegotiate   = ``"\x01"``
 - whisper       = ``"\x02"``
-- renegotiate   = ``"\x03"``
-- ping          = ``"\x04"``
-- pong          = ``"\x05"``
+- ping          = ``"\x03"``
+- pong          = ``"\x04"``
 
 Sub-Flags
 +++++++++
@@ -21,9 +20,9 @@ These flags will denote the secondary purpose, or a more specific purpose, of a 
 - broadcast     = ``"\x00"``
 - compression   = ``"\x01"``
 - whisper       = ``"\x02"``
-- handshake     = ``"\x03"``
-- ping          = ``"\x04"``
-- pong          = ``"\x05"``
+- ping          = ``"\x03"``
+- pong          = ``"\x04"``
+- handshake     = ``"\x05"``
 - notify        = ``"\x06"``
 - peers         = ``"\x07"``
 - request       = ``"\x08"``

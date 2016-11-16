@@ -82,19 +82,18 @@ base.flags = {
 
     //main flags
     broadcast:   '\x00',
-    waterfall:   '\x01',
+    renegotiate: '\x01',
     whisper:     '\x02',
-    renegotiate: '\x03',
-    ping:        '\x04',
-    pong:        '\x05',
+    ping:        '\x03',
+    pong:        '\x04',
 
     //sub-flags
     //broadcast: '\x00',
     compression: '\x01',
     //whisper:   '\x02',
-    handshake:   '\x03',
-    //ping:      '\x04',
-    //pong:      '\x05',
+    //ping:      '\x03',
+    //pong:      '\x04',
+    handshake:   '\x05',
     notify:      '\x06',
     peers:       '\x07',
     request:     '\x08',
@@ -755,6 +754,37 @@ base.base_connection = class base_connection   {
         console.log(`Connection to ${this.id || this} closed. This is the template function`);
     }
 
+    send_InternalMessage(msg)   {
+        /**
+        *     .. js:function:: js2p.base.base_connection.send_InternalMessage(msg)
+        *
+        *         Sends a message through its connection.
+        *
+        *         :param js2p.base.pathfinding_message msg:      A :js:class:`~js2p.base.pathfinding_message` object
+        *
+        *         :returns: the :js:class:`~js2p.base.pathfinding_message` object you just sent, or ``undefined`` if the sending was unsuccessful
+        */
+        msg.compression = this.compression;
+        // console.log(msg.payload);
+        if (msg.msg_type === base.flags.whisper || msg.msg_type === base.flags.broadcast) {
+            this.last_sent = [msg.msg_type].concat(packs);
+        }
+        // this.__print__(`Sending ${[msg.len()].concat(msg.packets)} to ${this}`, 4);
+        if (msg.compression_used)   {
+            //console.log(`Compressing with ${JSON.stringify(msg.compression_used)}`);
+            // self.__print__(`Compressing with ${msg.compression_used}`, level=4)
+        }
+        // try {
+            //console.log(`Sending message ${JSON.stringify(msg.string.toString())} to ${this.id}`);
+            this.sock.write(msg.string, 'ascii')
+            return msg
+        // }
+        // catch(e)   {
+        //     self.server.daemon.exceptions.append((e, traceback.format_exc()))
+        //     self.server.disconnect(self)
+        // }
+    }
+
     send(msg_type, packs, id, time)  {
         /**
         *     .. js:function:: js2p.base.base_connection.send(msg_type, packs, id, time)
@@ -775,24 +805,7 @@ base.base_connection = class base_connection   {
         time = time || base.getUTC();
         //Begin real method
         var msg = new base.pathfinding_message(msg_type, id, packs, this.compression, time);
-        // console.log(msg.payload);
-        if (msg_type === base.flags.whisper || msg_type === base.flags.broadcast) {
-            this.last_sent = [msg_type].concat(packs);
-        }
-        // this.__print__(`Sending ${[msg.len()].concat(msg.packets)} to ${this}`, 4);
-        if (msg.compression_used)   {
-            //console.log(`Compressing with ${JSON.stringify(msg.compression_used)}`);
-            // self.__print__(`Compressing with ${msg.compression_used}`, level=4)
-        }
-        // try {
-            //console.log(`Sending message ${JSON.stringify(msg.string.toString())} to ${this.id}`);
-            this.sock.write(msg.string, 'ascii')
-            return msg
-        // }
-        // catch(e)   {
-        //     self.server.daemon.exceptions.append((e, traceback.format_exc()))
-        //     self.server.disconnect(self)
-        // }
+        return this.send_InternalMessage(msg);
     }
 
     get protocol()  {
