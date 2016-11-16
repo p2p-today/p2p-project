@@ -18,7 +18,7 @@ except:
     from .base import protocol
 from .base import (flags, compression, to_base_58, from_base_58,
                 base_connection, message, base_daemon, base_socket,
-                pathfinding_message, json_compressions)
+                InternalMessage, json_compressions)
 from .utils import getUTC, get_socket, intersect
 
 max_outgoing = 4
@@ -30,14 +30,14 @@ class mesh_connection(base_connection):
         """Sends a message through its connection.
 
         Args:
-            msg_type:   Message type, corresponds to the header in a :py:class:`py2p.base.pathfinding_message` object
+            msg_type:   Message type, corresponds to the header in a :py:class:`py2p.base.InternalMessage` object
             *args:      A list of bytes-like objects, which correspond to the packets to send to you
             **kargs:    There are two available keywords:
             id:         The ID this message should appear to be sent from (default: your ID)
             time:       The time this message should appear to be sent from (default: now in UTC)
 
         Returns:
-            the :py:class:`~py2p.base.pathfinding_message` object you just sent, or None if the sending was unsuccessful
+            the :py:class:`~py2p.base.InternalMessage` object you just sent, or None if the sending was unsuccessful
         """
         msg = super(mesh_connection, self).send(msg_type, *args, **kargs)
         if msg and (msg.id, msg.time) not in self.server.waterfalls:

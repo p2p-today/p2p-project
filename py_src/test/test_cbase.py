@@ -44,8 +44,8 @@ try:
     def test_protocol():
         test_base.test_protocol(impl=cbase)
 
-    def test_pathfinding_message():
-        test_base.test_pathfinding_message(impl=cbase)
+    def test_InternalMessage():
+        test_base.test_InternalMessage(impl=cbase)
 
 except ImportError:
     pass

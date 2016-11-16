@@ -52,7 +52,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         Sends a message through its connection.
         *
-        *         :param msg_type:      Message type, corresponds to the header in a :js:class:`~js2p.base.pathfinding_message` object
+        *         :param msg_type:      Message type, corresponds to the header in a :js:class:`~js2p.base.InternalMessage` object
         *         :param packs:         A list of Buffer-like objects, which correspond to the packets to send to you
         *         :param id:            The ID this message should appear to be sent from (default: your ID)
         *         :param number time:   The time this message should appear to be sent from (default: now in UTC)
@@ -121,7 +121,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *         If it is older than a preset limit, this method returns ``true``.
         *         Otherwise this method returns ``undefined``, and forwards the message appropriately.
         *
-        *         :param js2p.base.pathfinding_message msg: The message in question
+        *         :param js2p.base.InternalMessage msg: The message in question
         *         :param packets:                           The message's packets
         *
         *         :returns: ``true`` or ``undefined``

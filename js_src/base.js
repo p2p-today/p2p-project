@@ -369,9 +369,9 @@ base.protocol = class protocol {
 
 base.default_protocol = new base.protocol('', 'Plaintext');
 
-base.pathfinding_message = class pathfinding_message {
+base.InternalMessage = class InternalMessage {
     /**
-    * .. js:class:: js2p.base.pathfinding_message(msg_type, sender, payload, compression, timestamp)
+    * .. js:class:: js2p.base.InternalMessage(msg_type, sender, payload, compression, timestamp)
     *
     *     This is the message serialization/deserialization class.
     *
@@ -395,7 +395,7 @@ base.pathfinding_message = class pathfinding_message {
 
     static feed_string(string, sizeless, compressions) {
         /**
-        *     .. js:function:: js2p.base.pathfinding_message.feed_string(string, sizeless, compressions)
+        *     .. js:function:: js2p.base.InternalMessage.feed_string(string, sizeless, compressions)
         *
         *         This method deserializes a message
         *
@@ -403,14 +403,14 @@ base.pathfinding_message = class pathfinding_message {
         *         :param sizeless:      A bool-like object describing whether the size header is present
         *         :param compressions:  A list of possible compression methods this message may be under
         *
-        *         :returns: A :js:class:`~js2p.base.pathfinding_message` object containing the deserialized message
+        *         :returns: A :js:class:`~js2p.base.InternalMessage` object containing the deserialized message
         */
-        string = base.pathfinding_message.sanitize_string(string, sizeless)
-        var compression_return = base.pathfinding_message.decompress_string(string, compressions)
+        string = base.InternalMessage.sanitize_string(string, sizeless)
+        var compression_return = base.InternalMessage.decompress_string(string, compressions)
         var compression_fail = compression_return[1]
         string = compression_return[0]
-        var packets = base.pathfinding_message.process_string(string)
-        var msg = new base.pathfinding_message(packets[0], packets[1], packets.slice(4), compressions)
+        var packets = base.InternalMessage.process_string(string)
+        var msg = new base.InternalMessage(packets[0], packets[1], packets.slice(4), compressions)
         msg.time = base.from_base_58(packets[3])
         msg.compression_fail = compression_fail
         assert (msg.id === packets[2].toString(), `ID check failed. ${msg.id} !== ${packets[2].toString()}`)
@@ -474,7 +474,7 @@ base.pathfinding_message = class pathfinding_message {
 
     get compression_used() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.compression_used
+        *     .. js:attribute:: js2p.base.InternalMessage.compression_used
         *
         *         Returns the compression method used in this message, as defined in :js:data:`~js2p.base.flags`, or ``undefined`` if none
         */
@@ -489,12 +489,12 @@ base.pathfinding_message = class pathfinding_message {
 
     get time_58() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.time
+        *     .. js:attribute:: js2p.base.InternalMessage.time
         *
         *         Returns the timestamp of this message
         *
         *
-        *     .. js:attribute:: js2p.base.pathfinding_message.time_58
+        *     .. js:attribute:: js2p.base.InternalMessage.time_58
         *
         *         Returns the timestamp encoded in base_58
         */
@@ -503,7 +503,7 @@ base.pathfinding_message = class pathfinding_message {
 
     get id() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.id
+        *     .. js:attribute:: js2p.base.InternalMessage.id
         *
         *         Returns the ID/checksum associated with this message
         */
@@ -520,12 +520,12 @@ base.pathfinding_message = class pathfinding_message {
 
     get packets() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.payload
+        *     .. js:attribute:: js2p.base.InternalMessage.payload
         *
         *         Returns the payload "packets" associated with this message
         *
         *
-        *     .. js:attribute:: js2p.base.pathfinding_message.packets
+        *     .. js:attribute:: js2p.base.InternalMessage.packets
         *
         *         Returns the total "packets" associated with this message
         */
@@ -549,7 +549,7 @@ base.pathfinding_message = class pathfinding_message {
 
     get string() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.string
+        *     .. js:attribute:: js2p.base.InternalMessage.string
         *
         *         Returns a Buffer containing the serialized version of this message
         */
@@ -559,7 +559,7 @@ base.pathfinding_message = class pathfinding_message {
 
     get length() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.length
+        *     .. js:attribute:: js2p.base.InternalMessage.length
         *
         *         Returns the length of this message when serialized
         */
@@ -577,7 +577,7 @@ base.message = class message {
     *
     *     This is the message class we present to the user.
     *
-    *     :param js2p.base.pathfinding_message msg: This is the serialization object you received
+    *     :param js2p.base.InternalMessage msg: This is the serialization object you received
     *     :param js2p.base.base_socket sender:      This is the "socket" object that received it
     */
     constructor(msg, server) {
@@ -760,9 +760,9 @@ base.base_connection = class base_connection   {
         *
         *         Sends a message through its connection.
         *
-        *         :param js2p.base.pathfinding_message msg:      A :js:class:`~js2p.base.pathfinding_message` object
+        *         :param js2p.base.InternalMessage msg:      A :js:class:`~js2p.base.InternalMessage` object
         *
-        *         :returns: the :js:class:`~js2p.base.pathfinding_message` object you just sent, or ``undefined`` if the sending was unsuccessful
+        *         :returns: the :js:class:`~js2p.base.InternalMessage` object you just sent, or ``undefined`` if the sending was unsuccessful
         */
         msg.compression = this.compression;
         // console.log(msg.payload);
@@ -791,12 +791,12 @@ base.base_connection = class base_connection   {
         *
         *         Sends a message through its connection.
         *
-        *         :param msg_type:      Message type, corresponds to the header in a :js:class:`~js2p.base.pathfinding_message` object
+        *         :param msg_type:      Message type, corresponds to the header in a :js:class:`~js2p.base.InternalMessage` object
         *         :param packs:         A list of Buffer-like objects, which correspond to the packets to send to you
         *         :param id:            The ID this message should appear to be sent from (default: your ID)
         *         :param number time:   The time this message should appear to be sent from (default: now in UTC)
         *
-        *         :returns: the :js:class:`~js2p.base.pathfinding_message` object you just sent, or ``undefined`` if the sending was unsuccessful
+        *         :returns: the :js:class:`~js2p.base.InternalMessage` object you just sent, or ``undefined`` if the sending was unsuccessful
         */
 
         //This section handles waterfall-specific flags
@@ -804,7 +804,7 @@ base.base_connection = class base_connection   {
         id = id || this.server.id;  //Latter is returned if key not found
         time = time || base.getUTC();
         //Begin real method
-        var msg = new base.pathfinding_message(msg_type, id, packs, this.compression, time);
+        var msg = new base.InternalMessage(msg_type, id, packs, this.compression, time);
         return this.send_InternalMessage(msg);
     }
 
@@ -847,7 +847,7 @@ base.base_connection = class base_connection   {
         *         :returns: The deserialized message received
         */
         //console.log("I got called");
-        var msg = base.pathfinding_message.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
+        var msg = base.InternalMessage.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
         this.buffer = this.buffer.slice(this.expected);
         this.expected = 4;
         this.active = false;

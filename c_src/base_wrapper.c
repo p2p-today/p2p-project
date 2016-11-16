@@ -9,7 +9,7 @@
 #include "base.h"
 #include "py_utils.h"
 #include "protocol_wrapper.h"
-#include "pathfinding_message_wrapper.h"
+#include "InternalMessage_wrapper.h"
 #include "flags_wrapper.h"
 
 #ifdef _cplusplus
@@ -25,7 +25,7 @@ static PyMethodDef BaseMethods[] = {
     static struct PyModuleDef basemodule = {
        PyModuleDef_HEAD_INIT,
        "cbase",  /* name of module */
-       "A C++ implementation of select features from the py2p.base module",/* module documentation, may be NULL */
+       "A C implementation of select features from the py2p.base module",/* module documentation, may be NULL */
        -1,      /* size of per-interpreter state of the module,
                    or -1 if the module keeps state in global variables. */
        BaseMethods
@@ -54,7 +54,7 @@ static PyMethodDef BaseMethods[] = {
         PyModule_AddObject(cbase, "protocol", (PyObject *)&protocol_wrapper_type);
 
         Py_INCREF(&pmessage_wrapper_type);
-        PyModule_AddObject(cbase, "pathfinding_message", (PyObject *)&pmessage_wrapper_type);
+        PyModule_AddObject(cbase, "InternalMessage", (PyObject *)&pmessage_wrapper_type);
 
         addConstants(cbase, flags_wrapper);
 
@@ -110,7 +110,7 @@ static PyMethodDef BaseMethods[] = {
                            "Storage container for protocol level flags");
 
         Py_INCREF(&pmessage_wrapper_type);
-        PyModule_AddObject(cbase, "pathfinding_message", (PyObject *)&pmessage_wrapper_type);
+        PyModule_AddObject(cbase, "InternalMessage", (PyObject *)&pmessage_wrapper_type);
 
         Py_INCREF(&protocol_wrapper_type);
         PyModule_AddObject(cbase, "protocol", (PyObject *)&protocol_wrapper_type);

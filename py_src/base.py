@@ -311,7 +311,7 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
 default_protocol = protocol('', "Plaintext")  # SSL")
 
 
-class pathfinding_message(object):
+class InternalMessage(object):
     """An object used to build and parse protocol-defined message structures"""
     @classmethod
     def __sanitize_string(cls, string, sizeless=False):
@@ -393,7 +393,7 @@ class pathfinding_message(object):
 
     @classmethod
     def feed_string(cls, string, sizeless=False, compressions=None):
-        """Constructs a pathfinding_message from a string or bytes object.
+        """Constructs a InternalMessage from a string or bytes object.
 
         Args:
             string:         The string you wish to parse
@@ -401,7 +401,7 @@ class pathfinding_message(object):
             compressions:   A list containing the standardized compression methods this message might be under (default: [])
 
         Returns:
-            A base.pathfinding_message from the given string
+            A base.InternalMessage from the given string
 
         Raises:
            AttributeError: Fed a non-string, non-bytes argument
@@ -423,7 +423,7 @@ class pathfinding_message(object):
         return msg
 
     def __init__(self, msg_type, sender, payload, compression=None, timestamp=None):
-        """Initializes a pathfinding_message instance
+        """Initializes a InternalMessage instance
 
         Args:
             msg_type:       A bytes-like header for the message you wish to send
@@ -534,7 +534,7 @@ class base_connection(object):
             msg: The IntenalMessage you wish to send
 
         Returns:
-            the pathfinding_message object you just sent, or None if the sending was unsuccessful"""
+            the InternalMessage object you just sent, or None if the sending was unsuccessful"""
         msg.compression = self.compression
         if msg.msg_type in [flags.whisper, flags.broadcast]:
             self.last_sent = msg.payload
@@ -551,20 +551,20 @@ class base_connection(object):
         """Sends a message through its connection.
 
         Args:
-            msg_type:   Message type, corresponds to the header in a :py:class:`py2p.base.pathfinding_message` object
+            msg_type:   Message type, corresponds to the header in a :py:class:`py2p.base.InternalMessage` object
             *args:      A list of bytes-like objects, which correspond to the packets to send to you
             **kargs:    There are two available keywords:
             id:         The ID this message should appear to be sent from (default: your ID)
             time:       The time this message should appear to be sent from (default: now in UTC)
 
         Returns:
-            the pathfinding_message object you just sent, or None if the sending was unsuccessful
+            the InternalMessage object you just sent, or None if the sending was unsuccessful
         """
         # This section handles waterfall-specific flags
         id = kargs.get('id', self.server.id)  # Latter is returned if key not found
         time = kargs.get('time') or getUTC()
         # Begin real method
-        msg = pathfinding_message(msg_type, id, list(args), self.compression, timestamp=time)
+        msg = InternalMessage(msg_type, id, list(args), self.compression, timestamp=time)
         return self.send_InternalMessage(msg)
 
     @property
@@ -606,7 +606,7 @@ class base_connection(object):
         self.expected = 4
         self.buffer = []
         self.active = False
-        msg = pathfinding_message.feed_string(raw_msg, False, self.compression)
+        msg = InternalMessage.feed_string(raw_msg, False, self.compression)
         return msg
 
     def handle_renegotiate(self, packets):
@@ -849,7 +849,7 @@ class message(object):
         """Initializes a message object
 
         Args:
-            msg:    A :py:class:`py2p.base.pathfinding_message` object
+            msg:    A :py:class:`py2p.base.InternalMessage` object
             server: A :py:class:`py2p.base.base_socket` object
         """
         self.msg = msg

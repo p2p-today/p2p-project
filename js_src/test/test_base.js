@@ -20,9 +20,9 @@ function get_random_array(len)  {
     return ret;
 }
 
-function test_pathfinding_message(payload, instance)  {
+function test_InternalMessage(payload, instance)  {
     if (!instance)  {
-        var msg = new base.pathfinding_message(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload);
+        var msg = new base.InternalMessage(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload);
     }
     else    {
         var msg = instance;
@@ -104,27 +104,27 @@ describe('base', function() {
         });
     });
 
-    describe('pathfinding_message', function()  {
+    describe('InternalMessage', function()  {
         it('should pass some short, statically defined tests', function()  {
             var string = '\x00\x00\x00{\x00\x00\x00\tbroadcast\x00\x00\x00\x0btest sender\x00\x00\x00B2ypz9RTBAFbw75WSJTNwaXZ6zSVLG8wvqbQDNRtoh74Hkxg3JAozHAZtCfwg1PEmpe\x00\x00\x00\x063EdmDc\x00\x00\x00\x0btest packet';
             var zlib = new Buffer('\x00\x00\x00zx\x9cc``\xe0L*\xcaOLIN,.a``\xe0.I-.Q(N\xcdKI-\x02r\x9d\x8c*\x0b\xaa,\x83B\x9c\x1c\xdd\x92\xca\xcdM\xc3\x83\xbdB\xfc\xca\x13#\xa2\xcc\xaa\x82\xc3|\xdc-\xca\xcb\n\x93\x02]\xfc\x82J\xf23\xccM<\xb2+\xd2\x8d\xbd\x1c\xf3\xab<\x1c\xa3J\x9c\xd3\xca\xd3\r\x03\\s\x0bR\x81\xa6\xb0\x19\xbb\xa6\xe4\xba$\xc3\x8d/HL\xceN-\x01\x00\xdf\xcb%T', "ascii");
             var gzip = new Buffer('\x00\x00\x00\x86\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03c``\xe0L*\xcaOLIN,.a``\xe0.I-.Q(N\xcdKI-\x02r\x9d\x8c*\x0b\xaa,\x83B\x9c\x1c\xdd\x92\xca\xcdM\xc3\x83\xbdB\xfc\xca\x13#\xa2\xcc\xaa\x82\xc3|\xdc-\xca\xcb\n\x93\x02]\xfc\x82J\xf23\xccM<\xb2+\xd2\x8d\xbd\x1c\xf3\xab<\x1c\xa3J\x9c\xd3\xca\xd3\r\x03\\s\x0bR\x81\xa6\xb0\x19\xbb\xa6\xe4\xba$\xc3\x8d/HL\xceN-\x01\x00\xbe\xfc\xd1\x07{\x00\x00\x00', "ascii");
 
-            var pm = base.pathfinding_message.feed_string(string);
+            var pm = base.InternalMessage.feed_string(string);
             var msg = new base.message(pm);
 
-            var zlib_pm = base.pathfinding_message.feed_string(zlib, false, [base.flags.zlib]);
+            var zlib_pm = base.InternalMessage.feed_string(zlib, false, [base.flags.zlib]);
 
-            var gzip_pm = base.pathfinding_message.feed_string(gzip, false, [base.flags.gzip]);
+            var gzip_pm = base.InternalMessage.feed_string(gzip, false, [base.flags.gzip]);
 
             var expected = [ new Buffer('broadcast'), new Buffer('test sender'), '2ypz9RTBAFbw75WSJTNwaXZ6zSVLG8wvqbQDNRtoh74Hkxg3JAozHAZtCfwg1PEmpe', '3EdmDc', new Buffer('test packet') ];
 
-            assert (JSON.stringify(pm.packets) == JSON.stringify(expected), "pathfinding_message is not extracting packets correctly");
-            assert (JSON.stringify(msg.packets) == JSON.stringify(expected.slice(4)), "message is not extracting from pathfinding_message correctly");
+            assert (JSON.stringify(pm.packets) == JSON.stringify(expected), "InternalMessage is not extracting packets correctly");
+            assert (JSON.stringify(msg.packets) == JSON.stringify(expected.slice(4)), "message is not extracting from InternalMessage correctly");
 
-            assert (JSON.stringify(zlib_pm.packets) == JSON.stringify(expected), "pathfinding_message is not extracting zlib packets correctly");
+            assert (JSON.stringify(zlib_pm.packets) == JSON.stringify(expected), "InternalMessage is not extracting zlib packets correctly");
 
-            assert (JSON.stringify(gzip_pm.packets) == JSON.stringify(expected), "pathfinding_message is not extracting gzip packets correctly");
+            assert (JSON.stringify(gzip_pm.packets) == JSON.stringify(expected), "InternalMessage is not extracting gzip packets correctly");
         });
 
         it('should serialize and deserialize', function()   {
@@ -136,9 +136,9 @@ describe('base', function() {
                         compressions.push(base.compression[j]);
                     }
                     var payload = get_random_array(Math.floor(Math.random() * 16));
-                    var msg = new base.pathfinding_message(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload, compressions);
-                    var deserialized = base.pathfinding_message.feed_string(msg.string, false, compressions);
-                    test_pathfinding_message(payload, deserialized);
+                    var msg = new base.InternalMessage(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload, compressions);
+                    var deserialized = base.InternalMessage.feed_string(msg.string, false, compressions);
+                    test_InternalMessage(payload, deserialized);
                 }
             }
         });
@@ -146,7 +146,7 @@ describe('base', function() {
         it('should have information assigned to the correct getters', function()    {
             for (var i = 0; i < 250; i++)   {
                 var payload = get_random_array(Math.floor(Math.random() * 16));
-                test_pathfinding_message(payload);
+                test_InternalMessage(payload);
             }
         });
     });
@@ -159,7 +159,7 @@ describe('base', function() {
                     sen[j] = sen[j] % 128;
                 }
                 var pac = get_random_array(36);
-                var base_msg = new base.pathfinding_message(base.flags.broadcast, sen, pac);
+                var base_msg = new base.InternalMessage(base.flags.broadcast, sen, pac);
                 var test = new base.message(base_msg, null);
                 assert.equal(test.packets, pac);
                 assert.equal(test.msg, base_msg);

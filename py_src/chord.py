@@ -19,7 +19,7 @@ except:
 
 from .base import (flags, compression, to_base_58, from_base_58,
                 base_connection, message, base_daemon, base_socket,
-                pathfinding_message, json_compressions)
+                InternalMessage, json_compressions)
 from .utils import (getUTC, get_socket, intersect, awaiting_value, most_common)
 
 default_protocol = protocol('chord', "Plaintext")  # SSL")

@@ -51,46 +51,46 @@ def test_compression_exceptions(iters=100):
             base.decompress(test, os.urandom(4))
 
 
-def test_pathfinding_message(iters=500, impl=base):
+def test_InternalMessage(iters=500, impl=base):
     max_val = 2**8
     for _ in xrange(iters):
         length = random.randint(0, max_val)
         array = gen_random_list(36, length)
-        pathfinding_message_constructor_validation(array, impl)
-        pathfinding_message_exceptions_validiation(array, impl)
+        InternalMessage_constructor_validation(array, impl)
+        InternalMessage_exceptions_validiation(array, impl)
 
 
-def pathfinding_message_constructor_validation(array, impl):
-    msg = impl.pathfinding_message(base.flags.broadcast, u'\xff', array)
+def InternalMessage_constructor_validation(array, impl):
+    msg = impl.InternalMessage(base.flags.broadcast, u'\xff', array)
     assert array == msg.payload
     assert msg.packets == [base.flags.broadcast, u'\xff'.encode('utf-8'), msg.id, msg.time_58] + array
     p_hash = hashlib.sha384(b''.join(array + [msg.time_58]))
     assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id
-    assert impl.pathfinding_message.feed_string(msg.string).id == msg.id
+    assert impl.InternalMessage.feed_string(msg.string).id == msg.id
     if impl != base:
-        assert base.pathfinding_message.feed_string(msg.string).id == msg.id
+        assert base.InternalMessage.feed_string(msg.string).id == msg.id
     for method in impl.compression:
         msg.compression = []
         string = base.compress(msg.string[4:], method)
         string = struct.pack('!L', len(string)) + string
         msg.compression = [method]
-        comp1 = impl.pathfinding_message.feed_string(string, False, [method])
-        comp2 = base.pathfinding_message.feed_string(string, False, [method])
+        comp1 = impl.InternalMessage.feed_string(string, False, [method])
+        comp2 = base.InternalMessage.feed_string(string, False, [method])
         assert msg.string == string == comp1.string == comp2.string
 
 
-def pathfinding_message_exceptions_validiation(array, impl):
-    msg = impl.pathfinding_message(base.flags.broadcast, 'TEST SENDER', array)
+def InternalMessage_exceptions_validiation(array, impl):
+    msg = impl.InternalMessage(base.flags.broadcast, 'TEST SENDER', array)
     for method in impl.compression:
         msg.compression = [method]
         with pytest.raises(Exception):
-            impl.pathfinding_message.feed_string(msg.string, True, [method])
+            impl.InternalMessage.feed_string(msg.string, True, [method])
 
         with pytest.raises(Exception):
-            impl.pathfinding_message.feed_string(msg.string[4:], False, [method])
+            impl.InternalMessage.feed_string(msg.string[4:], False, [method])
 
         with pytest.raises(Exception):
-            impl.pathfinding_message.feed_string(msg.string)
+            impl.InternalMessage.feed_string(msg.string)
 
 
 def test_protocol(iters=200, impl=base):
@@ -112,7 +112,7 @@ def test_message_sans_network(iters=1000):
     for _ in range(iters):
         sen = str(uuid.uuid4())
         pac = gen_random_list(36, 10)
-        base_msg = base.pathfinding_message(base.flags.broadcast, sen, pac)
+        base_msg = base.InternalMessage(base.flags.broadcast, sen, pac)
         test = base.message(base_msg, None)
         assert test.packets == pac
         assert test.msg == base_msg
