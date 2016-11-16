@@ -29,11 +29,9 @@ A more formal definition would look like:
     Timestamp          - A base_58 unix UTC timestamp of initial broadcast
     Size of packet 4   - 4 bytes defining the plaintext size of packet 4
     Payload header     - [broadcast, whisper, handshake, peers, request, response]
-    Size of packet 5   - 4 bytes defining the plaintext size of packet 5
-    Payload packet 1
-    ...
-    Size of packet n   - 4 bytes defining the plaintext size of packet n
-    Payload packet n
+    ------------------------------Payload Packets------------------------------
+    Size of packet n
+    Packet n     (payload packet n-4)
 
 To understand this, let’s work from the bottom up. When a user wants to
 construct a message, they feed a list of packets. For this example,
