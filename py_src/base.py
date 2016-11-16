@@ -383,11 +383,11 @@ class pathfinding_message(object):
             Do not feed a message with the size header. Do not feed a compressed message.
         """
         processed = 0
-        pack_lens, packets = [], []
+        packets = []
         while processed < len(string):
-            pack_lens.extend(struct.unpack("!L", string[processed:processed+4]))
+            pack_len = unpack_value(string[processed:processed+4])
             processed += 4
-            end = processed + pack_lens[-1]
+            end = processed + pack_len
             packets.append(string[processed:end])
             processed = end
         return packets
