@@ -28,7 +28,8 @@ A more formal definition would look like:
     Size of packet 3   - 4 bytes defining the plaintext size of packet 3
     Timestamp          - A base_58 unix UTC timestamp of initial broadcast
     Size of packet 4   - 4 bytes defining the plaintext size of packet 4
-    Payload header     - [broadcast, whisper, handshake, peers, request, response]
+    Payload header     - [broadcast, compression, whisper, handshake, peers,
+                          request, resend, response, store, retrieve]
     ------------------------------Payload Packets------------------------------
     Size of packet n
     Packet n     (payload packet n-4)
