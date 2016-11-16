@@ -64,7 +64,7 @@ else {
 *     This is :js:data:`~js2p.base.version_info` joined in the format ``'a.b.c'``
 */
 
-base.version_info = [0, 4, 516];
+base.version_info = [0, 5, 551];
 base.node_policy_version = base.version_info[2].toString();
 base.protocol_version = base.version_info.slice(0, 2).join(".");
 base.version = base.version_info.join('.');
@@ -460,21 +460,15 @@ base.pathfinding_message = class pathfinding_message {
     static process_string(string) {
         var processed = 0;
         var expected = string.length;
-        var pack_lens = [];
         var packets = [];
         while (processed < expected) {
-            pack_lens = pack_lens.concat(base.unpack_value(new Buffer(string.slice(processed, processed+4))));
+            let len = base.unpack_value(new Buffer(string.slice(processed, processed+4)));
             processed += 4;
-            expected -= pack_lens[pack_lens.length - 1];
+            packets = packets.concat(new Buffer(string.slice(processed, processed+len)));
+            processed += len;
         }
         if (processed > expected)   {
-            throw `Could not parse correctly processed=${processed}, expected=${expected}, pack_lens=${pack_lens}`;
-        }
-        // Then revarruct the packets
-        for (var i=0; i < pack_lens.length; i++) {
-            var end = processed + pack_lens[i];
-            packets = packets.concat([string.slice(processed, end)]);
-            processed = end;
+            throw `Could not parse correctly processed=${processed}, expected=${expected}, packets=${packets}`;
         }
         return packets;
     }
@@ -544,14 +538,10 @@ base.pathfinding_message = class pathfinding_message {
         var buf_array = [];
         var packets = this.packets;
         for (var i = 0; i < packets.length; i++)    {
+            buf_array.push(base.pack_value(4, packets[i].length));
             buf_array.push(new Buffer(packets[i]));
         }
         var total = Buffer.concat(buf_array);
-        var headers = [];
-        for (var i = 0; i < buf_array.length; i++) {
-            headers = headers.concat(base.pack_value(4, buf_array[i].length));
-        }
-        total = Buffer.concat(headers.concat(total));
         if (this.compression_used) {
             total = base.compress(total, this.compression_used);
         }

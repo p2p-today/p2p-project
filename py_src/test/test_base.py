@@ -67,6 +67,8 @@ def pathfinding_message_constructor_validation(array, impl):
     p_hash = hashlib.sha384(b''.join(array + [msg.time_58]))
     assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id
     assert impl.pathfinding_message.feed_string(msg.string).id == msg.id
+    if impl != base:
+        assert base.pathfinding_message.feed_string(msg.string).id == msg.id
     for method in impl.compression:
         msg.compression = []
         string = base.compress(msg.string[4:], method)
