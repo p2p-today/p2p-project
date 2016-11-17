@@ -158,7 +158,7 @@ endif
 
 html: jsdocs
 	python $(docs_deps)
-	cd docs; rm -r .build; $(MAKE) html
+	cd docs; $(MAKE) html
 
 py_all: LICENSE setup.py setup.cfg python html cpython2 cpython3 pypy
 
