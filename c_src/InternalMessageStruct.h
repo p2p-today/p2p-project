@@ -335,6 +335,10 @@ static InternalMessageStruct *deserializeInternalMessage(const char *serialized,
     CP2P_DEBUG("Entering process_string\n");
     process_string(tmp, len, &packets, &lens, &num_packets);
     CP2P_DEBUG("Exiting process_string\n");
+    if (packets == NULL)    {
+        *errored = 2;
+        return NULL;
+    }
     ret = constructInternalMessage(
         packets[0], lens[0],
         packets[1], lens[1],
@@ -378,7 +382,9 @@ static InternalMessageStruct *deserializeCompressedInternalMessage(const char *s
     sanitize_string(tmp, &len, sizeless);
     decompress_string(tmp, len, &result, &res_len, compression, compression_lens, num_compressions);
     ret = deserializeInternalMessage(result, res_len, 0, errored);
-    setInternalMessageCompressions(ret, compression, compression_lens, num_compressions);
+    if (!errored)   {
+        setInternalMessageCompressions(ret, compression, compression_lens, num_compressions);
+    }
     return ret;
 }
 

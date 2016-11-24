@@ -376,6 +376,12 @@ static int process_string(const char *str, size_t len, char ***packets, size_t *
         processed += tmp + 4;
         *num_packets += 1;
     }
+    if (processed > len)    {
+        free(*lens);
+        *lens = NULL;
+        *packets = NULL;
+        return -1;
+    }
     CP2P_DEBUG("Exited while loop\n");
     *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets));
     *packets = (char **) realloc(*packets, sizeof(char *) * (*num_packets));

@@ -129,8 +129,13 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
         CP2P_DEBUG("Python GIL re-obtained\n");
     }
 
-    if (PyErr_Occurred() || err)    {
+    if (PyErr_Occurred())    {
         CP2P_DEBUG("Returning NULL (that's bad)\n");
+        return NULL;
+    }
+    else if (err)   {
+        CP2P_DEBUG("Returning NULL due to error (that's bad)\n");
+        PyErr_SetString(PyExc_IndexError, "Packets could not be correctly parsed");
         return NULL;
     }
     CP2P_DEBUG("Returning normally: %p\n", ret);
