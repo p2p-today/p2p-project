@@ -387,7 +387,7 @@ class mesh_socket(base_socket):
         """
         if msg.id not in (i for i, t in self.waterfalls):
             self.waterfalls.appendleft((msg.id, msg.time))
-            for handler in self.routing_table.values():
+            for handler in tuple(self.routing_table.values()):
                 if handler.id != msg.sender:
                     handler.send_InternalMessage(msg.msg)
             self.__clean_waterfalls()
