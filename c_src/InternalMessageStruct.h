@@ -346,10 +346,14 @@ static InternalMessageStruct *deserializeInternalMessage(const char *serialized,
         packets + 4, lens + 4, num_packets - 4);
     CP2P_DEBUG("Message deserialized\n");
     ret->timestamp = from_base_58(packets[3], lens[3]);
-    ret->str_len = len;
-    ret->str = (char *) malloc(sizeof(char) * len);
-    memcpy(ret->str, serialized, len);
+    ret->str_len = len + 4;
+    ret->str = (char *) malloc(sizeof(char) * (len + 4));
+    memcpy(ret->str, serialized, len + 4);
     CP2P_DEBUG("Known attributes cached\n");
+
+    ensureInternalMessageID(ret);
+    *errored = memcmp(ret->id, packets[2], ret->id_len);
+    CP2P_DEBUG("Error attribute set\n");
 
     for (i = 0; i < num_packets; i++)    {
         free(packets[i]);
@@ -357,10 +361,6 @@ static InternalMessageStruct *deserializeInternalMessage(const char *serialized,
     free(packets);
     free(lens);
     CP2P_DEBUG("Temporary memory freed\n");
-
-    ensureInternalMessageID(ret);
-    *errored = memcmp(ret->id, packets[2], ret->id_len);
-    CP2P_DEBUG("Error attribute set\n");
 
     if (*errored)
         return NULL;
