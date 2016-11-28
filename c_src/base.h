@@ -355,6 +355,8 @@ static int process_string(const char *str, size_t len, char ***packets, size_t *
     *     :param lens:      A pointer to the returned array of packet lengths. This will be initiaized for you
     *     :num_packets:     A pointer to the number of packets. This will be initialized for you
     *
+    *     :returns: ``0`` if successful, any other number if not. If it returns non-``0``, ``packets`` and ``lens`` will point to ``NULL``
+    *
     *     .. warning::
     *
     *         If you do not :c:func:`free` ``packets`` and ``lens`` you will develop a memory leak

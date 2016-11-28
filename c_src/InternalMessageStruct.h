@@ -323,12 +323,13 @@ static InternalMessageStruct *deserializeInternalMessage(const char *serialized,
     *     :param sizeless:      A boolean which indicates whether the network size header is still present on the given string
     *     :param errored:       A pointer to a boolean. If this is set with a non-zero value, it indicates that the checksum test failed
     *
-    *     :returns: An equivalent :c:type:`InternalMessageStruct`
+    *     :returns: An equivalent :c:type:`InternalMessageStruct`, or ``NULL`` if there was an error
     */
     char *tmp = (char *) malloc(sizeof(char) * len);
     char **packets = (char **) malloc(sizeof(char *) * 4);
     size_t *lens;
     size_t num_packets;
+    size_t i;
     InternalMessageStruct *ret;
     memcpy(tmp, serialized, len);
     sanitize_string(tmp, &len, sizeless);
@@ -350,10 +351,19 @@ static InternalMessageStruct *deserializeInternalMessage(const char *serialized,
     memcpy(ret->str, serialized, len);
     CP2P_DEBUG("Known attributes cached\n");
 
+    for (i = 0; i < num_packets; i++)    {
+        free(packets[i]);
+    }
+    free(packets);
+    free(lens);
+    CP2P_DEBUG("Temporary memory freed\n");
+
     ensureInternalMessageID(ret);
     *errored = memcmp(ret->id, packets[2], ret->id_len);
     CP2P_DEBUG("Error attribute set\n");
 
+    if (*errored)
+        return NULL;
     return ret;
 }
 
@@ -372,7 +382,7 @@ static InternalMessageStruct *deserializeCompressedInternalMessage(const char *s
     *     :param compression_lens:  See :c:func:`setInternalMessageCompressions`
     *     :param num_compressions:  See :c:func:`setInternalMessageCompressions`
     *
-    *     :returns: An equivalent :c:type:`InternalMessageStruct`
+    *     :returns: An equivalent :c:type:`InternalMessageStruct`, or ``NULL`` if there was an error
     */
     char *tmp = (char *) malloc(sizeof(char) * len);
     char *result;
