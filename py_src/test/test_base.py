@@ -63,7 +63,8 @@ def test_InternalMessage(iters=500, impl=base):
 def InternalMessage_constructor_validation(array, impl):
     msg = impl.InternalMessage(base.flags.broadcast, u'\xff', array)
     assert array == msg.payload
-    assert msg.packets == [base.flags.broadcast, u'\xff'.encode('utf-8'), msg.id, msg.time_58] + array
+    assert msg.packets == [base.flags.broadcast, u'\xff'.encode('utf-8'),
+                           msg.id, msg.time_58] + array
     p_hash = hashlib.sha384(b''.join(array + [msg.time_58]))
     assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id
     assert impl.InternalMessage.feed_string(msg.string).id == msg.id
@@ -103,7 +104,8 @@ def test_protocol(iters=200, impl=base):
         assert test.subnet == test[0] == sub
         print("testing encryption equality")
         assert test.encryption == test[1] == enc
-        p_hash = hashlib.sha256(''.join([sub, enc, base.protocol_version]).encode())
+        p_hash = hashlib.sha256(''.join(
+            [sub, enc, base.protocol_version]).encode())
         print("testing ID equality")
         assert base.to_base_58(int(p_hash.hexdigest(), 16)) == test.id
 
@@ -118,5 +120,7 @@ def test_message_sans_network(iters=1000):
         assert test.msg == base_msg
         assert test.sender == sen.encode()
         assert test.id == base_msg.id
-        assert test.time == base_msg.time == base.from_base_58(test.time_58) == base.from_base_58(base_msg.time_58)
+        assert (test.time == base_msg.time ==
+                base.from_base_58(test.time_58) ==
+                base.from_base_58(base_msg.time_58))
         assert sen in repr(test)

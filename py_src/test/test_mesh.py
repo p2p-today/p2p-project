@@ -20,11 +20,13 @@ def close_all_nodes(nodes):
 def propagation_validation(iters, start_port, num_nodes, encryption):
     for i in xrange(iters):
         print("----------------------Test start----------------------")
-        nodes = [mesh.mesh_socket('localhost', start_port + i*num_nodes,
-                                  prot=mesh.protocol('', encryption), debug_level=5)]
+        nodes = [mesh.mesh_socket(
+            'localhost', start_port + i*num_nodes,
+            prot=mesh.protocol('', encryption), debug_level=5)]
         for j in xrange(1, num_nodes):
-            new_node = mesh.mesh_socket('localhost', start_port + i*num_nodes + j,
-                                        prot=mesh.protocol('', encryption), debug_level=5)
+            new_node = mesh.mesh_socket(
+                'localhost', start_port + i*num_nodes + j,
+                prot=mesh.protocol('', encryption), debug_level=5)
             nodes[-1].connect('localhost', start_port + i*num_nodes + j)
             nodes.append(new_node)
             time.sleep(0.5)
@@ -54,14 +56,17 @@ def protocol_rejection_validation(iters, start_port, encryption):
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         f = mesh.mesh_socket('localhost', start_port + i*2,
-                             prot=mesh.protocol('test', encryption), debug_level=5)
+                             prot=mesh.protocol('test', encryption),
+                             debug_level=5)
         g = mesh.mesh_socket('localhost', start_port + i*2 + 1,
-                             prot=mesh.protocol('test2', encryption), debug_level=5)
+                             prot=mesh.protocol('test2', encryption),
+                             debug_level=5)
         print("----------------------Test event----------------------")
         g.connect('localhost', start_port + i*2)
         time.sleep(1)
         print("----------------------Test ended----------------------")
-        assert len(f.routing_table) == len(f.awaiting_ids) == len(g.routing_table) == len(g.awaiting_ids) == 0
+        assert (len(f.routing_table) == len(f.awaiting_ids) ==
+                len(g.routing_table) == len(g.awaiting_ids) == 0)
         close_all_nodes([f, g])
 
 
@@ -141,13 +146,20 @@ def test_reply_SSL(iters=3):
 # def connection_recovery_validation(iters, start_port, encryption, method):
 #     for i in xrange(iters):
 #         print("----------------------Test start----------------------")
-#         f = mesh.mesh_socket('localhost', start_port + i*3, prot=mesh.protocol('', encryption), debug_level=2)
-#         g = mesh.mesh_socket('localhost', start_port + i*3 + 1, prot=mesh.protocol('', encryption), debug_level=2)
-#         h = mesh.mesh_socket('localhost', start_port + i*3 + 2, prot=mesh.protocol('', encryption), debug_level=2)
+#         f = mesh.mesh_socket('localhost', start_port + i*3,
+#                              prot=mesh.protocol('', encryption),
+#                              debug_level=2)
+#         g = mesh.mesh_socket('localhost', start_port + i*3 + 1,
+#                              prot=mesh.protocol('', encryption),
+#                              debug_level=2)
+#         h = mesh.mesh_socket('localhost', start_port + i*3 + 2,
+#                              prot=mesh.protocol('', encryption),
+#                              debug_level=2)
 #         f.connect('localhost', start_port + i*3 + 1)
 #         g.connect('localhost', start_port + i*3 + 2)
 #         time.sleep(0.5)
-#         assert len(f.routing_table) == len(g.routing_table) == len(h.routing_table) == 2, "Initial connection failed"
+#         assert (len(f.routing_table) == len(g.routing_table) ==
+#                 len(h.routing_table) == 2), "Initial connection failed"
 #         print("----------------------Disconnect----------------------")
 #         disconnect(f, method)
 #         for j in range(4)[::-1]:
@@ -155,7 +167,8 @@ def test_reply_SSL(iters=3):
 #             time.sleep(1)
 #         print("----------------------Test ended----------------------")
 #         try:
-#             assert len(f.routing_table) == len(g.routing_table) == len(h.routing_table) == 2, "Network recovery failed"
+#             assert (len(f.routing_table) == len(g.routing_table) ==
+#                     len(h.routing_table) == 2), "Network recovery failed"
 #         except:  # pragma: no cover
 #             raise
 #         finally:
