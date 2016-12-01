@@ -406,8 +406,7 @@ class InternalMessage(object):
             A list containing the message's packets
 
         Raises:
-           struct.error:   Packet headers are incorrect OR not fed plaintext
-           IndexError:     See  case of :py:class:`struct.error`
+           IndexError: Packet headers are incorrect OR not fed plaintext
 
         Warning:
             Do not feed a message with the size header.
@@ -442,9 +441,8 @@ class InternalMessage(object):
            AttributeError: Fed a non-string, non-bytes argument
            AssertionError: Initial size header is incorrect
            Exception:      Unrecognized compression method fed in compressions
-           struct.error:   Packet headers are incorrect OR unrecognized
-                               compression
-           IndexError:     See case of :py:class:`struct.error`
+           IndexError:     Packet headers are incorrect OR
+                               unrecognized compression
         """
         # First section checks size header
         string = cls.__sanitize_string(string, sizeless)
@@ -610,10 +608,10 @@ class base_connection(object):
             *args:     A list of bytes-like objects, which correspond to the
                            packets to send to you
             **kargs:   There are two available keywords:
-                id:        The ID this message should appear to be sent from
-                               (default: your ID)
-                time:      The time this message should appear to be sent from
-                               (default: now in UTC)
+            id:        The ID this message should appear to be sent from
+                           (default: your ID)
+            time:      The time this message should appear to be sent from
+                           (default: now in UTC)
 
         Returns:
             the InternalMessage object you just sent, or None if the sending
@@ -859,8 +857,8 @@ class base_socket(object):
             if (len(args.parameters) !=
                     (3 if args.parameters.get('self') else 2)):
                 raise ValueError(
-                    "This method must contain exactly two arguments (or thre"
-                    "e if first is self)")
+                    "This method must contain exactly two arguments "
+                    "(or three if first is self)")
             self.__handlers.append(method)
 
     else:
@@ -883,8 +881,8 @@ class base_socket(object):
             if (args[1:] != (None, None, None) or len(args[0]) !=
                     (3 if args[0][0] == 'self' else 2)):
                 raise ValueError(
-                    "This method must contain exactly two arguments (or thre"
-                    "e if first is self)")
+                    "This method must contain exactly two arguments "
+                    "(or three if first is self)")
             self.__handlers.append(method)
 
     def handle_msg(self, msg, conn):
@@ -1006,6 +1004,6 @@ class message(object):
             self.server.send(request_id, self.sender, type=flags.request)
             self.server.requests.update({
                 request_id: [flags.whisper, flags.whisper] + list(args)})
-            print("You aren't connected to the original sender. This reply i"
-                  "s not guarunteed, but we're trying to make a connection a"
-                  "nd put the message through.")
+            print("You aren't connected to the original sender. This reply "
+                  "is not guarunteed, but we're trying to make a connection"
+                  " and put the message through.")

@@ -52,8 +52,8 @@ def test_lan_ip():
 
 def lan_ip_validation_linux():
     # command pulled from http://stackoverflow.com/a/13322549
-    command = ("ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | gre"
-               "p -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'")
+    command = ("ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | "
+               "grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'")
     output = subprocess.check_output(
         command, universal_newlines=True, shell=True)
     assert utils.get_lan_ip() in output

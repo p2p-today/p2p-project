@@ -38,10 +38,10 @@ class mesh_connection(base_connection):
             *args:      A list of bytes-like objects, which correspond to the
                             packets to send to you
             **kargs:    There are two available keywords:
-                id:         The ID this message should appear to be sent
-                                from (default: your ID)
-                time:       The time this message should appear to be sent
-                                from (default: now in UTC)
+            id:         The ID this message should appear to be sent
+                            from (default: your ID)
+            time:       The time this message should appear to be sent
+                            from (default: now in UTC)
 
         Returns:
             the :py:class:`~py2p.base.InternalMessage` object you just sent,
@@ -82,7 +82,7 @@ class mesh_connection(base_connection):
 
         If it is older than a preset limit, this method returns ``True``.
 
-        Otherwise this method returns ``None``, and forwards the message
+        Otherwise this method returns ``False``, and forwards the message
         appropriately.
 
         Args:
@@ -90,7 +90,7 @@ class mesh_connection(base_connection):
             packets:    The message's packets
 
         Returns:
-            Either ``True`` or ``None``
+            Either ``True`` or ``False``
         """
         if packets[0] == flags.broadcast:
             if from_base_58(packets[3]) < getUTC() - 60:
@@ -101,6 +101,7 @@ class mesh_connection(base_connection):
                 return True
             self.__print__(
                 "New waterfall received. Proceeding as normal", level=2)
+        return False
 
 
 class mesh_daemon(base_daemon):
@@ -163,9 +164,9 @@ class mesh_daemon(base_daemon):
                 self.__print__(
                     "There was an unhandled exception with peer id %s. This "
                     "peer is being disconnected, and the relevant exception "
-                    "is added to the debug queue. If you'd like to report th"
-                    "is, please post a copy of your mesh_socket.status to gi"
-                    "thub.com/gappleto97/p2p-project/issues." % handler.id,
+                    "is added to the debug queue. If you'd like to report "
+                    "this, please post a copy of your mesh_socket.status to "
+                    "git.p2p.today/issues." % handler.id,
                     level=0)
                 self.exceptions.append((e, traceback.format_exc()))
             self.server.disconnect(handler)
@@ -538,17 +539,17 @@ class mesh_socket(base_socket):
 
     def recv(self, quantity=1):
         """This function has two behaviors depending on whether quantity is
-        truthy.
+        left as default.
 
-        If truthy is truthy, it will return a list of
-        :py:class:`~py2p.base.message` objects up to length len.
+        If quantity is given, it will return a list of
+        :py:class:`~py2p.base.message` objects up to length quantity.
 
-        If truthy is not truthy, it will return either a single
+        If quantity is left alone, it will return either a single
         :py:class:`~py2p.base.message` object, or ``None``
 
         Args:
             quantity:   The maximum number of :py:class:`~py2p.base.message`s
-                            you would like to pull
+                            you would like to pull (default: 1)
 
         Returns:
             A list of :py:class:`~py2p.base.message` s, an empty list, a
