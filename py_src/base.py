@@ -20,7 +20,7 @@ from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet)
 protocol_version = "0.5"
 node_policy_version = "551"
 
-version = '.'.join([protocol_version, node_policy_version])
+version = '.'.join((protocol_version, node_policy_version))
 
 plock = threading.Lock()
 
@@ -269,6 +269,10 @@ def compress(msg, method):
         The types fed are dependent on which compression method you use.
         Best to assume most values are :py:class:`bytes` or
         :py:class:`bytearray`
+
+    Raises:
+        A :py:class:`ValueError` if there is an unknown compression method,
+            or a method-specific error
     """
     if method == flags.gzip:
         compressor = zlib.compressobj(
@@ -283,7 +287,7 @@ def compress(msg, method):
     elif method == flags.lzma:
         return lzma.compress(msg)
     else:  # pragma: no cover
-        raise Exception('Unknown compression method')
+        raise ValueError('Unknown compression method')
 
 
 def decompress(msg, method):
@@ -307,6 +311,10 @@ def decompress(msg, method):
         The types fed are dependent on which decompression method you use.
         Best to assume most values are :py:class:`bytes` or
         :py:class:`bytearray`
+
+    Raises:
+        A :py:class:`ValueError` if there is an unknown compression method,
+            or a method-specific error
     """
     if method in (flags.gzip, flags.zlib):
         return zlib.decompress(msg, zlib.MAX_WBITS | 32)
@@ -315,7 +323,7 @@ def decompress(msg, method):
     elif method == flags.lzma:
         return lzma.decompress(msg)
     else:  # pragma: no cover
-        raise Exception('Unknown decompression method')
+        raise ValueError('Unknown decompression method')
 
 
 class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
@@ -378,7 +386,7 @@ class InternalMessage(object):
             A decompressed version of the message
 
         Raises:
-           Exception:  Unrecognized compression method fed in compressions
+           ValueError:  Unrecognized compression method fed in compressions
 
         Warning:
             Do not feed it with the size header, it will throw errors
@@ -440,7 +448,7 @@ class InternalMessage(object):
         Raises:
            AttributeError: Fed a non-string, non-bytes argument
            AssertionError: Initial size header is incorrect
-           Exception:      Unrecognized compression method fed in compressions
+           ValueError:     Unrecognized compression method fed in compressions
            IndexError:     Packet headers are incorrect OR
                                unrecognized compression
         """
@@ -582,10 +590,10 @@ class base_connection(object):
 
         Returns:
             the InternalMessage object you just sent, or None if the sending
-            was unsuccessful
+                was unsuccessful
         """
         msg.compression = self.compression
-        if msg.msg_type in [flags.whisper, flags.broadcast]:
+        if msg.msg_type in (flags.whisper, flags.broadcast):
             self.last_sent = msg.payload
         self.__print__(
             "Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)

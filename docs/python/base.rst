@@ -17,8 +17,6 @@ Base Module
 
 		- .. autoattribute:: flags.broadcast
 			:annotation:
-		- .. autoattribute:: waterfall
-			:annotation:
 		- .. autoattribute:: whisper
 			:annotation:
 		- .. autoattribute:: renegotiate

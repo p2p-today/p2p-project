@@ -228,7 +228,7 @@ class mesh_socket(base_socket):
         be handled automatically
         """
         if not super(mesh_socket, self).handle_msg(msg, conn):
-            if msg.packets[0] in [flags.whisper, flags.broadcast]:
+            if msg.packets[0] in (flags.whisper, flags.broadcast):
                 self.queue.appendleft(msg)
             else:
                 self.__print__(
