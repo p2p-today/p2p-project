@@ -7,6 +7,7 @@ Authors
 The following people have contributed to this project:
 
 - Gabe Appleton
+- :user:`the-zebulan`
 
 Licenses
 --------
