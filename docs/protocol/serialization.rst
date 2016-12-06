@@ -20,7 +20,7 @@ A more formal definition would look like:
     Size of message    - 4 (big-endian) bytes defining the size of the message
     ------------------------All below may be compressed------------------------
     Size of packet 0   - 4 bytes defining the plaintext size of packet 0
-    Pathfinding header - [broadcast, waterfall, whisper, renegotiate]
+    Pathfinding header - [broadcast, whisper, renegotiate]
     Size of packet 1   - 4 bytes defining the plaintext size of packet 1
     Sender ID          - A base_58 SHA384-based ID for the sender
     Size of packet 2   - 4 bytes defining the plaintext size of packet 2
