@@ -60,12 +60,13 @@ class sync_socket(mesh.mesh_socket):
                           is ``True``
         """
         meta = self.metadata.get(key, None)
-        if ((not meta) or (not self.__leasing) or
+        if ((not meta) or
                 (meta.owner == new_meta.owner) or
-                (meta.timestamp > new_meta.timestamp) or
                 (meta.timestamp < getUTC() - 3600) or
                 (meta.timestamp == new_meta.timestamp and
-                    meta.owner > new_meta.owner)):
+                    meta.owner > new_meta.owner) or
+                (meta.timestamp < new_meta.timestamp and
+                    not self.__leasing)):
             if new_data not in ('', b''):
                 self.metadata[key] = new_meta
                 self.data[key] = new_data
