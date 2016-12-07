@@ -81,9 +81,10 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         :raises Error: If someone else has a lease at this value, and ``error`` is not ``false``
         */
         let meta = this.metadata[key];
-        if ( (!meta) || (!this.__leasing) || (meta.owner == new_meta.owner) ||
-                (meta.timestamp > new_meta.timestamp) || (meta.timestamp < base.getUTC() - 3600) ||
-                (meta.timestamp == new_meta.timestamp && meta.owner > new_meta.owner) )    {
+        if ( (!meta) || (meta.owner === new_meta.owner) ||
+                (meta.timestamp < base.getUTC() - 3600) ||
+                (meta.timestamp === new_meta.timestamp && meta.owner > new_meta.owner) ||
+                ((meta.timestamp < new_meta.timestamp) && (!this.__leasing)) )    {
             if (new_data !== new Buffer(''))    {
                 this.metadata[key] = new_meta;
                 this.data[key] = new_data;

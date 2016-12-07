@@ -97,28 +97,6 @@ class chord_daemon(base_daemon):
         except exceptions:
             pass
 
-    def process_data(self, handler):
-        """Collects incoming data from nodes"""
-        try:
-            while not handler.find_terminator():
-                if not handler.collect_incoming_data(handler.sock.recv(1)):
-                    self.__print__("disconnecting node %s while in loop" % handler.id, level=6)
-                    self.server.disconnect(handler)
-                    return
-            handler.found_terminator()
-        except socket.timeout:  # pragma: no cover
-            return  # Shouldn't happen with select, but if it does...
-        except Exception as e:
-            if isinstance(e, socket.error) and e.args[0] in (9, 104, 10053, 10054, 10058):
-                node_id = handler.id
-                if not node_id:
-                    node_id = repr(handler)
-                self.__print__("Node %s has disconnected from the network" % node_id, level=1)
-            else:
-                self.__print__("There was an unhandled exception with peer id %s. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your chord_socket.status to github.com/gappleto97/p2p-project/issues." % handler.id, level=0)
-                self.exceptions.append((e, traceback.format_exc()))
-            self.server.disconnect(handler)
-
 
 class chord_socket(base_socket):
     """The class for chord socket abstraction. This inherits from :py:class:`py2p.base.base_socket`"""
@@ -157,6 +135,9 @@ class chord_socket(base_socket):
         self.prev = self
         self.leeching = True
         warnings.warn("This network configuration supports %s total nodes and requires a theoretical minimum of %s nodes" % (min(self.limit, 2**160), self.k), RuntimeWarning, stacklevel=2)
+
+    def request_peers(self):
+        pass
 
     @property
     def addr(self):

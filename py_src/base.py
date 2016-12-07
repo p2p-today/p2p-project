@@ -118,6 +118,84 @@ except ImportError:  # pragma: no cover
 json_compressions = json.dumps([method.decode() for method in compression])
 
 
+def compress(msg, method):
+    """Shortcut method for compression
+
+    Args:
+        msg:    The message you wish to compress, the type required is
+                    defined by the requested method
+        method: The compression method you wish to use.
+                    Supported (assuming installed):
+                        :py:class:`~base.flags.gzip`,
+                        :py:class:`~base.flags.zlib`,
+                        :py:class:`~base.flags.bz2`,
+                        :py:class:`~base.flags.lzma`
+
+    Returns:
+        Defined by the compression method, but typically the bytes of the
+        compressed message
+
+    Warning:
+        The types fed are dependent on which compression method you use.
+        Best to assume most values are :py:class:`bytes` or
+        :py:class:`bytearray`
+
+    Raises:
+        A :py:class:`ValueError` if there is an unknown compression method,
+            or a method-specific error
+    """
+    if method == flags.gzip:
+        compressor = zlib.compressobj(
+            zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 31)
+        return compressor.compress(msg) + compressor.flush()
+    elif method == flags.zlib:
+        compressor = zlib.compressobj(
+            zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 15)
+        return compressor.compress(msg) + compressor.flush()
+    elif method == flags.bz2:
+        return bz2.compress(msg)
+    elif method == flags.lzma:
+        return lzma.compress(msg)
+    else:  # pragma: no cover
+        raise ValueError('Unknown compression method')
+
+
+def decompress(msg, method):
+    """Shortcut method for decompression
+
+    Args:
+        msg:    The message you wish to decompress, the type required is
+                    defined by the requested method
+        method: The decompression method you wish to use.
+                    Supported (assuming installed):
+                        :py:class:`~base.flags.gzip`,
+                        :py:class:`~base.flags.zlib`,
+                        :py:class:`~base.flags.bz2`,
+                        :py:class:`~base.flags.lzma`
+
+    Returns:
+        Defined by the decompression method, but typically the bytes of the
+        compressed message
+
+    Warning:
+        The types fed are dependent on which decompression method you use.
+        Best to assume most values are :py:class:`bytes` or
+        :py:class:`bytearray`
+
+    Raises:
+        A :py:class:`ValueError` if there is an unknown compression method,
+            or a method-specific error
+    """
+    if method in (flags.gzip, flags.zlib):
+        return zlib.decompress(msg, zlib.MAX_WBITS | 32)
+    elif method == flags.bz2:
+        return bz2.decompress(msg)
+    elif method == flags.lzma:
+        return lzma.decompress(msg)
+    else:  # pragma: no cover
+        raise ValueError('Unknown decompression method')
+
+
 if sys.version_info < (3, ):
     def pack_value(l, i):
         """For value i, pack it into bytes of size length
@@ -246,84 +324,6 @@ def from_base_58(string):
     for char in string:
         decimal = decimal * 58 + base_58.index(char)
     return decimal
-
-
-def compress(msg, method):
-    """Shortcut method for compression
-
-    Args:
-        msg:    The message you wish to compress, the type required is
-                    defined by the requested method
-        method: The compression method you wish to use.
-                    Supported (assuming installed):
-                        :py:class:`~base.flags.gzip`,
-                        :py:class:`~base.flags.zlib`,
-                        :py:class:`~base.flags.bz2`,
-                        :py:class:`~base.flags.lzma`
-
-    Returns:
-        Defined by the compression method, but typically the bytes of the
-        compressed message
-
-    Warning:
-        The types fed are dependent on which compression method you use.
-        Best to assume most values are :py:class:`bytes` or
-        :py:class:`bytearray`
-
-    Raises:
-        A :py:class:`ValueError` if there is an unknown compression method,
-            or a method-specific error
-    """
-    if method == flags.gzip:
-        compressor = zlib.compressobj(
-            zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 31)
-        return compressor.compress(msg) + compressor.flush()
-    elif method == flags.zlib:
-        compressor = zlib.compressobj(
-            zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 15)
-        return compressor.compress(msg) + compressor.flush()
-    elif method == flags.bz2:
-        return bz2.compress(msg)
-    elif method == flags.lzma:
-        return lzma.compress(msg)
-    else:  # pragma: no cover
-        raise ValueError('Unknown compression method')
-
-
-def decompress(msg, method):
-    """Shortcut method for decompression
-
-    Args:
-        msg:    The message you wish to decompress, the type required is
-                    defined by the requested method
-        method: The decompression method you wish to use.
-                    Supported (assuming installed):
-                        :py:class:`~base.flags.gzip`,
-                        :py:class:`~base.flags.zlib`,
-                        :py:class:`~base.flags.bz2`,
-                        :py:class:`~base.flags.lzma`
-
-    Returns:
-        Defined by the decompression method, but typically the bytes of the
-        compressed message
-
-    Warning:
-        The types fed are dependent on which decompression method you use.
-        Best to assume most values are :py:class:`bytes` or
-        :py:class:`bytearray`
-
-    Raises:
-        A :py:class:`ValueError` if there is an unknown compression method,
-            or a method-specific error
-    """
-    if method in (flags.gzip, flags.zlib):
-        return zlib.decompress(msg, zlib.MAX_WBITS | 32)
-    elif method == flags.bz2:
-        return bz2.decompress(msg)
-    elif method == flags.lzma:
-        return lzma.decompress(msg)
-    else:  # pragma: no cover
-        raise ValueError('Unknown decompression method')
 
 
 class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
@@ -661,8 +661,7 @@ class base_connection(object):
         if not self.active and self.find_terminator():
             self.__print__(
                 self.buffer, self.expected, self.find_terminator(), level=4)
-            self.expected = struct.unpack(
-                "!L", bytes(self.buffer[:4]))[0] + 4
+            self.expected = unpack_value(bytes(self.buffer[:4])) + 4
             self.active = True
         return True
 
@@ -677,8 +676,7 @@ class base_connection(object):
         self.buffer = self.buffer[self.expected:]
         self.active = len(self.buffer) > 4
         if self.active:
-            self.expected = struct.unpack(
-                "!L", bytes(self.buffer[:4]))[0] + 4
+            self.expected = unpack_value(bytes(self.buffer[:4])) + 4
         else:
             self.expected = 4
         msg = InternalMessage.feed_string(raw_msg, False, self.compression)

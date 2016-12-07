@@ -22,6 +22,9 @@ engines:
       - 0d6601bfd2a9f00e972db6f0f594fea0
       - d098e5074e270ba459e0dfb5fee17663
       - 2d21bc6adeb012585bebc59cdbf51cac
+      - 9d00c8c9fc815b3999e7a11cb80074df
+      - 6e01dcdfb0b6ad72e7d1c986b87603e6
+      - fec3c4f3837296dbee23d5bd702cd1ef
 
   eslint:
     enabled: true

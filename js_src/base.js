@@ -866,7 +866,7 @@ base.base_connection = class base_connection   {
         *         :returns: ``true`` if action was taken, ``undefined`` if not
         */
         if (packets[0].toString() === base.flags.renegotiate)    {
-            if (packets[4].toString() == base.flags.compression)   {
+            if (packets[4].toString() === base.flags.compression)   {
                 var encoded_methods = JSON.parse(packets[5]);
                 var respond = (base.intersect(this.compression, encoded_methods) === this.compression.length);
                 this.compression = encoded_methods;

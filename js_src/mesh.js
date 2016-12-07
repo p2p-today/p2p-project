@@ -375,7 +375,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         */
         var packets = msg.packets;
         if (packets[0].toString() === base.flags.handshake)  {
-            if (packets[2] != msg.protocol.id) {
+            if (packets[2].toString() !== msg.protocol.id) {
                 this.disconnect(conn);
                 return true;
             }
@@ -446,10 +446,10 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             if (this.requests[packets[1]])  {
                 var addr = JSON.parse(packets[2]);
                 if (addr)   {
-                    var msg = this.requests[packets[1]];
+                    var info = this.requests[packets[1]];
                     // console.log(msg);
                     this.connect(addr[0][0], addr[0][1], addr[1]);
-                    this.routing_table[addr[1]].send(msg[1], [msg[2]].concat(msg[0]));
+                    this.routing_table[addr[1]].send(info[1], [info[2]].concat(info[0]));
                     delete this.requests[packets[1]];
                 }
             }
@@ -476,7 +476,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         //console.log(packets[0].toString());
         //console.log(packets[1].toString());
         if (packets[0].toString() === base.flags.request)  {
-            if (packets[1].toString() == '*')  {
+            if (packets[1].toString() === '*')  {
                 conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
             }
             else if (this.routing_table[packets[2]])    {
