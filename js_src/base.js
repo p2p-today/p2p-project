@@ -146,7 +146,7 @@ base.intersect = function intersect()    {
     var last = arguments.length - 1;
     var seen={};
     var result=[];
-    for (var i = 1; i <= last; i++)   {
+    for (let i = 1; i <= last; i++)   {
         for (var j = 0; j < arguments[i].length; j++)  {
             if (seen[arguments[i][j]])  {
                 seen[arguments[i][j]] += 1;
@@ -156,7 +156,7 @@ base.intersect = function intersect()    {
             }
         }
     }
-    for (var i = 0; i < arguments[0].length; i++) {
+    for (let i = 0; i < arguments[0].length; i++) {
         if ( seen[arguments[0][i]] === last)
             result.push(arguments[0][i]);
         }
@@ -175,7 +175,7 @@ base.unpack_value = function unpack_value(str)  {
     */
     str = new Buffer(str, 'ascii');
     var val = BigInt.zero;
-    for (var i = 0; i < str.length; i++)    {
+    for (let i = 0; i < str.length; i++)    {
         val = val.shiftLeft(8);
         val = val.add(str[i]);
     }
@@ -194,7 +194,7 @@ base.pack_value = function pack_value(len, i) {
     *     :returns: A big endian buffer of length len
     */
     var arr = new Buffer(new Array(len));
-    for (var j = 0; j < len && i != 0; j++)    {
+    for (let j = 0; j < len && i !== 0; j++)    {
         arr[len - j - 1] = i & 0xff;
         i = i >> 8;
     }
@@ -244,7 +244,7 @@ base.from_base_58 = function from_base_58(string) {
     finally {
         var decimal = new BigInt(0);
         //for char in string {
-        for (var i = 0; i < string.length; i++) {
+        for (let i = 0; i < string.length; i++) {
             decimal = decimal.times(58).plus(base.base_58.indexOf(string[i]));
         }
         return decimal;
@@ -865,10 +865,10 @@ base.base_connection = class base_connection   {
         *
         *         :returns: ``true`` if action was taken, ``undefined`` if not
         */
-        if (packets[0] == base.flags.renegotiate)    {
-            if (packets[4] == base.flags.compression)   {
+        if (packets[0].toString() === base.flags.renegotiate)    {
+            if (packets[4].toString() == base.flags.compression)   {
                 var encoded_methods = JSON.parse(packets[5]);
-                var respond = (this.compression != encoded_methods);
+                var respond = (base.intersect(this.compression, encoded_methods) === this.compression.length);
                 this.compression = encoded_methods;
                 // self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
                 if (respond)    {
@@ -877,7 +877,7 @@ base.base_connection = class base_connection   {
                 }
                 return true;
             }
-            else if (packets[4] == base.flags.resend)   {
+            else if (packets[4].toString() === base.flags.resend)   {
                 var type = self.last_sent[0];
                 var packs = self.last_sent.slice(1);
                 self.send(type, packs);

@@ -126,7 +126,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         :returns: ``true`` or ``undefined``
         */
-        if (packets[0] == base.flags.broadcast) {
+        if (packets[0].toString() === base.flags.broadcast) {
             if (base.from_base_58(packets[3]) < base.getUTC() - 60) {
                 // this.__print__("Waterfall expired", level=2);
                 return true;
@@ -288,10 +288,13 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         //                                                     id in self.routing_table:
         //     self.__print__("Connection already established", level=1)
         //     return false
-        var shouldBreak = (id == this.id || [addr, port] == this.out_addr || [addr, port] == this.addr);
+        var shouldBreak = ((id && id.toString() === this.id.toString()) ||
+                (addr === this.out_addr[0] && port === this.out_addr[1]) ||
+                (addr === this.addr[0] && port === this.addr[1]));
         var self = this;
         Object.keys(this.routing_table).some(function(key)   {
-            if (key == id || self.routing_table[key].addr == [addr, port])   {
+            if (key.toString() === id.toString() || self.routing_table[key].addr[0] === addr ||
+                self.routing_table[key].addr[1] === port)   {
                 shouldBreak = true;
             }
             if (shouldBreak)    {
@@ -330,7 +333,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     handle_msg(msg, conn)    {
         if (!super.handle_msg(msg, conn))   {
             var packs = msg.packets;
-            if (packs[0] == base.flags.whisper || packs[0] == base.flags.broadcast) {
+            if (packs[0].toString() === base.flags.whisper || packs[0].toString() === base.flags.broadcast) {
                 this.queue = this.queue.concat(msg);
             }
             // else    {
@@ -371,7 +374,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() == base.flags.handshake)  {
+        if (packets[0].toString() === base.flags.handshake)  {
             if (packets[2] != msg.protocol.id) {
                 this.disconnect(conn);
                 return true;
@@ -405,7 +408,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() == base.flags.peers)  {
+        if (packets[0].toString() === base.flags.peers)  {
             var new_peers = JSON.parse(packets[1]);
             var self = this;
             new_peers.forEach(function(peer_array)  {
@@ -438,7 +441,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() == base.flags.response)  {
+        if (packets[0].toString() === base.flags.response)  {
             // self.__print__("Response received for request id %s" % packets[1], level=1)
             if (this.requests[packets[1]])  {
                 var addr = JSON.parse(packets[2]);
@@ -472,7 +475,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var packets = msg.packets;
         //console.log(packets[0].toString());
         //console.log(packets[1].toString());
-        if (packets[0].toString() == base.flags.request)  {
+        if (packets[0].toString() === base.flags.request)  {
             if (packets[1].toString() == '*')  {
                 conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
             }
