@@ -50,6 +50,7 @@ class mesh_connection(base_connection):
         msg = super(mesh_connection, self).send(msg_type, *args, **kargs)
         if msg and (msg.id, msg.time) not in self.server.waterfalls:
             self.server.waterfalls.appendleft((msg.id, msg.time))
+        return msg
 
     def found_terminator(self):
         """This method is called when the expected amount of data is received
@@ -136,41 +137,6 @@ class mesh_daemon(base_daemon):
             self.server.awaiting_ids.append(handler)
         except exceptions:
             pass
-
-    def process_data(self, handler):
-        """Collects incoming data from nodes"""
-        try:
-            while not handler.find_terminator():
-                if not handler.collect_incoming_data(handler.sock.recv(1)):
-                    self.__print__(
-                        "disconnecting node %s while in loop" % handler.id,
-                        level=6)
-                    self.server.disconnect(handler)
-                    self.server.request_peers()
-                    return
-            handler.found_terminator()
-        except socket.timeout:  # pragma: no cover
-            return  # Shouldn't happen with select, but if it does...
-        except Exception as e:
-            if (isinstance(e, socket.error) and
-                    e.args[0] in (9, 104, 10053, 10054, 10058)):
-                node_id = handler.id
-                if not node_id:
-                    node_id = repr(handler)
-                self.__print__(
-                    "Node %s has disconnected from the network" % node_id,
-                    level=1)
-            else:
-                self.__print__(
-                    "There was an unhandled exception with peer id %s. This "
-                    "peer is being disconnected, and the relevant exception "
-                    "is added to the debug queue. If you'd like to report "
-                    "this, please post a copy of your mesh_socket.status to "
-                    "git.p2p.today/issues." % handler.id,
-                    level=0)
-                self.exceptions.append((e, traceback.format_exc()))
-            self.server.disconnect(handler)
-            self.server.request_peers()
 
 
 class mesh_socket(base_socket):

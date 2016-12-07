@@ -573,7 +573,7 @@ class base_connection(object):
         self.sock = sock
         self.server = server
         self.outgoing = outgoing
-        self.buffer = []
+        self.buffer = bytearray()
         self.id = None
         self.time = getUTC()
         self.addr = None
@@ -656,27 +656,31 @@ class base_connection(object):
             except:
                 pass
             return False
-        self.buffer.append(data)
+        self.buffer.extend(data)
         self.time = getUTC()
         if not self.active and self.find_terminator():
             self.__print__(
                 self.buffer, self.expected, self.find_terminator(), level=4)
             self.expected = struct.unpack(
-                "!L", ''.encode().join(self.buffer))[0] + 4
+                "!L", bytes(self.buffer[:4]))[0] + 4
             self.active = True
         return True
 
     def find_terminator(self):
         """Returns whether the defined return sequences is found"""
-        return len(''.encode().join(self.buffer)) == self.expected
+        return len(self.buffer) >= self.expected
 
     def found_terminator(self):
         """Processes received messages"""
-        raw_msg = ''.encode().join(self.buffer)
+        raw_msg = bytes(self.buffer[:self.expected])
         self.__print__("Received: %s" % repr(raw_msg), level=6)
-        self.expected = 4
-        self.buffer = []
-        self.active = False
+        self.buffer = self.buffer[self.expected:]
+        self.active = len(self.buffer) > 4
+        if self.active:
+            self.expected = struct.unpack(
+                "!L", bytes(self.buffer[:4]))[0] + 4
+        else:
+            self.expected = 4
         msg = InternalMessage.feed_string(raw_msg, False, self.compression)
         return msg
 
@@ -766,6 +770,42 @@ class base_daemon(object):
         """Cleans out connections which never finish a message"""
         if handler.active and handler.time < getUTC() - 60:
             self.server.disconnect(handler)
+
+    def process_data(self, handler):
+        """Collects incoming data from nodes"""
+        try:
+            while not handler.find_terminator():
+                if not handler.collect_incoming_data(handler.sock.recv(1024)):
+                    self.__print__(
+                        "disconnecting node %s while in loop" % handler.id,
+                        level=6)
+                    self.server.disconnect(handler)
+                    self.server.request_peers()
+                    return
+            while handler.find_terminator():
+                handler.found_terminator()
+        except socket.timeout:  # pragma: no cover
+            return  # Shouldn't happen with select, but if it does...
+        except Exception as e:
+            if (isinstance(e, socket.error) and
+                    e.args[0] in (9, 104, 10053, 10054, 10058)):
+                node_id = handler.id
+                if not node_id:
+                    node_id = repr(handler)
+                self.__print__(
+                    "Node %s has disconnected from the network" % node_id,
+                    level=1)
+            else:
+                self.__print__(
+                    "There was an unhandled exception with peer id %s. This "
+                    "peer is being disconnected, and the relevant exception "
+                    "is added to the debug queue. If you'd like to report "
+                    "this, please post a copy of your mesh_socket.status to "
+                    "git.p2p.today/issues." % handler.id,
+                    level=0)
+                self.exceptions.append((e, traceback.format_exc()))
+            self.server.disconnect(handler)
+            self.server.request_peers()
 
     def __del__(self):
         self.alive = False
