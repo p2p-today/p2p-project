@@ -132,8 +132,10 @@ STATIC_ASSERT(sizeof(size_t) >= 4, "Size of strings is too small to easily meet 
 #define PPMD_LEN (size_t) 1
 #define SIMPLE_FLAG (unsigned char *) "\x1F"
 #define SIMPLE_LEN (size_t) 1
+#define SNAPPY_FLAG (unsigned char *) "\x20"
+#define SNAPPY_LEN (size_t) 1
 
-static size_t NUM_RESERVED = 0x20;
+static size_t NUM_RESERVED = 0x30;
 
 static unsigned char *RESERVED_FLAGS[] = {
     BROADCAST_FLAG,
@@ -168,6 +170,22 @@ static unsigned char *RESERVED_FLAGS[] = {
     MTF_FLAG,
     PPMD_FLAG,
     SIMPLE_FLAG,
+    SNAPPY_FLAG,
+    (unsigned char *) "\x21",
+    (unsigned char *) "\x22",
+    (unsigned char *) "\x23",
+    (unsigned char *) "\x24",
+    (unsigned char *) "\x25",
+    (unsigned char *) "\x26",
+    (unsigned char *) "\x27",
+    (unsigned char *) "\x28",
+    (unsigned char *) "\x29",
+    (unsigned char *) "\x2A",
+    (unsigned char *) "\x2B",
+    (unsigned char *) "\x2C",
+    (unsigned char *) "\x2D",
+    (unsigned char *) "\x2E",
+    (unsigned char *) "\x2F",
     NULL /* sentinel */
 };
 
@@ -204,6 +222,22 @@ static size_t RESERVED_LENS[] = {
     MTF_LEN,
     PPMD_LEN,
     SIMPLE_LEN,
+    SNAPPY_LEN,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
     0 /* sentinel */
 };
 

@@ -46,7 +46,7 @@ class brepr(bytearray):
 class flags():
     """A namespace to hold protocol-defined flags"""
     # Reserved set of bytes
-    reserved = [struct.pack('!B', x) for x in range(0x20)]
+    reserved = [struct.pack('!B', x) for x in range(0x30)]
 
     # main flags
     broadcast = brepr(b'\x00', rep='broadcast')  # also sub-flag
@@ -75,6 +75,7 @@ class flags():
     gzip = brepr(b'\x11', rep='gzip')
     lzma = brepr(b'\x12', rep='lzma')
     zlib = brepr(b'\x13', rep='zlib')
+    snappy = brepr(b'\x20', rep='snappy')
 
     # non-implemented compression methods (based on list from compressjs):
     bwtc = brepr(b'\x14', rep='bwtc')
@@ -98,20 +99,30 @@ compression = []
 # Compression testing section
 
 try:
+    import snappy
+    if hasattr(snappy, 'compress'):
+        compression.append(flags.snappy)
+except ImportError:  # pragma: no cover
+    pass
+
+try:
     import zlib
-    compression.extend((flags.zlib, flags.gzip))
+    if hasattr(zlib, 'compressobj'):
+        compression.extend((flags.zlib, flags.gzip))
 except ImportError:  # pragma: no cover
     pass
 
 try:
     import bz2
-    compression.append(flags.bz2)
+    if hasattr(bz2, 'compress'):
+        compression.append(flags.bz2)
 except ImportError:  # pragma: no cover
     pass
 
 try:
     import lzma
-    compression.append(flags.lzma)
+    if hasattr(lzma, 'compress'):
+        compression.append(flags.lzma)
 except ImportError:  # pragma: no cover
     pass
 
@@ -144,18 +155,17 @@ def compress(msg, method):
         A :py:class:`ValueError` if there is an unknown compression method,
             or a method-specific error
     """
-    if method == flags.gzip:
+    if method in (flags.gzip, flags.zlib):
+        wbits = 15 + (16 * (method == flags.gzip))
         compressor = zlib.compressobj(
-            zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 31)
-        return compressor.compress(msg) + compressor.flush()
-    elif method == flags.zlib:
-        compressor = zlib.compressobj(
-            zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, 15)
+            zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, wbits)
         return compressor.compress(msg) + compressor.flush()
     elif method == flags.bz2:
         return bz2.compress(msg)
     elif method == flags.lzma:
         return lzma.compress(msg)
+    elif method == flags.snappy:
+        return snappy.compress(msg)
     else:  # pragma: no cover
         raise ValueError('Unknown compression method')
 
@@ -192,6 +202,8 @@ def decompress(msg, method):
         return bz2.decompress(msg)
     elif method == flags.lzma:
         return lzma.decompress(msg)
+    elif method == flags.snappy:
+        return snappy.decompress(msg)
     else:  # pragma: no cover
         raise ValueError('Unknown decompression method')
 

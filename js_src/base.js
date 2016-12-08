@@ -12,6 +12,7 @@ var Buffer = buffer.Buffer;
 var BigInt = require('big-integer');
 var SHA = require('jssha');
 var zlib = require('zlibjs');
+var snappy = require('snappy');
 var assert = require('assert');
 var net = require('net');
 var util = require('util');
@@ -78,7 +79,9 @@ base.flags = {
     reserved: ['\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
                '\x08', '\x09', '\x0A', '\x0B', '\x0C', '\x0D', '\x0E', '\x0F',
                '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17',
-               '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F'],
+               '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F',
+               '\x20', '\x21', '\x22', '\x23', '\x24', '\x25', '\x26', '\x27',
+               '\x28', '\x29', '\x2A', '\x2B', '\x2C', '\x2D', '\x2E', '\x2F'],
 
     //main flags
     broadcast:   '\x00',
@@ -102,11 +105,14 @@ base.flags = {
     store:       '\x0B',
     retrieve:    '\x0C',
 
+    //implemented compression methods
+    gzip:     '\x11',
+    zlib:     '\x13',
+    snappy:   '\x20',
+
     //compression methods
     bz2:      '\x10',
-    gzip:     '\x11',
     lzma:     '\x12',
-    zlib:     '\x13',
     bwtc:     '\x14',
     context1: '\x15',
     defsum:   '\x16',
@@ -121,8 +127,61 @@ base.flags = {
     simple:   '\x1F'
 };
 
-base.compression = [base.flags.zlib, base.flags.gzip];
+base.compression = [base.flags.snappy, base.flags.zlib, base.flags.gzip];
 base.json_compressions = JSON.stringify(base.compression);
+
+
+base.compress = function compress(text, method) {
+    /**
+    * .. js:function:: js2p.base.compress(text, method)
+    *
+    *     This function is a shortcut for compressing data using a predefined method
+    *
+    *     :param text:      The string or Buffer-like object you wish to compress
+    *     :param method:    A compression method as defined in :js:data:`~js2p.base.flags`
+    *
+    *     :returns: A variabley typed object containing a compressed version of text
+    */
+    if (method === base.flags.zlib) {
+        return zlib.deflateSync(new Buffer(text));
+    }
+    else if (method === base.flags.gzip) {
+        return zlib.gzipSync(new Buffer(text));
+    }
+    else if (method === base.flags.snappy) {
+        return snappy.compressSync(new Buffer(text));
+    }
+    else {
+        throw new Error("Unknown compression method");
+    }
+};
+
+
+base.decompress = function decompress(text, method) {
+    /**
+    * .. js:function:: js2p.base.decompress(text, method)
+    *
+    *     This function is a shortcut for decompressing data using a predefined method
+    *
+    *     :param text:      The string or Buffer-like object you wish to decompress
+    *     :param method:    A compression method as defined in :js:data:`~js2p.base.flags`
+    *
+    *     :returns: A variabley typed object containing a decompressed version of text
+    */
+    if (method === base.flags.zlib) {
+        return zlib.inflateSync(new Buffer(text));
+    }
+    else if (method === base.flags.gzip) {
+        return zlib.gunzipSync(new Buffer(text));
+    }
+    else if (method === base.flags.snappy) {
+        return snappy.uncompressSync(new Buffer(text));
+    }
+    else {
+        throw new Error("Unknown compression method");
+    }
+};
+
 
 // User salt generation pulled from: http://stackoverflow.com/a/2117523
 base.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -291,52 +350,6 @@ base.SHA256 = function SHA256(text) {
     var hash = new SHA("SHA-256", "TEXT");
     hash.update(text);
     return hash.getHash("HEX");
-};
-
-
-base.compress = function compress(text, method) {
-    /**
-    * .. js:function:: js2p.base.compress(text, method)
-    *
-    *     This function is a shortcut for compressing data using a predefined method
-    *
-    *     :param text:      The string or Buffer-like object you wish to compress
-    *     :param method:    A compression method as defined in :js:data:`~js2p.base.flags`
-    *
-    *     :returns: A variabley typed object containing a compressed version of text
-    */
-    if (method === base.flags.zlib) {
-        return zlib.deflateSync(new Buffer(text));
-    }
-    else if (method === base.flags.gzip) {
-        return zlib.gzipSync(new Buffer(text));
-    }
-    else {
-        throw new Error("Unknown compression method");
-    }
-};
-
-
-base.decompress = function decompress(text, method) {
-    /**
-    * .. js:function:: js2p.base.decompress(text, method)
-    *
-    *     This function is a shortcut for decompressing data using a predefined method
-    *
-    *     :param text:      The string or Buffer-like object you wish to decompress
-    *     :param method:    A compression method as defined in :js:data:`~js2p.base.flags`
-    *
-    *     :returns: A variabley typed object containing a decompressed version of text
-    */
-    if (method === base.flags.zlib) {
-        return zlib.inflateSync(new Buffer(text));
-    }
-    else if (method === base.flags.gzip) {
-        return zlib.gunzipSync(new Buffer(text));
-    }
-    else {
-        throw new Error("Unknown compression method");
-    }
 };
 
 

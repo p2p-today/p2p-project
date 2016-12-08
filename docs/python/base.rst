@@ -63,6 +63,8 @@ Base Module
 			:annotation:
 		- .. autoattribute:: lzma
 			:annotation:
+		- .. autoattribute:: snappy
+			:annotation:
 		- .. autoattribute:: zlib
 			:annotation:
 

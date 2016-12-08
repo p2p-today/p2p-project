@@ -14,7 +14,8 @@
     "big-integer": "^1.6.16",
     "buffer": "^4.9.1",
     "jssha": "^2.2.0",
-    "zlibjs": "^0.2.0"
+    "zlibjs": "^0.2.0",
+    "snappy": "^5.0.5"
   },
   "devDependencies": {
     "babel-cli": "^6.16.0",

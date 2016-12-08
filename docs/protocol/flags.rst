@@ -54,6 +54,7 @@ All
 - mtf       = ``"\x1D"``
 - ppmd      = ``"\x1E"``
 - simple    = ``"\x1F"``
+- snappy    = ``"\x20"``
 - zlib      = ``"\x13"``
 
 Python Implemented
@@ -62,6 +63,7 @@ Python Implemented
 - bz2
 - gzip
 - lzma
+- snappy
 - zlib
 
 .. note::
@@ -77,6 +79,7 @@ Javascript Implemented
 ~~~~~~~~~~~~~~~~~~~~~~
 
 - gzip
+- snappy
 - zlib
 
 Reserved Flags
@@ -84,4 +87,4 @@ Reserved Flags
 
 These define the flags that other applications should *not* use, as they either are (or will be) used by the standard protocol.
 
-Currently, this is all single byte characters from ``0x00`` to ``0x20``. This list may be expanded later.
+Currently, this is all single byte characters from ``0x00`` to ``0x30``. This list may be expanded later.
