@@ -156,8 +156,13 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         This function is run when a connection is ended
         */
-        this.sock.end();
-        this.sock.destroy();
+        if (this.sock.end)  {
+            this.sock.end();
+            this.sock.destroy(); //These implicitly remove from routing table
+        }
+        else    {
+            this.sock.close();
+        }
     }
 }
 
@@ -194,7 +199,14 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
         this.incoming.on('connection', function onConnection(sock)   {
             var conn = new m.mesh_connection(sock, self, false);
-            self._send_handshake_response(conn);
+            if (self.protocol === 'ws' || self.protocol === 'wss') {
+                sock.on("connect", ()=>{
+                    self._send_handshake_response(conn);
+                });
+            }
+            else    {
+                self._send_handshake_response(conn);
+            }
             self.awaiting_ids = self.awaiting_ids.concat(conn);
         });
     }
@@ -304,12 +316,18 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         if (shouldBreak)    {
             return false;
         }
-        var conn = new net.Socket();
-        // conn.settimeout(1)
-        conn.connect(port, addr);
+        var conn = base.get_socket(addr, port, this.protocol);
         var handler = new m.mesh_connection(conn, this, true);
         handler.id = id;
-        this._send_handshake_response(handler);
+        if (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss')    {
+            var self = this;
+            conn.on('connect', ()=>{
+                self._send_handshake_response(handler);
+            })
+        }
+        else    {
+            this._send_handshake_response(handler);
+        }
         if (id) {
             this.routing_table[id] = handler;
         }
@@ -326,8 +344,13 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *
         *         :param js2p.mesh.mesh_connection handler: The connection you wish to close
         */
-        handler.sock.end();
-        handler.sock.destroy(); //These implicitly remove from routing table
+        if (handler.sock.end)   {
+            handler.sock.end();
+            handler.sock.destroy(); //These implicitly remove from routing table
+        }
+        else    {
+            handler.sock.close();
+        }
     }
 
     handle_msg(msg, conn)    {

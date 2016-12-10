@@ -14,7 +14,6 @@ var SHA = require('jssha');
 var zlib = require('zlibjs');
 var snappy = require('snappy');
 var assert = require('assert');
-var net = require('net');
 var util = require('util');
 
 /**
@@ -382,6 +381,40 @@ base.protocol = class protocol {
 
 base.default_protocol = new base.protocol('', 'Plaintext');
 
+base.get_server = function get_server(aProtocol)    {
+    if (aProtocol.encryption === 'Plaintext')   {
+        return new require('net').Server();
+    }
+    else if (aProtocol.encryption === 'ws' || aProtocol.encryption === 'wss')    {
+        var options = {
+            secure: aProtocol.encryption === 'wss'
+        };
+        return require('nodejs-websocket').createServer(options);
+    }
+    else    {
+        throw new Error("Unknown transport protocol");
+    }
+}
+
+base.get_socket = function get_socket(addr, port, aProtocol)    {
+    if (aProtocol.encryption === 'Plaintext')   {
+        var conn = new require('net').Socket();
+        conn.connect(port, addr);
+        conn.protocol = 'Plaintext';
+        return conn;
+    }
+    else if (aProtocol.encryption === 'ws' || aProtocol.encryption === 'wss')    {
+        var url = `${aProtocol.encryption}://${addr}:${port}`;
+        var conn = new require('nodejs-websocket').connect(url);
+        conn.protocol = aProtocol.encryption;
+        conn.write = conn.send;
+        return conn;
+    }
+    else    {
+        throw new Error("Unknown transport protocol");
+    }
+}
+
 base.InternalMessage = class InternalMessage {
     /**
     * .. js:class:: js2p.base.InternalMessage(msg_type, sender, payload, compression, timestamp)
@@ -724,16 +757,27 @@ base.base_connection = class base_connection   {
         this.active = false;
         var self = this;
 
-        this.sock.on('data', function(data) {
+        this.sock.on('data', (data)=>{
             self.collect_incoming_data(self, data);
         });
-        this.sock.on('end', function()  {
+        this.sock.on('text', (data)=>{
+            self.collect_incoming_data(self, new Buffer(data));
+        });
+        this.sock.on('binary', (inStream)=>{
+            inStream.on("readable", ()=>{
+                var newData = inStream.read();
+                if (newData)    {
+                    self.collect_incoming_data(self, newData);
+                }
+            });
+        });
+        this.sock.on('end', ()=>{
             self.onEnd();
         });
-        this.sock.on('error', function(err)    {
+        this.sock.on('error', (err)=>{
             self.onError(err);
         });
-        this.sock.on('close', function()    {
+        this.sock.on('close', ()=>{
             self.onClose();
         });
     }
@@ -754,8 +798,13 @@ base.base_connection = class base_connection   {
         *         This function is run when a connection experiences an error
         */
         console.log(`Error: ${err}`);
-        this.sock.end();
-        this.sock.destroy();
+        if (this.sock.end)  {
+            this.sock.end();
+            this.sock.destroy(); //These implicitly remove from routing table
+        }
+        else    {
+            this.sock.close();
+        }
     }
 
     onClose()   {
@@ -789,8 +838,13 @@ base.base_connection = class base_connection   {
         }
         // try {
             //console.log(`Sending message ${JSON.stringify(msg.string.toString())} to ${this.id}`);
-            this.sock.write(msg.string, 'ascii')
-            return msg
+            if (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss')    {
+                this.sock.send(new Buffer(msg.string, 'ascii'));
+            }
+            else    {
+                this.sock.write(msg.string, 'ascii');
+            }
+            return msg;
         // }
         // catch(e)   {
         //     self.server.daemon.exceptions.append((e, traceback.format_exc()))
@@ -927,7 +981,7 @@ base.base_socket = class base_socket   {
     constructor(addr, port, protocol, out_addr, debug_level)   {
         var self = this;
         this.addr = [addr, port];
-        this.incoming = new net.Server();
+        this.incoming = base.get_server(protocol);
         this.incoming.listen(port, addr);
         this.protocol = protocol || base.default_protocol;
         this.out_addr = out_addr || this.addr;
