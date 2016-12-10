@@ -13,9 +13,12 @@
   "dependencies": {
     "big-integer": "^1.6.16",
     "buffer": "^4.9.1",
-    "jssha": "^2.2.0",
+    "jssha": "^2.2.0"
+  },
+  "optionalDependencies": {
     "zlibjs": "^0.2.0",
-    "snappy": "^5.0.5"
+    "snappy": "^5.0.5",
+    "nodejs-websocket": "^1.7.1"
   },
   "devDependencies": {
     "babel-cli": "^6.16.0",

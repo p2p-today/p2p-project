@@ -11,8 +11,6 @@ var buffer = require('buffer');  // These ensure parser compatability with brows
 var Buffer = buffer.Buffer;
 var BigInt = require('big-integer');
 var SHA = require('jssha');
-var zlib = require('zlibjs');
-var snappy = require('snappy');
 var assert = require('assert');
 var util = require('util');
 
@@ -126,7 +124,21 @@ base.flags = {
     simple:   '\x1F'
 };
 
-base.compression = [base.flags.snappy, base.flags.zlib, base.flags.gzip];
+base.compression = []; //base.flags.snappy, base.flags.zlib, base.flags.gzip];
+
+try {
+    base.snappy = require('snappy');
+    base.compresison = base.compresison.concat(base.flags.snappy);
+}
+catch (e) {}
+
+try {
+    base.zlib = require('zlibjs');
+    base.compresison = base.compresison.concat(base.flags.snappy);
+    base.compresison = base.compresison.concat(base.flags.snappy);
+}
+catch (e) {}
+
 base.json_compressions = JSON.stringify(base.compression);
 
 
@@ -142,13 +154,13 @@ base.compress = function compress(text, method) {
     *     :returns: A variabley typed object containing a compressed version of text
     */
     if (method === base.flags.zlib) {
-        return zlib.deflateSync(new Buffer(text));
+        return base.zlib.deflateSync(new Buffer(text));
     }
     else if (method === base.flags.gzip) {
-        return zlib.gzipSync(new Buffer(text));
+        return base.zlib.gzipSync(new Buffer(text));
     }
     else if (method === base.flags.snappy) {
-        return snappy.compressSync(new Buffer(text));
+        return base.snappy.compressSync(new Buffer(text));
     }
     else {
         throw new Error("Unknown compression method");
@@ -168,13 +180,13 @@ base.decompress = function decompress(text, method) {
     *     :returns: A variabley typed object containing a decompressed version of text
     */
     if (method === base.flags.zlib) {
-        return zlib.inflateSync(new Buffer(text));
+        return base.zlib.inflateSync(new Buffer(text));
     }
     else if (method === base.flags.gzip) {
-        return zlib.gunzipSync(new Buffer(text));
+        return base.zlib.gunzipSync(new Buffer(text));
     }
     else if (method === base.flags.snappy) {
-        return snappy.uncompressSync(new Buffer(text));
+        return base.snappy.uncompressSync(new Buffer(text));
     }
     else {
         throw new Error("Unknown compression method");
