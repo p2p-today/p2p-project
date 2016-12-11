@@ -82,7 +82,9 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         catch(err)  {
             console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to http://git.p2p.today/issues`);
             this.server.exceptions.push(err);
-            this.sock.emit('error');
+            if (this.sock.emit) {
+                this.sock.emit('error');
+            }
         }
     }
 
@@ -108,7 +110,9 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         catch(err)  {
             console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to http://git.p2p.today/issues`);
             this.server.exceptions.push(err);
-            this.sock.emit('error');
+            if (this.sock.emit) {
+                this.sock.emit('error');
+            }
         }
     }
 
@@ -197,18 +201,20 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         this.register_handler(function handle_response(msg, conn)   {return self.__handle_response(msg, conn);});
         this.register_handler(function handle_request(msg, conn)    {return self.__handle_request(msg, conn);});
 
-        this.incoming.on('connection', function onConnection(sock)   {
-            var conn = new m.mesh_connection(sock, self, false);
-            if (self.protocol === 'ws' || self.protocol === 'wss') {
-                sock.on("connect", ()=>{
+        if (this.incoming)  {
+            this.incoming.on('connection', function onConnection(sock)   {
+                var conn = new m.mesh_connection(sock, self, false);
+                if (self.protocol === 'ws' || self.protocol === 'wss') {
+                    sock.on("connect", ()=>{
+                        self._send_handshake_response(conn);
+                    });
+                }
+                else    {
                     self._send_handshake_response(conn);
-                });
-            }
-            else    {
-                self._send_handshake_response(conn);
-            }
-            self.awaiting_ids = self.awaiting_ids.concat(conn);
-        });
+                }
+                self.awaiting_ids = self.awaiting_ids.concat(conn);
+            });
+        }
     }
 
     get outgoing()  {
@@ -319,7 +325,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var conn = base.get_socket(addr, port, this.protocol);
         var handler = new m.mesh_connection(conn, this, true);
         handler.id = id;
-        if (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss')    {
+        if (conn.on && (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss'))   {
             var self = this;
             conn.on('connect', ()=>{
                 self._send_handshake_response(handler);

@@ -398,6 +398,9 @@ base.get_server = function get_server(aProtocol)    {
         return new require('net').Server();
     }
     else if (aProtocol.encryption === 'ws' || aProtocol.encryption === 'wss')    {
+        if (require('net').connect === undefined)   {
+            return null;
+        }
         var options = {
             secure: aProtocol.encryption === 'wss'
         };
@@ -417,10 +420,12 @@ base.get_socket = function get_socket(addr, port, aProtocol)    {
     }
     else if (aProtocol.encryption === 'ws' || aProtocol.encryption === 'wss')    {
         var url = `${aProtocol.encryption}://${addr}:${port}`;
-        var conn = new require('nodejs-websocket').connect(url);
-        conn.protocol = aProtocol.encryption;
-        conn.write = conn.send;
-        return conn;
+        if (require('net').connect === undefined)   {
+            return new WebSocket(url);
+        }
+        else    {
+            return new require('nodejs-websocket').connect(url);
+        }
     }
     else    {
         throw new Error("Unknown transport protocol");
@@ -769,29 +774,51 @@ base.base_connection = class base_connection   {
         this.active = false;
         var self = this;
 
-        this.sock.on('data', (data)=>{
-            self.collect_incoming_data(self, data);
-        });
-        this.sock.on('text', (data)=>{
-            self.collect_incoming_data(self, new Buffer(data));
-        });
-        this.sock.on('binary', (inStream)=>{
-            inStream.on("readable", ()=>{
-                var newData = inStream.read();
-                if (newData)    {
-                    self.collect_incoming_data(self, newData);
-                }
+        if (this.sock.on)   {
+            this.sock.on('data', (data)=>{
+                self.collect_incoming_data(self, data);
             });
-        });
-        this.sock.on('end', ()=>{
-            self.onEnd();
-        });
-        this.sock.on('error', (err)=>{
-            self.onError(err);
-        });
-        this.sock.on('close', ()=>{
-            self.onClose();
-        });
+            this.sock.on('text', (data)=>{
+                self.collect_incoming_data(self, new Buffer(data));
+            });
+            this.sock.on('binary', (inStream)=>{
+                inStream.on("readable", ()=>{
+                    var newData = inStream.read();
+                    if (newData)    {
+                        self.collect_incoming_data(self, newData);
+                    }
+                });
+            });
+            this.sock.on('end', ()=>{
+                self.onEnd();
+            });
+            this.sock.on('error', (err)=>{
+                self.onError(err);
+            });
+            this.sock.on('close', ()=>{
+                self.onClose();
+            });
+        }
+        else    {
+            this.sock.onmessage = (evt)=>{
+                var data;
+                var fileReader = new FileReader();
+                fileReader.onload = function() {
+                    data = this.result;
+                };
+                fileReader.readAsText(evt.data);
+                self.collect_incoming_data(self, new Buffer(data));
+            };
+            this.sock.onend = (evt)=>{
+                self.onEnd();
+            };
+            this.sock.onerror = (evt)=>{
+                self.onError(evt);
+            };
+            this.sock.onclose = (evt)=>{
+                self.onClose();
+            };
+        }
     }
 
     onEnd() {
@@ -994,7 +1021,9 @@ base.base_socket = class base_socket   {
         var self = this;
         this.addr = [addr, port];
         this.incoming = base.get_server(protocol);
-        this.incoming.listen(port, addr);
+        if (this.incoming)  {
+            this.incoming.listen(port, addr);
+        }
         this.protocol = protocol || base.default_protocol;
         this.out_addr = out_addr || this.addr;
         this.debug_level = debug_level || 0;
