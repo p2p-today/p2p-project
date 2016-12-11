@@ -382,7 +382,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var ret = [];
         var self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
-            ret = ret.concat([[self.routing_table[key].addr, key]]);
+            if (self.routing_table[key].addr)   {
+                ret = ret.concat([[self.routing_table[key].addr, key]]);
+            }
         });
         return ret;
     }

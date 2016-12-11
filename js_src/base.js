@@ -128,14 +128,14 @@ base.compression = []; //base.flags.snappy, base.flags.zlib, base.flags.gzip];
 
 try {
     base.snappy = require('snappy');
-    base.compresison = base.compresison.concat(base.flags.snappy);
+    base.compression = base.compression.concat(base.flags.snappy);
 }
 catch (e) {}
 
 try {
     base.zlib = require('zlibjs');
-    base.compresison = base.compresison.concat(base.flags.snappy);
-    base.compresison = base.compresison.concat(base.flags.snappy);
+    base.compression = base.compression.concat(base.flags.zlib);
+    base.compression = base.compression.concat(base.flags.gzip);
 }
 catch (e) {}
 
@@ -801,13 +801,13 @@ base.base_connection = class base_connection   {
         }
         else    {
             this.sock.onmessage = (evt)=>{
-                var data;
                 var fileReader = new FileReader();
                 fileReader.onload = function() {
-                    data = this.result;
+                    var data = fileReader.result;
+                    console.log(data);
+                    self.collect_incoming_data(self, Buffer.from(data));
                 };
-                fileReader.readAsText(evt.data);
-                self.collect_incoming_data(self, new Buffer(data));
+                fileReader.readAsArrayBuffer(evt.data);
             };
             this.sock.onend = (evt)=>{
                 self.onEnd();
@@ -974,7 +974,7 @@ base.base_connection = class base_connection   {
         if (packets[0].toString() === base.flags.renegotiate)    {
             if (packets[4].toString() === base.flags.compression)   {
                 var encoded_methods = JSON.parse(packets[5]);
-                var respond = (base.intersect(this.compression, encoded_methods) === this.compression.length);
+                var respond = (base.intersect(this.compression, encoded_methods).length !== this.compression.length);
                 this.compression = encoded_methods;
                 // self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
                 if (respond)    {
