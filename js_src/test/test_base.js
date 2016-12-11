@@ -114,22 +114,23 @@ describe('base', function() {
             var pm = base.InternalMessage.feed_string(string);
             var msg = new base.message(pm);
 
-            var zlib_pm = base.InternalMessage.feed_string(zlib, false, [base.flags.zlib]);
-
-            var gzip_pm = base.InternalMessage.feed_string(gzip, false, [base.flags.gzip]);
-
-            var snappy_pm = base.InternalMessage.feed_string(snappy, false, [base.flags.snappy]);
-
             var expected = [ new Buffer('broadcast'), new Buffer('test sender'), '2ypz9RTBAFbw75WSJTNwaXZ6zSVLG8wvqbQDNRtoh74Hkxg3JAozHAZtCfwg1PEmpe', '3EdmDc', new Buffer('test packet') ];
 
             assert (JSON.stringify(pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting packets correctly");
             assert (JSON.stringify(msg.packets) === JSON.stringify(expected.slice(4)), "message is not extracting from InternalMessage correctly");
 
-            assert (JSON.stringify(zlib_pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting zlib packets correctly");
+            if (base.zlib)  {
+                var zlib_pm = base.InternalMessage.feed_string(zlib, false, [base.flags.zlib]);
+                assert (JSON.stringify(zlib_pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting zlib packets correctly");
 
-            assert (JSON.stringify(gzip_pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting gzip packets correctly");
+                var gzip_pm = base.InternalMessage.feed_string(gzip, false, [base.flags.gzip]);
+                assert (JSON.stringify(gzip_pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting gzip packets correctly");
+            }
 
-            assert (JSON.stringify(snappy_pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting snappy packets correctly");
+            if (base.snappy)    {
+                var snappy_pm = base.InternalMessage.feed_string(snappy, false, [base.flags.snappy]);
+                assert (JSON.stringify(snappy_pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting snappy packets correctly");
+            }
         });
 
         it('should serialize and deserialize', function()   {
