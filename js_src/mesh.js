@@ -332,7 +332,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             })
         }
         else    {
-            this._send_handshake_response(handler);
+            conn.onopen = ()=>{
+                this._send_handshake_response(handler);
+            }
         }
         if (id) {
             this.routing_table[id] = handler;

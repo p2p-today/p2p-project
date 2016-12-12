@@ -45,6 +45,10 @@ jsdeps: LICENSE
 ES5: LICENSE jsdeps
 	node node_modules/babel-cli/bin/babel.js --presets es2015 js_src --out-dir build/es5
 
+browser: LICENSE jsdeps
+	npm install browserify
+	node node_modules/browserify/bin/cmd.js -e . -o test.js -u zlibjs -u snappy -s js2p
+
 jsdocs:
 	node js_src/docs_test.js
 
