@@ -175,6 +175,6 @@ html: jsdocs
 
 py_all: LICENSE setup.py setup.cfg python html cpython2 cpython3 pypy
 
-js_all: LICENSE ES5 html
+js_all: LICENSE ES5 html browser browser-min browser-compat browser-compat-min
 
 test_all: LICENSE jstest ES5test pytest cpy2test cpy3test

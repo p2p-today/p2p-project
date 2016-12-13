@@ -397,7 +397,49 @@ base.protocol = class protocol {
 
 base.default_protocol = new base.protocol('', 'Plaintext');
 
-base.get_server = function get_server(aProtocol)    {
+function getCertKeyPair(ip) {
+    console.log("Creating key pair");
+    const pki = require('node-forge').pki;
+    var keys = pki.rsa.generateKeyPair(2048);
+    var cert = pki.createCertificate();
+    console.log("Setting attributes");
+    cert.publicKey = keys.publicKey;
+    cert.serialNumber = '01';
+    cert.validity.notBefore = new Date();
+    cert.validity.notAfter = new Date();
+    cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1);
+    var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+    }, {
+        name: 'countryName',
+        value: 'US'
+    }, {
+        shortName: 'ST',
+        value: 'Virginia'
+    }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+    }, {
+        name: 'organizationName',
+        value: 'Test'
+    }, {
+        shortName: 'OU',
+        value: 'Test'
+    }];
+    cert.setSubject(attrs);
+    cert.setIssuer(attrs);
+    cert.setExtensions([{
+        name: 'basicConstraints',
+        cA: false
+    }]);
+    console.log("Signing");
+    cert.sign(keys.privateKey);
+    console.log("Returning");
+    return [pki.certificateToPem(cert), pki.privateKeyToPem(keys.privateKey)];
+}
+
+base.get_server = function get_server(aProtocol, addr)    {
     if (aProtocol.encryption === 'Plaintext')   {
         return new require('net').Server();
     }
@@ -410,6 +452,15 @@ base.get_server = function get_server(aProtocol)    {
         };
         return require('nodejs-websocket').createServer(options);
     }
+    else if (aProtocol.encryption === 'SSL')    {
+        let certKeyPair = getCertKeyPair(addr);
+        let options = {
+            key: certKeyPair[1],
+            cert: certKeyPair[0],
+            secureProtocol: 'SSLv23_method'
+        };
+        return require('tls').createServer(options);
+    }
     else    {
         throw new Error("Unknown transport protocol");
     }
@@ -419,7 +470,6 @@ base.get_socket = function get_socket(addr, port, aProtocol)    {
     if (aProtocol.encryption === 'Plaintext')   {
         var conn = new require('net').Socket();
         conn.connect(port, addr);
-        conn.protocol = 'Plaintext';
         return conn;
     }
     else if (aProtocol.encryption === 'ws' || aProtocol.encryption === 'wss')    {
@@ -430,6 +480,12 @@ base.get_socket = function get_socket(addr, port, aProtocol)    {
         else    {
             return new require('nodejs-websocket').connect(url);
         }
+    }
+    else if (aProtocol.encryption === 'SSL')    {
+        let options = {
+            rejectUnauthorized: false
+        };
+        return require('tls').connect(port, addr, options);
     }
     else    {
         throw new Error("Unknown transport protocol");
@@ -1024,7 +1080,7 @@ base.base_socket = class base_socket   {
     constructor(addr, port, protocol, out_addr, debug_level)   {
         var self = this;
         this.addr = [addr, port];
-        this.incoming = base.get_server(protocol);
+        this.incoming = base.get_server(protocol, addr);
         if (this.incoming)  {
             this.incoming.listen(port, addr);
         }
