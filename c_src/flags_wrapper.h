@@ -52,6 +52,7 @@ static void addConstants(PyObject *cbase, PyObject *flags_wrapper)  {
     // Implemented compression methods
     PyModule_AddObject(flags_wrapper, "gzip", pybytes_from_chars(GZIP_FLAG, GZIP_LEN));
     PyModule_AddObject(flags_wrapper, "zlib", pybytes_from_chars(ZLIB_FLAG, ZLIB_LEN));
+    PyModule_AddObject(flags_wrapper, "snappy",   pybytes_from_chars(SNAPPY_FLAG, SNAPPY_LEN));
 
     // non-implemented compression methods (based on list from compressjs):
     PyModule_AddObject(flags_wrapper, "bwtc",     pybytes_from_chars(BWTC_FLAG, BWTC_LEN));

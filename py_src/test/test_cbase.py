@@ -39,7 +39,7 @@ try:
         assert bf_sub == cf_sub
 
         # common compression methods
-        assert (bf.zlib, bf.gzip) == (cf.zlib, cf.gzip)
+        assert (bf.zlib, bf.gzip, bf.snappy) == (cf.zlib, cf.gzip, cf.snappy)
 
     def test_protocol():
         test_base.test_protocol(impl=cbase)
