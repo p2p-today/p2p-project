@@ -41,7 +41,7 @@ It is important to note that keys are all translated to :py:class:`bytes` before
 :py:meth:`~py2p.sync.sync_socket.set` / :py:meth:`~py2p.sync.sync_socket.__setitem__`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A value can be stored by using the :py:meth:`~py2p.sync.sync_socket.set` method, or alternately with :py:meth:`~py2p.chord.chord_socket.__setitem__`. These calls are ``O(n)``, as it has to change values on other nodes. More accurately, the delay between your node knowing of the change and the last node knowing of the change is ``O(n)``.
+A value can be stored by using the :py:meth:`~py2p.sync.sync_socket.set` method, or alternately with :py:meth:`~py2p.chord.chord_socket.__setitem__`. These calls are worst case ``O(n)``, as it has to change values on other nodes. More accurately, the delay between your node knowing of the change and the last node knowing of the change is between ``O(log(n))`` and ``O(n)``.
 
 .. code-block:: python
 
@@ -58,7 +58,7 @@ Any node which sets a value can change this value as well. Changing the value re
 :py:meth:`~py2p.sync.sync_socket.__delitem__`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is ``O(n)``.
+Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is worst case ``O(n)``.
 
 .. code-block:: python
 

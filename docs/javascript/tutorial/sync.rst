@@ -40,7 +40,7 @@ It is important to note that keys are all translated to a :js:class:`Buffer` bef
 :js:func:`~js2p.sync.sync_socket.set`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A value can be stored by using the :js:func:`~js2p.sync.sync_socket.set` method. These calls are ``O(n)``, as it has to change values on other nodes. More accurately, the delay between your node knowing of the change and the last node knowing of the change is ``O(n)``.
+A value can be stored by using the :js:func:`~js2p.sync.sync_socket.set` method. These calls are worst case ``O(n)``, as it has to change values on other nodes. More accurately, the delay between your node knowing of the change and the last node knowing of the change is between ``O(log(n))`` and ``O(n)``.
 
 .. code-block:: javascript
 
@@ -56,7 +56,7 @@ Any node which sets a value can change this value as well. Changing the value re
 :js:func:`~js2p.sync.sync_socket.del`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is ``O(n)``.
+Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is worst case ``O(n)``.
 
 .. code-block:: javascript
 
