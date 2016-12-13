@@ -15,3 +15,17 @@ Contents:
     javascript/sync
     javascript/chord
     javascript/kademlia
+
+
+Supported Transport Methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
++------------+----------------------------------------------+
+|  Protocol  |               Protocol  Object               |
++============+==============================================+
+| TCP        | ``new js2p.base.protocol(app, 'Plaintext')`` |
++------------+----------------------------------------------+
+| Websocket  | ``new js2p.base.protocol(app, 'ws')``        |
++------------+----------------------------------------------+
+| WSS (soon) | ``new js2p.base.protocol(app, 'wss')``       |
++------------+----------------------------------------------+
