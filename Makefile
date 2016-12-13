@@ -47,7 +47,7 @@ ES5: LICENSE jsdeps
 
 browser: LICENSE jsdeps
 	npm install browserify
-	node node_modules/browserify/bin/cmd.js -e . -o test.js -u zlibjs -u snappy -s js2p
+	node node_modules/browserify/bin/cmd.js -e . -o ./build/js2p-browser.js -s js2p
 
 jsdocs:
 	node js_src/docs_test.js

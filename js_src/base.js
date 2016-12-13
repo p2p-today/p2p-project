@@ -130,14 +130,18 @@ try {
     base.snappy = require('snappy');
     base.compression = base.compression.concat(base.flags.snappy);
 }
-catch (e) {}
+catch (e) {
+    console.log("Couldn't load snappy compression (Ignore if in browser)");
+}
 
 try {
     base.zlib = require('zlibjs');
     base.compression = base.compression.concat(base.flags.zlib);
     base.compression = base.compression.concat(base.flags.gzip);
 }
-catch (e) {}
+catch (e) {
+    console.log("Couldn't load zlib/gzip compression");
+}
 
 base.json_compressions = JSON.stringify(base.compression);
 
