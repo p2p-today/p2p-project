@@ -26,5 +26,5 @@ Supported Transport Methods
 +==========+==========================================+
 | TCP      | ``py2p.base.protocol(app, 'Plaintext')`` |
 +----------+------------------------------------------+
-| SSL      | ``py2p.base.protocol(app, 'SSL')``        |
+| SSL      | ``py2p.base.protocol(app, 'SSL')``       |
 +----------+------------------------------------------+

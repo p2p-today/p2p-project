@@ -10,6 +10,7 @@ Contents:
 
     cpp/tutorial
     cpp/base
+    cpp/BaseConverter
     cpp/base_wrapper
     cpp/flags_wrapper
     cpp/protocol_wraper

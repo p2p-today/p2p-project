@@ -15,16 +15,10 @@
 #include <string.h>
 
 #ifdef __cplusplus
-#include <string>
-using namespace std;
-
 extern "C" {
 #endif
 
 /**
-* C/C++ Section
-* ~~~~~~~~~~~~~
-*
 * .. c:var:: const static char *base_58
 *
 *     This buffer contains all of the characters within the base_58 "alphabet"
@@ -276,53 +270,6 @@ static char *ascii_to_base_58(const char *input, size_t length, size_t *res_len,
 }
 
 #ifdef __cplusplus
-}
-
-/**
-* C++ Only Section
-* ~~~~~~~~~~~~~~~~
-*
-* .. cpp:function:: static std::string ascii_to_base_58(std::string input)
-*
-*     Converts an arbitrary binary buffer into its base_58 equivalent.
-*
-*     This is a shortcut version of :c:func:`ascii_to_base_58`, with arguments:
-*
-*     - ``input.c_str()``
-*     - ``input.length()``
-*     - ``&size_placeholder``
-*     - ``1``
-*
-*     :param input: A :cpp:type:`std::string` which contains the buffer you wish to convert
-*
-*     :returns: A :cpp:type:`std::string` which contains the resulting data
-*/
-
-static string ascii_to_base_58(string input)   {
-    size_t res_size = 0;
-    char *c_string = ascii_to_base_58(input.c_str(), input.length(), &res_size, 1);
-    string result = string(c_string, res_size);
-    free(c_string);
-    return result;
-}
-
-/**
-* .. cpp:function:: static std::string to_base_58(unsigned long long i)
-*
-*     Converts an integral value into its base_58 equivalent. This takes the data from
-*     :c:func:`to_base_58` and converts it to a :cpp:type:`std::string`.
-*
-*     :param i: The integral value you wish to convert
-*
-*     :returns: A :cpp:type:`std::string` which contains the resulting data
-*/
-
-static string to_base_58(unsigned long long i)   {
-    size_t len = 0;
-    char *temp_str = to_base_58(i, &len);
-    string ret = string(temp_str, len);
-    free(temp_str);
-    return ret;
 }
 
 #endif
