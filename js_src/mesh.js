@@ -325,16 +325,21 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var conn = base.get_socket(addr, port, this.protocol);
         var handler = new m.mesh_connection(conn, this, true);
         handler.id = id;
-        if (conn.on && (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss'))   {
+        if (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss')    {
             var self = this;
-            conn.on('connect', ()=>{
-                self._send_handshake_response(handler);
-            })
+            if (conn.on)    {
+                conn.on('connect', ()=>{
+                    self._send_handshake_response(handler);
+                })
+            }
+            else    {
+                conn.onopen = ()=>{
+                    this._send_handshake_response(handler);
+                }
+            }
         }
         else    {
-            conn.onopen = ()=>{
-                this._send_handshake_response(handler);
-            }
+            this._send_handshake_response(handler);
         }
         if (id) {
             this.routing_table[id] = handler;
