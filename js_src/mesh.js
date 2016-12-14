@@ -205,7 +205,6 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             if (self.protocol.encryption === 'SSL') {
                 this.incoming.on('secureConnection', function onConnection(sock)   {
                     var conn = new m.mesh_connection(sock, self, false);
-                    console.trace();
                     self._send_handshake_response(conn);
                     self.awaiting_ids = self.awaiting_ids.concat(conn);
                 });
@@ -351,7 +350,6 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         else if (this.protocol.encryption === 'SSL')    {
             const self = this;
             conn.on('secureConnect', ()=>{
-                console.trace();
                 self._send_handshake_response(handler);
             })
         }
