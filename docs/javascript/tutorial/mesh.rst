@@ -18,7 +18,17 @@ Using ``'0.0.0.0'`` will (this feature in progress) automatically grab your LAN 
     > const mesh = require('js2p').mesh;
     > sock = new mesh.mesh_socket('0.0.0.0', 4444, null, ['35.24.77.21', 44565]);
 
-Specifying a different protocol object will ensure that you *only* can connect to people who share your object structure. So if someone has ``'mesh2'`` instead of ``'mesh'``, you will fail to connect.
+If `nodejs-websocket <https://www.npmjs.com/package/nodejs-websocket>`_ is installed, then you can use websockets as a transport layer (for instance, to allow communication with a browser). If `node-forge <https://www.npmjs.com/package/node-forge>`_ is installed, then you can use SSL/TLS as a transport layer. You can do this by providing a :js:class:`~js2p.base.protocol` object, like so:
+
+.. code-block:: javascript
+
+    > const mesh = require('js2p').mesh;
+    > const base = require('js2p').base;
+    > var app_description = 'A string which describes your application';
+    > var SSL = new mesh.mesh_socket('0.0.0.0', 4444, new base.protocol(app_description, 'SSL'));
+    > var WS = new mesh.mesh_socket('0.0.0.0', 5555, new base.protocol(app_description, 'ws'));
+
+Specifying a different protocol object will ensure that you *only* can connect to people who share your object structure. So if someone has the description ``'mesh2'`` instead of ``'mesh'``, you will fail to connect.
 
 Unfortunately, this failure is currently silent. Because this is asynchronous in nature, raising an error is not possible. Because of this, it's good to perform the following check the truthiness of :js:attr:`.mesh_socket.routing_table`. If it is truthy, then you are connected to the network.
 
@@ -75,3 +85,12 @@ In addition to this, you can register a custom handler for incoming messages. Th
     >>> sock.register_handler(relay_tx)
 
 To help debug these services, you can specify a :js:attr:`~js2p.base.base_socket.debug_level` in the constructor. Using a value of 5, you can see when it enters into each handler, as well as every message which goes in or out.
+
+Use In A Browser
+----------------
+
+There are a few differences if you want to use this in a browser. First, you can only use websockets as a transport layer. That means that any servers which want to listen *must* have `nodejs-websocket <https://www.npmjs.com/package/nodejs-websocket>`_ installed. The code run in the browser uses the natively supplied :js:class:`WebSocket` implementation.
+
+Browser nodes also cannot receive connections. That means they *must* connect to a "server" at some point.
+
+Lastly, you do not need to :js:func:`require` this module, it is provided for you in a file. This can be loaded either from the latest release (starting in 0.5), or by cloning the repository and calling ``make browser``.

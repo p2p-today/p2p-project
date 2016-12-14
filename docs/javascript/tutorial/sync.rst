@@ -23,7 +23,9 @@ You can override the last restriction by constructing with ``leasing`` set to ``
     > const sync = require('js2p').sync;
     > let sock = new sync.sync_socket('0.0.0.0', 4444, false);
 
-The only API differences between this and :js:class:`~js2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
+Note that the ``leasing`` parameter is supplied *before* a :js:class:`~js2p.base.protocol`.
+
+The only API differences between this and :js:class:`~js2p.mesh.mesh_socket` are for access to this dictionary. They are as follows:
 
 :js:func:`~js2p.sync.sync_socket.get`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -75,5 +77,10 @@ The update method is simply a wrapper which updates based on a fed :js:class:`Ob
 
 Advanced Usage
 --------------
+
+Refer to :doc:`the mesh socket tutorial <./mesh>`
+
+Use In A Browser
+----------------
 
 Refer to :doc:`the mesh socket tutorial <./mesh>`
