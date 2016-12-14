@@ -46,17 +46,18 @@ ES5: LICENSE jsdeps
 	node node_modules/babel-cli/bin/babel.js --presets es2015 js_src -d build/es5
 
 browser: LICENSE jsdeps
+	mkdir -p build
 	npm install browserify
-	node node_modules/browserify/bin/cmd.js -e . -o ./build/js2p-browser.js -s js2p
+	node node_modules/browserify/bin/cmd.js -e . -o ./build/js2p-browser.js -u snappy -u nodejs-websocket -u node-forge -s js2p
+
+browser-min: browser
+	node node_modules/babel-cli/bin/babel.js ./build/js2p-browser.js -o ./build/js2p-browser.min.js --minified --no-comments
 
 browser-compat: browser
 	node node_modules/babel-cli/bin/babel.js --presets es2015 ./build/js2p-browser.js -o ./build/js2p-browser.es5.js
 
-browser-compat-min: browser
-	node node_modules/babel-cli/bin/babel.js --presets es2015 ./build/js2p-browser.js -o ./build/js2p-browser.min.es5.js --minified --no-comments
-
-browser-min: browser
-	node node_modules/babel-cli/bin/babel.js ./build/js2p-browser.js -o ./build/js2p-browser.min.js --minified --no-comments
+browser-compat-min: browser-compat
+	node node_modules/babel-cli/bin/babel.js ./build/js2p-browser.es5.js -o ./build/js2p-browser.min.es5.js --minified --no-comments
 
 jsdocs:
 	node js_src/docs_test.js

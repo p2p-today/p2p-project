@@ -11,7 +11,6 @@ var buffer = require('buffer');  // These ensure parser compatability with brows
 var Buffer = buffer.Buffer;
 var BigInt = require('big-integer');
 var SHA = require('jssha');
-var assert = require('assert');
 var util = require('util');
 
 /**
@@ -397,7 +396,7 @@ base.protocol = class protocol {
 
 base.default_protocol = new base.protocol('', 'Plaintext');
 
-function getCertKeyPair(ip) {
+function getCertKeyPair()   {
     console.log("Creating key pair");
     const pki = require('node-forge').pki;
     var keys = pki.rsa.generateKeyPair(2048);
@@ -439,7 +438,7 @@ function getCertKeyPair(ip) {
     return [pki.certificateToPem(cert), pki.privateKeyToPem(keys.privateKey)];
 }
 
-base.get_server = function get_server(aProtocol, addr)    {
+base.get_server = function get_server(aProtocol)    {
     if (aProtocol.encryption === 'Plaintext')   {
         return new require('net').Server();
     }
@@ -453,11 +452,10 @@ base.get_server = function get_server(aProtocol, addr)    {
         return require('nodejs-websocket').createServer(options);
     }
     else if (aProtocol.encryption === 'SSL')    {
-        let certKeyPair = getCertKeyPair(addr);
+        let certKeyPair = getCertKeyPair();
         let options = {
-            key: certKeyPair[1],
             cert: certKeyPair[0],
-            secureProtocol: 'SSLv23_method'
+            key: certKeyPair[1]
         };
         return require('tls').createServer(options);
     }
@@ -536,7 +534,9 @@ base.InternalMessage = class InternalMessage {
         var msg = new base.InternalMessage(packets[0], packets[1], packets.slice(4), compressions)
         msg.time = base.from_base_58(packets[3])
         msg.compression_fail = compression_fail
-        assert (msg.id === packets[2].toString(), `ID check failed. ${msg.id} !== ${packets[2].toString()}`)
+        if (msg.id !== packets[2].toString())   {
+            throw new Error(`ID check failed. ${msg.id} !== ${packets[2].toString()}`);
+        }
         return msg
     }
 
@@ -1080,7 +1080,7 @@ base.base_socket = class base_socket   {
     constructor(addr, port, protocol, out_addr, debug_level)   {
         var self = this;
         this.addr = [addr, port];
-        this.incoming = base.get_server(protocol, addr);
+        this.incoming = base.get_server(protocol);
         if (this.incoming)  {
             this.incoming.listen(port, addr);
         }

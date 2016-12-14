@@ -202,18 +202,28 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         this.register_handler(function handle_request(msg, conn)    {return self.__handle_request(msg, conn);});
 
         if (this.incoming)  {
-            this.incoming.on('connection', function onConnection(sock)   {
-                var conn = new m.mesh_connection(sock, self, false);
-                if (self.protocol === 'ws' || self.protocol === 'wss') {
-                    sock.on("connect", ()=>{
-                        self._send_handshake_response(conn);
-                    });
-                }
-                else    {
+            if (self.protocol.encryption === 'SSL') {
+                this.incoming.on('secureConnection', function onConnection(sock)   {
+                    var conn = new m.mesh_connection(sock, self, false);
+                    console.trace();
                     self._send_handshake_response(conn);
-                }
-                self.awaiting_ids = self.awaiting_ids.concat(conn);
-            });
+                    self.awaiting_ids = self.awaiting_ids.concat(conn);
+                });
+            }
+            else    {
+                this.incoming.on('connection', function onConnection(sock)   {
+                    var conn = new m.mesh_connection(sock, self, false);
+                    if (self.protocol === 'ws' || self.protocol === 'wss') {
+                        sock.on("connect", ()=>{
+                            self._send_handshake_response(conn);
+                        });
+                    }
+                    else    {
+                        self._send_handshake_response(conn);
+                    }
+                    self.awaiting_ids = self.awaiting_ids.concat(conn);
+                });
+            }
         }
     }
 
@@ -337,6 +347,13 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                     this._send_handshake_response(handler);
                 }
             }
+        }
+        else if (this.protocol.encryption === 'SSL')    {
+            const self = this;
+            conn.on('secureConnect', ()=>{
+                console.trace();
+                self._send_handshake_response(handler);
+            })
         }
         else    {
             this._send_handshake_response(handler);

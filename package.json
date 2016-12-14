@@ -16,9 +16,10 @@
     "jssha": "^2.2.0"
   },
   "optionalDependencies": {
-    "zlibjs": "^0.2.0",
+    "node-forge": "^0.6.46",
+    "nodejs-websocket": "^1.7.1",
     "snappy": "^5.0.5",
-    "nodejs-websocket": "^1.7.1"
+    "zlibjs": "^0.2.0"
   },
   "devDependencies": {
     "babel-cli": "^6.16.0",
