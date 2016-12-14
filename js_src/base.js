@@ -864,7 +864,6 @@ base.base_connection = class base_connection   {
                 var fileReader = new FileReader();
                 fileReader.onload = function() {
                     var data = fileReader.result;
-                    console.log(data);
                     self.collect_incoming_data(self, Buffer.from(data));
                 };
                 fileReader.readAsArrayBuffer(evt.data);

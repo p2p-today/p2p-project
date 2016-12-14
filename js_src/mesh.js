@@ -342,9 +342,13 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                 })
             }
             else    {
-                conn.onopen = ()=>{
+                var onopen = ()=>{
                     this._send_handshake_response(handler);
                 }
+                if (conn.readyState === 1)  {
+                    onopen();
+                }
+                conn.onopen = onopen;
             }
         }
         else if (this.protocol.encryption === 'SSL')    {
@@ -469,7 +473,8 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                     // try:
                         var addr = peer_array[0];
                         var id = peer_array[1];
-                        self.connect(addr[0], addr[1], id);
+                        if (addr[0] && addr[1])
+                            self.connect(addr[0], addr[1], id);
                 }
                     // except:  # pragma: no cover
                         // self.__print__("Could not connect to %s:%s because\n%s" % (addr[0], addr[1], traceback.format_exc()), level=1)
