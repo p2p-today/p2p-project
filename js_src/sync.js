@@ -61,6 +61,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         let lease_descriptor = (leasing !== false) ? '1' : '0';
         let protocol_used = new base.protocol(protocol.subnet + lease_descriptor, protocol.encryption);
         super(addr, port, protocol_used, out_addr, debug_level);
+        this.__leasing = leasing;
         this.data = {};
         this.metadata = {};
         const self = this;
