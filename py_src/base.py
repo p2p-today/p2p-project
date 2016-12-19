@@ -971,6 +971,18 @@ class base_socket(object):
         """
         return self.daemon.exceptions or "Nominal"
 
+    @property
+    def outgoing(self):
+        """IDs of outgoing connections"""
+        return [handler.id for handler in self.routing_table.values()
+                if handler.outgoing]
+
+    @property
+    def incoming(self):
+        """IDs of incoming connections"""
+        return [handler.id for handler in self.routing_table.values()
+                if not handler.outgoing]
+
     def __print__(self, *args, **kargs):
         """Private method to print if level is <= self.debug_level
 

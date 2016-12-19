@@ -177,18 +177,6 @@ class mesh_socket(base_socket):
         self.register_handler(self.__handle_response)
         self.register_handler(self.__handle_request)
 
-    @property
-    def outgoing(self):
-        """IDs of outgoing connections"""
-        return [handler.id for handler in self.routing_table.values()
-                if handler.outgoing]
-
-    @property
-    def incoming(self):
-        """IDs of incoming connections"""
-        return [handler.id for handler in self.routing_table.values()
-                if not handler.outgoing]
-
     def handle_msg(self, msg, conn):
         """Decides how to handle various message types, allowing some to
         be handled automatically
