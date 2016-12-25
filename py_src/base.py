@@ -15,7 +15,8 @@ import traceback
 import uuid
 
 from collections import namedtuple
-from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet)
+from .utils import (
+    getUTC, intersect, get_lan_ip, get_socket, sanitize_packet, inherit_doc)
 
 protocol_version = "0.5"
 node_policy_version = "551"
@@ -69,6 +70,7 @@ class flags():
     response = brepr(b'\x0A', rep='response')
     store = brepr(b'\x0B', rep='store')
     retrieve = brepr(b'\x0C', rep='retrieve')
+    retrieved = brepr(b'\x0D', rep='retrieved')
 
     # implemented compression methods
     bz2 = brepr(b'\x10', rep='bz2')
@@ -824,15 +826,8 @@ class base_daemon(object):
         except:  # pragma: no cover
             pass
 
+    @inherit_doc(base_connection.__print__)
     def __print__(self, *args, **kargs):
-        """Private method to print if level is <= self.server.debug_level
-
-        Args:
-            *args:   Each argument you wish to feed to the print method
-            **kargs: One keyword is used here: level, which defines the
-                         lowest value of self.server.debug_level at which the
-                         message will be printed
-        """
         self.server.__print__(*args, **kargs)
 
 
@@ -1021,8 +1016,8 @@ class message(object):
         return self.msg.time
 
     @property
+    @inherit_doc(InternalMessage.time_58)
     def time_58(self):
-        """Returns the messages timestamp in base_58"""
         return self.msg.time_58
 
     @property
@@ -1031,29 +1026,27 @@ class message(object):
         return self.msg.sender
 
     @property
+    @inherit_doc(InternalMessage.id)
     def id(self):
-        """This message's ID"""
         return self.msg.id
 
     @property
+    @inherit_doc(InternalMessage.payload)
     def packets(self):
-        """Return the message's component packets, including it's type in
-        position 0
-        """
         return self.msg.payload
 
+    @inherit_doc(InternalMessage.__len__)
     def __len__(self):
         return self.msg.__len__()
 
     def __repr__(self):
         packets = self.packets
-        string = ("message(type=" + repr(packets[0]) + ", packets=" +
-                  repr(packets[1:]) + ", sender=")
+        sender = self.sender
         # This should no longer happen, but just in case
         if isinstance(self.sender, base_connection):
-            return string + repr(self.sender.addr) + ")"
-        else:
-            return string + repr(self.sender) + ")"
+            sender = sender.addr
+        return "message(type={}, packets={}, sender={})".format(
+            packets[0], packets[1:], sender)
 
     def reply(self, *args):
         """Replies to the sender if you're directly connected. Tries to make

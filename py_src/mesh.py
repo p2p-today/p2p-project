@@ -19,7 +19,8 @@ except:
 from .base import (
     flags, compression, to_base_58, from_base_58, base_connection, message,
     base_daemon, base_socket, InternalMessage, json_compressions)
-from .utils import getUTC, get_socket, intersect
+from .utils import (
+    getUTC, get_socket, intersect, inherit_doc)
 
 max_outgoing = 4
 default_protocol = protocol('mesh', "Plaintext")  # SSL")
@@ -29,24 +30,8 @@ class mesh_connection(base_connection):
     """The class for mesh connection abstraction.
     This inherits from :py:class:`py2p.base.base_connection`
     """
+    @inherit_doc(base_connection.send)
     def send(self, msg_type, *args, **kargs):
-        """Sends a message through its connection.
-
-        Args:
-            msg_type:   Message type, corresponds to the header in a
-                            :py:class:`py2p.base.InternalMessage` object
-            *args:      A list of bytes-like objects, which correspond to the
-                            packets to send to you
-            **kargs:    There are two available keywords:
-            id:         The ID this message should appear to be sent
-                            from (default: your ID)
-            time:       The time this message should appear to be sent
-                            from (default: now in UTC)
-
-        Returns:
-            the :py:class:`~py2p.base.InternalMessage` object you just sent,
-            or None if the sending was unsuccessful
-        """
         msg = super(mesh_connection, self).send(msg_type, *args, **kargs)
         if msg and (msg.id, msg.time) not in self.server.waterfalls:
             self.server.waterfalls.appendleft((msg.id, msg.time))
@@ -109,6 +94,11 @@ class mesh_daemon(base_daemon):
     """The class for mesh daemon.
     This inherits from :py:class:`py2p.base.base_daemon`
     """
+    @inherit_doc(base_daemon.__init__)
+    def __init__(self, *args, **kwargs):
+        super(mesh_daemon, self).__init__(*args, **kwargs)
+        self.conn_type = mesh_connection
+
     def mainloop(self):
         """Daemon thread which handles all incoming data and connections"""
         while self.main_thread.is_alive() and self.alive:
@@ -131,7 +121,7 @@ class mesh_daemon(base_daemon):
         try:
             conn, addr = self.sock.accept()
             self.__print__('Incoming connection from %s' % repr(addr), level=1)
-            handler = mesh_connection(conn, self.server)
+            handler = self.conn_type(conn, self.server)
             self.server._send_handshake(handler)
             handler.sock.settimeout(1)
             self.server.awaiting_ids.append(handler)
@@ -163,6 +153,8 @@ class mesh_socket(base_socket):
             socket.error:   The address you wanted could not be bound, or is
                                 otherwise used
         """
+        if not hasattr(self, 'daemon'):
+            self.daemon = 'mesh reserved'
         super(mesh_socket, self).__init__(
             addr, port, prot, out_addr, debug_level)
         # Metadata about msg replies where you aren't connected to the sender
@@ -171,24 +163,24 @@ class mesh_socket(base_socket):
         self.waterfalls = deque()
         # Queue of received messages. Access through recv()
         self.queue = deque()
-        self.daemon = mesh_daemon(addr, port, self)
+        if self.daemon == 'mesh reserved':
+            self.daemon = mesh_daemon(addr, port, self)
         self.register_handler(self.__handle_handshake)
-        self.register_handler(self.__handle_peers)
+        self.register_handler(self._handle_peers)
         self.register_handler(self.__handle_response)
         self.register_handler(self.__handle_request)
 
+    @inherit_doc(base_socket.handle_msg)
     def handle_msg(self, msg, conn):
-        """Decides how to handle various message types, allowing some to
-        be handled automatically
-        """
         if not super(mesh_socket, self).handle_msg(msg, conn):
             if msg.packets[0] in (flags.whisper, flags.broadcast):
                 self.queue.appendleft(msg)
             else:
                 self.__print__(
                     "Ignoring message with invalid subflag", level=4)
+            return True
 
-    def __get_peer_list(self):
+    def _get_peer_list(self):
         """This function is used to generate a list-formatted group of your
         peers. It goes in format ``[ ((addr, port), ID), ...]``
         """
@@ -244,7 +236,7 @@ class mesh_socket(base_socket):
         cleaner inheritence from :py:class:`py2p.sync.sync_socket`
         """
         handler.send(flags.whisper, flags.peers,
-                     json.dumps(self.__get_peer_list()))
+                     json.dumps(self._get_peer_list()))
 
     def __handle_handshake(self, msg, handler):
         """This callback is used to deal with handshake signals. Its three
@@ -287,7 +279,7 @@ class mesh_socket(base_socket):
             self._send_handshake_response(handler)
             return True
 
-    def __handle_peers(self, msg, handler):
+    def _handle_peers(self, msg, handler):
         """This callback is used to deal with peer signals. Its primary jobs
         is to connect to the given peers, if this does not exceed
         :py:const:`py2p.mesh.max_outgoing`
@@ -358,7 +350,7 @@ class mesh_socket(base_socket):
         if packets[0] == flags.request:
             if packets[1] == b'*':
                 handler.send(flags.whisper, flags.peers,
-                             json.dumps(self.__get_peer_list()))
+                             json.dumps(self._get_peer_list()))
             elif self.routing_table.get(packets[2]):
                 handler.send(
                     flags.broadcast, flags.response, packets[1],
@@ -429,7 +421,7 @@ class mesh_socket(base_socket):
             self.__print__("Not rebroadcasting", level=3)
             return False
 
-    def connect(self, addr, port, id=None):
+    def connect(self, addr, port, id=None, conn_type=mesh_connection):
         """This function connects you to a specific node in the overall
         network. Connecting to one node *should* connect you to the rest of
         the network, however if you connect to the wrong subnet, the handshake
@@ -460,7 +452,7 @@ class mesh_socket(base_socket):
         conn = get_socket(self.protocol, False)
         conn.settimeout(1)
         conn.connect((addr, port))
-        handler = mesh_connection(conn, self, outgoing=True)
+        handler = conn_type(conn, self, outgoing=True)
         self._send_handshake(handler)
         if id:
             self.routing_table.update({id: handler})

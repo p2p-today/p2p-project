@@ -9,10 +9,24 @@ import socket
 import tempfile
 import time
 
+from custom_inherit import doc_inherit as _doc_inherit
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+
+def _doc_merger(parent, child):
+    if child:
+        return child
+    return parent
+
+
+def inherit_doc(function):
+    """A decorator which allows you to inherit docstrings from a specified
+    function."""
+    return _doc_inherit(function, _doc_merger)
 
 
 def sanitize_packet(packet):
@@ -103,7 +117,7 @@ class awaiting_value(object):
     def callback_method(self, method, key):
         from .base import flags
         self.callback.send(
-            flags.whisper, flags.response, method, key, self.value)
+            flags.whisper, flags.retrieved, method, key, self.value)
 
     def __repr__(self):
         return "<" + repr(self.value) + ">"
