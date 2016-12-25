@@ -65,7 +65,7 @@ def has_environment_marker_support():
 
 def main():
     ext_modules = []
-    install_requires = []
+    install_requires = ['custom_inherit']
     extras_require = {'SSL': ['cryptography']}
     if has_environment_marker_support():
         pass
