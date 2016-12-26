@@ -39,6 +39,8 @@ endif
 
 #End python setup section
 
+#Begin Javascript section
+
 jsdeps: LICENSE
 	yarn || npm install
 
@@ -67,6 +69,9 @@ jstest: LICENSE jsdeps
 
 ES5test: LICENSE ES5
 	node node_modules/mocha/bin/mocha build/es5/test/*
+
+#End Javascript section
+#Begin Python section
 
 python: LICENSE setup.py
 	python $(py_deps)
@@ -172,10 +177,17 @@ endif
 
 html: jsdocs
 	python $(docs_deps)
-	cd docs; rm -r .build; $(MAKE) html
+	cd docs; $(MAKE) clean html
 
-py_all: LICENSE setup.py setup.cfg python html cpython2 cpython3 pypy
+#End Python section
+#Begin General section
+
+clean:
+	rm -r build || echo "build already clean"
+	cd docs; $(MAKE) clean
+
+py_all: LICENSE setup.py setup.cfg python2 python3 html cpython2 cpython3 pypy
 
 js_all: LICENSE ES5 html browser browser-min browser-compat browser-compat-min
 
-test_all: LICENSE jstest ES5test pytest cpy2test cpy3test
+test_all: LICENSE clean jstest ES5test pytest cpy2test cpy3test
