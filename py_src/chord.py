@@ -271,7 +271,7 @@ class chord_socket(mesh_socket):
         if packets[0] == flags.retrieve:
             if packets[1] in hashes:
                 val = self.__lookup(packets[1], from_base_58(packets[2]), handler)
-                if isinstance(val.value, str):
+                if isinstance(val.value, (str, bytes, bytearray)):
                     self.__print__(val.value, level=1)
                     handler.send(flags.whisper, flags.retrieved, packets[1], packets[2], val.value)
                 return True
