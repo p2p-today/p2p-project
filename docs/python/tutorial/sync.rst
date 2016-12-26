@@ -71,8 +71,8 @@ The update method is simply a wrapper which updates based on a fed :py:class:`di
 
 .. code-block:: python
 
-    >>> for key in update_dict:
-    ...     sock[key] = update_dict[key]
+    >>> for key, value in update_dict.items():
+    ...     sock[key] = value
 
 Advanced Usage
 --------------

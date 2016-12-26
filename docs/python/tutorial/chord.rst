@@ -1,90 +1,72 @@
 Chord Socket
 ~~~~~~~~~~~~
 
-.. warning::
+This is an extension of the :py:class:`~py2p.mesh.mesh_socket` which chordronizes a common :py:class:`dict`. It works by providing an extra handler to store data. This does not expose the entire :py:class:`dict` API, but it exposes a substantial subset, and we're working to expose more.
 
-    This module is partly unstable, and should be regarded as "pre-alpha".
+.. note::
 
-    If you're considering using this, please wait until this warning is removed. Expected beta status is by end of November 2016.
+    This is a fairly inefficient architecture for write intensive applications. For cases where the majority of access is reading, or for small networks, this is ideal. For larger networks where a significant portion of your operations are writing values, you should wait for the chord socket to come into beta.
 
 Basic Usage
 -----------
 
-The chord schema is used as a distributed hash table. Its primary purpose is to ensure data syncronization between peers. While it's not entirely :py:class:`dict`-like, it has a substantial subset of this API.
+There are three limitations compared to a normal :py:class:`dict`.
 
-To connect to a chord network, use the :py:class:`~py2p.chord.chord_socket` object. this is instantiated as follows:
+1. Keys and values can only be :py:class:`bytes`-like objects
+2. Keys and values are automatically translated to :py:class:`bytes`
+3. By default, this implements a leasing system which prevents you from changing values set by others for a certain time
 
-.. code-block:: python
-
-    >>> from py2p import chord
-    >>> sock = chord.chord_socket('0.0.0.0', 4444, k=2)
-    >>> sock.join()  # This indicates you want to store data
-
-There are two arguments to explain here.
-
-The keyword ``k`` specifies the maximum number of seeding nodes on the network. In other words, for a given ``k``, you can have up to ``2**k`` nodes storing data, and as few as ``k``. ``k`` is also the maximum number of requests you can expect to issue for a given piece of data. So lookup time will be ``O(k)``.
-
-And like in :py:class:`~py2p.mesh.mesh_socket`, using ``'0.0.0.0'`` will automatically grab your LAN address. Using an outbound internet connection requires a little more work. First, ensure that you have a port forward set up (NAT busting is not in the scope of this project). Then specify your outward address as follows:
+You can override the last restriction by constructing with ``leasing=False``, like so:
 
 .. code-block:: python
 
     >>> from py2p import chord
-    >>> sock = chord.chord_socket('0.0.0.0', 4444, k=2 out_addr=('35.24.77.21', 44565))
-    >>> sock.join()  # This indicates you want to store data
+    >>> sock = chord.chord_socket('0.0.0.0', 4444, leasing=False)
 
-In addition, SSL encryption can be enabled if `cryptography <https://cryptography.io/en/latest/installation/>`_ is installed. This works by specifying a custom :py:class:`~py2p.base.protocol` object, like so:
+.. note::
 
-.. code-block:: python
+    The leasing system is not yet implemented. If you're building test versions, this part is not yet available. It should be present by release.
 
-    >>> from py2p import chord, base
-    >>> sock = chord.chord_socket('0.0.0.0', 4444, k=2, prot=base.protocol('chord', 'SSL'))
+The only API differences between this and :py:class:`~py2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
 
-Eventually that will be the default, but while things are being tested it will default to plaintext. If `cryptography <https://cryptography.io/en/latest/installation/>`_ is not installed, this will generate an :py:exc:`ImportError`
+:py:meth:`~py2p.chord.chord_socket.get` / :py:meth:`~py2p.chord.chord_socket.__getitem__`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Specifying a different protocol object will ensure that the node *only* can connect to people who share its object structure. So if someone has ``'chord2'`` instead of ``'chord'``, it will fail to connect. You can see the current default by looking at :py:data:`py2p.chord.default_protocol`.
-
-This same check is performed for the ``k`` value provided. The full check which happens is essentially:
+A value can be retrieved by using the :py:meth:`~py2p.chord.chord_socket.get` method, or alternately with :py:meth:`~py2p.chord.chord_socket.__getitem__`. These calls are about ``O(log(n))`` hops, as they approximately halve their search area with each hop.
 
 .. code-block:: python
 
-    assert your_protocol.id + to_base_58(your_k) == peer_protocol.id + to_base_58(peer_k)
-
-Unfortunately, this failure is currently silent. Because this is asynchronous in nature, raising an :py:exc:`Exception` is not possible. Because of this, it's good to perform the following check after connecting:
-
-.. code-block:: python
-
-    >>> from py2p import chord
-    >>> import time
-    >>> sock = chord.chord_socket('0.0.0.0', 4444, k=2)
-    >>> sock.connect('192.168.1.14', 4567)
-    >>> time.sleep(1)
-    >>> assert sock.routing_table or sock.awaiting_ids
-
-Using the constructed table is very easy. Several :py:class:`dict`-like methods have been implemented.
-
-:py:meth:`~py2p.chord.chord_socket.get`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-A value can be retrieved by using the :py:meth:`~py2p.chord.chord_socket.get` method, or alternately with :py:meth:`~py2p.chord.chord_socket.__getitem__`.
-
-.. code-block:: python
-
-    >>> foo = sock.get('test key', None)  # Returns None if there is nothing at that key
-    >>> bar = sock[b'test key']           # Raises KeyError if there is nothing at that key
+    >>> foo = sock.get('test key', None)        # Returns None if there is nothing at that key
+    >>> bar = sock[b'test key']                 # Raises KeyError if there is nothing at that key
+    >>> assert bar == foo == sock[u'test key']  # Because of the translation mentioned below, these are the same key
 
 It is important to note that keys are all translated to :py:class:`bytes` before being used, so it is required that you use a :py:class:`bytes`-like object. It is also safer to manually convert :py:class:`unicode` keys to :py:class:`bytes`, as there are sometimes inconsistencies betwen the Javascript and Python implementation. If you notice one of these, please file a bug report.
 
-:py:meth:`~py2p.chord.chord_socket.set`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:py:meth:`~py2p.chord.chord_socket.set` / :py:meth:`~py2p.chord.chord_socket.__setitem__`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A value can be stored by using the :py:meth:`~py2p.chord.chord_socket.set` method, or alternately with :py:meth:`~py2p.chord.chord_socket.__setitem__`.
+A value can be stored by using the :py:meth:`~py2p.chord.chord_socket.set` method, or alternately with :py:meth:`~py2p.chord.chord_socket.__setitem__`. Like the above, these calls are about ``O(log(n))`` hops, as they approximately halve their search area with each hop.
 
 .. code-block:: python
 
     >>> sock.set('test key', 'value')
     >>> sock[b'test key'] = b'value'
+    >>> sock[u'测试'] = 'test'
 
 Like above, keys and values are all translated to :py:class:`bytes` before being used, so it is required that you use a :py:class:`bytes`-like object.
+
+This will raise a :py:class:`KeyError` if another node has set this value already. Their lease will expire one hour after they set it. If two leases are started at the same UTC second, the tie is settled by doing a string compare of their IDs.
+
+Any node which sets a value can change this value as well. Changing the value renews the lease on it.
+
+:py:meth:`~py2p.chord.chord_socket.__delitem__`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is about ``O(log(n))``.
+
+.. code-block:: python
+
+    >>> del sock['test']
 
 :py:meth:`~py2p.chord.chord_socket.update`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -93,8 +75,8 @@ The update method is simply a wrapper which updates based on a fed :py:class:`di
 
 .. code-block:: python
 
-    >>> for key in update_dict:
-    ...     sock[key] = update_dict[key]
+    >>> for key, value in update_dict.items():
+    ...     sock[key] = value
 
 Advanced Usage
 --------------
