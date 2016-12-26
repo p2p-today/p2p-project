@@ -1,5 +1,5 @@
 from . import mesh
-from .utils import (getUTC, sanitize_packet)
+from .utils import (inherit_doc, getUTC, sanitize_packet)
 from .base import (flags, to_base_58, from_base_58)
 
 try:
@@ -12,7 +12,7 @@ from collections import namedtuple
 default_protocol = protocol('sync', "Plaintext")  # SSL")
 
 
-class metatuple(namedtuple('meta', ['owner', 'timestamp'])):
+class metatuple(namedtuple('meta', ('owner', 'timestamp'))):
     """This class is used to store metadata for a particular key"""
     pass
 
@@ -112,16 +112,6 @@ class sync_socket(mesh.mesh_socket):
             return True
 
     def __setitem__(self, key, data):
-        new_meta = metatuple(self.id, getUTC())
-        key = sanitize_packet(key)
-        data = sanitize_packet(data)
-        self.__store(key, data, new_meta)
-        if data is None:
-            self.send(key, '', type=flags.store)
-        else:
-            self.send(key, data, type=flags.store)
-
-    def set(self, key, data):
         """Updates the value at a given key.
 
         Args:
@@ -134,6 +124,17 @@ class sync_socket(mesh.mesh_socket):
             KeyError: If you do not have the lease for this slot. Lease is
                           given automatically for one hour if the slot is open.
         """
+        new_meta = metatuple(self.id, getUTC())
+        key = sanitize_packet(key)
+        data = sanitize_packet(data)
+        self.__store(key, data, new_meta)
+        if data in ('', b''):
+            self.send(key, '', type=flags.store)
+        else:
+            self.send(key, data, type=flags.store)
+
+    @inherit_doc(__setitem__)
+    def set(self, key, data):
         self.__setitem__(key, data)
 
     def update(self, update_dict):
@@ -146,33 +147,90 @@ class sync_socket(mesh.mesh_socket):
             update_dict: A :py:class:`dict`-like object to extract key/value
                              pairs from. Key and value be a :py:class:`str`
                              or :py:class:`bytes`-like object
+
+        Raises:
+            KeyError: If you do not have the lease for this slot. Lease is
+                          given automatically for one hour if the slot is open.
         """
         for key in update_dict:
             value = update_dict[key]
             self.__setitem__(key, value)
 
     def __getitem__(self, key):
+        """Looks up the value at a given key.
+
+        Args:
+            key: The key that you wish to check. Must be a :py:class:`str` or
+                    :py:class:`bytes`-like object
+
+        Returns:
+            The value at said key
+
+        Raises:
+            KeyError: If there is no value assigned at that key
+        """
         key = sanitize_packet(key)
         return self.data[key]
 
-    def get(self, key, ret=None):
+    def get(self, key, ifError=None):
         """Retrieves the value at a given key.
 
         Args:
-            key: The key that you wish to update. Must be a :py:class:`str`
-                     or :py:class:`bytes`-like object
+            key:     The key that you wish to check. Must be a :py:class:`str` or
+                        :py:class:`bytes`-like object
+            ifError: The value you wish to return on exception (default: ``None``)
 
         Returns:
-            The value at this key, or ``ret`` if there is none.
+            The value at said key, or the value at ifError if there's an Exception
         """
         key = sanitize_packet(key)
-        return self.data.get(key, ret)
+        return self.data.get(key, ifError)
 
     def __len__(self):
         return len(self.data)
 
     def __delitem__(self, key):
-        self[key] = None
+        self[key] = ''
 
     def __iter__(self):
         return iter(self.data)
+
+    def keys(self):
+        """Returns an iterator of the underlying :py:class:`dict`s keys"""
+        if hasattr(self.data, 'iterkeys'):
+            return self.data.iterkeys()
+        return self.data.keys()
+
+    def values(self):
+        """Returns an iterator of the underlying :py:class:`dict`s values"""
+        if hasattr(self.data, 'itervalues'):
+            return self.data.itervalues()
+        return self.data.values()
+
+    def items(self):
+        """Returns an iterator of the underlying :py:class:`dict`s items"""
+        if hasattr(self.data, 'iteritems'):
+            return self.data.iteritems()
+        return self.data.items()
+
+    @inherit_doc(dict.pop)
+    def pop(self, key, *args):
+        args = tuple(args)
+        if len(args):
+            ret = self.get(key, args[0])
+            if ret != args[0]:
+                del self[key]
+        else:
+            ret = self[key]
+            del self[key]
+        return ret
+
+    @inherit_doc(dict.popitem)
+    def popitem(self):
+        key, value = next(self.items())
+        del self[key]
+        return (key, value)
+
+    @inherit_doc(dict.copy)
+    def copy(self):
+        return self.data.copy()

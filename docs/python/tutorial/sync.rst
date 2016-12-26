@@ -65,7 +65,7 @@ Any node which owns a key, can clear its value. Doing this will relinquish your 
     >>> del sock['test']
 
 :py:meth:`~py2p.sync.sync_socket.update`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The update method is simply a wrapper which updates based on a fed :py:class:`dict`. Essentially it runs the following:
 
@@ -73,6 +73,16 @@ The update method is simply a wrapper which updates based on a fed :py:class:`di
 
     >>> for key, value in update_dict.items():
     ...     sock[key] = value
+
+:py:meth:`~py2p.sync.sync_socket.keys` / :py:meth:`~py2p.sync.sync_socket.values` / :py:meth:`~py2p.sync.sync_socket.items`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These methods are analagous to the ones in Python's :py:class:`dict`. The main difference is that they emulate the Python 3 behavior. So if you call these from Python 2, they will still return an iterator, rather than a list.
+
+:py:meth:`~py2p.sync.sync_socket.pop` / :py:meth:`~py2p.sync.sync_socket.popitem`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These methods are also analagous to the ones in Python's :py:class:`dict`. The main difference is that if the leasing system is active, calling this method may throw an error if you don't "own" whatever key is popped.
 
 Advanced Usage
 --------------
