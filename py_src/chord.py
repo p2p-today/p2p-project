@@ -12,6 +12,8 @@ import time
 import traceback
 import warnings
 
+from itertools import chain
+
 try:
     from .cbase import protocol
 except:
@@ -498,13 +500,10 @@ class chord_socket(mesh_socket):
         """Tells the node to start seeding the chord table"""
         # for handler in self.awaiting_ids:
         self.leeching = False
-        handler = random.choice(
-                tuple(self.data_storing) or \
-                tuple(self.routing_table.values()) or \
-                self.awaiting_ids)
-        self._send_handshake(handler)
-        self._send_peers(handler)
-        self._send_meta(handler)
+        for handler in chain(self.routing_table.values(), self.awaiting_ids):
+            self._send_handshake(handler)
+            self._send_peers(handler)
+            self._send_meta(handler)
 
     @inherit_doc(mesh_socket.connect)
     def connect(self, *args, **kwargs):
