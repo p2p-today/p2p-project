@@ -43,7 +43,13 @@ def distance(a, b, limit=2**384):
 
 
 def get_hashes(key):
-    [hashlib.new(algo.decode(), key).digest() for algo in hashes]
+    return (
+        int(hashlib.sha1(key).hexdigest(), 16) << (384 - 160),
+        int(hashlib.sha224(key).hexdigest(), 16) << (384 - 224),
+        int(hashlib.sha256(key).hexdigest(), 16) << (384 - 256),
+        int(hashlib.sha384(key).hexdigest(), 16),
+        int(hashlib.sha512(key).hexdigest(), 16)
+    )
 
 
 class chord_connection(mesh_connection):
@@ -103,18 +109,6 @@ class chord_socket(mesh_socket):
     def data_storing(self):
         return (node for node in self.routing_table.values() if not node.leeching)
 
-    @inherit_doc(mesh_socket.handle_msg)
-    def handle_msg(self, msg, conn):
-        if not super(chord_socket, self).handle_msg(msg, conn):
-            self.__print__("Ignoring message with invalid subflag", level=4)
-
-    @inherit_doc(mesh_socket._get_peer_list)
-    def _get_peer_list(self):
-        peer_list = [(node.addr, key.decode())
-                     for key, node in self.routing_table.items()]
-        random.shuffle(peer_list)
-        return peer_list
-
     def disconnect_least_efficient(self):
         """Disconnects the node which provides the least value.
 
@@ -140,7 +134,7 @@ class chord_socket(mesh_socket):
                     narrowest = mid
             return narrowest
 
-        relevant_nodes = (node for node in self.data_storing if not node.leeching)
+        relevant_nodes = [node for node in self.data_storing if not node.leeching]
         to_kill = smallest_gap(relevant_nodes)
         if to_kill:
             self.disconnect(to_kill)
@@ -353,7 +347,7 @@ class chord_socket(mesh_socket):
         """
         if not isinstance(key, (bytes, bytearray)):
             key = str(key).encode()
-        keys = (int(hashlib.new(algo.decode(), key).hexdigest(), 16) for algo in hashes)
+        keys = get_hashes(key)
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
         common, count = most_common(vals)
         iters = 0
@@ -362,7 +356,7 @@ class chord_socket(mesh_socket):
             time.sleep(0.1)
             iters += 1
             common, count = most_common(vals)
-        if common not in (None, '') and count > len(hashes) // 2:
+        if common not in (None, b'', -1) and count > len(hashes) // 2:
             return common
         elif iters == limit:
             raise socket.timeout()
@@ -395,7 +389,7 @@ class chord_socket(mesh_socket):
         if self.leeching and node is self:
             node = random.choice(self.awaiting_ids)
         if node in (self, None):
-            self.data[method].update({key: value})
+            self.data[method][key] = value
         else:
             node.send(flags.whisper, flags.store, method, to_base_58(key), value)
 
@@ -411,7 +405,7 @@ class chord_socket(mesh_socket):
         """
         if not isinstance(key, (bytes, bytearray)):
             key = str(key).encode()
-        keys = [int(hashlib.new(algo.decode(), key).hexdigest(), 16) for algo in hashes]
+        keys = get_hashes(key)
         for method, x in zip(hashes, keys):
             self.__store(method, x, value)
 
@@ -500,7 +494,7 @@ class chord_socket(mesh_socket):
         """Tells the node to start seeding the chord table"""
         # for handler in self.awaiting_ids:
         self.leeching = False
-        for handler in chain(self.routing_table.values(), self.awaiting_ids):
+        for handler in tuple(self.routing_table.values()) + tuple(self.awaiting_ids):
             self._send_handshake(handler)
             self._send_peers(handler)
             self._send_meta(handler)

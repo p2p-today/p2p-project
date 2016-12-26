@@ -191,8 +191,8 @@ class mesh_socket(base_socket):
         """This function is used to generate a list-formatted group of your
         peers. It goes in format ``[ ((addr, port), ID), ...]``
         """
-        peer_list = [(self.routing_table[key].addr, key.decode())
-                     for key in self.routing_table]
+        peer_list = [(node.addr, key.decode())
+                     for key, node in self.routing_table.items() if node.addr]
         random.shuffle(peer_list)
         return peer_list
 
