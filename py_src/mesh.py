@@ -11,6 +11,7 @@ import sys
 import traceback
 
 from collections import deque
+from itertools import chain
 
 try:
     from .cbase import protocol
@@ -102,14 +103,20 @@ class mesh_daemon(base_daemon):
     def mainloop(self):
         """Daemon thread which handles all incoming data and connections"""
         while self.main_thread.is_alive() and self.alive:
-            conns = (list(self.server.routing_table.values()) +
-                     self.server.awaiting_ids)
-            for handler in select.select(conns + [self.sock], [], [], 0.01)[0]:
+            conns = chain(
+                self.server.routing_table.values(),
+                self.server.awaiting_ids,
+                (self.sock,)
+            )
+            for handler in select.select(conns, [], [], 0.01)[0]:
                 if handler == self.sock:
                     self.handle_accept()
                 else:
                     self.process_data(handler)
-            for handler in conns:
+            for handler in chain(
+                tuple(self.server.routing_table.values()),
+                self.server.awaiting_ids
+            ):
                 self.kill_old_nodes(handler)
 
     def handle_accept(self):

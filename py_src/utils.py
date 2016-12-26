@@ -54,8 +54,8 @@ def intersect(*args):  # returns list
         return []
     intersection = args[0]
     for l in args[1:]:
-        intersection = [item for item in intersection if item in l]
-    return intersection
+        intersection = (item for item in intersection if item in l)
+    return list(intersection)
 
 
 def get_lan_ip():

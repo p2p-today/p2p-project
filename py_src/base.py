@@ -15,6 +15,8 @@ import traceback
 import uuid
 
 from collections import namedtuple
+from itertools import chain
+
 from .utils import (
     getUTC, intersect, get_lan_ip, get_socket, sanitize_packet, inherit_doc)
 
@@ -646,7 +648,7 @@ class base_connection(object):
         time = kargs.get('time') or getUTC()
         # Begin real method
         msg = InternalMessage(
-            msg_type, id, list(args), self.compression, timestamp=time)
+            msg_type, id, tuple(args), self.compression, timestamp=time)
         return self.send_InternalMessage(msg)
 
     @property
@@ -885,8 +887,7 @@ class base_socket(object):
                 self.daemon.sock.shutdown(socket.SHUT_RDWR)
             except:
                 pass
-            conns = list(self.routing_table.values()) + self.awaiting_ids
-            for conn in conns:
+            for conn in chain(tuple(self.routing_table.values()), self.awaiting_ids):
                 self.disconnect(conn)
             self.__closed = True
 
@@ -1065,8 +1066,7 @@ class message(object):
                 self.sender + to_base_58(getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
-            self.server.requests.update({
-                request_id: [flags.whisper, flags.whisper] + list(args)})
+            self.server.requests[request_id] = (flags.whisper, flags.whisper) + tuple(args)
             print("You aren't connected to the original sender. This reply "
                   "is not guarunteed, but we're trying to make a connection"
                   " and put the message through.")
