@@ -51,7 +51,7 @@ def intersect(*args):
         iterables, where the order is defined by the first iterable
     """
     if not all(args):
-        return []
+        return ()
     intersection = args[0]
     for l in args[1:]:
         intersection = (item for item in intersection if item in l)
