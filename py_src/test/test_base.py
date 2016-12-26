@@ -24,7 +24,7 @@ def try_identity(in_func, out_func, data_gen, iters):
 
 
 def gen_random_list(item_size, list_size):
-    return [os.urandom(item_size) for _ in xrange(list_size)]
+    return tuple(os.urandom(item_size) for _ in xrange(list_size))
 
 
 def test_base_58(iters=1000):
@@ -63,9 +63,9 @@ def test_InternalMessage(iters=500, impl=base):
 def InternalMessage_constructor_validation(array, impl):
     msg = impl.InternalMessage(base.flags.broadcast, u'\xff', array)
     assert array == msg.payload
-    assert msg.packets == [base.flags.broadcast, u'\xff'.encode('utf-8'),
-                           msg.id, msg.time_58] + array
-    p_hash = hashlib.sha384(b''.join(array + [msg.time_58]))
+    assert msg.packets == (base.flags.broadcast, u'\xff'.encode('utf-8'),
+                           msg.id, msg.time_58) + array
+    p_hash = hashlib.sha384(b''.join(array + (msg.time_58, )))
     assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id
     assert impl.InternalMessage.feed_string(msg.string).id == msg.id
     if impl != base:
@@ -105,7 +105,7 @@ def test_protocol(iters=200, impl=base):
         print("testing encryption equality")
         assert test.encryption == test[1] == enc
         p_hash = hashlib.sha256(''.join(
-            [sub, enc, base.protocol_version]).encode())
+            (sub, enc, base.protocol_version)).encode())
         print("testing ID equality")
         assert base.to_base_58(int(p_hash.hexdigest(), 16)) == test.id
 

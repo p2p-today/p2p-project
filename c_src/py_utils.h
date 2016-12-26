@@ -135,6 +135,19 @@ static PyObject *pylist_from_array_string(char **lst, size_t *lens, size_t num) 
     return listObj;
 }
 
+static PyObject *pytuple_from_array_string(char **lst, size_t *lens, size_t num) {
+    PyObject *listObj = PyTuple_New(num);
+    size_t i;
+    if (!listObj)   {
+        PyErr_SetString(PyExc_MemoryError, "Unable to allocate memory for Python tuple");
+        return NULL;
+    }
+    for (i = 0; i < num; i++) {
+        PyTuple_SET_ITEM(listObj, i, pybytes_from_chars((unsigned char*)lst[i], lens[i]));
+    }
+    return listObj;
+}
+
 #ifdef _cplusplus
 }
 

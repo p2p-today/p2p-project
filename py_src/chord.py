@@ -35,25 +35,40 @@ if sys.version_info >= (3,):
     xrange = range
 
 
-def distance(a, b, limit=2**384):
-    """This is a clockwise ring distance function.
-    It depends on a globally defined k, the key size.
-    The largest possible node id is limit (or 2**k)."""
-    return (b - a) % limit
+def distance(a, b, limit=None):
+    """This is a clockwise ring distance function. It depends on a globally
+    defined k, the key size. The largest possible node id is limit (or
+    ``2**384``).
+    """
+    return (b - a) % (limit or \
+        39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806627990306816)
 
 
 def get_hashes(key):
+    """Returns the (adjusted) hashes for a given key. This is in the order of:
+
+    - SHA1 (shifted 224 bits right)
+    - SHA224 (shifted 160 bits right)
+    - SHA256 (shifted 128 bits right)
+    - SHA384 (unadjusted)
+    - SHA512 (unadjusted)
+
+    The adjustment is made to allow better load balancing between nodes, which
+    assign responisbility for a value based on their SHA384-assigned ID.
+    """
     return (
-        int(hashlib.sha1(key).hexdigest(), 16) << (384 - 160),
-        int(hashlib.sha224(key).hexdigest(), 16) << (384 - 224),
-        int(hashlib.sha256(key).hexdigest(), 16) << (384 - 256),
+        int(hashlib.sha1(key).hexdigest(), 16) << 224,  # 384 - 160
+        int(hashlib.sha224(key).hexdigest(), 16) << 160,  # 384 - 224
+        int(hashlib.sha256(key).hexdigest(), 16) << 128,  # 384 - 256
         int(hashlib.sha384(key).hexdigest(), 16),
         int(hashlib.sha512(key).hexdigest(), 16)
     )
 
 
 class chord_connection(mesh_connection):
-    """The class for chord connection abstraction. This inherits from :py:class:`py2p.mesh.mesh_connection`"""
+    """The class for chord connection abstraction. This inherits from
+    :py:class:`py2p.mesh.mesh_connection`
+    """
     @inherit_doc(mesh_connection.__init__)
     def __init__(self, *args, **kwargs):
         super(chord_connection, self).__init__(*args, **kwargs)
@@ -96,9 +111,6 @@ class chord_socket(mesh_socket):
         self.register_handler(self.__handle_retrieve)
         self.register_handler(self.__handle_store)
         self.leeching = True
-
-    def request_peers(self):
-        pass
 
     @property
     def addr(self):
@@ -160,7 +172,7 @@ class chord_socket(mesh_socket):
             if new_meta != handler.leeching:
                 self._send_meta(handler)
                 handler.leeching = new_meta
-                if len(self.outgoing) > max_outgoing:
+                if len(tuple(self.outgoing)) > max_outgoing:
                     self.disconnect_least_efficient()
                 if not self.leeching:
                     handler.send(flags.whisper, flags.peers, json.dumps(self._get_peer_list()))
@@ -189,7 +201,7 @@ class chord_socket(mesh_socket):
                 return distance(self.id_10, from_base_58(id)) <= distance(self.id_10, self.next.id_10)
 
             for addr, id in new_peers:
-                if len(self.outgoing) < max_outgoing or is_prev(id) or is_next(id):
+                if len(tuple(self.outgoing)) < max_outgoing or is_prev(id) or is_next(id):
                     try:
                         self.__connect(addr[0], addr[1], id.encode())
                     except:  # pragma: no cover
@@ -315,6 +327,19 @@ class chord_socket(mesh_socket):
             return ret
 
     def __lookup(self, method, key, handler=None):
+        """Looks up the value at a given hash function and key. This method
+        deals with just *one* of the underlying hash tables.
+
+        Args:
+            method: The hash table that you wish to check. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            key:    The key that you wish to check. Must be a :py:class:`int` or
+                        :py:class:`long`
+
+        Returns:
+            The value at said key, or an :py:class:`py2p.utils.awaiting_value`
+                object, which will eventually contain its result
+        """
         if self.routing_table:
             node = self.find(key)
         else:
@@ -385,6 +410,17 @@ class chord_socket(mesh_socket):
             return ifError
 
     def __store(self, method, key, value):
+        """Updates the value at a given key. This method deals with just *one*
+        of the underlying hash tables.
+
+        Args:
+            method: The hash table that you wish to check. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            key:    The key that you wish to check. Must be a :py:class:`int` or
+                        :py:class:`long`
+            value:  The value you wish to put at this key. Must be a :py:class:`str`
+                        or :py:class:`bytes`-like object
+        """
         node = self.find(key)
         if self.leeching and node is self:
             node = random.choice(self.awaiting_ids)
@@ -433,6 +469,16 @@ class chord_socket(mesh_socket):
             self.__setitem__(key, value)
 
     def find(self, key):
+        """Finds the node which is responsible for a certain value. This does
+        not necessarily mean that they are supposed to store that value, just
+        that they are along your path to said node.
+
+        Args:
+            key:    The key that you wish to check. Must be a :py:class:`int` or
+                        :py:class:`long`
+
+        Returns: A :py:class:`~py2p.chord.chord_connection` or this socket
+        """
         ret = self
         gap = distance(self.id_10, key)
         for handler in self.data_storing:
@@ -442,6 +488,16 @@ class chord_socket(mesh_socket):
         return ret
 
     def find_prev(self, key):
+        """Finds the node which is farthest from a certain value. This is used
+        to find a node's "predecessor"; the node it is supposed to delegate to
+        in the event of a disconnections.
+
+        Args:
+            key:    The key that you wish to check. Must be a :py:class:`int` or
+                        :py:class:`long`
+
+        Returns: A :py:class:`~py2p.chord.chord_connection` or this socket
+        """
         ret = self
         gap = distance(key, self.id_10)
         for handler in self.data_storing:
@@ -452,10 +508,16 @@ class chord_socket(mesh_socket):
 
     @property
     def next(self):
+        """The connection that is your nearest neighbor *ahead* on the
+        hash table ring
+        """
         return self.find(self.id_10 - 1)
 
     @property
     def prev(self):
+        """The connection that is your nearest neighbor *behind* on the
+        hash table ring
+        """
         return self.find_prev(self.id_10 + 1)
 
     def _send_peers(self, handler):

@@ -54,7 +54,7 @@ class mesh_connection(base_connection):
             self.send(flags.renegotiate, flags.resend)
             return
         packets = msg.packets
-        self.__print__("Message received: %s" % packets, level=1)
+        self.__print__("Message received: {}".format(packets), level=1)
         if self.handle_waterfall(msg, packets):
             return
         elif self.handle_renegotiate(packets):
@@ -302,7 +302,7 @@ class mesh_socket(base_socket):
         if packets[0] == flags.peers:
             new_peers = json.loads(packets[1].decode())
             for addr, id in new_peers:
-                if len(self.outgoing) < max_outgoing:
+                if len(tuple(self.outgoing)) < max_outgoing:
                     try:
                         self.connect(addr[0], addr[1], id.encode())
                     except:  # pragma: no cover
@@ -397,8 +397,8 @@ class mesh_socket(base_socket):
             handler.send(main_flag, send_type, *args)
 
     def __clean_waterfalls(self):
-        """This function cleans the list of recently relayed messages based
-        on the following heuristics:
+        """This function cleans the :py:class:`deque` of recently relayed
+        messages based on the following heuristics:
 
         * Delete all duplicates
         * Delete all older than 60 seconds

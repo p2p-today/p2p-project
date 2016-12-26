@@ -18,16 +18,16 @@ def test_intersect(iters=200):
     max_val = 2**12 - 1
     for _ in xrange(iters):
         pair1 = sorted(
-            [random.randint(0, max_val), random.randint(0, max_val)])
+            (random.randint(0, max_val), random.randint(0, max_val)))
         pair2 = sorted(
-            [random.randint(0, max_val), random.randint(0, max_val)])
-        cross1 = [pair1[0], pair2[0]]
-        cross2 = [pair1[1], pair2[1]]
+            (random.randint(0, max_val), random.randint(0, max_val)))
+        cross1 = (pair1[0], pair2[0])
+        cross2 = (pair1[1], pair2[1])
         if max(cross1) < min(cross2):
             assert (utils.intersect(range(*pair1), range(*pair2)) ==
-                    list(range(max(cross1), min(cross2))))
+                    tuple(range(max(cross1), min(cross2))))
         else:
-            assert utils.intersect(range(*pair1), range(*pair2)) == []
+            assert utils.intersect(range(*pair1), range(*pair2)) == ()
 
 
 def test_getUTC(iters=20):

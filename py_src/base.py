@@ -28,72 +28,54 @@ version = '.'.join((protocol_version, node_policy_version))
 plock = threading.Lock()
 
 
-class brepr(bytearray):
-    """An extension of the bytearray object which prints a different value
-    than it stores. This is mostly used for debugging purposes.
-    """
-    def __init__(self, value, rep=None):
-        """Initializes a brepr object
-
-        Args:
-            value:  The value you want this bytearray to store
-            rep:    The value you want this bytearray to print
-        """
-        super(brepr, self).__init__(value)
-        self.__rep = (rep or value)
-
-    def __repr__(self):
-        return self.__rep
-
-
 class flags():
     """A namespace to hold protocol-defined flags"""
     # Reserved set of bytes
     reserved = [struct.pack('!B', x) for x in range(0x30)]
 
     # main flags
-    broadcast = brepr(b'\x00', rep='broadcast')  # also sub-flag
-    renegotiate = brepr(b'\x01', rep='renegotiate')
-    whisper = brepr(b'\x02', rep='whisper')      # also sub-flag
-    ping = brepr(b'\x03', rep='ping')            # Unused, but reserved
-    pong = brepr(b'\x04', rep='pong')            # Unused, but reserved
+    broadcast = b'\x00'     # also sub-flag
+    renegotiate = b'\x01'
+    whisper = b'\x02'       # also sub-flag
+    ping = b'\x03'          # Unused, but reserved
+    pong = b'\x04'          # Unused, but reserved
 
     # sub-flags
-    # broadcast = brepr(b'\x00', rep='broadcast')
-    compression = brepr(b'\x01', rep='compression')
-    # whisper = brepr(b'\x02', rep='whisper')
-    # ping = brepr(b'\x03', rep='ping')
-    # pong = brepr(b'\x04', rep='pong')
-    handshake = brepr(b'\x05', rep='handshake')
-    notify = brepr(b'\x06', rep='notify')
-    peers = brepr(b'\x07', rep='peers')
-    request = brepr(b'\x08', rep='request')
-    resend = brepr(b'\x09', rep='resend')
-    response = brepr(b'\x0A', rep='response')
-    store = brepr(b'\x0B', rep='store')
-    retrieve = brepr(b'\x0C', rep='retrieve')
-    retrieved = brepr(b'\x0D', rep='retrieved')
+    # broadcast = b'\x00'
+    compression = b'\x01'
+    # whisper = b'\x02'
+    # ping = b'\x03'
+    # pong = b'\x04'
+    handshake = b'\x05'
+    notify = b'\x06'
+    peers = b'\x07'
+    request = b'\x08'
+    resend = b'\x09'
+    response = b'\x0A'
+    store = b'\x0B'
+    retrieve = b'\x0C'
+    retrieved = b'\x0D'
 
     # implemented compression methods
-    bz2 = brepr(b'\x10', rep='bz2')
-    gzip = brepr(b'\x11', rep='gzip')
-    lzma = brepr(b'\x12', rep='lzma')
-    zlib = brepr(b'\x13', rep='zlib')
-    snappy = brepr(b'\x20', rep='snappy')
+    bz2 = b'\x10'
+    gzip = b'\x11'
+    lzma = b'\x12'
+    zlib = b'\x13'
+    snappy = b'\x20'
 
     # non-implemented compression methods (based on list from compressjs):
-    bwtc = brepr(b'\x14', rep='bwtc')
-    context1 = brepr(b'\x15', rep='context1')
-    defsum = brepr(b'\x16', rep='defsum')
-    dmc = brepr(b'\x17', rep='dmc')
-    fenwick = brepr(b'\x18', rep='fenwick')
-    huffman = brepr(b'\x19', rep='huffman')
-    lzjb = brepr(b'\x1A', rep='lzjb')
-    lzjbr = brepr(b'\x1B', rep='lzjbr')
-    lzp3 = brepr(b'\x1C', rep='lzp3')
-    mtf = brepr(b'\x1D', rep='mtf')
-    ppmd = brepr(b'\x1E', rep='ppmd')
-    simple = brepr(b'\x1F', rep='simple')
+    bwtc = b'\x14'
+    context1 = b'\x15'
+    defsum = b'\x16'
+    dmc = b'\x17'
+    fenwick = b'\x18'
+    huffman = b'\x19'
+    lzjb = b'\x1A'
+    lzjbr = b'\x1B'
+    lzp3 = b'\x1C'
+    mtf = b'\x1D'
+    ppmd = b'\x1E'
+    simple = b'\x1F'
 
 
 user_salt = str(uuid.uuid4()).encode()
@@ -354,8 +336,8 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
     @property
     def id(self):
         """The SHA-256-based ID of the protocol"""
-        h = hashlib.sha256(''.join(
-            [str(x) for x in self] + [protocol_version]).encode())
+        h = hashlib.sha256(''.join(str(x) for x in self).encode())
+        h.update(protocol_version.encode())
         return to_base_58(int(h.hexdigest(), 16))
 
 default_protocol = protocol('', "Plaintext")  # SSL")
@@ -490,7 +472,7 @@ class InternalMessage(object):
             msg_type:       A bytes-like header for the message you wish
                                 to send
             sender:         A bytes-like sender ID the message is using
-            payload:        A list of bytes-like objects containing the
+            payload:        A iterable of bytes-like objects containing the
                                 payload of the message
             compression:    A list of the compression methods this message
                                 may use (default: [])
@@ -507,7 +489,7 @@ class InternalMessage(object):
         """
         self.msg_type = sanitize_packet(msg_type)
         self.sender = sanitize_packet(sender)
-        self.__payload = [sanitize_packet(packet) for packet in payload]
+        self.__payload = tuple(sanitize_packet(packet) for packet in payload)
         self.time = timestamp or getUTC()
         self.compression_fail = False
 
@@ -518,7 +500,9 @@ class InternalMessage(object):
 
     @property
     def payload(self):
-        """Returns a list containing the message payload encoded as bytes"""
+        """Returns a :py:class:`tuple` containing the message payload encoded
+        as :py:class:`bytes`
+        """
         return self.__payload
 
     @property
@@ -530,40 +514,39 @@ class InternalMessage(object):
 
     @property
     def time_58(self):
-        """Returns the messages timestamp in base_58"""
+        """Returns this message's timestamp in base_58"""
         return to_base_58(self.time)
 
     @property
     def id(self):
         """Returns the message id"""
-        payload_string = b''.join((bytes(pac) for pac in self.payload))
+        payload_string = b''.join(bytes(pac) for pac in self.payload)
         payload_hash = hashlib.sha384(payload_string + self.time_58)
         return to_base_58(int(payload_hash.hexdigest(), 16))
 
     @property
     def packets(self):
-        """Returns the full list of packets in this message encoded as bytes,
-        excluding the header
+        """Returns the full :py:class:`tuple` of packets in this message
+        encoded as :py:class:`bytes`, excluding the header
         """
-        return ([self.msg_type, self.sender, self.id, self.time_58] +
-                self.payload)
+        return ((self.msg_type, self.sender, self.id, self.time_58) +
+                    self.payload)
 
     @property
     def __non_len_string(self):
-        """Returns a bytes object containing the entire message, excepting
-        the total length header
+        """Returns a :py:class:`bytes` object containing the entire message,
+        excepting the total length header
         """
         packets = self.packets
-        headers = [pack_value(4, len(x)) for x in packets]
-        string = b''.join((bytes(head) + bytes(pack)
-                           for head, pack in zip(headers, packets)))
+        headers = (pack_value(4, len(x)) for x in packets)
+        string = b''.join(chain.from_iterable(zip(headers, packets)))
         if self.compression_used:
             string = compress(string, self.compression_used)
         return string
 
     @property
     def string(self):
-        """Returns a string representation of the message"""
+        """Returns a :py:class:`bytes` representation of the message"""
         string = self.__non_len_string
         return pack_value(4, len(string)) + string
 
@@ -602,17 +585,17 @@ class base_connection(object):
         """Sends a preconstructed message
 
         Args:
-            msg: The IntenalMessage you wish to send
+            msg: The :py:class:`~py2p.base.IntenalMessage` you wish to send
 
         Returns:
-            the InternalMessage object you just sent, or None if the sending
-                was unsuccessful
+            the :py:class:`~py2p.base.IntenalMessage` object you just sent,
+                or None if the sending was unsuccessful
         """
         msg.compression = self.compression
         if msg.msg_type in (flags.whisper, flags.broadcast):
             self.last_sent = msg.payload
         self.__print__(
-            "Sending %s to %s" % ([msg.len] + msg.packets, self), level=4)
+            "Sending %s to %s" % ((msg.len,) + msg.packets, self), level=4)
         if msg.compression_used:
             self.__print__(
                 "Compressing with %s" % repr(msg.compression_used), level=4)
@@ -620,7 +603,7 @@ class base_connection(object):
             self.sock.send(msg.string)
             return msg
         except (IOError, socket.error) as e:  # pragma: no cover
-            self.server.daemon.exceptions.append((e, traceback.format_exc()))
+            self.server.daemon.exceptions.append(traceback.format_exc())
             self.server.disconnect(self)
 
     def send(self, msg_type, *args, **kargs):
@@ -628,7 +611,7 @@ class base_connection(object):
 
         Args:
             msg_type:  Message type, corresponds to the header in a
-                           :py:class:`py2p.base.InternalMessage` object
+                           :py:class:`~py2p.base.InternalMessage` object
             *args:     A list of bytes-like objects, which correspond to the
                            packets to send to you
             **kargs:   There are two available keywords:
@@ -638,17 +621,15 @@ class base_connection(object):
                            (default: now in UTC)
 
         Returns:
-            the InternalMessage object you just sent, or None if the sending
-            was unsuccessful
+            the :py:class:`~py2p.base.IntenalMessage` object you just sent, or
+            ``None`` if the sending was unsuccessful
         """
-        # This section handles waterfall-specific flags
-
         # Latter is returned if key not found
         id = kargs.get('id', self.server.id)
         time = kargs.get('time') or getUTC()
         # Begin real method
         msg = InternalMessage(
-            msg_type, id, tuple(args), self.compression, timestamp=time)
+            msg_type, id, args, self.compression, timestamp=time)
         return self.send_InternalMessage(msg)
 
     @property
@@ -660,7 +641,7 @@ class base_connection(object):
         """Collects incoming data
 
         Args:
-            data:   The most recently received byte
+            data:   The most recently received :py:class:`bytes`
 
         Returns:
             ``True`` if the data collection was successful, ``False`` if the
@@ -707,7 +688,8 @@ class base_connection(object):
         name of the flag associated with it, "renegotiate".
 
         Args:
-            packets:    A list containing the packets received in this message
+            packets:    A :py:class:`tuple` containing the packets received
+                            in this message
 
         Returns:
             ``True`` if an action was taken, ``None`` if not
@@ -817,7 +799,7 @@ class base_daemon(object):
                     "this, please post a copy of your mesh_socket.status to "
                     "git.p2p.today/issues." % handler.id,
                     level=0)
-                self.exceptions.append((e, traceback.format_exc()))
+                self.exceptions.append(traceback.format_exc())
             self.server.disconnect(handler)
             self.server.request_peers()
 
@@ -865,7 +847,7 @@ class base_socket(object):
             self.out_addr = get_lan_ip(), port
         else:
             self.out_addr = addr, port
-        info = [str(self.out_addr).encode(), prot.id, user_salt]
+        info = (str(self.out_addr).encode(), prot.id, user_salt)
         h = hashlib.sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
         self.__handlers = []
@@ -970,14 +952,14 @@ class base_socket(object):
     @property
     def outgoing(self):
         """IDs of outgoing connections"""
-        return [handler.id for handler in self.routing_table.values()
-                if handler.outgoing]
+        return (handler.id for handler in self.routing_table.values()
+                if handler.outgoing)
 
     @property
     def incoming(self):
         """IDs of incoming connections"""
-        return [handler.id for handler in self.routing_table.values()
-                if not handler.outgoing]
+        return (handler.id for handler in self.routing_table.values()
+                if not handler.outgoing)
 
     def __print__(self, *args, **kargs):
         """Private method to print if level is <= self.debug_level

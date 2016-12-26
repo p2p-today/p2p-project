@@ -144,7 +144,7 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
 }
 
 static PyObject *pmessage_payload(pmessage_wrapper *self)    {
-    PyObject *ret = pylist_from_array_string(self->msg->payload, self->msg->payload_lens, self->msg->num_payload);
+    PyObject *ret = pytuple_from_array_string(self->msg->payload, self->msg->payload_lens, self->msg->num_payload);
     if (PyErr_Occurred())
         return NULL;
     return ret;
@@ -171,7 +171,7 @@ static PyObject *pmessage_packets(pmessage_wrapper *self)    {
         lens[4+i] = self->msg->payload_lens[i];
     }
     Py_END_ALLOW_THREADS
-    ret = pylist_from_array_string(packets, lens, num);
+    ret = pytuple_from_array_string(packets, lens, num);
     free(packets[3]);
     free(packets);
     free(lens);

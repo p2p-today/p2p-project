@@ -40,22 +40,22 @@ def sanitize_packet(packet):
     return packet
 
 
-def intersect(*args):  # returns list
+def intersect(*args):
     """Finds the intersection of several iterables
 
     Args:
         *args:  Several iterables
 
     Returns:
-        A list containing the ordered intersection of all given iterables,
-        where the order is defined by the first iterable
+        A :py:class:`tuple` containing the ordered intersection of all given
+        iterables, where the order is defined by the first iterable
     """
     if not all(args):
         return []
     intersection = args[0]
     for l in args[1:]:
         intersection = (item for item in intersection if item in l)
-    return list(intersection)
+    return tuple(intersection)
 
 
 def get_lan_ip():
