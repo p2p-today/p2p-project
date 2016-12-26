@@ -193,29 +193,27 @@ class sync_socket(mesh.mesh_socket):
         self[key] = ''
 
     def __iter__(self):
-        return iter(self.data)
+        return self.keys()
 
     def keys(self):
         """Returns an iterator of the underlying :py:class:`dict`s keys"""
         if hasattr(self.data, 'iterkeys'):
-            return self.data.iterkeys()
-        return self.data.keys()
+            return (key for key in self.data.keys() if key in self.data)
+        return (key for key in tuple(self.data.keys()) if key in self.data)
+
+    def __iter__(self):
+        return self.keys()
 
     def values(self):
         """Returns an iterator of the underlying :py:class:`dict`s values"""
-        if hasattr(self.data, 'itervalues'):
-            return self.data.itervalues()
-        return self.data.values()
+        return (self[key] for key in self.keys())
 
     def items(self):
         """Returns an iterator of the underlying :py:class:`dict`s items"""
-        if hasattr(self.data, 'iteritems'):
-            return self.data.iteritems()
-        return self.data.items()
+        return ((key, self[key]) for key in self.keys())
 
     @inherit_doc(dict.pop)
     def pop(self, key, *args):
-        args = tuple(args)
         if len(args):
             ret = self.get(key, args[0])
             if ret != args[0]:
