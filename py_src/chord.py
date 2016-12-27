@@ -578,7 +578,7 @@ class chord_socket(mesh_socket):
 
     def unjoin(self):
         """Tells the node to stop seeding the chord table"""
-        self.leeching = False
+        self.leeching = True
         for handler in tuple(self.routing_table.values()) + tuple(self.awaiting_ids):
             self._send_handshake(handler)
             self._send_peers(handler)
