@@ -14,18 +14,7 @@ There are three limitations compared to a normal :py:class:`dict`.
 
 1. Keys and values can only be :py:class:`bytes`-like objects
 2. Keys and values are automatically translated to :py:class:`bytes`
-3. By default, this implements a leasing system which prevents you from changing values set by others for a certain time
-
-You can override the last restriction by constructing with ``leasing=False``, like so:
-
-.. code-block:: python
-
-    >>> from py2p import chord
-    >>> sock = chord.chord_socket('0.0.0.0', 4444, leasing=False)
-
-.. note::
-
-    The leasing system is not yet implemented. If you're building test versions, this part is not yet available. It should be present by release.
+3. Fetching values is significantly slower than for a :py:class:`dict`
 
 The only API differences between this and :py:class:`~py2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
 
