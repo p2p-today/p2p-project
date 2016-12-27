@@ -73,11 +73,14 @@ class chord_connection(mesh_connection):
     def __init__(self, *args, **kwargs):
         super(chord_connection, self).__init__(*args, **kwargs)
         self.leeching = True
+        self.__id_10 = -1
 
     @property
     def id_10(self):
         """Returns the nodes ID as an integer"""
-        return from_base_58(self.id)
+        if self.__id_10 == -1:
+            self.__id_10 = from_base_58(self.id)
+        return self.__id_10
 
     def __hash__(self):
         return self.id_10 or id(self)
@@ -572,6 +575,22 @@ class chord_socket(mesh_socket):
             self._send_handshake(handler)
             self._send_peers(handler)
             self._send_meta(handler)
+
+    def unjoin(self):
+        """Tells the node to stop seeding the chord table"""
+        self.leeching = False
+        for handler in tuple(self.routing_table.values()) + tuple(self.awaiting_ids):
+            self._send_handshake(handler)
+            self._send_peers(handler)
+            self._send_meta(handler)
+        for method in self.data.keys():
+            for key, value in self.data[method].items():
+                self.__store(method, key, value)
+            self.data[method].clear()
+
+    def __del__(self):
+        self.unjoin()
+        super(chord_socket, self).__del__()
 
     @inherit_doc(mesh_socket.connect)
     def connect(self, *args, **kwargs):
