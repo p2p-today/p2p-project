@@ -75,6 +75,16 @@ The update method is simply a wrapper which updates based on a fed :js:class:`Ob
     ... sock.set(key, update_dict[key]);
     ... }
 
+:js:func:`~py2p.sync.sync_socket.keys` / :js:func:`~py2p.sync.sync_socket.values` / :js:func:`~py2p.sync.sync_socket.items`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These methods are analagous to the ones in Python's :py:class:`dict`. The main difference is that they emulate the Python 3 behavior. So, they will still return an generator, rather than a list.
+
+:js:func:`~py2p.sync.sync_socket.pop` / :js:func:`~py2p.sync.sync_socket.popitem`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These methods are also analagous to the ones in Python's :py:class:`dict`. The main difference is that if the leasing system is active, calling this method may throw an error if you don't "own" whatever key is popped.
+
 Advanced Usage
 --------------
 

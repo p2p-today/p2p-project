@@ -192,9 +192,6 @@ class sync_socket(mesh.mesh_socket):
     def __delitem__(self, key):
         self[key] = ''
 
-    def __iter__(self):
-        return self.keys()
-
     def keys(self):
         """Returns an iterator of the underlying :py:class:`dict`s keys"""
         if hasattr(self.data, 'iterkeys'):
