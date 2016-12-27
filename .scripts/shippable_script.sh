@@ -22,5 +22,4 @@ elif [ $jsver ]; then
     nvm use $jsver
     node --version
     make jstest
-    make ES5test
 fi
