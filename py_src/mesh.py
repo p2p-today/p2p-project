@@ -262,7 +262,7 @@ class mesh_socket(base_socket):
                 Either ``True`` or ``None``
         """
         packets = msg.packets
-        if packets[0] == flags.handshake:
+        if packets[0] == flags.handshake and len(packets) == 5:
             if packets[2] != self.protocol.id:
                 self.__print__(
                     "Connected to peer on wrong subnet. ID: %s" % packets[2],

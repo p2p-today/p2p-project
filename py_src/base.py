@@ -365,8 +365,12 @@ class InternalMessage(object):
         if not isinstance(string, (bytes, bytearray)):
             string = string.encode()
         if not sizeless:
-            assert unpack_value(string[:4]) == len(string[4:]), \
-                "Must assert base.unpack_value(string[:4]) == len(string[4:])"
+            if unpack_value(string[:4]) != len(string[4:]):
+                raise AssertionError(
+                    "Real message size {} != expected size {}".format(
+                        len(string),
+                        unpack_value(string[:4]) + 4
+                    ))
             string = string[4:]
         return string
 

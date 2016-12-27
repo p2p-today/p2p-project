@@ -113,13 +113,15 @@ class chord_socket(mesh_socket):
             self.daemon = chord_daemon(addr, port, self)
         self.id_10 = from_base_58(self.id)
         self.data = dict(((method, {}) for method in hashes))
+        self.__keys = set()
+        self.leeching = True
         # self.register_handler(self._handle_peers)
         self.register_handler(self.__handle_meta)
+        self.register_handler(self.__handle_key)
         self.register_handler(self.__handle_retrieved)
         self.register_handler(self.__handle_request)
         self.register_handler(self.__handle_retrieve)
         self.register_handler(self.__handle_store)
-        self.leeching = True
 
     @property
     def addr(self):
@@ -163,9 +165,9 @@ class chord_socket(mesh_socket):
         return False
 
     def __handle_meta(self, msg, handler):
-        """This callback is used to deal with handshake signals. Its two primary jobs are:
+        """This callback is used to deal with chord specific metadata.
+        Its primary job is:
 
-             - reject connections seeking a different network
              - set connection state
 
              Args:
@@ -176,7 +178,7 @@ class chord_socket(mesh_socket):
                 Either ``True`` or ``None``
         """
         packets = msg.packets
-        if packets[0] == flags.notify:
+        if packets[0] == flags.handshake and len(packets) == 2:
             new_meta = bool(int(packets[1]))
             if new_meta != handler.leeching:
                 self._send_meta(handler)
@@ -191,6 +193,28 @@ class chord_socket(mesh_socket):
                             for key, value in table.items():
                                 print(method, key, value)
                                 self.__store(method, key, value)
+            return True
+
+    def __handle_key(self, msg, handler):
+        """This callback is used to deal with new key entries. Its primary
+        job is:
+
+             - Ensure keylist syncronization
+
+             Args:
+                msg:        A :py:class:`~py2p.base.message`
+                handler:    A :py:class:`~py2p.chord.chord_connection`
+
+             Returns:
+                Either ``True`` or ``None``
+        """
+        packets = msg.packets
+        if packets[0] == flags.notify:
+            if len(packets) == 3:
+                if key in self.__keys:
+                    self.__keys.remove(packets[1])
+            else:
+                self.__keys.add(packets[1])
             return True
 
     def _handle_peers(self, msg, handler):
@@ -369,7 +393,7 @@ class chord_socket(mesh_socket):
             self.requests[method, to_base_58(key)] = ret
             return ret
 
-    def lookup(self, key):
+    def __getitem__(self, key):
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -402,9 +426,7 @@ class chord_socket(mesh_socket):
             raise socket.timeout()
         raise KeyError("This key does not have an agreed-upon value", vals)
 
-    @inherit_doc(lookup)
-    def __getitem__(self, key):
-        return self.lookup(key)
+        return self[key]
 
     def get(self, key, ifError=None):
         """Looks up the value at a given key.
@@ -440,11 +462,14 @@ class chord_socket(mesh_socket):
         if self.leeching and node is self:
             node = random.choice(self.awaiting_ids)
         if node in (self, None):
-            self.data[method][key] = value
+            if value == b'':
+                del self.data[method][key]
+            else:
+                self.data[method][key] = value
         else:
             node.send(flags.whisper, flags.store, method, to_base_58(key), value)
 
-    def store(self, key, value):
+    def __setitem__(self, key, value):
         """Updates the value at a given key.
         Under the covers, this actually uses five different hash tables, and
         updates the value in all of them.
@@ -459,14 +484,22 @@ class chord_socket(mesh_socket):
         keys = get_hashes(key)
         for method, x in zip(hashes, keys):
             self.__store(method, x, value)
-
-    @inherit_doc(store)
-    def __setitem__(self, key, value):
-        return self.store(key, value)
+        if key not in self.__keys:
+            self.__keys.add(key)
+            self.send(key, type=flags.notify)
 
     @inherit_doc(__setitem__)
     def set(self, key, value):
         return self.__setitem__(key, value)
+
+    def __delitem__(self, key):
+        if not isinstance(key, (bytes, bytearray)):
+            key = str(key).encode()
+        if key not in self.__keys:
+            raise KeyError(key)
+        self.set(key, '')
+        self.__keys.remove(key)
+        self.send(key, b'del', type=flags.notify)
 
     def update(self, update_dict):
         """Equivalent to :py:meth:`dict.update`
@@ -494,12 +527,17 @@ class chord_socket(mesh_socket):
 
         Returns: A :py:class:`~py2p.chord.chord_connection` or this socket
         """
-        ret = self
-        gap = distance(self.id_10, key)
+        if not self.leeching:
+            ret = self
+            gap = distance(self.id_10, key)
+        else:
+            ret = None
+            gap = 2**384
         for handler in self.data_storing:
-            if distance(handler.id_10, key) < gap:
+            dist = distance(handler.id_10, key)
+            if dist < gap:
                 ret = handler
-                gap = distance(handler.id_10, key)
+                gap = dist
         return ret
 
     def find_prev(self, key):
@@ -513,12 +551,17 @@ class chord_socket(mesh_socket):
 
         Returns: A :py:class:`~py2p.chord.chord_connection` or this socket
         """
-        ret = self
-        gap = distance(key, self.id_10)
+        if not self.leeching:
+            ret = self
+            gap = distance(key, self.id_10)
+        else:
+            ret = None
+            gap = 2**384
         for handler in self.data_storing:
-            if distance(key, handler.id_10) < gap:
+            dist = distance(key, handler.id_10)
+            if dist < gap:
                 ret = handler
-                gap = distance(key, handler.id_10)
+                gap = dist
         return ret
 
     @property
@@ -550,7 +593,9 @@ class chord_socket(mesh_socket):
         Args:
             handler: A :py:class:`~py2p.chord.chord_connection`
         """
-        handler.send(flags.whisper, flags.notify, str(int(self.leeching)))
+        handler.send(flags.whisper, flags.handshake, str(int(self.leeching)))
+        for key in self.__keys.copy():
+            handler.send(flags.whisper, flags.notify, key)
 
     def __connect(self, addr, port, id=None):
         """Private API method for connecting and handshaking
@@ -597,3 +642,47 @@ class chord_socket(mesh_socket):
         if kwargs.get('conn_type'):
             return super(chord_socket, self).connect(*args, **kwargs)
         return super(chord_socket, self).connect(*args, conn_type=chord_connection, **kwargs)
+
+    def keys(self):
+        """Returns an iterator of the underlying :py:class:`dict`s keys"""
+        return (key for key in self.__keys if key in self.__keys)
+
+    @inherit_doc(keys)
+    def __iter__(self):
+        return self.keys()
+
+    def values(self):
+        """Returns an iterator of the underlying :py:class:`dict`s values"""
+        return (self[key] for key in self.keys())
+
+    def items(self):
+        """Returns an iterator of the underlying :py:class:`dict`s items"""
+        return ((key, self[key]) for key in self.keys())
+
+    @inherit_doc(dict.pop)
+    def pop(self, key, *args):
+        if len(args):
+            ret = self.get(key, args[0])
+            if ret != args[0]:
+                del self[key]
+        else:
+            ret = self[key]
+            del self[key]
+        return ret
+
+    @inherit_doc(dict.popitem)
+    def popitem(self):
+        key, value = next(self.items())
+        del self[key]
+        return (key, value)
+
+    def copy(self):
+        """Returns a :py:class:`dict` copy of this DHT
+
+        .. warning::
+
+            This is a *very* slow operation. It's a far better idea to use
+            :py:meth:`~py2p.chord.chord_socket.items`, as this produces an
+            iterator. That should even out lag times
+        """
+        return dict(self.items())

@@ -201,6 +201,7 @@ class sync_socket(mesh.mesh_socket):
             return (key for key in self.data.keys() if key in self.data)
         return (key for key in tuple(self.data.keys()) if key in self.data)
 
+    @inherit_doc(keys)
     def __iter__(self):
         return self.keys()
 
@@ -229,6 +230,6 @@ class sync_socket(mesh.mesh_socket):
         del self[key]
         return (key, value)
 
-    @inherit_doc(dict.copy)
     def copy(self):
+        """Returns a :py:class:`dict` copy of this synchronized hash table"""
         return self.data.copy()
