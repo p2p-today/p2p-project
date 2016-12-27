@@ -9,8 +9,6 @@ import socket
 import tempfile
 import time
 
-from custom_inherit import doc_inherit as _doc_inherit
-
 try:
     import cPickle as pickle
 except ImportError:
@@ -26,7 +24,11 @@ def _doc_merger(parent, child):
 def inherit_doc(function):
     """A decorator which allows you to inherit docstrings from a specified
     function."""
-    return _doc_inherit(function, _doc_merger)
+    try:
+        from custom_inherit import doc_inherit
+        return doc_inherit(function, _doc_merger)
+    except:
+        return lambda x: x  # If unavailable, just return the function
 
 
 def sanitize_packet(packet):
