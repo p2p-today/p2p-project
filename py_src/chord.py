@@ -92,6 +92,12 @@ class chord_daemon(mesh_daemon):
         super(chord_daemon, self).__init__(*args, **kwargs)
         self.conn_type = chord_connection
 
+    @inherit_doc(mesh_daemon.handle_accept)
+    def handle_accept(self):
+        handler = super(chord_daemon, self).handle_accept()
+        self.server._send_meta(handler)
+        return handler
+
 
 class chord_socket(mesh_socket):
     """The class for chord socket abstraction. This inherits from :py:class:`py2p.mesh.mesh_socket`"""
@@ -136,7 +142,7 @@ class chord_socket(mesh_socket):
 
         def smallest_gap(lst):
             coll = sorted(lst, key=get_id)
-            coll_len = len(lst)
+            coll_len = len(coll)
             circular_triplets = ((coll[x], coll[(x+1)%coll_len], coll[(x+2)%coll_len]) for x in range(coll_len))
             narrowest = None
             gap = 2**384
@@ -146,7 +152,7 @@ class chord_socket(mesh_socket):
                     narrowest = mid
             return narrowest
 
-        relevant_nodes = [node for node in self.data_storing if not node.leeching]
+        relevant_nodes = (node for node in self.data_storing if not node.leeching)
         to_kill = smallest_gap(relevant_nodes)
         if to_kill:
             self.disconnect(to_kill)
@@ -176,6 +182,12 @@ class chord_socket(mesh_socket):
                     self.disconnect_least_efficient()
                 if not self.leeching:
                     handler.send(flags.whisper, flags.peers, json.dumps(self._get_peer_list()))
+                    if self.next is handler:
+                        update = self.dump_data(handler.id_10, self.id_10)
+                        for method, table in update.items():
+                            for key, value in table.items():
+                                print(method, key, value)
+                                self.__store(method, key, value)
             return True
 
     def _handle_peers(self, msg, handler):
@@ -321,7 +333,7 @@ class chord_socket(mesh_socket):
         ret = dict(((method, {}) for method in hashes))
         for method in self.data:
             for key in self.data[method]:
-                if key >= start % self.limit and (not end or key < end % self.limit):
+                if key >= (start % 2**384) and (not end or key < (end % 2**384)):
                     print(method, key, self.data)
                     ret[method][key] = self.data[method][key]
             return ret

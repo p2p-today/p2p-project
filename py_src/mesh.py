@@ -132,6 +132,7 @@ class mesh_daemon(base_daemon):
             self.server._send_handshake(handler)
             handler.sock.settimeout(1)
             self.server.awaiting_ids.append(handler)
+            return handler
         except exceptions:
             pass
 
