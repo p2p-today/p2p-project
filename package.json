@@ -13,6 +13,7 @@
   "dependencies": {
     "big-integer": "^1.6.16",
     "buffer": "^4.9.1",
+    "ip": "^1.1.4",
     "jssha": "^2.2.0"
   },
   "optionalDependencies": {

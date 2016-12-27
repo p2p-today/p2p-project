@@ -11,7 +11,7 @@ To connect to a mesh network, you will use the :js:class:`~js2p.mesh.mesh_socket
     > const mesh = require('js2p').mesh;
     > sock = new mesh.mesh_socket('0.0.0.0', 4444);
 
-Using ``'0.0.0.0'`` will (this feature in progress) automatically grab your LAN address. If you want to use an outward-facing internet connection, there is a little more work. First you need to make sure that you have a port forward setup (NAT busting is not in the scope of this project). Then you will specify this outward address as follows:
+Using ``'0.0.0.0'`` will automatically grab your LAN address. If you want to use an outward-facing internet connection, there is a little more work. First you need to make sure that you have a port forward setup (NAT busting is not in the scope of this project). Then you will specify this outward address as follows:
 
 .. code-block:: javascript
 

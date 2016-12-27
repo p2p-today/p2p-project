@@ -1078,7 +1078,13 @@ base.base_socket = class base_socket   {
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         var self = this;
-        this.addr = [addr, port];
+        if (addr === '0.0.0.0') {
+            let ip = require('ip');
+            this.addr = [ip.address(), port];
+        }
+        else    {
+            this.addr = [addr, port];
+        }
         this.incoming = base.get_server(protocol);
         if (this.incoming)  {
             this.incoming.listen(port, addr);
