@@ -347,21 +347,22 @@ class chord_socket(mesh_socket):
             self.__store(method, key, packets[3])
             return True
 
-    def dump_data(self, start, end=None):
+    def dump_data(self, start, end):
         """Args:
             start:  An :py:class:`int` which indicates the start of the desired key range.
                         ``0`` will get all data.
             end:    An :py:class:`int` which indicates the end of the desired key range.
-                        ``None`` will get all data. (default: ``None``)
+                        ``None`` will get all data.
         Returns:
             A nested :py:class:`dict` containing your data from start to end
         """
         i = start
         ret = dict(((method, {}) for method in hashes))
+        self.__print__("Entering dump_data")
         for method, table in self.data.items():
             for key, value in table.items():
-                if key >= (start % 2**384) and (not end or key < (end % 2**384)):
-                    print(method, key, self.data)
+                if distance(start, key) < distance(end, key):
+                    print(method, key)
                     ret[method][key] = value
         return ret
 
@@ -416,17 +417,21 @@ class chord_socket(mesh_socket):
         common, count = most_common(vals)
         iters = 0
         limit = 100
-        while common == -1 and iters < limit:
+        fails = {None, b'', -1}
+        while common in fails and iters < limit:
             time.sleep(0.1)
             iters += 1
             common, count = most_common(vals)
-        if common not in (None, b'', -1) and count > len(hashes) // 2:
+        if common not in fails and count > len(hashes) // 2:
             return common
         elif iters == limit:
             raise socket.timeout()
-        raise KeyError("This key does not have an agreed-upon value", vals)
-
-        return self[key]
+        raise KeyError("This key does not have an agreed-upon value. "
+            "values={}, count={}, majority={}, most common ={}".format(
+                vals,
+                count,
+                len(hashes) // 2 + 1,
+                common))
 
     def get(self, key, ifError=None):
         """Looks up the value at a given key.
@@ -473,6 +478,7 @@ class chord_socket(mesh_socket):
         """Updates the value at a given key.
         Under the covers, this actually uses five different hash tables, and
         updates the value in all of them.
+
         Args:
             key:    The key that you wish to update. Must be a :py:class:`str` or
                         :py:class:`bytes`-like object
@@ -481,6 +487,8 @@ class chord_socket(mesh_socket):
         """
         if not isinstance(key, (bytes, bytearray)):
             key = str(key).encode()
+        if not isinstance(value, (bytes, bytearray)):
+            value = str(value).encode()
         keys = get_hashes(key)
         for method, x in zip(hashes, keys):
             self.__store(method, x, value)
