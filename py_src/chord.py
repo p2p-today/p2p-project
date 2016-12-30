@@ -358,12 +358,12 @@ class chord_socket(mesh_socket):
         """
         i = start
         ret = dict(((method, {}) for method in hashes))
-        for method in self.data:
-            for key in self.data[method]:
+        for method, table in self.data.items():
+            for key, value in table.items():
                 if key >= (start % 2**384) and (not end or key < (end % 2**384)):
                     print(method, key, self.data)
-                    ret[method][key] = self.data[method][key]
-            return ret
+                    ret[method][key] = value
+        return ret
 
     def __lookup(self, method, key, handler=None):
         """Looks up the value at a given hash function and key. This method
