@@ -188,7 +188,7 @@ class chord_socket(mesh_socket):
                     update = self.dump_data(handler.id_10, self.id_10)
                     for method, table in update.items():
                         for key, value in table.items():
-                            print(method, key, value)
+                            self.__print__(method, key, value, level=5)
                             self.__store(method, key, value)
                 if len(tuple(self.outgoing)) > max_outgoing:
                     self.disconnect_least_efficient()
@@ -357,11 +357,11 @@ class chord_socket(mesh_socket):
         """
         i = start
         ret = dict(((method, {}) for method in hashes))
-        self.__print__("Entering dump_data")
+        self.__print__("Entering dump_data", level=1)
         for method, table in self.data.items():
             for key, value in table.items():
                 if distance(start, key) < distance(end, key):
-                    print(method, key)
+                    self.__print__(method, key, level=6)
                     ret[method][key] = value
         return ret
 

@@ -367,9 +367,10 @@ class InternalMessage(object):
         if not sizeless:
             if unpack_value(string[:4]) != len(string[4:]):
                 raise AssertionError(
-                    "Real message size {} != expected size {}".format(
+                    "Real message size {} != expected size {}. Buffer given: {}".format(
                         len(string),
-                        unpack_value(string[:4]) + 4
+                        unpack_value(string[:4]) + 4,
+                        string
                     ))
             string = string[4:]
         return string
