@@ -672,9 +672,8 @@ class base_connection(object):
 
     def found_terminator(self):
         """Processes received messages"""
-        raw_msg = bytes(self.buffer[:self.expected])
+        raw_msg, self.buffer = bytes(self.buffer[:self.expected]), self.buffer[self.expected:]
         self.__print__("Received: %s" % repr(raw_msg), level=6)
-        self.buffer = self.buffer[self.expected:]
         self.active = len(self.buffer) > 4
         if self.active:
             self.expected = unpack_value(bytes(self.buffer[:4])) + 4

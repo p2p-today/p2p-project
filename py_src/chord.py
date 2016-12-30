@@ -183,16 +183,15 @@ class chord_socket(mesh_socket):
             if new_meta != handler.leeching:
                 self._send_meta(handler)
                 handler.leeching = new_meta
+                if not self.leeching and not handler.leeching:
+                    handler.send(flags.whisper, flags.peers, json.dumps(self._get_peer_list()))
+                    update = self.dump_data(handler.id_10, self.id_10)
+                    for method, table in update.items():
+                        for key, value in table.items():
+                            print(method, key, value)
+                            self.__store(method, key, value)
                 if len(tuple(self.outgoing)) > max_outgoing:
                     self.disconnect_least_efficient()
-                if not self.leeching:
-                    handler.send(flags.whisper, flags.peers, json.dumps(self._get_peer_list()))
-                    if self.next is handler:
-                        update = self.dump_data(handler.id_10, self.id_10)
-                        for method, table in update.items():
-                            for key, value in table.items():
-                                print(method, key, value)
-                                self.__store(method, key, value)
             return True
 
     def __handle_key(self, msg, handler):
@@ -394,20 +393,21 @@ class chord_socket(mesh_socket):
             self.requests[method, to_base_58(key)] = ret
             return ret
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, timeout=10):
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
 
         Args:
-            key: The key that you wish to check. Must be a :py:class:`str` or
-                    :py:class:`bytes`-like object
+            key:        The key that you wish to check. Must be a :py:class:`str` or
+                            :py:class:`bytes`-like object
+            timeout:    The longest you would like to await a value (default: 10s)
 
         Returns:
             The value at said key
 
         Raises:
-            socket.timeout: If the request goes partly-unanswered for >=10 seconds
+            socket.timeout: If the request goes partly-unanswered for >=timeout seconds
             KeyError:       If the request is made for a key with no agreed-upon value
         """
         if not isinstance(key, (bytes, bytearray)):
@@ -416,7 +416,7 @@ class chord_socket(mesh_socket):
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
         common, count = most_common(vals)
         iters = 0
-        limit = 100
+        limit = timeout // 0.1
         fails = {None, b'', -1}
         while common in fails and iters < limit:
             time.sleep(0.1)
@@ -433,7 +433,7 @@ class chord_socket(mesh_socket):
                 len(hashes) // 2 + 1,
                 common))
 
-    def get(self, key, ifError=None):
+    def get(self, key, ifError=None, timeout=10):
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -442,12 +442,13 @@ class chord_socket(mesh_socket):
             key:     The key that you wish to check. Must be a :py:class:`str` or
                         :py:class:`bytes`-like object
             ifError: The value you wish to return on exception (default: ``None``)
+            timeout: The longest you would like to await a value (default: 10s)
 
         Returns:
             The value at said key, or the value at ifError if there's an Exception
         """
         try:
-            return self.__getitem__(key)
+            return self.__getitem__(key, timeout=timeout)
         except Exception:
             return ifError
 
