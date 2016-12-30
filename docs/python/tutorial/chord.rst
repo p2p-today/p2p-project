@@ -1,11 +1,11 @@
 Chord Socket
 ~~~~~~~~~~~~
 
-This is an extension of the :py:class:`~py2p.mesh.mesh_socket` which chordronizes a common :py:class:`dict`. It works by providing an extra handler to store data. This does not expose the entire :py:class:`dict` API, but it exposes a substantial subset, and we're working to expose more.
+This is an extension of the :doc:`mesh_socket <./mesh>` which chordronizes a common :py:class:`dict`. It works by providing an extra handler to store data. This does not expose the entire :py:class:`dict` API, but it exposes a substantial subset, and we're working to expose more.
 
 .. note::
 
-    This is a fairly inefficient architecture for write intensive applications. For cases where the majority of access is reading, or for small networks, this is ideal. For larger networks where a significant portion of your operations are writing values, you should wait for the chord socket to come into beta.
+    This is a fairly inefficient architecture for read intensive applications. For large databases which are infrequently changed, this is ideal. For smaller networks where there is significant access required, you should use the :doc:`sync <./sync>` socket.
 
 Basic Usage
 -----------
@@ -44,8 +44,6 @@ A value can be stored by using the :py:meth:`~py2p.chord.chord_socket.set` metho
 
 Like above, keys and values are all translated to :py:class:`bytes` before being used, so it is required that you use a :py:class:`bytes`-like object.
 
-This will raise a :py:class:`KeyError` if another node has set this value already. Their lease will expire one hour after they set it. If two leases are started at the same UTC second, the tie is settled by doing a string compare of their IDs.
-
 Any node which sets a value can change this value as well. Changing the value renews the lease on it.
 
 :py:meth:`~py2p.chord.chord_socket.__delitem__`
@@ -66,6 +64,18 @@ The update method is simply a wrapper which updates based on a fed :py:class:`di
 
     >>> for key, value in update_dict.items():
     ...     sock[key] = value
+
+:py:meth:`~py2p.chord.chord_socket.keys` / :py:meth:`~py2p.chord.chord_socket.values` / :py:meth:`~py2p.chord.chord_socket.items`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These methods are analagous to the ones in Python's :py:class:`dict`. The main difference is that they emulate the Python 3 behavior. So if you call these from Python 2, they will still return an iterator, rather than a list.
+
+In addition, you should always surround :py:meth:`~py2p.chord.chord_socket.values` and :py:meth:`~py2p.chord.chord_socket.items` in a try-catch for :py:class:`KeyError` and :py:class:`socket.error`. Because the data is almost always stored on other nodes, you cannot guaruntee that an item in :py:meth:`~py2p.chord.chord_socket.keys` is retrievable.
+
+:py:meth:`~py2p.chord.chord_socket.pop` / :py:meth:`~py2p.chord.chord_socket.popitem`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These methods are also analagous to the ones in Python's :py:class:`dict`. The main difference is that, like the above, you should always surround these in a try-catch for :py:class:`KeyError` and :py:class:`socket.error`.
 
 Advanced Usage
 --------------

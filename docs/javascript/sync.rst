@@ -90,4 +90,48 @@ Sync Module
         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
         :raises:              See :js:func:`~js2p.sync.sync_socket.set`
 
+    .. js:function:: js2p.sync.sync_socket.keys()
+
+        Returns a generator for all keys presently in the dictionary
+
+        Because this data is changed asynchronously, the key is
+        only garunteed to be present at the time of generation.
+
+        :returns: A generator which yields :js:class:`Buffer`s
+
+    .. js:function:: js2p.sync.sync_socket.values()
+
+        Returns a generator for all values presently in the
+        dictionary
+
+        Because this data is changed asynchronously, the value is
+        only garunteed to be accurate at the time of generation.
+
+        :returns: A generator which yields :js:class:`Buffer`s
+
+    .. js:function:: js2p.sync.sync_socket.items()
+
+        Returns a generator for all associations presently in the
+        dictionary
+
+        Because this data is changed asynchronously, the association
+        is only garunteed to be present at the time of generation.
+
+        :returns: A generator which yields pairs of
+                  :js:class:`Buffer`s
+
+    .. js:function:: js2p.sync.sync_socket.pop(key [, fallback])
+
+        Returns the value at a given key. As a side effect, it
+        it deletes that key.
+
+        :returns: A :js:class:`Buffer`
+
+    .. js:function:: js2p.sync.sync_socket.popitem()
+
+        Returns the association at a key. As a side effect, it
+        it deletes that key.
+
+        :returns: A pair of :js:class:`Buffer`s
+
 

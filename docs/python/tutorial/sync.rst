@@ -1,11 +1,11 @@
 Sync Socket
 ~~~~~~~~~~~
 
-This is an extension of the :py:class:`~py2p.mesh.mesh_socket` which syncronizes a common :py:class:`dict`. It works by providing an extra handler to store data. This does not expose the entire :py:class:`dict` API, but it exposes a substantial subset, and we're working to expose more.
+This is an extension of the :doc:`mesh_socket <./mesh>` which syncronizes a common :py:class:`dict`. It works by providing an extra handler to store data. This does not expose the entire :py:class:`dict` API, but it exposes a substantial subset, and we're working to expose more.
 
 .. note::
 
-    This is a fairly inefficient architecture for write intensive applications. For cases where the majority of access is reading, or for small networks, this is ideal. For larger networks where a significant portion of your operations are writing values, you should wait for the chord socket to come into beta.
+    This is a fairly inefficient architecture for write intensive applications. For cases where the majority of access is reading, or for small networks, this is ideal. For larger networks with infrequent access, you should use the :doc:`chord <./chord>` socket.
 
 Basic Usage
 -----------
@@ -23,7 +23,7 @@ You can override the last restriction by constructing with ``leasing=False``, li
     >>> from py2p import sync
     >>> sock = sync.sync_socket('0.0.0.0', 4444, leasing=False)
 
-The only API differences between this and :py:class:`~py2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
+The only other API differences between this and :py:class:`~py2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
 
 :py:meth:`~py2p.sync.sync_socket.get` / :py:meth:`~py2p.sync.sync_socket.__getitem__`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

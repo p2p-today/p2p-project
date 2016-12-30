@@ -1,7 +1,7 @@
 Sync Socket
 ~~~~~~~~~~~
 
-This is an extension of the :js:class:`~js2p.mesh.mesh_socket` which syncronizes a common :js:class:`Object`. It works by providing an extra handler to store data. This does not expose the entire :js:class:`Object` API, but it exposes a substantial subset, and we're working to expose more.
+This is an extension of the :doc:`mesh_socket <./mesh>` which syncronizes a common :js:class:`Object`. It works by providing an extra handler to store data. This does not expose the entire :js:class:`Object` API, but it exposes a substantial subset, and we're working to expose more.
 
 .. note::
 
@@ -25,7 +25,7 @@ You can override the last restriction by constructing with ``leasing`` set to ``
 
 Note that the ``leasing`` parameter is supplied *before* a :js:class:`~js2p.base.protocol`.
 
-The only API differences between this and :js:class:`~js2p.mesh.mesh_socket` are for access to this dictionary. They are as follows:
+The only other API differences between this and :js:class:`~js2p.mesh.mesh_socket` are for access to this dictionary. They are as follows:
 
 :js:func:`~js2p.sync.sync_socket.get`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -71,7 +71,7 @@ The update method is simply a wrapper which updates based on a fed :js:class:`Ob
 
 .. code-block:: javascript
 
-    > for (var key in update_dict)  {
+    > for (var key of update_dict)  {
     ... sock.set(key, update_dict[key]);
     ... }
 
