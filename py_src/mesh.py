@@ -250,16 +250,16 @@ class mesh_socket(base_socket):
         """This callback is used to deal with handshake signals. Its three
         primary jobs are:
 
-             - reject connections seeking a different network
-             - set connection state
-             - deal with connection conflicts
+        - reject connections seeking a different network
+        - set connection state
+        - deal with connection conflicts
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.mesh.mesh_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.mesh.mesh_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.handshake and len(packets) == 5:
@@ -292,12 +292,12 @@ class mesh_socket(base_socket):
         is to connect to the given peers, if this does not exceed
         :py:const:`py2p.mesh.max_outgoing`
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.mesh.mesh_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.mesh.mesh_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.peers:
@@ -316,15 +316,15 @@ class mesh_socket(base_socket):
         """This callback is used to deal with response signals. Its two
         primary jobs are:
 
-             - if it was your request, send the deferred message
-             - if it was someone else's request, relay the information
+        - if it was your request, send the deferred message
+        - if it was someone else's request, relay the information
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.mesh.mesh_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.mesh.mesh_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.response:
@@ -343,16 +343,16 @@ class mesh_socket(base_socket):
         """This callback is used to deal with request signals. Its three
         primary jobs are:
 
-             - respond with a peers signal if packets[1] is ``'*'``
-             - if you know the ID requested, respond to it
-             - if you don't, make a request with your peers
+        - respond with a peers signal if packets[1] is ``'*'``
+        - if you know the ID requested, respond to it
+        - if you don't, make a request with your peers
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.mesh.mesh_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.mesh.mesh_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.request:

@@ -168,14 +168,14 @@ class chord_socket(mesh_socket):
         """This callback is used to deal with chord specific metadata.
         Its primary job is:
 
-             - set connection state
+        - set connection state
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.chord.chord_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.chord.chord_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.handshake and len(packets) == 2:
@@ -198,14 +198,14 @@ class chord_socket(mesh_socket):
         """This callback is used to deal with new key entries. Its primary
         job is:
 
-             - Ensure keylist syncronization
+        - Ensure keylist syncronization
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.chord.chord_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.chord.chord_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.notify:
@@ -221,12 +221,12 @@ class chord_socket(mesh_socket):
         is to connect to the given peers, if this does not exceed
         :py:const:`py2p.chord.max_outgoing`
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.chord.chord_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.chord.chord_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.peers:
@@ -252,15 +252,15 @@ class chord_socket(mesh_socket):
         """This callback is used to deal with response signals. Its two
         primary jobs are:
 
-             - if it was your request, send the deferred message
-             - if it was someone else's request, relay the information
+        - if it was your request, send the deferred message
+        - if it was someone else's request, relay the information
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.chord.chord_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.chord.chord_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.retrieved:
@@ -274,48 +274,44 @@ class chord_socket(mesh_socket):
             return True
 
     def __handle_request(self, msg, handler):
-        """This callback is used to deal with request signals. Its three
+        """This callback is used to deal with request signals. Its two
         primary jobs are:
 
-             - respond with a peers signal if packets[1] is ``'*'``
-             - if you know the ID requested, respond to it
-             - if you don't, make a request with your peers
+        - if you know the ID requested, respond to it
+        - if you don't, make a request with your peers
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.chord.chord_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.chord.chord_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.request:
-            if packets[1] == b'*':
-                handler.send(flags.whisper, flags.peers, json.dumps(self.__get_fingers()))
+            goal = from_base_58(packets[1])
+            node = self.find(goal)
+            if node is not self:
+                node.send(flags.whisper, flags.request, packets[1], msg.id)
+                ret = awaiting_value()
+                ret.callback = handler
+                self.requests[(packets[1], msg.id)] = ret
             else:
-                goal = from_base_58(packets[1])
-                node = self.find(goal)
-                if node is not self:
-                    node.send(flags.whisper, flags.request, packets[1], msg.id)
-                    ret = awaiting_value()
-                    ret.callback = handler
-                    self.requests.update({(packets[1], msg.id): ret})
-                else:
-                    handler.send(flags.whisper, flags.retrieved, packets[1], packets[2], self.out_addr)
+                handler.send(flags.whisper, flags.retrieved, packets[1], packets[2], self.out_addr)
             return True
 
     def __handle_retrieve(self, msg, handler):
         """This callback is used to deal with data retrieval signals. Its two primary jobs are:
 
-             - respond with data you possess
-             - if you don't possess it, make a request with your closest peer to that key
+        - respond with data you possess
+        - if you don't possess it, make a request with your closest peer to that key
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.chord.chord_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.chord.chord_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.retrieve:
@@ -329,15 +325,15 @@ class chord_socket(mesh_socket):
     def __handle_store(self, msg, handler):
         """This callback is used to deal with data storage signals. Its two primary jobs are:
 
-             - store data in keys you're responsible for
-             - if you aren't responsible, make a request with your closest peer to that key
+        - store data in keys you're responsible for
+        - if you aren't responsible, make a request with your closest peer to that key
 
-             Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.chord.chord_connection`
+        Args:
+            msg:        A :py:class:`~py2p.base.message`
+            handler:    A :py:class:`~py2p.chord.chord_connection`
 
-             Returns:
-                Either ``True`` or ``None``
+        Returns:
+            Either ``True`` or ``None``
         """
         packets = msg.packets
         if packets[0] == flags.store:
@@ -352,6 +348,7 @@ class chord_socket(mesh_socket):
                         ``0`` will get all data.
             end:    An :py:class:`int` which indicates the end of the desired key range.
                         ``None`` will get all data.
+
         Returns:
             A nested :py:class:`dict` containing your data from start to end
         """
@@ -377,7 +374,7 @@ class chord_socket(mesh_socket):
 
         Returns:
             The value at said key, or an :py:class:`py2p.utils.awaiting_value`
-                object, which will eventually contain its result
+            object, which will eventually contain its result
         """
         if self.routing_table:
             node = self.find(key)
@@ -653,7 +650,7 @@ class chord_socket(mesh_socket):
         return super(chord_socket, self).connect(*args, conn_type=chord_connection, **kwargs)
 
     def keys(self):
-        """Returns an iterator of the underlying :py:class:`dict`s keys"""
+        """Returns an iterator of the underlying :py:class:`dict`'s keys"""
         return (key for key in self.__keys if key in self.__keys)
 
     @inherit_doc(keys)
@@ -661,15 +658,44 @@ class chord_socket(mesh_socket):
         return self.keys()
 
     def values(self):
-        """Returns an iterator of the underlying :py:class:`dict`s values"""
+        """Returns:
+            an iterator of the underlying :py:class:`dict`'s values
+
+        Raises:
+            KeyError:       If the key does not have a majority-recognized
+                                value
+            socket.timeout: See KeyError
+        """
         return (self[key] for key in self.keys())
 
     def items(self):
-        """Returns an iterator of the underlying :py:class:`dict`s items"""
+        """Returns:
+            an iterator of the underlying :py:class:`dict`'s items
+
+        Raises:
+            KeyError:       If the key does not have a majority-recognized
+                                value
+            socket.timeout: See KeyError
+        """
         return ((key, self[key]) for key in self.keys())
 
-    @inherit_doc(dict.pop)
     def pop(self, key, *args):
+        """Returns a value, with the side effect of deleting that association
+
+        Args:
+            Key:        The key you wish to look up. Must be a :py:class:`str`
+                            or :py:class:`bytes`-like object
+            ifError:    The value you wish to return on Exception
+                            (default: raise an Exception)
+
+        Returns:
+            The value of the supplied key, or ``ifError``
+
+        Raises:
+            KeyError:       If the key does not have a majority-recognized
+                                value
+            socket.timeout: See KeyError
+        """
         if len(args):
             ret = self.get(key, args[0])
             if ret != args[0]:
@@ -679,8 +705,18 @@ class chord_socket(mesh_socket):
             del self[key]
         return ret
 
-    @inherit_doc(dict.popitem)
     def popitem(self):
+        """Returns an association, with the side effect of deleting that
+        association
+
+        Returns:
+            An arbitrary association
+
+        Raises:
+            KeyError:       If the key does not have a majority-recognized
+                                value
+            socket.timeout: See KeyError
+        """
         key, value = next(self.items())
         del self[key]
         return (key, value)

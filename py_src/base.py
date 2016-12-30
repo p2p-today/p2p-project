@@ -593,8 +593,8 @@ class base_connection(object):
             msg: The :py:class:`~py2p.base.IntenalMessage` you wish to send
 
         Returns:
-            the :py:class:`~py2p.base.IntenalMessage` object you just sent,
-                or None if the sending was unsuccessful
+            the :py:class:`~py2p.base.IntenalMessage` object you just sent, or
+            ``None`` if the sending was unsuccessful
         """
         msg.compression = self.compression
         if msg.msg_type in (flags.whisper, flags.broadcast):

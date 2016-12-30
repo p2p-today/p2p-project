@@ -210,8 +210,21 @@ class sync_socket(mesh.mesh_socket):
         """Returns an iterator of the underlying :py:class:`dict`s items"""
         return ((key, self[key]) for key in self.keys())
 
-    @inherit_doc(dict.pop)
     def pop(self, key, *args):
+        """Returns a value, with the side effect of deleting that association
+
+        Args:
+            Key:        The key you wish to look up. Must be a :py:class:`str`
+                            or :py:class:`bytes`-like object
+            ifError:    The value you wish to return on Exception
+                            (default: raise an Exception)
+
+        Returns:
+            The value of the supplied key, or ``ifError``
+
+        Raises:
+            KeyError:       If the key does not have an associated value
+        """
         if len(args):
             ret = self.get(key, args[0])
             if ret != args[0]:
@@ -221,8 +234,13 @@ class sync_socket(mesh.mesh_socket):
             del self[key]
         return ret
 
-    @inherit_doc(dict.popitem)
     def popitem(self):
+        """Returns an association, with the side effect of deleting that
+        association
+
+        Returns:
+            An arbitrary association
+        """
         key, value = next(self.items())
         del self[key]
         return (key, value)
