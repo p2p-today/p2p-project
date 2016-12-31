@@ -193,6 +193,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     constructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
         var self = this;
+        this.conn_type = m.mesh_connection;
         this.waterfalls = [];
         this.requests = {};
         this.queue = [];
@@ -204,7 +205,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         if (this.incoming)  {
             if (self.protocol.encryption === 'SSL') {
                 this.incoming.on('secureConnection', function onConnection(sock)   {
-                    var conn = new m.mesh_connection(sock, self, false);
+                    var conn = new self.conn_type(sock, self, false);
                     self._send_handshake_response(conn);
                     self.awaiting_ids = self.awaiting_ids.concat(conn);
                 });
@@ -224,23 +225,6 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                 });
             }
         }
-    }
-
-    get outgoing()  {
-        /**
-        *     .. js:attribute:: js2p.mesh.mesh_socket.outgoing
-        *
-        *         This is an array of all outgoing connections. The length of this array is used to determine
-        *         whether the "socket" should automatically initiate connections
-        */
-        var outs = [];
-        var self = this;
-        Object.keys(this.routing_table).forEach(function(key)   {
-            if (self.routing_table[key].outgoing)   {
-                outs.push(self.routing_table[key]);
-            }
-        });
-        return outs;
     }
 
     recv(num)   {
@@ -332,7 +316,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             return false;
         }
         var conn = base.get_socket(addr, port, this.protocol);
-        var handler = new m.mesh_connection(conn, this, true);
+        var handler = new this.conn_type(conn, this, true);
         handler.id = id;
         if (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss')    {
             var self = this;
@@ -431,7 +415,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.handshake)  {
+        if (packets[0].toString() === base.flags.handshake && packets.length === 5) {
             if (packets[2].toString() !== msg.protocol.id) {
                 this.disconnect(conn);
                 return true;

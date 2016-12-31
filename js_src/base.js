@@ -1115,6 +1115,39 @@ base.base_socket = class base_socket   {
         return "Nominal";
     }
 
+    get outgoing()  {
+        /**
+        *     .. js:attribute:: js2p.mesh.mesh_socket.outgoing
+        *
+        *         This is an array of all outgoing connections. The length of this array is used to determine
+        *         whether the "socket" should automatically initiate connections
+        */
+        var outs = [];
+        for (let key of Object.keys(this.routing_table))   {
+            let node = this.routing_table[key];
+            if (node.outgoing)  {
+                outs.push(node);
+            }
+        }
+        return outs;
+    }
+
+    // get *outgoing()  {
+    //     for (let node of Object.values(this.routing_table)) {
+    //         if (node.outgoing)   {
+    //             yield node;
+    //         }
+    //     }
+    // }
+
+    // get *incoming() {
+    //     for (let node of Object.values(this.routing_table)) {
+    //         if (!node.outgoing)  {
+    //             yield node;
+    //         }
+    //     }
+    // }
+
     register_handler(callback)  {
         /**
         *     .. js:function:: js2p.base.base_socket.register_handler(callback)
