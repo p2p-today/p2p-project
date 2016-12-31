@@ -41,15 +41,15 @@ def distance(a, b, limit=None):
     ``2**384``).
     """
     return (b - a) % (limit or \
-        39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806627990306816)
+        0x1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000)
 
 
 def get_hashes(key):
     """Returns the (adjusted) hashes for a given key. This is in the order of:
 
-    - SHA1 (shifted 224 bits right)
-    - SHA224 (shifted 160 bits right)
-    - SHA256 (shifted 128 bits right)
+    - SHA1 (shifted 224 bits left)
+    - SHA224 (shifted 160 bits left)
+    - SHA256 (shifted 128 bits left)
     - SHA384 (unadjusted)
     - SHA512 (unadjusted)
 
@@ -352,7 +352,6 @@ class chord_socket(mesh_socket):
         Returns:
             A nested :py:class:`dict` containing your data from start to end
         """
-        i = start
         ret = dict(((method, {}) for method in hashes))
         self.__print__("Entering dump_data", level=1)
         for method, table in self.data.items():

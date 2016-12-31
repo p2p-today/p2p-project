@@ -204,27 +204,38 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
         if (this.incoming)  {
             if (self.protocol.encryption === 'SSL') {
-                this.incoming.on('secureConnection', function onConnection(sock)   {
-                    var conn = new self.conn_type(sock, self, false);
-                    self._send_handshake_response(conn);
-                    self.awaiting_ids = self.awaiting_ids.concat(conn);
+                this.incoming.on('secureConnection', (sock)=>{
+                    self.__on_TCP_Connection(sock);
+                });
+            }
+            else if (self.protocol.encryption === 'Plaintext')  {
+                this.incoming.on('connection', (sock)=>{
+                    self.__on_TCP_Connection(sock);
                 });
             }
             else    {
-                this.incoming.on('connection', function onConnection(sock)   {
-                    var conn = new m.mesh_connection(sock, self, false);
-                    if (self.protocol === 'ws' || self.protocol === 'wss') {
-                        sock.on("connect", ()=>{
-                            self._send_handshake_response(conn);
-                        });
-                    }
-                    else    {
-                        self._send_handshake_response(conn);
-                    }
-                    self.awaiting_ids = self.awaiting_ids.concat(conn);
+                this.incoming.on('connection', (sock)=>{
+                    self.__on_WS_Connection(sock);
                 });
             }
         }
+    }
+
+    __on_TCP_Connection(sock)  {
+        var conn = new this.conn_type(sock, this, false);
+        this._send_handshake_response(conn);
+        this.awaiting_ids.push(conn);
+        return conn;
+    }
+
+    __on_WS_Connection(sock)  {
+        var conn = new this.conn_type(sock, this, false);
+        const self = this;
+        sock.on("connect", ()=>{
+            self._send_handshake_response(conn);
+        });
+        this.awaiting_ids.push(conn);
+        return conn;
     }
 
     recv(num)   {
