@@ -23,7 +23,7 @@ import (
 
 const protocol_major_version int = 0
 const protocol_minor_version int = 5
-const node_policy_version int = 551
+const node_policy_version int = 607
 
 func pseudo_uuid() (string) {
     b := make([]byte, 16)

@@ -11,7 +11,7 @@ import java.util.Arrays;
 
 public class base   {
 
-    public static int[] version_info = {0, 5, 551};
+    public static int[] version_info = {0, 5, 607};
     public static String protocol_version = String.valueOf(version_info[0]) + "." + String.valueOf(version_info[1]);
 
     public static long unpack_value(byte[] arr, int len)    {

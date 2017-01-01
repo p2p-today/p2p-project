@@ -21,7 +21,7 @@ from .utils import (
     getUTC, intersect, get_lan_ip, get_socket, sanitize_packet, inherit_doc)
 
 protocol_version = "0.5"
-node_policy_version = "551"
+node_policy_version = "607"
 
 version = '.'.join((protocol_version, node_policy_version))
 
