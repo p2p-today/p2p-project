@@ -395,7 +395,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             node = this.find(key);
         }
         else    {
-            node = this.awaiting_ids[Math.floor(Math.random()*items.length)];
+            node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
         }
         if (Object.is(node, this))  {
             return new m.awaiting_value(this.data[method][key]);
@@ -418,7 +418,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         common, count = most_common(vals)
         let iters = 0
         let limit = Math.floor(timeout / 0.1) || 100;
-        let fails = new Set([None, b'', -1]);
+        let fails = new Set([undefined, null, '', -1]);
         while (fails.has(common) && iters < limit)  {
             time.sleep(0.1)
             iters += 1
@@ -435,7 +435,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         }
     }
 
-    get(key, fallback)  {
+    get(key, fallback, timeout) {
         /**
         *     .. js:function:: js2p.chord.chord_socket.get(key [, fallback])
         *
@@ -448,13 +448,33 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *
         *         :raises TypeError:    If the key could not be transformed into a :js:class:`Buffer`
         */
+        try {
+            return this.get_no_fallback(key, timeout);
+        }
+        catch (e)   {
+            return fallback;
+        }
     }
 
-    __store(method, key, data)  {
-
+    __store(method, key, value) {
+        let node = this.find(key);
+        if (this.leeching && Object.is(node, this)) {
+            node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
+        }
+        if (Object.is(node, this))  {
+            if (value.toString() === '')    {
+                delete this.data[method][key];
+            }
+            else    {
+                this.data[method][key] = value;
+            }
+        }
+        else    {
+            node.send(flags.whisper, [base.flags.store, method, base.to_base_58(key), value]);
+        }
     }
 
-    set(key, data) {
+    set(key, value) {
         /**
         *     .. js:function:: js2p.chord.chord_socket.set(key, value)
         *
@@ -466,6 +486,22 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
         *         :raises:              See :js:func:`~js2p.chord.chord_socket.__store`
         */
+        key = new Buffer(key);
+        value = new Buffer(value);
+        let keys = m.get_hashes(key);
+        this.__store('sha1', keys[0], value);
+        this.__store('sha224', keys[1], value);
+        this.__store('sha256', keys[2], value);
+        this.__store('sha384', keys[3], value);
+        this.__store('sha512', keys[4], value);
+        if (!this.__keys.has(key) && value.toString() !== '')   {
+            this.__keys.add(key);
+            this.send([key], undefined, base.flags.notify);
+        }
+        else if (this.__keys.has(key) && value.toString() === '')   {
+            this.__keys.add(key);
+            this.send([key, 'del'], undefined, base.flags.notify);
+        }
     }
 
     update(update_dict) {

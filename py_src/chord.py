@@ -489,9 +489,12 @@ class chord_socket(mesh_socket):
         keys = get_hashes(key)
         for method, x in zip(hashes, keys):
             self.__store(method, x, value)
-        if key not in self.__keys:
+        if key not in self.__keys and value != b'':
             self.__keys.add(key)
             self.send(key, type=flags.notify)
+        elif key in self.__keys and value == b'':
+            self.__keys.add(key)
+            self.send(key, b'del', type=flags.notify)
 
     @inherit_doc(__setitem__)
     def set(self, key, value):
@@ -503,8 +506,6 @@ class chord_socket(mesh_socket):
         if key not in self.__keys:
             raise KeyError(key)
         self.set(key, '')
-        self.__keys.remove(key)
-        self.send(key, b'del', type=flags.notify)
 
     def update(self, update_dict):
         """Equivalent to :py:meth:`dict.update`
