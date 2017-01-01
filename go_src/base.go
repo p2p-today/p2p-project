@@ -17,8 +17,13 @@ import (
     "io/ioutil"
     "reflect"
     "strings"
+    "strconv"
     "time"
 )
+
+const protocol_major_version int = 0
+const protocol_minor_version int = 5
+const node_policy_version int = 607
 
 func pseudo_uuid() (string) {
     b := make([]byte, 16)
@@ -207,10 +212,11 @@ func (p protocol) id() string    {
     info := []byte(p.subnet + p.encryption)
     hash := sha256.New()
     hash.Write(info)
+    hash.Write([]byte(strconv.Itoa(protocol_major_version) + "." + strconv.Itoa(protocol_minor_version)))
     return to_base_58(hash.Sum([]byte("")))
 }
 
-type pathfinding_message struct {
+type InternalMessage struct {
     protocol            protocol
     msg_type            string
     sender              string
@@ -220,21 +226,22 @@ type pathfinding_message struct {
     compression_fail    bool
 }
 
-func (msg pathfinding_message) time_58() string {
+func (msg InternalMessage) time_58() string {
     return to_base_58_from_int64(msg.time)
 }
 
-func (msg pathfinding_message) id() string  {
+func (msg InternalMessage) id() string  {
     payload_bytes := make([]byte, 0)
     for i := 0; i < len(msg.payload); i++   {
         payload_bytes = append(payload_bytes, msg.payload[i]...)
     }
     hash := sha512.New384()
     hash.Write(payload_bytes)
+    hash.Write([]byte(msg.time_58()))
     return to_base_58_from_bytes(hash.Sum([]byte("")))
 }
 
-func (msg pathfinding_message) packets() [][]byte   {
+func (msg InternalMessage) packets() [][]byte   {
     meta := [][]byte{
         []byte(msg.msg_type),
         []byte(msg.sender),
@@ -243,7 +250,7 @@ func (msg pathfinding_message) packets() [][]byte   {
     return append(meta, msg.payload...)
 }
 
-func (msg pathfinding_message) compression_used() string    {
+func (msg InternalMessage) compression_used() string    {
     for i := 0; i < len(msg.compression); i++   {
         for j := 0; j < len(compression); j++   {
             if msg.compression[i] == compression[j] {
@@ -254,27 +261,26 @@ func (msg pathfinding_message) compression_used() string    {
     return ""
 }
 
-func (msg pathfinding_message) base_bytes() []byte  {
-    header := make([]byte, 0)
-    payload := make([]byte, 0)
+func (msg InternalMessage) base_bytes() []byte  {
+    ret := make([]byte, 0)
     packets := msg.packets()
     for i := 0; i < len(packets); i++   {
-        header = append(header, pack_ulong(int64(len(packets[i])))...)
-        payload = append(payload, packets[i]...)
+        ret = append(ret, pack_ulong(int64(len(packets[i])))...)
+        ret = append(ret, packets[i]...)
     }
     if comp := msg.compression_used(); comp != ""   {
-        return compress(append(header, payload...), comp)
+        return compress(ret, comp)
     }
-    return append(header, payload...)
+    return ret
 }
 
-func (msg pathfinding_message) bytes() []byte   {
+func (msg InternalMessage) bytes() []byte   {
     payload := msg.base_bytes()
     header := pack_ulong(int64(len(payload)))
     return append(header, payload...)
 }
 
-func new_pathfinding_message(prot protocol, msg_type string, sender string, payload interface{}, compressions interface{}) (pathfinding_message)   {
+func new_InternalMessage(prot protocol, msg_type string, sender string, payload interface{}, compressions interface{}) (InternalMessage)   {
     fmtd_payload := make([][]byte, 0)
     fmtd_compression := make([]string, 0)
     switch payload.(type)   {
@@ -299,7 +305,7 @@ func new_pathfinding_message(prot protocol, msg_type string, sender string, payl
         default:
             panic("compressions are wrong type")
     }
-    return pathfinding_message{
+    return InternalMessage{
                 protocol:         prot,
                 msg_type:         msg_type,
                 sender:           sender,
@@ -338,27 +344,22 @@ func decompress_string(b []byte, compressions []string) []byte   {
 func process_string(b []byte) [][]byte  {
     processed := 0
     expected := len(b)
-    pack_lens := make([]int, 0)
     packets := make([][]byte, 0)
-    for processed != expected   {
-        pack_lens = append(pack_lens, int(get_ulong(b[processed:processed+4])))
+    for processed <= expected   {
+        length := int(get_ulong(b[processed:processed+4]))
         processed += 4
-        expected -= pack_lens[len(pack_lens)-1]
-    }
-    for _, val := range pack_lens {
-        start := processed
-        processed += val
-        end := processed
-        packets = append(packets, b[start:end])
+        end := processed + length
+        packets = append(packets, b[processed:end])
+        processed = end
     }
     return packets
 }
 
-func feed_string(prot protocol, b []byte, sizeless bool, compressions []string) pathfinding_message {
+func feed_string(prot protocol, b []byte, sizeless bool, compressions []string) InternalMessage {
     b = sanitize_string(b, sizeless)
     b = decompress_string(b, compressions)
     packets := process_string(b)
-    return pathfinding_message{
+    return InternalMessage{
                 protocol:         prot,
                 msg_type:         string(packets[0]),
                 sender:           string(packets[1]),
@@ -379,7 +380,7 @@ func main() {
                 subnet: "hi",
                 encryption: "Plaintext"}.id())
     fmt.Println(pseudo_uuid())
-    test_msg := new_pathfinding_message(
+    test_msg := new_InternalMessage(
         protocol{
             "hi",
             "Plaintext"},
@@ -410,4 +411,5 @@ func main() {
                     []string{"zlib"})
     fmt.Println(from_feed.bytes())
     fmt.Println(string(test_msg.bytes()) == string(from_feed.bytes()))
+    fmt.Println(string(test_msg.id()))
 }

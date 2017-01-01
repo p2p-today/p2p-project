@@ -11,9 +11,6 @@ var buffer = require('buffer');  // These ensure parser compatability with brows
 var Buffer = buffer.Buffer;
 var BigInt = require('big-integer');
 var SHA = require('jssha');
-var zlib = require('zlibjs');
-var assert = require('assert');
-var net = require('net');
 var util = require('util');
 
 /**
@@ -64,7 +61,7 @@ else {
 *     This is :js:data:`~js2p.base.version_info` joined in the format ``'a.b.c'``
 */
 
-base.version_info = [0, 4, 516];
+base.version_info = [0, 5, 607];
 base.node_policy_version = base.version_info[2].toString();
 base.protocol_version = base.version_info.slice(0, 2).join(".");
 base.version = base.version_info.join('.');
@@ -78,23 +75,24 @@ base.flags = {
     reserved: ['\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
                '\x08', '\x09', '\x0A', '\x0B', '\x0C', '\x0D', '\x0E', '\x0F',
                '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17',
-               '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F'],
+               '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F',
+               '\x20', '\x21', '\x22', '\x23', '\x24', '\x25', '\x26', '\x27',
+               '\x28', '\x29', '\x2A', '\x2B', '\x2C', '\x2D', '\x2E', '\x2F'],
 
     //main flags
     broadcast:   '\x00',
-    waterfall:   '\x01',
+    renegotiate: '\x01',
     whisper:     '\x02',
-    renegotiate: '\x03',
-    ping:        '\x04',
-    pong:        '\x05',
+    ping:        '\x03',
+    pong:        '\x04',
 
     //sub-flags
     //broadcast: '\x00',
     compression: '\x01',
     //whisper:   '\x02',
-    handshake:   '\x03',
-    //ping:      '\x04',
-    //pong:      '\x05',
+    //ping:      '\x03',
+    //pong:      '\x04',
+    handshake:   '\x05',
     notify:      '\x06',
     peers:       '\x07',
     request:     '\x08',
@@ -102,12 +100,16 @@ base.flags = {
     response:    '\x0A',
     store:       '\x0B',
     retrieve:    '\x0C',
+    retrieve:    '\x0D',
+
+    //implemented compression methods
+    gzip:     '\x11',
+    zlib:     '\x13',
+    snappy:   '\x20',
 
     //compression methods
     bz2:      '\x10',
-    gzip:     '\x11',
     lzma:     '\x12',
-    zlib:     '\x13',
     bwtc:     '\x14',
     context1: '\x15',
     defsum:   '\x16',
@@ -122,8 +124,79 @@ base.flags = {
     simple:   '\x1F'
 };
 
-base.compression = [base.flags.zlib, base.flags.gzip];
+base.compression = []; //base.flags.snappy, base.flags.zlib, base.flags.gzip];
+
+try {
+    base.snappy = require('snappy');
+    base.compression = base.compression.concat(base.flags.snappy);
+}
+catch (e) {
+    console.log("Couldn't load snappy compression (Ignore if in browser)");
+}
+
+try {
+    base.zlib = require('zlibjs');
+    base.compression = base.compression.concat(base.flags.zlib);
+    base.compression = base.compression.concat(base.flags.gzip);
+}
+catch (e) {
+    console.log("Couldn't load zlib/gzip compression");
+}
+
 base.json_compressions = JSON.stringify(base.compression);
+
+
+base.compress = function compress(text, method) {
+    /**
+    * .. js:function:: js2p.base.compress(text, method)
+    *
+    *     This function is a shortcut for compressing data using a predefined method
+    *
+    *     :param text:      The string or Buffer-like object you wish to compress
+    *     :param method:    A compression method as defined in :js:data:`~js2p.base.flags`
+    *
+    *     :returns: A variabley typed object containing a compressed version of text
+    */
+    if (method === base.flags.zlib) {
+        return base.zlib.deflateSync(new Buffer(text));
+    }
+    else if (method === base.flags.gzip) {
+        return base.zlib.gzipSync(new Buffer(text));
+    }
+    else if (method === base.flags.snappy) {
+        return base.snappy.compressSync(new Buffer(text));
+    }
+    else {
+        throw new Error("Unknown compression method");
+    }
+};
+
+
+base.decompress = function decompress(text, method) {
+    /**
+    * .. js:function:: js2p.base.decompress(text, method)
+    *
+    *     This function is a shortcut for decompressing data using a predefined method
+    *
+    *     :param text:      The string or Buffer-like object you wish to decompress
+    *     :param method:    A compression method as defined in :js:data:`~js2p.base.flags`
+    *
+    *     :returns: A variabley typed object containing a decompressed version of text
+    */
+    if (method === base.flags.zlib) {
+        return base.zlib.inflateSync(new Buffer(text));
+    }
+    else if (method === base.flags.gzip) {
+        return base.zlib.gunzipSync(new Buffer(text));
+    }
+    else if (method === base.flags.snappy) {
+        return base.snappy.uncompressSync(new Buffer(text));
+    }
+    else {
+        throw new Error("Unknown compression method");
+    }
+};
+
 
 // User salt generation pulled from: http://stackoverflow.com/a/2117523
 base.user_salt = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -147,7 +220,7 @@ base.intersect = function intersect()    {
     var last = arguments.length - 1;
     var seen={};
     var result=[];
-    for (var i = 1; i <= last; i++)   {
+    for (let i = 1; i <= last; i++)   {
         for (var j = 0; j < arguments[i].length; j++)  {
             if (seen[arguments[i][j]])  {
                 seen[arguments[i][j]] += 1;
@@ -157,7 +230,7 @@ base.intersect = function intersect()    {
             }
         }
     }
-    for (var i = 0; i < arguments[0].length; i++) {
+    for (let i = 0; i < arguments[0].length; i++) {
         if ( seen[arguments[0][i]] === last)
             result.push(arguments[0][i]);
         }
@@ -176,7 +249,7 @@ base.unpack_value = function unpack_value(str)  {
     */
     str = new Buffer(str, 'ascii');
     var val = BigInt.zero;
-    for (var i = 0; i < str.length; i++)    {
+    for (let i = 0; i < str.length; i++)    {
         val = val.shiftLeft(8);
         val = val.add(str[i]);
     }
@@ -195,7 +268,7 @@ base.pack_value = function pack_value(len, i) {
     *     :returns: A big endian buffer of length len
     */
     var arr = new Buffer(new Array(len));
-    for (var j = 0; j < len && i != 0; j++)    {
+    for (let j = 0; j < len && i !== 0; j++)    {
         arr[len - j - 1] = i & 0xff;
         i = i >> 8;
     }
@@ -245,7 +318,7 @@ base.from_base_58 = function from_base_58(string) {
     finally {
         var decimal = new BigInt(0);
         //for char in string {
-        for (var i = 0; i < string.length; i++) {
+        for (let i = 0; i < string.length; i++) {
             decimal = decimal.times(58).plus(base.base_58.indexOf(string[i]));
         }
         return decimal;
@@ -295,52 +368,6 @@ base.SHA256 = function SHA256(text) {
 };
 
 
-base.compress = function compress(text, method) {
-    /**
-    * .. js:function:: js2p.base.compress(text, method)
-    *
-    *     This function is a shortcut for compressing data using a predefined method
-    *
-    *     :param text:      The string or Buffer-like object you wish to compress
-    *     :param method:    A compression method as defined in :js:data:`~js2p.base.flags`
-    *
-    *     :returns: A variabley typed object containing a compressed version of text
-    */
-    if (method === base.flags.zlib) {
-        return zlib.deflateSync(new Buffer(text));
-    }
-    else if (method === base.flags.gzip) {
-        return zlib.gzipSync(new Buffer(text));
-    }
-    else {
-        throw new Error("Unknown compression method");
-    }
-};
-
-
-base.decompress = function decompress(text, method) {
-    /**
-    * .. js:function:: js2p.base.decompress(text, method)
-    *
-    *     This function is a shortcut for decompressing data using a predefined method
-    *
-    *     :param text:      The string or Buffer-like object you wish to decompress
-    *     :param method:    A compression method as defined in :js:data:`~js2p.base.flags`
-    *
-    *     :returns: A variabley typed object containing a decompressed version of text
-    */
-    if (method === base.flags.zlib) {
-        return zlib.inflateSync(new Buffer(text));
-    }
-    else if (method === base.flags.gzip) {
-        return zlib.gunzipSync(new Buffer(text));
-    }
-    else {
-        throw new Error("Unknown compression method");
-    }
-};
-
-
 base.protocol = class protocol {
     /**
     * .. js:class:: js2p.base.protocol(subnet, encryption)
@@ -370,9 +397,103 @@ base.protocol = class protocol {
 
 base.default_protocol = new base.protocol('', 'Plaintext');
 
-base.pathfinding_message = class pathfinding_message {
+function getCertKeyPair()   {
+    console.log("Creating key pair");
+    const pki = require('node-forge').pki;
+    var keys = pki.rsa.generateKeyPair(2048);
+    var cert = pki.createCertificate();
+    console.log("Setting attributes");
+    cert.publicKey = keys.publicKey;
+    cert.serialNumber = '01';
+    cert.validity.notBefore = new Date();
+    cert.validity.notAfter = new Date();
+    cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1);
+    var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+    }, {
+        name: 'countryName',
+        value: 'US'
+    }, {
+        shortName: 'ST',
+        value: 'Virginia'
+    }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+    }, {
+        name: 'organizationName',
+        value: 'Test'
+    }, {
+        shortName: 'OU',
+        value: 'Test'
+    }];
+    cert.setSubject(attrs);
+    cert.setIssuer(attrs);
+    cert.setExtensions([{
+        name: 'basicConstraints',
+        cA: false
+    }]);
+    console.log("Signing");
+    cert.sign(keys.privateKey);
+    console.log("Returning");
+    return [pki.certificateToPem(cert), pki.privateKeyToPem(keys.privateKey)];
+}
+
+base.get_server = function get_server(aProtocol)    {
+    if (aProtocol.encryption === 'Plaintext')   {
+        return new require('net').Server();
+    }
+    else if (aProtocol.encryption === 'ws' || aProtocol.encryption === 'wss')    {
+        if (require('net').connect === undefined)   {
+            return null;
+        }
+        var options = {
+            secure: aProtocol.encryption === 'wss'
+        };
+        return require('nodejs-websocket').createServer(options);
+    }
+    else if (aProtocol.encryption === 'SSL')    {
+        let certKeyPair = getCertKeyPair();
+        let options = {
+            cert: certKeyPair[0],
+            key: certKeyPair[1]
+        };
+        return require('tls').createServer(options);
+    }
+    else    {
+        throw new Error("Unknown transport protocol");
+    }
+}
+
+base.get_socket = function get_socket(addr, port, aProtocol)    {
+    if (aProtocol.encryption === 'Plaintext')   {
+        var conn = new require('net').Socket();
+        conn.connect(port, addr);
+        return conn;
+    }
+    else if (aProtocol.encryption === 'ws' || aProtocol.encryption === 'wss')    {
+        var url = `${aProtocol.encryption}://${addr}:${port}`;
+        if (require('net').connect === undefined)   {
+            return new WebSocket(url);
+        }
+        else    {
+            return new require('nodejs-websocket').connect(url);
+        }
+    }
+    else if (aProtocol.encryption === 'SSL')    {
+        let options = {
+            rejectUnauthorized: false
+        };
+        return require('tls').connect(port, addr, options);
+    }
+    else    {
+        throw new Error("Unknown transport protocol");
+    }
+}
+
+base.InternalMessage = class InternalMessage {
     /**
-    * .. js:class:: js2p.base.pathfinding_message(msg_type, sender, payload, compression, timestamp)
+    * .. js:class:: js2p.base.InternalMessage(msg_type, sender, payload, compression, timestamp)
     *
     *     This is the message serialization/deserialization class.
     *
@@ -396,7 +517,7 @@ base.pathfinding_message = class pathfinding_message {
 
     static feed_string(string, sizeless, compressions) {
         /**
-        *     .. js:function:: js2p.base.pathfinding_message.feed_string(string, sizeless, compressions)
+        *     .. js:function:: js2p.base.InternalMessage.feed_string(string, sizeless, compressions)
         *
         *         This method deserializes a message
         *
@@ -404,17 +525,19 @@ base.pathfinding_message = class pathfinding_message {
         *         :param sizeless:      A bool-like object describing whether the size header is present
         *         :param compressions:  A list of possible compression methods this message may be under
         *
-        *         :returns: A :js:class:`~js2p.base.pathfinding_message` object containing the deserialized message
+        *         :returns: A :js:class:`~js2p.base.InternalMessage` object containing the deserialized message
         */
-        string = base.pathfinding_message.sanitize_string(string, sizeless)
-        var compression_return = base.pathfinding_message.decompress_string(string, compressions)
+        string = base.InternalMessage.sanitize_string(string, sizeless)
+        var compression_return = base.InternalMessage.decompress_string(string, compressions)
         var compression_fail = compression_return[1]
         string = compression_return[0]
-        var packets = base.pathfinding_message.process_string(string)
-        var msg = new base.pathfinding_message(packets[0], packets[1], packets.slice(4), compressions)
+        var packets = base.InternalMessage.process_string(string)
+        var msg = new base.InternalMessage(packets[0], packets[1], packets.slice(4), compressions)
         msg.time = base.from_base_58(packets[3])
         msg.compression_fail = compression_fail
-        assert (msg.id === packets[2].toString(), `ID check failed. ${msg.id} !== ${packets[2].toString()}`)
+        if (msg.id !== packets[2].toString())   {
+            throw new Error(`ID check failed. ${msg.id} !== ${packets[2].toString()}`);
+        }
         return msg
     }
 
@@ -460,28 +583,22 @@ base.pathfinding_message = class pathfinding_message {
     static process_string(string) {
         var processed = 0;
         var expected = string.length;
-        var pack_lens = [];
         var packets = [];
         while (processed < expected) {
-            pack_lens = pack_lens.concat(base.unpack_value(new Buffer(string.slice(processed, processed+4))));
+            let len = base.unpack_value(new Buffer(string.slice(processed, processed+4)));
             processed += 4;
-            expected -= pack_lens[pack_lens.length - 1];
+            packets = packets.concat(new Buffer(string.slice(processed, processed+len)));
+            processed += len;
         }
         if (processed > expected)   {
-            throw `Could not parse correctly processed=${processed}, expected=${expected}, pack_lens=${pack_lens}`;
-        }
-        // Then revarruct the packets
-        for (var i=0; i < pack_lens.length; i++) {
-            var end = processed + pack_lens[i];
-            packets = packets.concat([string.slice(processed, end)]);
-            processed = end;
+            throw `Could not parse correctly processed=${processed}, expected=${expected}, packets=${packets}`;
         }
         return packets;
     }
 
     get compression_used() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.compression_used
+        *     .. js:attribute:: js2p.base.InternalMessage.compression_used
         *
         *         Returns the compression method used in this message, as defined in :js:data:`~js2p.base.flags`, or ``undefined`` if none
         */
@@ -496,12 +613,12 @@ base.pathfinding_message = class pathfinding_message {
 
     get time_58() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.time
+        *     .. js:attribute:: js2p.base.InternalMessage.time
         *
         *         Returns the timestamp of this message
         *
         *
-        *     .. js:attribute:: js2p.base.pathfinding_message.time_58
+        *     .. js:attribute:: js2p.base.InternalMessage.time_58
         *
         *         Returns the timestamp encoded in base_58
         */
@@ -510,7 +627,7 @@ base.pathfinding_message = class pathfinding_message {
 
     get id() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.id
+        *     .. js:attribute:: js2p.base.InternalMessage.id
         *
         *         Returns the ID/checksum associated with this message
         */
@@ -527,12 +644,12 @@ base.pathfinding_message = class pathfinding_message {
 
     get packets() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.payload
+        *     .. js:attribute:: js2p.base.InternalMessage.payload
         *
         *         Returns the payload "packets" associated with this message
         *
         *
-        *     .. js:attribute:: js2p.base.pathfinding_message.packets
+        *     .. js:attribute:: js2p.base.InternalMessage.packets
         *
         *         Returns the total "packets" associated with this message
         */
@@ -544,14 +661,10 @@ base.pathfinding_message = class pathfinding_message {
         var buf_array = [];
         var packets = this.packets;
         for (var i = 0; i < packets.length; i++)    {
+            buf_array.push(base.pack_value(4, packets[i].length));
             buf_array.push(new Buffer(packets[i]));
         }
         var total = Buffer.concat(buf_array);
-        var headers = [];
-        for (var i = 0; i < buf_array.length; i++) {
-            headers = headers.concat(base.pack_value(4, buf_array[i].length));
-        }
-        total = Buffer.concat(headers.concat(total));
         if (this.compression_used) {
             total = base.compress(total, this.compression_used);
         }
@@ -560,7 +673,7 @@ base.pathfinding_message = class pathfinding_message {
 
     get string() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.string
+        *     .. js:attribute:: js2p.base.InternalMessage.string
         *
         *         Returns a Buffer containing the serialized version of this message
         */
@@ -570,7 +683,7 @@ base.pathfinding_message = class pathfinding_message {
 
     get length() {
         /**
-        *     .. js:attribute:: js2p.base.pathfinding_message.length
+        *     .. js:attribute:: js2p.base.InternalMessage.length
         *
         *         Returns the length of this message when serialized
         */
@@ -588,7 +701,7 @@ base.message = class message {
     *
     *     This is the message class we present to the user.
     *
-    *     :param js2p.base.pathfinding_message msg: This is the serialization object you received
+    *     :param js2p.base.InternalMessage msg: This is the serialization object you received
     *     :param js2p.base.base_socket sender:      This is the "socket" object that received it
     */
     constructor(msg, server) {
@@ -722,18 +835,50 @@ base.base_connection = class base_connection   {
         this.active = false;
         var self = this;
 
-        this.sock.on('data', function(data) {
-            self.collect_incoming_data(self, data);
-        });
-        this.sock.on('end', function()  {
-            self.onEnd();
-        });
-        this.sock.on('error', function(err)    {
-            self.onError(err);
-        });
-        this.sock.on('close', function()    {
-            self.onClose();
-        });
+        if (this.sock.on)   {
+            this.sock.on('data', (data)=>{
+                self.collect_incoming_data(self, data);
+            });
+            this.sock.on('text', (data)=>{
+                self.collect_incoming_data(self, new Buffer(data));
+            });
+            this.sock.on('binary', (inStream)=>{
+                inStream.on("readable", ()=>{
+                    var newData = inStream.read();
+                    if (newData)    {
+                        self.collect_incoming_data(self, newData);
+                    }
+                });
+            });
+            this.sock.on('end', ()=>{
+                self.onEnd();
+            });
+            this.sock.on('error', (err)=>{
+                self.onError(err);
+            });
+            this.sock.on('close', ()=>{
+                self.onClose();
+            });
+        }
+        else    {
+            this.sock.onmessage = (evt)=>{
+                var fileReader = new FileReader();
+                fileReader.onload = function() {
+                    var data = fileReader.result;
+                    self.collect_incoming_data(self, Buffer.from(data));
+                };
+                fileReader.readAsArrayBuffer(evt.data);
+            };
+            this.sock.onend = (evt)=>{
+                self.onEnd();
+            };
+            this.sock.onerror = (evt)=>{
+                self.onError(evt);
+            };
+            this.sock.onclose = (evt)=>{
+                self.onClose();
+            };
+        }
     }
 
     onEnd() {
@@ -752,8 +897,13 @@ base.base_connection = class base_connection   {
         *         This function is run when a connection experiences an error
         */
         console.log(`Error: ${err}`);
-        this.sock.end();
-        this.sock.destroy();
+        if (this.sock.end)  {
+            this.sock.end();
+            this.sock.destroy(); //These implicitly remove from routing table
+        }
+        else    {
+            this.sock.close();
+        }
     }
 
     onClose()   {
@@ -765,29 +915,20 @@ base.base_connection = class base_connection   {
         console.log(`Connection to ${this.id || this} closed. This is the template function`);
     }
 
-    send(msg_type, packs, id, time)  {
+    send_InternalMessage(msg)   {
         /**
-        *     .. js:function:: js2p.base.base_connection.send(msg_type, packs, id, time)
+        *     .. js:function:: js2p.base.base_connection.send_InternalMessage(msg)
         *
         *         Sends a message through its connection.
         *
-        *         :param msg_type:      Message type, corresponds to the header in a :js:class:`~js2p.base.pathfinding_message` object
-        *         :param packs:         A list of Buffer-like objects, which correspond to the packets to send to you
-        *         :param id:            The ID this message should appear to be sent from (default: your ID)
-        *         :param number time:   The time this message should appear to be sent from (default: now in UTC)
+        *         :param js2p.base.InternalMessage msg:      A :js:class:`~js2p.base.InternalMessage` object
         *
-        *         :returns: the :js:class:`~js2p.base.pathfinding_message` object you just sent, or ``undefined`` if the sending was unsuccessful
+        *         :returns: the :js:class:`~js2p.base.InternalMessage` object you just sent, or ``undefined`` if the sending was unsuccessful
         */
-
-        //This section handles waterfall-specific flags
-        // console.log(packs);
-        id = id || this.server.id;  //Latter is returned if key not found
-        time = time || base.getUTC();
-        //Begin real method
-        var msg = new base.pathfinding_message(msg_type, id, packs, this.compression, time);
+        msg.compression = this.compression;
         // console.log(msg.payload);
-        if (msg_type === base.flags.whisper || msg_type === base.flags.broadcast) {
-            this.last_sent = [msg_type].concat(packs);
+        if (msg.msg_type === base.flags.whisper || msg.msg_type === base.flags.broadcast) {
+            this.last_sent = [msg.msg_type].concat(packs);
         }
         // this.__print__(`Sending ${[msg.len()].concat(msg.packets)} to ${this}`, 4);
         if (msg.compression_used)   {
@@ -796,13 +937,41 @@ base.base_connection = class base_connection   {
         }
         // try {
             //console.log(`Sending message ${JSON.stringify(msg.string.toString())} to ${this.id}`);
-            this.sock.write(msg.string, 'ascii')
-            return msg
+            if (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss')    {
+                this.sock.send(new Buffer(msg.string, 'ascii'));
+            }
+            else    {
+                this.sock.write(msg.string, 'ascii');
+            }
+            return msg;
         // }
         // catch(e)   {
         //     self.server.daemon.exceptions.append((e, traceback.format_exc()))
         //     self.server.disconnect(self)
         // }
+    }
+
+    send(msg_type, packs, id, time)  {
+        /**
+        *     .. js:function:: js2p.base.base_connection.send(msg_type, packs, id, time)
+        *
+        *         Sends a message through its connection.
+        *
+        *         :param msg_type:      Message type, corresponds to the header in a :js:class:`~js2p.base.InternalMessage` object
+        *         :param packs:         A list of Buffer-like objects, which correspond to the packets to send to you
+        *         :param id:            The ID this message should appear to be sent from (default: your ID)
+        *         :param number time:   The time this message should appear to be sent from (default: now in UTC)
+        *
+        *         :returns: the :js:class:`~js2p.base.InternalMessage` object you just sent, or ``undefined`` if the sending was unsuccessful
+        */
+
+        //This section handles waterfall-specific flags
+        // console.log(packs);
+        id = id || this.server.id;  //Latter is returned if key not found
+        time = time || base.getUTC();
+        //Begin real method
+        var msg = new base.InternalMessage(msg_type, id, packs, this.compression, time);
+        return this.send_InternalMessage(msg);
     }
 
     get protocol()  {
@@ -844,7 +1013,7 @@ base.base_connection = class base_connection   {
         *         :returns: The deserialized message received
         */
         //console.log("I got called");
-        var msg = base.pathfinding_message.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
+        var msg = base.InternalMessage.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
         this.buffer = this.buffer.slice(this.expected);
         this.expected = 4;
         this.active = false;
@@ -862,10 +1031,10 @@ base.base_connection = class base_connection   {
         *
         *         :returns: ``true`` if action was taken, ``undefined`` if not
         */
-        if (packets[0] == base.flags.renegotiate)    {
-            if (packets[4] == base.flags.compression)   {
+        if (packets[0].toString() === base.flags.renegotiate)    {
+            if (packets[4].toString() === base.flags.compression)   {
                 var encoded_methods = JSON.parse(packets[5]);
-                var respond = (this.compression != encoded_methods);
+                var respond = (base.intersect(this.compression, encoded_methods).length !== this.compression.length);
                 this.compression = encoded_methods;
                 // self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
                 if (respond)    {
@@ -874,7 +1043,7 @@ base.base_connection = class base_connection   {
                 }
                 return true;
             }
-            else if (packets[4] == base.flags.resend)   {
+            else if (packets[4].toString() === base.flags.resend)   {
                 var type = self.last_sent[0];
                 var packs = self.last_sent.slice(1);
                 self.send(type, packs);
@@ -910,9 +1079,17 @@ base.base_socket = class base_socket   {
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         var self = this;
-        this.addr = [addr, port];
-        this.incoming = new net.Server();
-        this.incoming.listen(port, addr);
+        if (addr === '0.0.0.0') {
+            let ip = require('ip');
+            this.addr = [ip.address(), port];
+        }
+        else    {
+            this.addr = [addr, port];
+        }
+        this.incoming = base.get_server(protocol);
+        if (this.incoming)  {
+            this.incoming.listen(port, addr);
+        }
         this.protocol = protocol || base.default_protocol;
         this.out_addr = out_addr || this.addr;
         this.debug_level = debug_level || 0;
@@ -937,6 +1114,39 @@ base.base_socket = class base_socket   {
         }
         return "Nominal";
     }
+
+    get outgoing()  {
+        /**
+        *     .. js:attribute:: js2p.mesh.mesh_socket.outgoing
+        *
+        *         This is an array of all outgoing connections. The length of this array is used to determine
+        *         whether the "socket" should automatically initiate connections
+        */
+        var outs = [];
+        for (let key of Object.keys(this.routing_table))   {
+            let node = this.routing_table[key];
+            if (node.outgoing)  {
+                outs.push(node);
+            }
+        }
+        return outs;
+    }
+
+    // get *outgoing()  {
+    //     for (let node of Object.values(this.routing_table)) {
+    //         if (node.outgoing)   {
+    //             yield node;
+    //         }
+    //     }
+    // }
+
+    // get *incoming() {
+    //     for (let node of Object.values(this.routing_table)) {
+    //         if (!node.outgoing)  {
+    //             yield node;
+    //         }
+    //     }
+    // }
 
     register_handler(callback)  {
         /**

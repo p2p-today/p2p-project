@@ -7,6 +7,7 @@ Authors
 The following people have contributed to this project:
 
 - Gabe Appleton
+- :user:`the-zebulan`
 
 Licenses
 --------
@@ -39,8 +40,15 @@ C Implementation's SHA2 Code
 C Literal Assert Macro
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. literalinclude:: ../cp_src/base.h
+.. literalinclude:: ../c_src/base.h
     :dedent: 2
     :lines: 43-50
+    :language: none
+    :linenos:
+
+C SuperFastHash
+~~~~~~~~~~~~~~~
+
+.. literalinclude:: ../c_src/spf/SuperFastHash.license
     :language: none
     :linenos:

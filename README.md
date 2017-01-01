@@ -2,9 +2,9 @@ To see a better formatted, more frequently updated version of this, please visit
 
 Current build status:
 
-[![shippable](https://img.shields.io/shippable/5750887b2a8192902e225466/develop.svg?maxAge=3600&label=Linux)](https://app.shippable.com/projects/5750887b2a8192902e225466) [![travis](https://img.shields.io/travis/gappleto97/p2p-project/develop.svg?maxAge=3600&label=OSX)](https://travis-ci.org/gappleto97/p2p-project) [![appveyor](https://img.shields.io/appveyor/ci/gappleto97/p2p-project/develop.svg?maxAge=3600&label=Windows)](https://ci.appveyor.com/project/gappleto97/p2p-project) [![codeclimate](https://img.shields.io/codeclimate/github/gappleto97/p2p-project.svg?maxAge=3600)](https://codeclimate.com/github/gappleto97/p2p-project) [![codecov](https://img.shields.io/codecov/c/github/gappleto97/p2p-project/develop.svg?maxAge=3600)](https://codecov.io/gh/gappleto97/p2p-project)
+[![shippable](https://img.shields.io/shippable/5750887b2a8192902e225466/develop.svg?maxAge=3600&label=Linux)](https://app.shippable.com/projects/5750887b2a8192902e225466) [![travis](https://img.shields.io/travis/p2p-today/p2p-project/develop.svg?maxAge=3600&label=OSX)](https://travis-ci.org/p2p-today/p2p-project) [![appveyor](https://img.shields.io/appveyor/ci/gappleto97/p2p-project-fowii/develop.svg?maxAge=3600&label=Windows)](https://ci.appveyor.com/project/gappleto97/p2p-project-fowii) [![codeclimate](https://img.shields.io/codeclimate/github/gappleto97/p2p-project.svg?maxAge=3600)](https://codeclimate.com/github/gappleto97/p2p-project) [![codecov](https://img.shields.io/codecov/c/github/gappleto97/p2p-project/develop.svg?maxAge=3600)](https://codecov.io/gh/gappleto97/p2p-project)
 
-[![waffleio\_queued](https://img.shields.io/waffle/label/gappleto97/p2p-project/queued.svg?maxAge=3600&labal=queued)](https://waffle.io/gappleto97/p2p-project) [![waffleio\_in\_progress](https://img.shields.io/waffle/label/gappleto97/p2p-project/in%20progress.svg?maxAge=3600&labal=in%20progress)](https://waffle.io/gappleto97/p2p-project) [![waffleio\_in\_review](https://img.shields.io/waffle/label/gappleto97/p2p-project/in%20review.svg?maxAge=3600&label=in%20review)](https://waffle.io/gappleto97/p2p-project)
+[![waffleio\_queued](https://img.shields.io/waffle/label/p2p-today/p2p-project/queued.svg?maxAge=3600&labal=queued)](https://waffle.io/p2p-today/p2p-project) [![waffleio\_in\_progress](https://img.shields.io/waffle/label/p2p-today/p2p-project/in%20progress.svg?maxAge=3600&labal=in%20progress)](https://waffle.io/p2p-today/p2p-project) [![waffleio\_in\_review](https://img.shields.io/waffle/label/p2p-today/p2p-project/in%20review.svg?maxAge=3600&label=in%20review)](https://waffle.io/p2p-today/p2p-project)
 
 Goal
 ====
@@ -48,6 +48,15 @@ Using these principles you can create a messaging network which scales linearly 
 
 Currently there is an implementation in [Python](https:dev-docs.p2p.today/python/mesh) and Javascript &lt;https:dev-docs.p2p.today/javascript/mesh&gt;. More tractable documentation can be found in their tutorial sections. For a more in-depth explanation you can see [it's specifications](https:dev-docs.p2p.today/protocol/mesh) or [this slideshow](http://slides.p2p.today/).
 
+Sync Table
+==========
+
+This is an extension of the above network. It inherits all of the message sending properties, while also syncronizing a local dictionary-like object.
+
+The only limitation is that it can only have string-like keys and values. There is also an optional "leasing" system, which is enabled by default. This means that a user can own a particular key for a period of time.
+
+Currently there is an implementation in [Python](https://dev-docs.p2p.today/python/sync) and [Javascript](https://dev-docs.p2p.today/javascript/sync). More tractable documentation can be found in their tutorial sections. Protocol specifications are in progress.
+
 Chord Table
 ===========
 
@@ -63,3 +72,8 @@ Contributing, Credits, and Licenses
 Contributors are always welcome! Information on how you can help is located on the [Contributing page](./CONTRIBUTING.rst).
 
 Credits and License are located on [their own page](./docs/License.rst).
+
+Donate
+======
+
+Bitcoin: [1BwVXxPj9JSEUoAx3HvcNjjJTHb2qsyjUr](https://blockchain.info/address/1BwVXxPj9JSEUoAx3HvcNjjJTHb2qsyjUr)

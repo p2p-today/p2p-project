@@ -4,6 +4,7 @@ IF DEFINED PIP (
     %PYPY%
     %PIP% install --upgrade setuptools
     %PIP% install pytest-coverage codecov cryptography wheel
+    %PIP% install -r requirements.txt
     cd %HOME%
     %RUN% -m pytest -c setup.cfg --cov=./py_src/ ./py_src/ || goto :error
     %RUN% setup.py sdist --universal
@@ -22,10 +23,8 @@ IF DEFINED PIP (
     dir C:\avvm\node
     powershell -Command "Install-Product node $env:NODE"
     npm install .
-    npm install -g mocha babel-cli
+    npm install -g mocha
     mocha js_src\\test\\* || goto :error
-    babel js_src --out-dir build\\es5
-    mocha build\\es5\\test\\* || goto :error
 )
 goto :EOF
 

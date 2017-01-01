@@ -20,18 +20,19 @@ A more formal definition would look like:
     Size of message    - 4 (big-endian) bytes defining the size of the message
     ------------------------All below may be compressed------------------------
     Size of packet 0   - 4 bytes defining the plaintext size of packet 0
+    Pathfinding header - [broadcast, whisper, renegotiate]
     Size of packet 1   - 4 bytes defining the plaintext size of packet 1
-    ...
-    Size of packet n-1 - 4 bytes defining the plaintext size of packet n-1
-    Size of packet n   - 4 bytes defining the plaintext size of packet n
-    ---------------------------------End Header--------------------------------
-    Pathfinding header - [broadcast, waterfall, whisper, renegotiate]
     Sender ID          - A base_58 SHA384-based ID for the sender
+    Size of packet 2   - 4 bytes defining the plaintext size of packet 2
     Message ID         - A base_58 SHA384-based ID for the message packets
+    Size of packet 3   - 4 bytes defining the plaintext size of packet 3
     Timestamp          - A base_58 unix UTC timestamp of initial broadcast
-    Payload packets
-      Payload header   - [broadcast, whisper, handshake, peers, request, response]
-      Payload contents
+    Size of packet 4   - 4 bytes defining the plaintext size of packet 4
+    Payload header     - [broadcast, compression, whisper, handshake, peers,
+                          request, resend, response, store, retrieve]
+    ------------------------------Payload Packets------------------------------
+    Size of packet n
+    Packet n     (payload packet n-4)
 
 To understand this, let’s work from the bottom up. When a user wants to
 construct a message, they feed a list of packets. For this example,
@@ -66,11 +67,11 @@ All of this still leaves out the header. Constructing this goes as follows:
 
 For each packet, compute its length and pack this into four bytes. So a
 message of length 6 would look like ``'\x00\x00\x00\x06'``. Take the resulting
-string and prepend it to the packets. In this example, you would end up with:
-``'\x00\x00\x00\t\x00\x00\x00B\x00\x00\x00B\x00\x00\x00\x06\x00\x00\x00\t\x00\x00\x00\x0cbroadcast6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V7iSCRDcHZwYtxGbTCz1rwDbUkt7YrbAh2VdS4A75hRuM6xan2gjmZqiVjLkMqiHE3Q3EfSDbbroadcasttest message'``.
+string and prepend it to the packet. In this example, you would end up with:
+``'\x00\x00\x00\tbroadcast\x00\x00\x00B6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V\x00\x00\x00B72tG7phqoAnoeWRKtWoSmseurpCtYg2wHih1y5ZX1AmUvihcH7CPZHThtm9LGvKtj7\x00\x00\x00\x063EfSDb\x00\x00\x00\tbroadcast\x00\x00\x00\x0ctest message'``.
 
 After running this message through whatever compression algorith which has
 been negotiated with the node's peer, it compute the message's size, and pack
 this into four bytes: ``'\x00\x00\x00\xc0'``. This results in a final message of:
 
-``'\x00\x00\x00\xc0\x00\x00\x00\t\x00\x00\x00B\x00\x00\x00B\x00\x00\x00\x06\x00\x00\x00\t\x00\x00\x00\x0cbroadcast6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V7iSCRDcHZwYtxGbTCz1rwDbUkt7YrbAh2VdS4A75hRuM6xan2gjmZqiVjLkMqiHE3Q3EfSDbbroadcasttest message'``
+``'\x00\x00\x00\xc0\x00\x00\x00\tbroadcast\x00\x00\x00B6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V\x00\x00\x00B72tG7phqoAnoeWRKtWoSmseurpCtYg2wHih1y5ZX1AmUvihcH7CPZHThtm9LGvKtj7\x00\x00\x00\x063EfSDb\x00\x00\x00\tbroadcast\x00\x00\x00\x0ctest message'``

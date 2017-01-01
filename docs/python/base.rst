@@ -17,8 +17,6 @@ Base Module
 
 		- .. autoattribute:: flags.broadcast
 			:annotation:
-		- .. autoattribute:: waterfall
-			:annotation:
 		- .. autoattribute:: whisper
 			:annotation:
 		- .. autoattribute:: renegotiate
@@ -64,6 +62,8 @@ Base Module
 		- .. autoattribute:: gzip
 			:annotation:
 		- .. autoattribute:: lzma
+			:annotation:
+		- .. autoattribute:: snappy
 			:annotation:
 		- .. autoattribute:: zlib
 			:annotation:

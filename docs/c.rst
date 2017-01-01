@@ -11,6 +11,8 @@ Contents:
     c/tutorial
     c/base
     c/utils
+    c/InternalMessageStruct
+    c/SubnetStruct
     c/BaseConverter
     c/mesh
     c/chord

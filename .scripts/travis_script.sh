@@ -14,6 +14,7 @@ if [ $pyver ]; then
     $PIP_CMD install virtualenv;
     virtualenv -p $PYTHON_EXE venv;
     source venv/bin/activate;
+    pip install -r requirements.txt
     make cpython;
     pip install pytest-coverage codecov wheel
     py.test -vv --cov=./py_src/ ./py_src/
@@ -28,5 +29,4 @@ if [ $pyver ]; then
     codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml
 else
     make jstest;
-    make ES5test;
 fi

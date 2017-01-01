@@ -1,6 +1,7 @@
 set -e;
 if [ $pyver ]; then
     pip install codecov
+    pip install -r requirements.txt
     make cpython pytestdeps
     py.test -vv --cov=./py_src/ ./py_src/
     python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
@@ -21,5 +22,4 @@ elif [ $jsver ]; then
     nvm use $jsver
     node --version
     make jstest
-    make ES5test
 fi

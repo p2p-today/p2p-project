@@ -1,0 +1,1 @@
+custom_inherit==2.0.2

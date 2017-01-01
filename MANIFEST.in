@@ -1,10 +1,13 @@
 include LICENSE
 include CONTRIBUTING.md
 include README.md
+include requirements.txt
 include setup.py
 include .coveragerc
 include py_src/*.rst
 include py_src/*.py
 include py_src/test/*.py
+include c_src/*
+include c_src/sha/*
 
 exclude MANIFEST.in

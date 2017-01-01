@@ -61,6 +61,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         let lease_descriptor = (leasing !== false) ? '1' : '0';
         let protocol_used = new base.protocol(protocol.subnet + lease_descriptor, protocol.encryption);
         super(addr, port, protocol_used, out_addr, debug_level);
+        this.__leasing = leasing;
         this.data = {};
         this.metadata = {};
         const self = this;
@@ -81,10 +82,11 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         :raises Error: If someone else has a lease at this value, and ``error`` is not ``false``
         */
         let meta = this.metadata[key];
-        if ( (!meta) || (!this.__leasing) || (meta.owner == new_meta.owner) ||
-                (meta.timestamp > new_meta.timestamp) || (meta.timestamp < base.getUTC() - 3600) ||
-                (meta.timestamp == new_meta.timestamp && meta.owner > new_meta.owner) )    {
-            if (new_data !== new Buffer(''))    {
+        if ( (!meta) || (meta.owner.toString() === new_meta.owner.toString()) ||
+                (meta.timestamp < base.getUTC() - 3600) ||
+                (meta.timestamp === new_meta.timestamp && meta.owner.toString() > new_meta.owner.toString()) ||
+                ((meta.timestamp < new_meta.timestamp) && (!this.__leasing)) )    {
+            if (new_data.toString() !== '')    {
                 this.metadata[key] = new_meta;
                 this.data[key] = new_data;
             }
@@ -204,5 +206,94 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         :raises:              See :js:func:`~js2p.sync.sync_socket.set`
         */
         this.set(key);
+    }
+
+    *keys()  {
+        /**
+        *     .. js:function:: js2p.sync.sync_socket.keys()
+        *
+        *         Returns a generator for all keys presently in the dictionary
+        *
+        *         Because this data is changed asynchronously, the key is
+        *         only garunteed to be present at the time of generation.
+        *
+        *         :returns: A generator which yields :js:class:`Buffer`s
+        */
+        for (let key of Object.keys(this.data)) {
+            if (this.get(key, null) !== null)    {
+                yield key;
+            }
+        }
+    }
+
+    *values()    {
+        /**
+        *     .. js:function:: js2p.sync.sync_socket.values()
+        *
+        *         Returns a generator for all values presently in the
+        *         dictionary
+        *
+        *         Because this data is changed asynchronously, the value is
+        *         only garunteed to be accurate at the time of generation.
+        *
+        *         :returns: A generator which yields :js:class:`Buffer`s
+        */
+        for (let key of this.keys())  {
+            let val = this.get(key);
+            if (val !== undefined)   {
+                yield val;
+            }
+        }
+    }
+
+    *items() {
+        /**
+        *     .. js:function:: js2p.sync.sync_socket.items()
+        *
+        *         Returns a generator for all associations presently in the
+        *         dictionary
+        *
+        *         Because this data is changed asynchronously, the association
+        *         is only garunteed to be present at the time of generation.
+        *
+        *         :returns: A generator which yields pairs of
+        *                   :js:class:`Buffer`s
+        */
+        for (let key of this.keys())  {
+            let val = this.get(key);
+            if (val !== undefined)   {
+                yield [key, val];
+            }
+        }
+    }
+
+    pop(key, fallback)  {
+        /**
+        *     .. js:function:: js2p.sync.sync_socket.pop(key [, fallback])
+        *
+        *         Returns the value at a given key. As a side effect, it
+        *         it deletes that key.
+        *
+        *         :returns: A :js:class:`Buffer`
+        */
+        let val = this.get(key, fallback);
+        if (val !== fallback)    {
+            this.del(key);
+        }
+        return val;
+    }
+
+    popitem()   {
+        /**
+        *     .. js:function:: js2p.sync.sync_socket.popitem()
+        *
+        *         Returns the association at a key. As a side effect, it
+        *         it deletes that key.
+        *
+        *         :returns: A pair of :js:class:`Buffer`s
+        */
+        for (let key of this.keys())  {
+            return [key, this.pop(key)];
+        }
     }
 }

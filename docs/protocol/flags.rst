@@ -7,11 +7,10 @@ Main Flags
 These flags will denote the primary purpose of a message.
 
 - broadcast     = ``"\x00"``
-- waterfall     = ``"\x01"``
+- renegotiate   = ``"\x01"``
 - whisper       = ``"\x02"``
-- renegotiate   = ``"\x03"``
-- ping          = ``"\x04"``
-- pong          = ``"\x05"``
+- ping          = ``"\x03"``
+- pong          = ``"\x04"``
 
 Sub-Flags
 +++++++++
@@ -21,9 +20,9 @@ These flags will denote the secondary purpose, or a more specific purpose, of a 
 - broadcast     = ``"\x00"``
 - compression   = ``"\x01"``
 - whisper       = ``"\x02"``
-- handshake     = ``"\x03"``
-- ping          = ``"\x04"``
-- pong          = ``"\x05"``
+- ping          = ``"\x03"``
+- pong          = ``"\x04"``
+- handshake     = ``"\x05"``
 - notify        = ``"\x06"``
 - peers         = ``"\x07"``
 - request       = ``"\x08"``
@@ -55,6 +54,7 @@ All
 - mtf       = ``"\x1D"``
 - ppmd      = ``"\x1E"``
 - simple    = ``"\x1F"``
+- snappy    = ``"\x20"``
 - zlib      = ``"\x13"``
 
 Python Implemented
@@ -63,6 +63,7 @@ Python Implemented
 - bz2
 - gzip
 - lzma
+- snappy
 - zlib
 
 .. note::
@@ -78,6 +79,7 @@ Javascript Implemented
 ~~~~~~~~~~~~~~~~~~~~~~
 
 - gzip
+- snappy
 - zlib
 
 Reserved Flags
@@ -85,4 +87,4 @@ Reserved Flags
 
 These define the flags that other applications should *not* use, as they either are (or will be) used by the standard protocol.
 
-Currently, this is all single byte characters from ``0x00`` to ``0x20``. This list may be expanded later.
+Currently, this is all single byte characters from ``0x00`` to ``0x30``. This list may be expanded later.

@@ -20,9 +20,9 @@ function get_random_array(len)  {
     return ret;
 }
 
-function test_pathfinding_message(payload, instance)  {
+function test_InternalMessage(payload, instance)  {
     if (!instance)  {
-        var msg = new base.pathfinding_message(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload);
+        var msg = new base.InternalMessage(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload);
     }
     else    {
         var msg = instance;
@@ -104,27 +104,33 @@ describe('base', function() {
         });
     });
 
-    describe('pathfinding_message', function()  {
+    describe('InternalMessage', function()  {
         it('should pass some short, statically defined tests', function()  {
-            var string = '\x00\x00\x00{\x00\x00\x00\t\x00\x00\x00\x0b\x00\x00\x00B\x00\x00\x00\x06\x00\x00\x00\x0bbroadcasttest sender2ypz9RTBAFbw75WSJTNwaXZ6zSVLG8wvqbQDNRtoh74Hkxg3JAozHAZtCfwg1PEmpe3EdmDctest packet';
-            var zlib = new Buffer("\x00\x00\x00{x\x9cc``\xe0d``\xe0\x06b' f\x03\xb1\x93\x8a\xf2\x13S\x92\x13\x8bKJR\x8bK\x14\x8aS\xf3RR\x8b\x8c*\x0b\xaa,\x83B\x9c\x1c\xdd\x92\xca\xcdM\xc3\x83\xbdB\xfc\xca\x13#\xa2\xcc\xaa\x82\xc3|\xdc-\xca\xcb\n\x93\x02]\xfc\x82J\xf23\xccM<\xb2+\xd2\x8d\xbd\x1c\xf3\xab<\x1c\xa3J\x9c\xd3\xca\xd3\r\x03\\s\x0bR\x8d]Sr]\x92\xc1F\x16$&g\xa7\x96\x00\x00\xbfC%T", "ascii");
-            var gzip = new Buffer("\x00\x00\x00\x87\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\x03c``\xe0d``\xe0\x06b' f\x03\xb1\x93\x8a\xf2\x13S\x92\x13\x8bKJR\x8bK\x14\x8aS\xf3RR\x8b\x8c*\x0b\xaa,\x83B\x9c\x1c\xdd\x92\xca\xcdM\xc3\x83\xbdB\xfc\xca\x13#\xa2\xcc\xaa\x82\xc3|\xdc-\xca\xcb\n\x93\x02]\xfc\x82J\xf23\xccM<\xb2+\xd2\x8d\xbd\x1c\xf3\xab<\x1c\xa3J\x9c\xd3\xca\xd3\r\x03\\s\x0bR\x8d]Sr]\x92\xc1F\x16$&g\xa7\x96\x00\x00m\xbeb\xef{\x00\x00\x00", "ascii");
+            var string = new Buffer([0,0,0,123,0,0,0,9,98,114,111,97,100,99,97,115,116,0,0,0,11,116,101,115,116,32,115,101,110,100,101,114,0,0,0,66,50,121,112,122,57,82,84,66,65,70,98,119,55,53,87,83,74,84,78,119,97,88,90,54,122,83,86,76,71,56,119,118,113,98,81,68,78,82,116,111,104,55,52,72,107,120,103,51,74,65,111,122,72,65,90,116,67,102,119,103,49,80,69,109,112,101,0,0,0,6,51,69,100,109,68,99,0,0,0,11,116,101,115,116,32,112,97,99,107,101,116]);
+            var zlib = new Buffer([0,0,0,128,120,156,61,204,61,14,130,48,20,0,224,78,38,198,75,120,5,69,69,199,86,80,66,12,81,32,106,216,250,243,196,132,96,43,125,177,218,211,211,201,241,91,62,66,200,84,12,154,43,201,45,6,204,16,44,206,45,188,20,12,129,108,249,51,126,87,214,140,30,132,139,215,183,42,175,11,199,239,205,198,87,215,211,113,235,62,111,113,73,138,18,245,51,94,101,221,183,141,114,170,125,70,27,220,63,92,187,56,167,189,129,176,76,162,84,245,137,252,247,134,203,14,112,4,223,203,37,84]);
+            var gzip = new Buffer([0,0,0,140,31,139,8,0,76,158,77,88,0,255,61,204,61,14,130,48,20,0,224,78,38,198,75,120,5,69,69,199,86,80,66,12,81,32,106,216,250,243,196,132,96,43,125,177,218,211,211,201,241,91,62,66,200,84,12,154,43,201,45,6,204,16,44,206,45,188,20,12,129,108,249,51,126,87,214,140,30,132,139,215,183,42,175,11,199,239,205,198,87,215,211,113,235,62,111,113,73,138,18,245,51,94,101,221,183,141,114,170,125,70,27,220,63,92,187,56,167,189,129,176,76,162,84,245,137,252,247,134,203,14,112,4,190,252,209,7,123,0,0,0]);
+            var snappy = new Buffer([0,0,0,126,123,240,122,0,0,0,9,98,114,111,97,100,99,97,115,116,0,0,0,11,116,101,115,116,32,115,101,110,100,101,114,0,0,0,66,50,121,112,122,57,82,84,66,65,70,98,119,55,53,87,83,74,84,78,119,97,88,90,54,122,83,86,76,71,56,119,118,113,98,81,68,78,82,116,111,104,55,52,72,107,120,103,51,74,65,111,122,72,65,90,116,67,102,119,103,49,80,69,109,112,101,0,0,0,6,51,69,100,109,68,99,0,0,0,11,116,101,115,116,32,112,97,99,107,101,116]);
 
-            var pm = base.pathfinding_message.feed_string(string);
+            var pm = base.InternalMessage.feed_string(string);
             var msg = new base.message(pm);
-
-            var zlib_pm = base.pathfinding_message.feed_string(zlib, false, [base.flags.zlib]);
-
-            var gzip_pm = base.pathfinding_message.feed_string(gzip, false, [base.flags.gzip]);
 
             var expected = [ new Buffer('broadcast'), new Buffer('test sender'), '2ypz9RTBAFbw75WSJTNwaXZ6zSVLG8wvqbQDNRtoh74Hkxg3JAozHAZtCfwg1PEmpe', '3EdmDc', new Buffer('test packet') ];
 
-            assert (JSON.stringify(pm.packets) == JSON.stringify(expected), "pathfinding_message is not extracting packets correctly");
-            assert (JSON.stringify(msg.packets) == JSON.stringify(expected.slice(4)), "message is not extracting from pathfinding_message correctly");
+            assert (JSON.stringify(pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting packets correctly");
+            assert (JSON.stringify(msg.packets) === JSON.stringify(expected.slice(4)), "message is not extracting from InternalMessage correctly");
 
-            assert (JSON.stringify(zlib_pm.packets) == JSON.stringify(expected), "pathfinding_message is not extracting zlib packets correctly");
+            if (base.zlib)  {
+                var zlib_pm = base.InternalMessage.feed_string(zlib, false, [base.flags.zlib]);
+                assert (JSON.stringify(zlib_pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting zlib packets correctly");
 
-            assert (JSON.stringify(gzip_pm.packets) == JSON.stringify(expected), "pathfinding_message is not extracting gzip packets correctly");
+                var gzip_pm = base.InternalMessage.feed_string(gzip, false, [base.flags.gzip]);
+                assert (JSON.stringify(gzip_pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting gzip packets correctly");
+            }
+
+            if (base.snappy)    {
+                var snappy_pm = base.InternalMessage.feed_string(snappy, false, [base.flags.snappy]);
+                assert (JSON.stringify(snappy_pm.packets) === JSON.stringify(expected), "InternalMessage is not extracting snappy packets correctly");
+            }
         });
 
         it('should serialize and deserialize', function()   {
@@ -136,9 +142,9 @@ describe('base', function() {
                         compressions.push(base.compression[j]);
                     }
                     var payload = get_random_array(Math.floor(Math.random() * 16));
-                    var msg = new base.pathfinding_message(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload, compressions);
-                    var deserialized = base.pathfinding_message.feed_string(msg.string, false, compressions);
-                    test_pathfinding_message(payload, deserialized);
+                    var msg = new base.InternalMessage(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload, compressions);
+                    var deserialized = base.InternalMessage.feed_string(msg.string, false, compressions);
+                    test_InternalMessage(payload, deserialized);
                 }
             }
         });
@@ -146,7 +152,7 @@ describe('base', function() {
         it('should have information assigned to the correct getters', function()    {
             for (var i = 0; i < 250; i++)   {
                 var payload = get_random_array(Math.floor(Math.random() * 16));
-                test_pathfinding_message(payload);
+                test_InternalMessage(payload);
             }
         });
     });
@@ -159,7 +165,7 @@ describe('base', function() {
                     sen[j] = sen[j] % 128;
                 }
                 var pac = get_random_array(36);
-                var base_msg = new base.pathfinding_message(base.flags.broadcast, sen, pac);
+                var base_msg = new base.InternalMessage(base.flags.broadcast, sen, pac);
                 var test = new base.message(base_msg, null);
                 assert.equal(test.packets, pac);
                 assert.equal(test.msg, base_msg);

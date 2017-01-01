@@ -34,6 +34,7 @@ classifiers = ['Development Status :: 3 - Alpha',
                'Operating System :: OS Independent',
                'Topic :: Communications',
                'Topic :: Internet',
+               'Programming Language :: C',
                'Programming Language :: C++',
                'Programming Language :: JavaScript',
                'Programming Language :: Other',
@@ -64,7 +65,7 @@ def has_environment_marker_support():
 
 def main():
     ext_modules = []
-    install_requires = []
+    install_requires = open(os.path.join(loc, 'requirements.txt'), 'r').read().split()
     extras_require = {'SSL': ['cryptography']}
     if has_environment_marker_support():
         pass
@@ -75,8 +76,7 @@ def main():
         ext_modules.append(
             Extension(
                 'py2p.cbase',
-                sources=[os.path.join(loc, 'cp_src', 'base_wrapper.cpp'),
-                         os.path.join(loc, 'cp_src', 'base.cpp'),
+                sources=[os.path.join(loc, 'c_src', 'base_wrapper.c'),
                          os.path.join(loc, 'c_src', 'sha', 'sha2.c')],
                 define_macros=__DEBUG__))
 
@@ -97,7 +97,7 @@ def main():
               extras_require=extras_require
         )
     except:
-        print("Not building C++ code due to errors")
+        print("Not building C code due to errors")
         setup(name='py2p',
               description='A python library for peer-to-peer networking',
               long_description=long_description,

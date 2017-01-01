@@ -1,11 +1,11 @@
 Sync Socket
 ~~~~~~~~~~~
 
-This is an extension of the :py:class:`~py2p.mesh.mesh_socket` which syncronizes a common :py:class:`dict`. It works by providing an extra handler to store data. This does not expose the entire :py:class:`dict` API, but it exposes a substantial subset, and we're working to expose more.
+This is an extension of the :doc:`mesh_socket <./mesh>` which syncronizes a common :py:class:`dict`. It works by providing an extra handler to store data. This does not expose the entire :py:class:`dict` API, but it exposes a substantial subset, and we're working to expose more.
 
 .. note::
 
-    This is a fairly inefficient architecture for write intensive applications. For cases where the majority of access is reading, or for small networks, this is ideal. For larger networks where a significant portion of your operations are writing values, you should wait for the chord socket to come into beta.
+    This is a fairly inefficient architecture for write intensive applications. For cases where the majority of access is reading, or for small networks, this is ideal. For larger networks with infrequent access, you should use the :doc:`chord <./chord>` socket.
 
 Basic Usage
 -----------
@@ -23,7 +23,7 @@ You can override the last restriction by constructing with ``leasing=False``, li
     >>> from py2p import sync
     >>> sock = sync.sync_socket('0.0.0.0', 4444, leasing=False)
 
-The only API differences between this and :py:class:`~py2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
+The only other API differences between this and :py:class:`~py2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
 
 :py:meth:`~py2p.sync.sync_socket.get` / :py:meth:`~py2p.sync.sync_socket.__getitem__`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -41,7 +41,7 @@ It is important to note that keys are all translated to :py:class:`bytes` before
 :py:meth:`~py2p.sync.sync_socket.set` / :py:meth:`~py2p.sync.sync_socket.__setitem__`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A value can be stored by using the :py:meth:`~py2p.sync.sync_socket.set` method, or alternately with :py:meth:`~py2p.chord.chord_socket.__setitem__`. These calls are ``O(n)``, as it has to change values on other nodes. More accurately, the delay between your node knowing of the change and the last node knowing of the change is ``O(n)``.
+A value can be stored by using the :py:meth:`~py2p.sync.sync_socket.set` method, or alternately with :py:meth:`~py2p.chord.chord_socket.__setitem__`. These calls are worst case ``O(n)``, as it has to change values on other nodes. More accurately, the delay between your node knowing of the change and the last node knowing of the change is between ``O(log(n))`` and ``O(n)``.
 
 .. code-block:: python
 
@@ -58,21 +58,31 @@ Any node which sets a value can change this value as well. Changing the value re
 :py:meth:`~py2p.sync.sync_socket.__delitem__`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is ``O(n)``.
+Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is worst case ``O(n)``.
 
 .. code-block:: python
 
     >>> del sock['test']
 
 :py:meth:`~py2p.sync.sync_socket.update`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The update method is simply a wrapper which updates based on a fed :py:class:`dict`. Essentially it runs the following:
 
 .. code-block:: python
 
-    >>> for key in update_dict:
-    ...     sock[key] = update_dict[key]
+    >>> for key, value in update_dict.items():
+    ...     sock[key] = value
+
+:py:meth:`~py2p.sync.sync_socket.keys` / :py:meth:`~py2p.sync.sync_socket.values` / :py:meth:`~py2p.sync.sync_socket.items`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These methods are analagous to the ones in Python's :py:class:`dict`. The main difference is that they emulate the Python 3 behavior. So if you call these from Python 2, they will still return an iterator, rather than a list.
+
+:py:meth:`~py2p.sync.sync_socket.pop` / :py:meth:`~py2p.sync.sync_socket.popitem`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These methods are also analagous to the ones in Python's :py:class:`dict`. The main difference is that if the leasing system is active, calling this method may throw an error if you don't "own" whatever key is popped.
 
 Advanced Usage
 --------------

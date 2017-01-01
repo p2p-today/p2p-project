@@ -16,3 +16,15 @@ Contents:
     python/sync
     python/chord
     python/kademlia
+
+
+Supported Transport Methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
++----------+------------------------------------------+
+| Protocol |             Protocol  Object             |
++==========+==========================================+
+| TCP      | ``py2p.base.protocol(app, 'Plaintext')`` |
++----------+------------------------------------------+
+| SSL      | ``py2p.base.protocol(app, 'SSL')``       |
++----------+------------------------------------------+

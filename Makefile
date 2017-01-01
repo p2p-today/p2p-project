@@ -39,11 +39,18 @@ endif
 
 #End python setup section
 
+#Begin Javascript section
+
 jsdeps: LICENSE
 	yarn || npm install
 
-ES5: LICENSE jsdeps
-	node node_modules/babel-cli/bin/babel.js --presets es2015 js_src --out-dir build/es5
+browser: LICENSE jsdeps
+	mkdir -p build
+	npm install browserify
+	node node_modules/browserify/bin/cmd.js -e . -o ./build/js2p-browser.js -u snappy -u nodejs-websocket -u node-forge -s js2p
+
+browser-min: browser
+	node node_modules/babel-cli/bin/babel.js ./build/js2p-browser.js -o ./build/js2p-browser.min.js --minified --no-comments
 
 jsdocs:
 	node js_src/docs_test.js
@@ -51,8 +58,8 @@ jsdocs:
 jstest: LICENSE jsdeps
 	node node_modules/mocha/bin/mocha js_src/test/*
 
-ES5test: LICENSE ES5
-	node node_modules/mocha/bin/mocha build/es5/test/*
+#End Javascript section
+#Begin Python section
 
 python: LICENSE setup.py
 	python $(py_deps)
@@ -158,10 +165,17 @@ endif
 
 html: jsdocs
 	python $(docs_deps)
-	cd docs; $(MAKE) html
+	cd docs; $(MAKE) clean html
 
-py_all: LICENSE setup.py setup.cfg python html cpython2 cpython3 pypy
+#End Python section
+#Begin General section
 
-js_all: LICENSE ES5 html
+clean:
+	rm -r build || echo "build already clean"
+	cd docs; $(MAKE) clean
 
-test_all: LICENSE jstest ES5test pytest cpy2test cpy3test
+py_all: LICENSE setup.py setup.cfg python2 python3 html cpython2 cpython3 pypy
+
+js_all: LICENSE ES5 html browser browser-min browser-compat browser-compat-min
+
+test_all: LICENSE clean jstest ES5test pytest cpy2test cpy3test

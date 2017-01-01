@@ -52,7 +52,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         Sends a message through its connection.
         *
-        *         :param msg_type:      Message type, corresponds to the header in a :js:class:`~js2p.base.pathfinding_message` object
+        *         :param msg_type:      Message type, corresponds to the header in a :js:class:`~js2p.base.InternalMessage` object
         *         :param packs:         A list of Buffer-like objects, which correspond to the packets to send to you
         *         :param id:            The ID this message should appear to be sent from (default: your ID)
         *         :param number time:   The time this message should appear to be sent from (default: now in UTC)
@@ -82,7 +82,9 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         catch(err)  {
             console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to http://git.p2p.today/issues`);
             this.server.exceptions.push(err);
-            this.sock.emit('error');
+            if (this.sock.emit) {
+                this.sock.emit('error');
+            }
         }
     }
 
@@ -108,7 +110,9 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         catch(err)  {
             console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to http://git.p2p.today/issues`);
             this.server.exceptions.push(err);
-            this.sock.emit('error');
+            if (this.sock.emit) {
+                this.sock.emit('error');
+            }
         }
     }
 
@@ -121,12 +125,12 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *         If it is older than a preset limit, this method returns ``true``.
         *         Otherwise this method returns ``undefined``, and forwards the message appropriately.
         *
-        *         :param js2p.base.pathfinding_message msg: The message in question
+        *         :param js2p.base.InternalMessage msg: The message in question
         *         :param packets:                           The message's packets
         *
         *         :returns: ``true`` or ``undefined``
         */
-        if (packets[0] == base.flags.waterfall || packets[0] == base.flags.broadcast) {
+        if (packets[0].toString() === base.flags.broadcast) {
             if (base.from_base_58(packets[3]) < base.getUTC() - 60) {
                 // this.__print__("Waterfall expired", level=2);
                 return true;
@@ -156,8 +160,13 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         This function is run when a connection is ended
         */
-        this.sock.end();
-        this.sock.destroy();
+        if (this.sock.end)  {
+            this.sock.end();
+            this.sock.destroy(); //These implicitly remove from routing table
+        }
+        else    {
+            this.sock.close();
+        }
     }
 }
 
@@ -184,6 +193,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     constructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
         var self = this;
+        this.conn_type = m.mesh_connection;
         this.waterfalls = [];
         this.requests = {};
         this.queue = [];
@@ -192,28 +202,40 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         this.register_handler(function handle_response(msg, conn)   {return self.__handle_response(msg, conn);});
         this.register_handler(function handle_request(msg, conn)    {return self.__handle_request(msg, conn);});
 
-        this.incoming.on('connection', function onConnection(sock)   {
-            var conn = new m.mesh_connection(sock, self, false);
-            self._send_handshake_response(conn);
-            self.awaiting_ids = self.awaiting_ids.concat(conn);
-        });
+        if (this.incoming)  {
+            if (self.protocol.encryption === 'SSL') {
+                this.incoming.on('secureConnection', (sock)=>{
+                    self.__on_TCP_Connection(sock);
+                });
+            }
+            else if (self.protocol.encryption === 'Plaintext')  {
+                this.incoming.on('connection', (sock)=>{
+                    self.__on_TCP_Connection(sock);
+                });
+            }
+            else    {
+                this.incoming.on('connection', (sock)=>{
+                    self.__on_WS_Connection(sock);
+                });
+            }
+        }
     }
 
-    get outgoing()  {
-        /**
-        *     .. js:attribute:: js2p.mesh.mesh_socket.outgoing
-        *
-        *         This is an array of all outgoing connections. The length of this array is used to determine
-        *         whether the "socket" should automatically initiate connections
-        */
-        var outs = [];
-        var self = this;
-        Object.keys(this.routing_table).forEach(function(key)   {
-            if (self.routing_table[key].outgoing)   {
-                outs.push(self.routing_table[key]);
-            }
+    __on_TCP_Connection(sock)  {
+        var conn = new this.conn_type(sock, this, false);
+        this._send_handshake_response(conn);
+        this.awaiting_ids.push(conn);
+        return conn;
+    }
+
+    __on_WS_Connection(sock)  {
+        var conn = new this.conn_type(sock, this, false);
+        const self = this;
+        sock.on("connect", ()=>{
+            self._send_handshake_response(conn);
         });
-        return outs;
+        this.awaiting_ids.push(conn);
+        return conn;
     }
 
     recv(num)   {
@@ -288,10 +310,13 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         //                                                     id in self.routing_table:
         //     self.__print__("Connection already established", level=1)
         //     return false
-        var shouldBreak = (id == this.id || [addr, port] == this.out_addr || [addr, port] == this.addr);
+        var shouldBreak = ((id && id.toString() === this.id.toString()) ||
+                (addr === this.out_addr[0] && port === this.out_addr[1]) ||
+                (addr === this.addr[0] && port === this.addr[1]));
         var self = this;
         Object.keys(this.routing_table).some(function(key)   {
-            if (key == id || self.routing_table[key].addr == [addr, port])   {
+            if (key.toString() === id.toString() || self.routing_table[key].addr[0] === addr ||
+                self.routing_table[key].addr[1] === port)   {
                 shouldBreak = true;
             }
             if (shouldBreak)    {
@@ -301,12 +326,35 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         if (shouldBreak)    {
             return false;
         }
-        var conn = new net.Socket();
-        // conn.settimeout(1)
-        conn.connect(port, addr);
-        var handler = new m.mesh_connection(conn, this, true);
+        var conn = base.get_socket(addr, port, this.protocol);
+        var handler = new this.conn_type(conn, this, true);
         handler.id = id;
-        this._send_handshake_response(handler);
+        if (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss')    {
+            var self = this;
+            if (conn.on)    {
+                conn.on('connect', ()=>{
+                    self._send_handshake_response(handler);
+                })
+            }
+            else    {
+                var onopen = ()=>{
+                    this._send_handshake_response(handler);
+                }
+                if (conn.readyState === 1)  {
+                    onopen();
+                }
+                conn.onopen = onopen;
+            }
+        }
+        else if (this.protocol.encryption === 'SSL')    {
+            const self = this;
+            conn.on('secureConnect', ()=>{
+                self._send_handshake_response(handler);
+            })
+        }
+        else    {
+            this._send_handshake_response(handler);
+        }
         if (id) {
             this.routing_table[id] = handler;
         }
@@ -323,14 +371,19 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *
         *         :param js2p.mesh.mesh_connection handler: The connection you wish to close
         */
-        handler.sock.end();
-        handler.sock.destroy(); //These implicitly remove from routing table
+        if (handler.sock.end)   {
+            handler.sock.end();
+            handler.sock.destroy(); //These implicitly remove from routing table
+        }
+        else    {
+            handler.sock.close();
+        }
     }
 
     handle_msg(msg, conn)    {
         if (!super.handle_msg(msg, conn))   {
             var packs = msg.packets;
-            if (packs[0] == base.flags.whisper || packs[0] == base.flags.broadcast) {
+            if (packs[0].toString() === base.flags.whisper || packs[0].toString() === base.flags.broadcast) {
                 this.queue = this.queue.concat(msg);
             }
             // else    {
@@ -350,7 +403,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var ret = [];
         var self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
-            ret = ret.concat([[self.routing_table[key].addr, key]]);
+            if (self.routing_table[key].addr)   {
+                ret = ret.concat([[self.routing_table[key].addr, key]]);
+            }
         });
         return ret;
     }
@@ -371,8 +426,8 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() == base.flags.handshake)  {
-            if (packets[2] != msg.protocol.id) {
+        if (packets[0].toString() === base.flags.handshake && packets.length === 5) {
+            if (packets[2].toString() !== msg.protocol.id) {
                 this.disconnect(conn);
                 return true;
             }
@@ -405,7 +460,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() == base.flags.peers)  {
+        if (packets[0].toString() === base.flags.peers)  {
             var new_peers = JSON.parse(packets[1]);
             var self = this;
             new_peers.forEach(function(peer_array)  {
@@ -413,7 +468,8 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                     // try:
                         var addr = peer_array[0];
                         var id = peer_array[1];
-                        self.connect(addr[0], addr[1], id);
+                        if (addr[0] && addr[1])
+                            self.connect(addr[0], addr[1], id);
                 }
                     // except:  # pragma: no cover
                         // self.__print__("Could not connect to %s:%s because\n%s" % (addr[0], addr[1], traceback.format_exc()), level=1)
@@ -438,15 +494,15 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() == base.flags.response)  {
+        if (packets[0].toString() === base.flags.response)  {
             // self.__print__("Response received for request id %s" % packets[1], level=1)
             if (this.requests[packets[1]])  {
                 var addr = JSON.parse(packets[2]);
                 if (addr)   {
-                    var msg = this.requests[packets[1]];
+                    var info = this.requests[packets[1]];
                     // console.log(msg);
                     this.connect(addr[0][0], addr[0][1], addr[1]);
-                    this.routing_table[addr[1]].send(msg[1], [msg[2]].concat(msg[0]));
+                    this.routing_table[addr[1]].send(info[1], [info[2]].concat(info[0]));
                     delete this.requests[packets[1]];
                 }
             }
@@ -472,8 +528,8 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var packets = msg.packets;
         //console.log(packets[0].toString());
         //console.log(packets[1].toString());
-        if (packets[0].toString() == base.flags.request)  {
-            if (packets[1].toString() == '*')  {
+        if (packets[0].toString() === base.flags.request)  {
+            if (packets[1].toString() === '*')  {
                 conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
             }
             else if (this.routing_table[packets[2]])    {
@@ -553,7 +609,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             Object.keys(this.routing_table).forEach(function(key)   {
                 var handler = self.routing_table[key];
                 if (handler.id.toString() !== msg.sender.toString())   {
-                    handler.send(base.flags.waterfall, msg.packets, msg.sender, msg.time);
+                    handler.send_InternalMessage(msg.msg);
                 }
             });
             this.__clean_waterfalls()

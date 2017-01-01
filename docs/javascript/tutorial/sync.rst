@@ -1,7 +1,7 @@
 Sync Socket
 ~~~~~~~~~~~
 
-This is an extension of the :js:class:`~js2p.mesh.mesh_socket` which syncronizes a common :js:class:`Object`. It works by providing an extra handler to store data. This does not expose the entire :js:class:`Object` API, but it exposes a substantial subset, and we're working to expose more.
+This is an extension of the :doc:`mesh_socket <./mesh>` which syncronizes a common :js:class:`Object`. It works by providing an extra handler to store data. This does not expose the entire :js:class:`Object` API, but it exposes a substantial subset, and we're working to expose more.
 
 .. note::
 
@@ -23,7 +23,9 @@ You can override the last restriction by constructing with ``leasing`` set to ``
     > const sync = require('js2p').sync;
     > let sock = new sync.sync_socket('0.0.0.0', 4444, false);
 
-The only API differences between this and :js:class:`~js2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
+Note that the ``leasing`` parameter is supplied *before* a :js:class:`~js2p.base.protocol`.
+
+The only other API differences between this and :js:class:`~js2p.mesh.mesh_socket` are for access to this dictionary. They are as follows:
 
 :js:func:`~js2p.sync.sync_socket.get`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -40,7 +42,7 @@ It is important to note that keys are all translated to a :js:class:`Buffer` bef
 :js:func:`~js2p.sync.sync_socket.set`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A value can be stored by using the :js:func:`~js2p.sync.sync_socket.set` method. These calls are ``O(n)``, as it has to change values on other nodes. More accurately, the delay between your node knowing of the change and the last node knowing of the change is ``O(n)``.
+A value can be stored by using the :js:func:`~js2p.sync.sync_socket.set` method. These calls are worst case ``O(n)``, as it has to change values on other nodes. More accurately, the delay between your node knowing of the change and the last node knowing of the change is between ``O(log(n))`` and ``O(n)``.
 
 .. code-block:: javascript
 
@@ -56,7 +58,7 @@ Any node which sets a value can change this value as well. Changing the value re
 :js:func:`~js2p.sync.sync_socket.del`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is ``O(n)``.
+Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is worst case ``O(n)``.
 
 .. code-block:: javascript
 
@@ -69,11 +71,26 @@ The update method is simply a wrapper which updates based on a fed :js:class:`Ob
 
 .. code-block:: javascript
 
-    > for (var key in update_dict)  {
+    > for (var key of update_dict)  {
     ... sock.set(key, update_dict[key]);
     ... }
 
+:js:func:`~py2p.sync.sync_socket.keys` / :js:func:`~py2p.sync.sync_socket.values` / :js:func:`~py2p.sync.sync_socket.items`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These methods are analagous to the ones in Python's :py:class:`dict`. The main difference is that they emulate the Python 3 behavior. So, they will still return an generator, rather than a list.
+
+:js:func:`~py2p.sync.sync_socket.pop` / :js:func:`~py2p.sync.sync_socket.popitem`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These methods are also analagous to the ones in Python's :py:class:`dict`. The main difference is that if the leasing system is active, calling this method may throw an error if you don't "own" whatever key is popped.
+
 Advanced Usage
 --------------
+
+Refer to :doc:`the mesh socket tutorial <./mesh>`
+
+Use In A Browser
+----------------
 
 Refer to :doc:`the mesh socket tutorial <./mesh>`
