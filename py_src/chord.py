@@ -584,15 +584,6 @@ class chord_socket(mesh_socket):
         """
         return self.find_prev(self.id_10 + 1)
 
-    def _send_peers(self, handler):
-        """Shortcut method for sending a peerlist to a given handler
-
-        Args:
-            handler: A :py:class:`~py2p.chord.chord_connection`
-        """
-        handler.send(flags.whisper, flags.peers,
-                     json.dumps(self._get_peer_list()))
-
     def _send_meta(self, handler):
         """Shortcut method for sending a chord-specific data to a given handler
 

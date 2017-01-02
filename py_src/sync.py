@@ -76,12 +76,12 @@ class sync_socket(mesh.mesh_socket):
         elif error:
             raise KeyError("You don't have permission to change this yet")
 
-    def _send_handshake_response(self, handler):
+    def _send_peers(self, handler):
         """Shortcut method to send a handshake response. This method is
         extracted from :py:meth:`.__handle_handshake` in order to allow
         cleaner inheritence from :py:class:`py2p.sync.sync_socket`
         """
-        super(sync_socket, self)._send_handshake_response(handler)
+        super(sync_socket, self)._send_peers(handler)
         for key in self:
             meta = self.metadata[key]
             handler.send(flags.whisper, flags.store, key, self[key],
