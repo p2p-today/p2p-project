@@ -7,6 +7,7 @@
 
 const base = require('./base.js');
 const mesh = require('./mesh.js');
+const buffer = require('buffer');
 const SHA = require('jssha');
 const BigInt = require('big-integer');
 
@@ -73,6 +74,47 @@ m.get_hashes(key)   {
     ret.push(BigInt(hash.getHash("HEX"), 16));
     return ret;
 };
+
+class awaiting_value    {
+    constructor(value)  {
+        this.value = value;
+        this.callback = undefined;
+        this.__is_awaiting_value = true;
+    }
+
+    callback_method(method, key)    {
+        this.callback.send(
+            base.flags.whisper,
+            [base.flags.retrieved, method, key, self.value]
+        );
+    }
+}
+
+function most_common(tmp)   {
+    lst = [];
+    for (let item in tmp)   {
+        if (item.__is_awaiting_value)   {
+            if (buffer.isBuffer(item))  {
+                lst.push(item.value.toString());
+            }
+            else    {
+                lst.push(item.value);
+            }
+        }
+        else if (buffer.isBuffer(item)) {
+            lst.push(item.toString());
+        }
+        else    {
+            lst.push(item);
+        }
+    }
+
+    let ret = lst.sort((a,b)=>{
+        return lst.filter((v)=>{ return v===a }).length
+             - lst.filter((v)=>{ return v===b }).length;
+    }).pop();
+    return [ret, lst.filter((v)=>{ return v===ret }).length];
+}
 
 
 m.chord_connection = class chord_connection extends mesh.mesh_connection    {
@@ -298,7 +340,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             let node = this.find(goal);
             if (!Object.is(node, this)) {
                 node.send(base.flags.whisper, [base.flags.request, packets[1], msg.id]);
-                let ret = awaiting_value();
+                let ret = new awaiting_value();
                 ret.callback = handler;
                 this.requests[[packets[1], msg.id]] = ret;
             }
@@ -398,11 +440,11 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
         }
         if (Object.is(node, this))  {
-            return new m.awaiting_value(this.data[method][key]);
+            return new awaiting_value(this.data[method][key]);
         }
         else    {
             node.send(base.flags.whisper, [base.flags.retrieve, method, base.to_base_58(key)]);
-            ret = new m.awaiting_value();
+            ret = new awaiting_value();
             if (handler)    {
                 ret.callback = handler;
             }
@@ -411,18 +453,28 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         }
     }
 
-    get_no_fallback(key, timeout)   {  // TODO: Finish this
+    get_no_fallback(key, timeout, callback) {  // TODO: Finish this
         key = new Buffer(key);
         let keys = m.get_hashes(key);
-        vals = [this.__lookup(method, x) for method, x in zip(hashes, keys)]
-        common, count = most_common(vals)
+        let vals = [
+            this.__lookup('sha1', keys[0]),
+            this.__lookup('sha224', keys[1]),
+            this.__lookup('sha256', keys[2]),
+            this.__lookup('sha384', keys[3]),
+            this.__lookup('sha512', keys[4])
+        ];
+        let ctuple = most_common(vals);
+        let common = ctuple[0];
+        let count = ctuple[1];
         let iters = 0
         let limit = Math.floor(timeout / 0.1) || 100;
         let fails = new Set([undefined, null, '', -1]);
         while (fails.has(common) && iters < limit)  {
             time.sleep(0.1)
             iters += 1
-            common, count = most_common(vals)
+            ctuple = most_common(vals);
+            common = ctuple[0];
+            count = ctuple[1];
         }
         if (!fails.has(common) && count > 2)  {
             return common;
@@ -435,7 +487,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         }
     }
 
-    get(key, fallback, timeout) {
+    get(key, fallback, timeout, callback) {
         /**
         *     .. js:function:: js2p.chord.chord_socket.get(key [, fallback])
         *
