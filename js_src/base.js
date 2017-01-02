@@ -346,8 +346,8 @@ base.SHA384 = function SHA384(text) {
     *
     *     :returns: the hex SHA384 hash
     */
-    var hash = new SHA("SHA-384", "TEXT");
-    hash.update(text);
+    var hash = new SHA("SHA-384", "ARRAYBUFFER");
+    hash.update(new Buffer(text));
     return hash.getHash("HEX");
 };
 
@@ -362,8 +362,8 @@ base.SHA256 = function SHA256(text) {
     *
     *     :returns: the hex SHA256 hash
     */
-    var hash = new SHA("SHA-256", "TEXT");
-    hash.update(text);
+    var hash = new SHA("SHA-256", "ARRAYBUFFER");
+    hash.update(new Buffer(text));
     return hash.getHash("HEX");
 };
 

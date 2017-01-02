@@ -57,11 +57,11 @@ m.get_hashes = function get_hashes(key) {
     */
     let ret = [];
     // get SHA1
-    let hash = new SHA("SHA-1", "TEXT");
+    let hash = new SHA("SHA-1", "ARRAYBUFFER");
     hash.update(key);
     ret.push(BigInt(hash.getHash("HEX"), 16).shiftLeft(224));
     // get SHA224
-    hash = new SHA("SHA-224", "TEXT");
+    hash = new SHA("SHA-224", "ARRAYBUFFER");
     hash.update(key);
     ret.push(BigInt(hash.getHash("HEX"), 16).shiftLeft(160));
     // get SHA256
@@ -69,7 +69,7 @@ m.get_hashes = function get_hashes(key) {
     // get SHA384
     ret.push(BigInt(base.SHA384(key), 16));
     // get SHA512
-    hash = new SHA("SHA-224", "TEXT");
+    hash = new SHA("SHA-224", "ARRAYBUFFER");
     hash.update(key);
     ret.push(BigInt(hash.getHash("HEX"), 16));
     return ret;
@@ -196,15 +196,16 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     }
 
     get data_storing()  {
+        const self = this;
         function *_data_storing()   {
-            for (let key in this.routing_table) {
-                let node = this.routing_table[key];
+            for (let key in self.routing_table) {
+                let node = self.routing_table[key];
                 if (!node.leeching) {
                     yield node;
                 }
             }
         }
-        return data_storing();
+        return _data_storing();
     }
 
     __handle_peers(msg, conn)   {
@@ -391,7 +392,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         }
     }
 
-    find(goal)  {
+    find(key)   {
         let ret = null;
         let gap = m.limit;
         if (!this.leeching) {
@@ -408,7 +409,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         return ret;
     }
 
-    find_prev(goal) {
+    find_prev(key)  {
         let ret = null;
         let gap = m.limit;
         if (!this.leeching) {
@@ -548,7 +549,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             }
         }
         else    {
-            node.send(flags.whisper, [base.flags.store, method, base.to_base_58(key), value]);
+            node.send(base.flags.whisper, [base.flags.store, method, base.to_base_58(key), value]);
         }
     }
 
