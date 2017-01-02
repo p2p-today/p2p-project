@@ -46,7 +46,8 @@ help:
 
 .PHONY: clean
 clean:
-	rm -rf $(BUILDDIR)/*
+	find $(BUILDDIR) ! -name 'keybase.txt' -type f -exec rm -f {} +
+	find $(BUILDDIR) -type d -empty -delete
 
 .PHONY: html
 html:
