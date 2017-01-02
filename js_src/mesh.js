@@ -223,7 +223,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     __on_TCP_Connection(sock)  {
         var conn = new this.conn_type(sock, this, false);
-        this._send_handshake_response(conn);
+        this._send_peers(conn);
         this.awaiting_ids.push(conn);
         return conn;
     }
@@ -232,7 +232,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var conn = new this.conn_type(sock, this, false);
         const self = this;
         sock.on("connect", ()=>{
-            self._send_handshake_response(conn);
+            self._send_peers(conn);
         });
         this.awaiting_ids.push(conn);
         return conn;
@@ -264,9 +264,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         return ret;
     }
 
-    _send_handshake_response(handler)   {
+    _send_peers(handler)   {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket._send_handshake_response(handler)
+        *     .. js:function:: js2p.mesh.mesh_socket._send_peers(handler)
         *
         *         Shortcut method to send a handshake response. This method is extracted from
         *         :js:meth:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
@@ -333,12 +333,12 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             var self = this;
             if (conn.on)    {
                 conn.on('connect', ()=>{
-                    self._send_handshake_response(handler);
+                    self._send_peers(handler);
                 })
             }
             else    {
                 var onopen = ()=>{
-                    this._send_handshake_response(handler);
+                    this._send_peers(handler);
                 }
                 if (conn.readyState === 1)  {
                     onopen();
@@ -349,11 +349,11 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         else if (this.protocol.encryption === 'SSL')    {
             const self = this;
             conn.on('secureConnect', ()=>{
-                self._send_handshake_response(handler);
+                self._send_peers(handler);
             })
         }
         else    {
-            this._send_handshake_response(handler);
+            this._send_peers(handler);
         }
         if (id) {
             this.routing_table[id] = handler;
