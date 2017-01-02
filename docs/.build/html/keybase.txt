@@ -1,0 +1,52 @@
+https://keybase.io/gappleto97
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of https://p2p.today
+  * I am gappleto97 (https://keybase.io/gappleto97) on keybase.
+  * I have a public key ASA7Za_FgGSGL98PXbTZ_NYbxVlV4kEXQXxgL5S5TpOqLgo
+
+To do so, I am signing this object:
+
+{
+    "body": {
+        "key": {
+            "eldest_kid": "01018392f43545a9985b13952bdb2a1272b8bbdc58fa49f5b75af16e96b6f5114a310a",
+            "host": "keybase.io",
+            "kid": "01203b65afc58064862fdf0f5db4d9fcd61bc55955e24117417c602f94b94e93aa2e0a",
+            "uid": "11b935633debcea66a90676d958f1319",
+            "username": "gappleto97"
+        },
+        "service": {
+            "hostname": "p2p.today",
+            "protocol": "https:"
+        },
+        "type": "web_service_binding",
+        "version": 1
+    },
+    "client": {
+        "name": "keybase.io go client",
+        "version": "1.0.18"
+    },
+    "ctime": 1479363046,
+    "expire_in": 504576000,
+    "merkle_root": {
+        "ctime": 1479362904,
+        "hash": "4bb0ff894d461e1102768ba33b50a9ac16e2d438fe6e5b669e3cb117278bd0e795cb09c4497a115a15ff8002f4fec74293c2b060eb85f8928b7fe77227ef71c1",
+        "seqno": 718587
+    },
+    "prev": "8c8c9c81ee857025d907b536b083d316500960cc8e263f42e5102c4ef18fe9a7",
+    "seqno": 11,
+    "tag": "signature"
+}
+
+which yields the signature:
+
+hKRib2R5hqhkZXRhY2hlZMOpaGFzaF90eXBlCqNrZXnEIwEgO2WvxYBkhi/fD1202fzWG8VZVeJBF0F8YC+UuU6Tqi4Kp3BheWxvYWTFAvR7ImJvZHkiOnsia2V5Ijp7ImVsZGVzdF9raWQiOiIwMTAxODM5MmY0MzU0NWE5OTg1YjEzOTUyYmRiMmExMjcyYjhiYmRjNThmYTQ5ZjViNzVhZjE2ZTk2YjZmNTExNGEzMTBhIiwiaG9zdCI6ImtleWJhc2UuaW8iLCJraWQiOiIwMTIwM2I2NWFmYzU4MDY0ODYyZmRmMGY1ZGI0ZDlmY2Q2MWJjNTU5NTVlMjQxMTc0MTdjNjAyZjk0Yjk0ZTkzYWEyZTBhIiwidWlkIjoiMTFiOTM1NjMzZGViY2VhNjZhOTA2NzZkOTU4ZjEzMTkiLCJ1c2VybmFtZSI6ImdhcHBsZXRvOTcifSwic2VydmljZSI6eyJob3N0bmFtZSI6InAycC50b2RheSIsInByb3RvY29sIjoiaHR0cHM6In0sInR5cGUiOiJ3ZWJfc2VydmljZV9iaW5kaW5nIiwidmVyc2lvbiI6MX0sImNsaWVudCI6eyJuYW1lIjoia2V5YmFzZS5pbyBnbyBjbGllbnQiLCJ2ZXJzaW9uIjoiMS4wLjE4In0sImN0aW1lIjoxNDc5MzYzMDQ2LCJleHBpcmVfaW4iOjUwNDU3NjAwMCwibWVya2xlX3Jvb3QiOnsiY3RpbWUiOjE0NzkzNjI5MDQsImhhc2giOiI0YmIwZmY4OTRkNDYxZTExMDI3NjhiYTMzYjUwYTlhYzE2ZTJkNDM4ZmU2ZTViNjY5ZTNjYjExNzI3OGJkMGU3OTVjYjA5YzQ0OTdhMTE1YTE1ZmY4MDAyZjRmZWM3NDI5M2MyYjA2MGViODVmODkyOGI3ZmU3NzIyN2VmNzFjMSIsInNlcW5vIjo3MTg1ODd9LCJwcmV2IjoiOGM4YzljODFlZTg1NzAyNWQ5MDdiNTM2YjA4M2QzMTY1MDA5NjBjYzhlMjYzZjQyZTUxMDJjNGVmMThmZTlhNyIsInNlcW5vIjoxMSwidGFnIjoic2lnbmF0dXJlIn2jc2lnxECdNqpo/DZRvH5VGSmT39irIlHQR7TEBGzpFI/Gk/TlhNPX4b/Z+IlvHtFg72b2nou1LywSpoy4CUl4DhAOks8JqHNpZ190eXBlIKRoYXNogqR0eXBlCKV2YWx1ZcQgFq+g406Pnn7DQCjaDqpPdgINO5hM1dES/LdOrbyMN1mjdGFnzQICp3ZlcnNpb24B
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/gappleto97
+
