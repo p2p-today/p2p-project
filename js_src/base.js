@@ -268,9 +268,12 @@ base.pack_value = function pack_value(len, i) {
     *     :returns: A big endian buffer of length len
     */
     var arr = new Buffer(new Array(len));
-    for (let j = 0; j < len && i !== 0; j++)    {
-        arr[len - j - 1] = i & 0xff;
-        i = i >> 8;
+    if (!BigInt.isInstance(i))  {
+        i = BigInt(i);
+    }
+    for (let j = 0; j < len && i.compare(0); j++)    {
+        arr[len - j - 1] = i.and(0xff).valueOf();
+        i = i.shiftRight(8);
     }
     return arr;
 }
