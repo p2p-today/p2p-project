@@ -171,7 +171,17 @@ html: jsdocs
 #Begin General section
 
 clean:
-	rm -r build || echo "build already clean"
+	rm -rf build
+	rm -rf dist
+	rm -rf node_modules
+	rm -rf py2p.egg-info
+	rm -rf .cache
+	find docs/c          ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
+	find docs/cpp        ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
+	find docs/java       ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
+	find docs/javascript ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
+	find docs/go         ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
+	rm -rf docs/py2p
 	cd docs; $(MAKE) clean
 
 py_all: LICENSE setup.py setup.cfg python2 python3 html cpython2 cpython3 pypy

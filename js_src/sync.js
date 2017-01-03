@@ -100,15 +100,15 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         }
     }
 
-    _send_handshake_response(handler) {
+    _send_peers(handler) {
         /**
-        *     .. js:function:: js2p.sync.sync_socket._send_handshake_response(handler)
+        *     .. js:function:: js2p.sync.sync_socket._send_peers(handler)
         *
         *         Shortcut method to send a handshake response. This method is extracted from :js:func:`~js2p.mesh.mesh_socket.__handle_handshake`
         *         in order to allow cleaner inheritence from :js:class:`js2p.sync.sync_socket`
         *
         */
-        super._send_handshake_response(handler)
+        super._send_peers(handler)
         for (var key in this.data)  {
             let meta = this.metadata[key];
             handler.send(base.flags.whisper, [base.flags.store, key, this.data[key], meta.owner, base.to_base_58(meta.timestamp)]);

@@ -118,9 +118,8 @@ class chord_socket(mesh_socket):
         # self.register_handler(self._handle_peers)
         self.register_handler(self.__handle_meta)
         self.register_handler(self.__handle_key)
-        self.register_handler(self.__handle_retrieved)
-        self.register_handler(self.__handle_request)
         self.register_handler(self.__handle_retrieve)
+        self.register_handler(self.__handle_retrieved)
         self.register_handler(self.__handle_store)
 
     @property
@@ -271,33 +270,6 @@ class chord_socket(mesh_socket):
                 value.value = packets[3]
                 if value.callback:
                     value.callback_method(packets[1], packets[2])
-            return True
-
-    def __handle_request(self, msg, handler):
-        """This callback is used to deal with request signals. Its two
-        primary jobs are:
-
-        - if you know the ID requested, respond to it
-        - if you don't, make a request with your peers
-
-        Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.chord.chord_connection`
-
-        Returns:
-            Either ``True`` or ``None``
-        """
-        packets = msg.packets
-        if packets[0] == flags.request:
-            goal = from_base_58(packets[1])
-            node = self.find(goal)
-            if node is not self:
-                node.send(flags.whisper, flags.request, packets[1], msg.id)
-                ret = awaiting_value()
-                ret.callback = handler
-                self.requests[(packets[1], msg.id)] = ret
-            else:
-                handler.send(flags.whisper, flags.retrieved, packets[1], packets[2], self.out_addr)
             return True
 
     def __handle_retrieve(self, msg, handler):
@@ -583,15 +555,6 @@ class chord_socket(mesh_socket):
         hash table ring
         """
         return self.find_prev(self.id_10 + 1)
-
-    def _send_peers(self, handler):
-        """Shortcut method for sending a peerlist to a given handler
-
-        Args:
-            handler: A :py:class:`~py2p.chord.chord_connection`
-        """
-        handler.send(flags.whisper, flags.peers,
-                     json.dumps(self._get_peer_list()))
 
     def _send_meta(self, handler):
         """Shortcut method for sending a chord-specific data to a given handler

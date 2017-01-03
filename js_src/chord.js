@@ -7,6 +7,7 @@
 
 const base = require('./base.js');
 const mesh = require('./mesh.js');
+const buffer = require('buffer');
 const SHA = require('jssha');
 const BigInt = require('big-integer');
 
@@ -39,7 +40,7 @@ m.distance = function distance(a, b, limit) {
     }
 };
 
-m.get_hashes(key)   {
+m.get_hashes = function get_hashes(key) {
     /**
     * .. js:function:: js2p.chord.get_hashes(key)
     *
@@ -56,23 +57,64 @@ m.get_hashes(key)   {
     */
     let ret = [];
     // get SHA1
-    let hash = new SHA("SHA-1", "TEXT");
-    hash.update(text);
+    let hash = new SHA("SHA-1", "ARRAYBUFFER");
+    hash.update(key);
     ret.push(BigInt(hash.getHash("HEX"), 16).shiftLeft(224));
     // get SHA224
-    hash = new SHA("SHA-224", "TEXT");
-    hash.update(text);
+    hash = new SHA("SHA-224", "ARRAYBUFFER");
+    hash.update(key);
     ret.push(BigInt(hash.getHash("HEX"), 16).shiftLeft(160));
     // get SHA256
     ret.push(BigInt(base.SHA256(key), 16).shiftLeft(128));
     // get SHA384
     ret.push(BigInt(base.SHA384(key), 16));
     // get SHA512
-    hash = new SHA("SHA-224", "TEXT");
-    hash.update(text);
+    hash = new SHA("SHA-224", "ARRAYBUFFER");
+    hash.update(key);
     ret.push(BigInt(hash.getHash("HEX"), 16));
     return ret;
 };
+
+class awaiting_value    {
+    constructor(value)  {
+        this.value = value;
+        this.callback = undefined;
+        this.__is_awaiting_value = true;
+    }
+
+    callback_method(method, key)    {
+        this.callback.send(
+            base.flags.whisper,
+            [base.flags.retrieved, method, key, self.value]
+        );
+    }
+}
+
+function most_common(tmp)   {
+    lst = [];
+    for (let item in tmp)   {
+        if (item.__is_awaiting_value)   {
+            if (buffer.isBuffer(item))  {
+                lst.push(item.value.toString());
+            }
+            else    {
+                lst.push(item.value);
+            }
+        }
+        else if (buffer.isBuffer(item)) {
+            lst.push(item.toString());
+        }
+        else    {
+            lst.push(item);
+        }
+    }
+
+    let ret = lst.sort((a,b)=>{
+        return lst.filter((v)=>{ return v===a }).length
+             - lst.filter((v)=>{ return v===b }).length;
+    }).pop();
+    return [ret, lst.filter((v)=>{ return v===ret }).length];
+}
 
 
 m.chord_connection = class chord_connection extends mesh.mesh_connection    {
@@ -124,7 +166,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         const self = this;
         this.conn_type = m.chord_connection;
         this.leeching = true;
-        this.id_10 = base.from_base_58(id);
+        this.id_10 = base.from_base_58(this.id);
         this.data = {
             'sha1': {},
             'sha224': {},
@@ -136,7 +178,6 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         this.register_handler(function __handle_meta(msg, conn)  {return self.__handle_meta(msg, conn);});
         this.register_handler(function __handle_key(msg, conn)  {return self.__handle_key(msg, conn);});
         this.register_handler(function __handle_retrieved(msg, conn)  {return self.__handle_retrieved(msg, conn);});
-        this.register_handler(function __handle_request(msg, conn)  {return self.__handle_request(msg, conn);});
         this.register_handler(function __handle_retrieve(msg, conn)  {return self.__handle_retrieve(msg, conn);});
         this.register_handler(function __handle_store(msg, conn)  {return self.__handle_store(msg, conn);});
     }
@@ -154,12 +195,16 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     }
 
     get data_storing()  {
-        for (let key in this.routing_table) {
-            let node = this.routing_table[key];
-            if (!node.leeching) {
-                yield node;
+        const self = this;
+        function *_data_storing()   {
+            for (let key in self.routing_table) {
+                let node = self.routing_table[key];
+                if (!node.leeching) {
+                    yield node;
+                }
             }
         }
+        return _data_storing();
     }
 
     __handle_peers(msg, conn)   {
@@ -195,6 +240,24 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
                 }
             });
             return true;
+        }
+    }
+
+    __connect(addr, port, id)   {
+        try {
+            let handler = this.connect(addr, port, id)
+            if (handler && !this.leeching)  {
+                this._send_handshake(handler)
+                this._send_meta(handler)
+            }
+        }
+        catch(e) {}
+    }
+
+    _send_meta(handler) {
+        handler.send(base.flags.whisper, [base.flags.handshake, this.leeching ? '1' : '0']);
+        for (let key in this.__keys)    {
+            handler.send(base.flags.whisper, [base.flags.notify, key]);
         }
     }
 
@@ -237,12 +300,12 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         const packets = msg.packets;
         if (packets[0].toString() === base.flags.handshake && packets.length === 2) {
             let new_meta = (packets[1].toString === '1');
-            if (new_meta !== handler.leeching)  {
-                this._send_meta(handler);
-                handler.leeching = new_meta;
-                if (!this.leeching && !handler.leeching)    {
-                    handler.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this._get_peer_list())]);
-                    let update = this.dump_data(handler.id_10, this.id_10);
+            if (new_meta !== conn.leeching)  {
+                this._send_meta(conn);
+                conn.leeching = new_meta;
+                if (!this.leeching && !conn.leeching)    {
+                    conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this._get_peer_list())]);
+                    let update = this.dump_data(conn.id_10, this.id_10);
                     for (let method in update)  {
                         let table = update[method];
                         for (let key in table)  {
@@ -291,29 +354,11 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         }
     }
 
-    __handle_request(msg, conn)   {
-        const packets = msg.packets;
-        if (packets[0].toString() === base.flags.request)   {
-            let goal = from_base_58(packets[1]);
-            let node = this.find(goal);
-            if (!Object.is(node, this)) {
-                node.send(base.flags.whisper, [base.flags.request, packets[1], msg.id]);
-                let ret = awaiting_value();
-                ret.callback = handler;
-                this.requests[[packets[1], msg.id]] = ret;
-            }
-            else    {
-                handler.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], this.out_addr]);
-            }
-            return true;
-        }
-    }
-
     __handle_retrieve(msg, conn)   {
         const packets = msg.packets;
         if (packets[0].toString() === base.flags.retrieve)  {
-            let val = this.__lookup(packets[1].toString(), base.from_base_58(packets[2]), handler);
-            handler.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], val.value]);
+            let val = this.__lookup(packets[1].toString(), base.from_base_58(packets[2]), conn);
+            conn.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], val.value]);
             return true;
         }
     }
@@ -328,7 +373,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         }
     }
 
-    find(goal)  {
+    find(key)   {
         let ret = null;
         let gap = m.limit;
         if (!this.leeching) {
@@ -345,7 +390,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         return ret;
     }
 
-    find_prev(goal) {
+    find_prev(key)  {
         let ret = null;
         let gap = m.limit;
         if (!this.leeching) {
@@ -389,7 +434,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         return ret;
     }
 
-    __lookup(method, key)   {
+    __lookup(method, key, handler)  {
         let node;
         if (Object.keys(this.routing_table).length) {
             node = this.find(key);
@@ -398,11 +443,11 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
         }
         if (Object.is(node, this))  {
-            return new m.awaiting_value(this.data[method][key]);
+            return new awaiting_value(this.data[method][key]);
         }
         else    {
             node.send(base.flags.whisper, [base.flags.retrieve, method, base.to_base_58(key)]);
-            ret = new m.awaiting_value();
+            ret = new awaiting_value();
             if (handler)    {
                 ret.callback = handler;
             }
@@ -411,28 +456,43 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         }
     }
 
-    get_no_fallback(key, timeout)   {  // TODO: Finish this
+    get_no_fallback(key, timeout) {  // TODO: Finish this
         key = new Buffer(key);
         let keys = m.get_hashes(key);
-        vals = [this.__lookup(method, x) for method, x in zip(hashes, keys)]
-        common, count = most_common(vals)
+        let vals = [
+            this.__lookup('sha1', keys[0]),
+            this.__lookup('sha224', keys[1]),
+            this.__lookup('sha256', keys[2]),
+            this.__lookup('sha384', keys[3]),
+            this.__lookup('sha512', keys[4])
+        ];
+        let ctuple = most_common(vals);
+        let common = ctuple[0];
+        let count = ctuple[1];
         let iters = 0
         let limit = Math.floor(timeout / 0.1) || 100;
         let fails = new Set([undefined, null, '', -1]);
-        while (fails.has(common) && iters < limit)  {
-            time.sleep(0.1)
-            iters += 1
-            common, count = most_common(vals)
-        }
-        if (!fails.has(common) && count > 2)  {
-            return common;
-        }
-        else if (iters === limit)   {
-            throw new Error("Time out");
-        }
-        else    {
-            throw new Error(`This key does not have an agreed-upon value. values=${vals}, count=${count}, majority=3, most common=${common}`);
-        }
+        return new Promise((fulfill, reject) => {
+            function check()    {
+                if (fails.has(common) && iters < limit)   {
+                    setTimeout(check, 100);
+                    iters += 1
+                    ctuple = most_common(vals);
+                    common = ctuple[0];
+                    count = ctuple[1];
+                }
+                else if (!fails.has(common) && count > 2) {
+                    fulfill(common);
+                }
+                else if (iters === limit)   {
+                    reject(new Error("Time out"));
+                }
+                else    {
+                    reject(new Error(`This key does not have an agreed-upon value. values=${vals}, count=${count}, majority=3, most common=${common}`));
+                }
+            }
+            check();
+        });
     }
 
     get(key, fallback, timeout) {
@@ -470,7 +530,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             }
         }
         else    {
-            node.send(flags.whisper, [base.flags.store, method, base.to_base_58(key), value]);
+            node.send(base.flags.whisper, [base.flags.store, method, base.to_base_58(key), value]);
         }
     }
 

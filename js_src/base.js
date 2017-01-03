@@ -268,9 +268,12 @@ base.pack_value = function pack_value(len, i) {
     *     :returns: A big endian buffer of length len
     */
     var arr = new Buffer(new Array(len));
-    for (let j = 0; j < len && i !== 0; j++)    {
-        arr[len - j - 1] = i & 0xff;
-        i = i >> 8;
+    if (!BigInt.isInstance(i))  {
+        i = BigInt(i);
+    }
+    for (let j = 0; j < len && i.compare(0); j++)    {
+        arr[len - j - 1] = i.and(0xff).valueOf();
+        i = i.shiftRight(8);
     }
     return arr;
 }
@@ -346,8 +349,8 @@ base.SHA384 = function SHA384(text) {
     *
     *     :returns: the hex SHA384 hash
     */
-    var hash = new SHA("SHA-384", "TEXT");
-    hash.update(text);
+    var hash = new SHA("SHA-384", "ARRAYBUFFER");
+    hash.update(new Buffer(text));
     return hash.getHash("HEX");
 };
 
@@ -362,8 +365,8 @@ base.SHA256 = function SHA256(text) {
     *
     *     :returns: the hex SHA256 hash
     */
-    var hash = new SHA("SHA-256", "TEXT");
-    hash.update(text);
+    var hash = new SHA("SHA-256", "ARRAYBUFFER");
+    hash.update(new Buffer(text));
     return hash.getHash("HEX");
 };
 
