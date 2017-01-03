@@ -178,7 +178,6 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         this.register_handler(function __handle_meta(msg, conn)  {return self.__handle_meta(msg, conn);});
         this.register_handler(function __handle_key(msg, conn)  {return self.__handle_key(msg, conn);});
         this.register_handler(function __handle_retrieved(msg, conn)  {return self.__handle_retrieved(msg, conn);});
-        this.register_handler(function __handle_request(msg, conn)  {return self.__handle_request(msg, conn);});
         this.register_handler(function __handle_retrieve(msg, conn)  {return self.__handle_retrieve(msg, conn);});
         this.register_handler(function __handle_store(msg, conn)  {return self.__handle_store(msg, conn);});
     }
@@ -350,24 +349,6 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
                 if (value.callback) {
                     value.callback_method(packets[1], packets[2]);
                 }
-            }
-            return true;
-        }
-    }
-
-    __handle_request(msg, conn)   {
-        const packets = msg.packets;
-        if (packets[0].toString() === base.flags.request)   {
-            let goal = from_base_58(packets[1]);
-            let node = this.find(goal);
-            if (!Object.is(node, this)) {
-                node.send(base.flags.whisper, [base.flags.request, packets[1], msg.id]);
-                let ret = new awaiting_value();
-                ret.callback = conn;
-                this.requests[[packets[1], msg.id]] = ret;
-            }
-            else    {
-                conn.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], this.out_addr]);
             }
             return true;
         }
