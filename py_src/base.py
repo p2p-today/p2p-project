@@ -79,40 +79,6 @@ class flags():
 
 
 user_salt = str(uuid.uuid4()).encode()
-# This should be in order of preference, with None being implied as last
-compression = []
-
-# Compression testing section
-
-try:
-    import snappy
-    if hasattr(snappy, 'compress'):
-        compression.append(flags.snappy)
-except ImportError:  # pragma: no cover
-    pass
-
-try:
-    import zlib
-    if hasattr(zlib, 'compressobj'):
-        compression.extend((flags.zlib, flags.gzip))
-except ImportError:  # pragma: no cover
-    pass
-
-try:
-    import bz2
-    if hasattr(bz2, 'compress'):
-        compression.append(flags.bz2)
-except ImportError:  # pragma: no cover
-    pass
-
-try:
-    import lzma
-    if hasattr(lzma, 'compress'):
-        compression.append(flags.lzma)
-except ImportError:  # pragma: no cover
-    pass
-
-json_compressions = json.dumps([method.decode() for method in compression])
 
 
 def compress(msg, method):
@@ -192,6 +158,47 @@ def decompress(msg, method):
         return snappy.decompress(msg)
     else:  # pragma: no cover
         raise ValueError('Unknown decompression method')
+
+
+# This should be in order of preference, with None being implied as last
+compression = []
+
+# Compression testing section
+
+try:
+    import snappy
+    if hasattr(snappy, 'compress'):
+        decompress(compress(b'test', flags.snappy), flags.snappy)
+        compression.append(flags.snappy)
+except:  # pragma: no cover
+    pass
+
+try:
+    import zlib
+    if hasattr(zlib, 'compressobj'):
+        decompress(compress(b'test', flags.zlib), flags.zlib)
+        decompress(compress(b'test', flags.gzip), flags.gzip)
+        compression.extend((flags.zlib, flags.gzip))
+except:  # pragma: no cover
+    pass
+
+try:
+    import bz2
+    if hasattr(bz2, 'compress'):
+        decompress(compress(b'test', flags.bz2), flags.bz2)
+        compression.append(flags.bz2)
+except:  # pragma: no cover
+    pass
+
+try:
+    import lzma
+    if hasattr(lzma, 'compress'):
+        decompress(compress(b'test', flags.lzma), flags.lzma)
+        compression.append(flags.lzma)
+except:  # pragma: no cover
+    pass
+
+json_compressions = json.dumps([method.decode() for method in compression])
 
 
 if sys.version_info < (3, ):

@@ -66,7 +66,8 @@ def has_environment_marker_support():
 def main():
     ext_modules = []
     install_requires = open(os.path.join(loc, 'requirements.txt'), 'r').read().split()
-    extras_require = {'SSL': ['cryptography']}
+    extras_require = {'SSL': ['cryptography'],
+                      'snappy': ['python-snappy']}
     if has_environment_marker_support():
         pass
     else:

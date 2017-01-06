@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import inspect
 import json
+import platform
 import random
 import select
 import socket
@@ -100,24 +101,47 @@ class mesh_daemon(base_daemon):
         super(mesh_daemon, self).__init__(*args, **kwargs)
         self.conn_type = mesh_connection
 
-    def mainloop(self):
-        """Daemon thread which handles all incoming data and connections"""
-        while self.main_thread.is_alive() and self.alive:
-            conns = chain(
-                self.server.routing_table.values(),
-                self.server.awaiting_ids,
-                (self.sock,)
-            )
-            for handler in select.select(conns, [], [], 0.01)[0]:
-                if handler == self.sock:
-                    self.handle_accept()
-                else:
-                    self.process_data(handler)
-            for handler in chain(
-                tuple(self.server.routing_table.values()),
-                self.server.awaiting_ids
-            ):
-                self.kill_old_nodes(handler)
+    if platform.system() != 'Java':
+
+        def mainloop(self):
+            """Daemon thread which handles all incoming data and connections"""
+            while self.main_thread.is_alive() and self.alive:
+                conns = chain(
+                    self.server.routing_table.values(),
+                    self.server.awaiting_ids,
+                    (self.sock,)
+                )
+                for handler in select.select(conns, [], [], 0.01)[0]:
+                    if handler == self.sock:
+                        self.handle_accept()
+                    else:
+                        self.process_data(handler)
+                for handler in chain(
+                    tuple(self.server.routing_table.values()),
+                    self.server.awaiting_ids
+                ):
+                    self.kill_old_nodes(handler)
+
+    else:
+
+        def mainloop(self):
+            """Daemon thread which handles all incoming data and connections"""
+            while self.main_thread.is_alive() and self.alive:
+                conns = tuple(chain(
+                    self.server.routing_table.values(),
+                    self.server.awaiting_ids,
+                    (self.sock,)
+                ))
+                for handler in select.select(conns, [], [], 0.01)[0]:
+                    if handler == self.sock:
+                        self.handle_accept()
+                    else:
+                        self.process_data(handler)
+                for handler in chain(
+                    tuple(self.server.routing_table.values()),
+                    self.server.awaiting_ids
+                ):
+                    self.kill_old_nodes(handler)
 
     def handle_accept(self):
         """Handle an incoming connection"""
