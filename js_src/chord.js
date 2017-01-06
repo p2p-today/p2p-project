@@ -33,9 +33,15 @@ m.max_outgoing = mesh.max_outgoing;
 m.distance = function distance(a, b, limit) {
     let raw = BigInt(a).minus(b);
     if (limit !== undefined)    {
+        if (raw.lesser(0))  {
+            return raw.mod(limit).plus(limit).mod(limit);
+        }
         return raw.mod(limit);
     }
     else    {
+        if (raw.lesser(0))  {
+            return raw.mod(m.limit).plus(m.limit).mod(m.limit);
+        }
         return raw.mod(m.limit);
     }
 };
