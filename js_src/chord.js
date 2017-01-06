@@ -69,7 +69,7 @@ m.get_hashes = function get_hashes(key) {
     // get SHA384
     ret.push(BigInt(base.SHA384(key), 16));
     // get SHA512
-    hash = new SHA("SHA-224", "ARRAYBUFFER");
+    hash = new SHA("SHA-512", "ARRAYBUFFER");
     hash.update(key);
     ret.push(BigInt(hash.getHash("HEX"), 16));
     return ret;
@@ -254,6 +254,23 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         catch(e) {}
     }
 
+    join()  {
+        this.leeching = false;
+        for (let handler in this.awaiting_ids)  {
+            this._send_handshake(handler);
+            this._send_peers(handler);
+            this._send_meta(handler);
+        }
+        for (let key in Object.keys(this.routing_table))    {
+            let handler = this.routing_table[key];
+            if (handler)    {
+                this._send_handshake(handler);
+                this._send_peers(handler);
+                this._send_meta(handler);
+            }
+        }
+    }
+
     _send_meta(handler) {
         handler.send(base.flags.whisper, [base.flags.handshake, this.leeching ? '1' : '0']);
         for (let key in this.__keys)    {
@@ -280,7 +297,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
                 let beg = tuple[0];
                 let mid = tuple[1];
                 let end = tuple[2];
-                if (m.distance(beg.id_10, end.id_10) < gap && mid.outgoing)    {
+                if (m.distance(beg.id_10, end.id_10).lesser(gap) && mid.outgoing)    {
                     gap = m.distance(beg.id_10, end.id_10);
                     narrowest = mid;
                 }
@@ -447,11 +464,11 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         }
         else    {
             node.send(base.flags.whisper, [base.flags.retrieve, method, base.to_base_58(key)]);
-            ret = new awaiting_value();
+            let ret = new awaiting_value();
             if (handler)    {
                 ret.callback = handler;
             }
-            this.requests[[method, to_base_58(key)]] = ret;
+            this.requests[[method, base.to_base_58(key)]] = ret;
             return ret;
         }
     }
@@ -475,6 +492,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         return new Promise((fulfill, reject) => {
             function check()    {
                 if (fails.has(common) && iters < limit)   {
+                    console.log('if');
                     setTimeout(check, 100);
                     iters += 1
                     ctuple = most_common(vals);
@@ -482,12 +500,15 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
                     count = ctuple[1];
                 }
                 else if (!fails.has(common) && count > 2) {
+                    console.log('fulfill');
                     fulfill(common);
                 }
                 else if (iters === limit)   {
+                    console.log('timeout');
                     reject(new Error("Time out"));
                 }
                 else    {
+                    console.log('else');
                     reject(new Error(`This key does not have an agreed-upon value. values=${vals}, count=${count}, majority=3, most common=${common}`));
                 }
             }
