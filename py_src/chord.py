@@ -386,7 +386,7 @@ class chord_socket(mesh_socket):
         iters = 0
         limit = timeout // 0.1
         fails = {None, b'', -1}
-        while common in fails and iters < limit:
+        while (common in fails or count <= len(hashes) // 2) and iters < limit:
             time.sleep(0.1)
             iters += 1
             common, count = most_common(vals)

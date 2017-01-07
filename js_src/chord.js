@@ -7,9 +7,10 @@
 
 const base = require('./base.js');
 const mesh = require('./mesh.js');
-const buffer = require('buffer');
+const Buffer = require('buffer').Buffer;
 const SHA = require('jssha');
 const BigInt = require('big-integer');
+const util = require('util');
 
 var m;
 
@@ -97,29 +98,41 @@ class awaiting_value    {
 }
 
 function most_common(tmp)   {
-    lst = [];
-    for (let item in tmp)   {
-        if (item.__is_awaiting_value)   {
-            if (buffer.isBuffer(item))  {
-                lst.push(item.value.toString());
-            }
-            else    {
+    let lst = [];
+    for (let item of tmp)   {
+        if (item === null || item === undefined)    {}
+        else if (item.__is_awaiting_value)  {
+            if (Buffer.isBuffer(item.value))  {
                 lst.push(item.value);
             }
+            else if (item.value !== null &&
+                     item.value !== undefined)  {
+                lst.push(new Buffer(item.value));
+            }
         }
-        else if (buffer.isBuffer(item)) {
-            lst.push(item.toString());
+        else if (Buffer.isBuffer(item)) {
+            lst.push(item);
         }
         else    {
-            lst.push(item);
+            lst.push(new Buffer(item));
+        }
+    }
+
+    if (!lst.length)    {
+        return [undefined, 0];
+    }
+
+    function comparator(o)  {
+        return function(v)  {
+            return !Buffer.compare(v,o);
         }
     }
 
     let ret = lst.sort((a,b)=>{
-        return lst.filter((v)=>{ return v===a }).length
-             - lst.filter((v)=>{ return v===b }).length;
+        return lst.filter(comparator(a)).length
+             - lst.filter(comparator(b)).length;
     }).pop();
-    return [ret, lst.filter((v)=>{ return v===ret }).length];
+    return [ret, lst.filter(comparator(ret)).length+1];
 }
 
 
@@ -327,7 +340,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
                 this._send_meta(conn);
                 conn.leeching = new_meta;
                 if (!this.leeching && !conn.leeching)    {
-                    conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this._get_peer_list())]);
+                    conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
                     let update = this.dump_data(conn.id_10, this.id_10);
                     for (let method in update)  {
                         let table = update[method];
@@ -381,7 +394,12 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         const packets = msg.packets;
         if (packets[0].toString() === base.flags.retrieve)  {
             let val = this.__lookup(packets[1].toString(), base.from_base_58(packets[2]), conn);
-            conn.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], val.value]);
+            try {
+                conn.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], val.value]);
+            }
+            catch (e)   {
+                console.log(e);
+            }
             return true;
         }
     }
@@ -458,7 +476,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     }
 
     __lookup(method, key, handler)  {
-        let node;
+        let node = this;
         if (Object.keys(this.routing_table).length) {
             node = this.find(key);
         }
@@ -480,25 +498,26 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     }
 
     get_no_fallback(key, timeout) {  // TODO: Finish this
-        key = new Buffer(key);
-        let keys = m.get_hashes(key);
-        let vals = [
-            this.__lookup('sha1', keys[0]),
-            this.__lookup('sha224', keys[1]),
-            this.__lookup('sha256', keys[2]),
-            this.__lookup('sha384', keys[3]),
-            this.__lookup('sha512', keys[4])
-        ];
-        let ctuple = most_common(vals);
-        let common = ctuple[0];
-        let count = ctuple[1];
-        let iters = 0
-        let limit = Math.floor(timeout / 0.1) || 100;
-        let fails = new Set([undefined, null, '', -1]);
         return new Promise((fulfill, reject) => {
+
+            key = new Buffer(key);
+            let keys = m.get_hashes(key);
+            let vals = [
+                this.__lookup('sha1', keys[0]),
+                this.__lookup('sha224', keys[1]),
+                this.__lookup('sha256', keys[2]),
+                this.__lookup('sha384', keys[3]),
+                this.__lookup('sha512', keys[4])
+            ];
+            let ctuple = most_common(vals);
+            let common = ctuple[0];
+            let count = ctuple[1];
+            let iters = 0
+            let limit = Math.floor(timeout / 0.1) || 100;
+            let fails = new Set([undefined, null, '', -1]);
+
             function check()    {
-                if (fails.has(common) && iters < limit)   {
-                    console.log('if');
+                if ((fails.has(common) || count <= 2) && iters < limit)   {
                     setTimeout(check, 100);
                     iters += 1
                     ctuple = most_common(vals);
@@ -506,16 +525,13 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
                     count = ctuple[1];
                 }
                 else if (!fails.has(common) && count > 2) {
-                    console.log('fulfill');
                     fulfill(common);
                 }
                 else if (iters === limit)   {
-                    console.log('timeout');
                     reject(new Error("Time out"));
                 }
                 else    {
-                    console.log('else');
-                    reject(new Error(`This key does not have an agreed-upon value. values=${vals}, count=${count}, majority=3, most common=${common}`));
+                    reject(new Error(`This key does not have an agreed-upon value. values=${utils.inspect(vals)}, count=${count}, majority=3, most common=${utils.inspect(common)}`));
                 }
             }
             check();
@@ -539,7 +555,9 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             return this.get_no_fallback(key, timeout);
         }
         catch (e)   {
-            return fallback;
+            return new Promise((resolve, reject)=>{
+                resolve(fallback);
+            });
         }
     }
 
@@ -648,7 +666,9 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *         Because this data is changed asynchronously, the value is
         *         only garunteed to be accurate at the time of generation.
         *
-        *         :returns: A generator which yields :js:class:`Buffer`s
+        *         :returns: A generator which yields :js:class:`Promise`s.
+        *                   These :js:class:`Promise`s will yield a
+        *                   :js:class:`Buffer`, on success.
         */
         for (let key of this.keys())  {
             let val = this.get(key);
@@ -669,7 +689,9 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *         is only garunteed to be present at the time of generation.
         *
         *         :returns: A generator which yields pairs of
-        *                   :js:class:`Buffer`s
+        *                   :js:class:`Buffer`s and :js:class:`Promise`s. The
+        *                   :js:class:`Promise`s will yield a
+        *                   :js:class:`Buffer`, on success.
         */
         for (let key of this.keys())  {
             let val = this.get(key);
@@ -684,9 +706,10 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *     .. js:function:: js2p.chord.chord_socket.pop(key [, fallback])
         *
         *         Returns the value at a given key. As a side effect, it
-        *         it deletes that key.
+        *         it deletes that association.
         *
-        *         :returns: A :js:class:`Buffer`
+        *         :returns: A :js:class:`Promise`, similar to the
+        *                   :js:func:`js2p.chord.chord_socket.get` method.
         */
         let val = this.get(key, fallback);
         if (val !== fallback)    {
@@ -700,12 +723,55 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *     .. js:function:: js2p.chord.chord_socket.popitem()
         *
         *         Returns the association at a key. As a side effect, it
-        *         it deletes that key.
+        *         it deletes that association.
         *
-        *         :returns: A pair of :js:class:`Buffer`s
+        *         :returns: A pair of :js:class:`Buffer` and
+        *                   :js:class:`Promise`, similar to an item in
+        *                   :js:func:`js2p.chord.chord_socket.items`
         */
         for (let key of this.keys())  {
             return [key, this.pop(key)];
         }
+    }
+
+    copy()  {
+        /**
+        *     .. js:function:: js2p.chord.chord_socket.copy()
+        *
+        *         Returns the :js:class:`Promise` of an :js:class:`Object`,
+        *         with the same associations as this DHT.
+        *
+        *         .. note::
+        *
+        *             This is potentially a very slow operation. It is probably
+        *             significantly faster, and likely to be more accurate, if
+        *             you iterate over :js:func:`js2p.chord.chord_socket.items`
+        *
+        *         :returns: The :js:class:`Promise` of an :js:class:`Object`,
+        *                   with the same associations as this DHT.
+        */
+        return new Promise((resolve, reject)=>{
+            let ret = {};
+            let count = this.__keys.length;
+            for (let item of this.items())  {
+                let key = item[0];
+                item[1].then((value)=>{
+                    ret[key] = value;
+                    --count;
+                },
+                (err)=>{
+                    --count;
+                });
+            }
+            function check() {
+                if (!count) {
+                    resolve(ret);
+                }
+                else    {
+                    setTimeout(check, 100);
+                }
+            }
+            check();
+        });
     }
 }

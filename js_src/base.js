@@ -100,7 +100,7 @@ base.flags = {
     response:    '\x0A',
     store:       '\x0B',
     retrieve:    '\x0C',
-    retrieve:    '\x0D',
+    retrieved:   '\x0D',
 
     //implemented compression methods
     gzip:     '\x11',
