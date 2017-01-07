@@ -1,18 +1,29 @@
 from __future__ import print_function
 from __future__ import with_statement
 
-import base64
 import calendar
 import os
-import shutil
 import socket
-import tempfile
 import time
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+from logging import (getLogger, INFO, DEBUG)
+
+
+def log_entry(name, level):
+
+    def annotation(function):
+        log = getLogger(name)
+
+        def caller(*args, **kwargs):
+            log.log(level, "Entering function {}".format(name))
+            function(*args, **kwargs)
+            log.log(level, "Exiting function {}".format(name))
+
+        return caller
+
+    metalogger = getLogger('py2p.utils.log_entry')
+    metalogger.info('Adding log handler to {} at level {}'.format(name, level))
+    return annotation
 
 
 def _doc_merger(parent, child):
@@ -24,10 +35,13 @@ def _doc_merger(parent, child):
 def inherit_doc(function):
     """A decorator which allows you to inherit docstrings from a specified
     function."""
+    logger = getLogger('py2p.utils.inherit_doc')
+    logger.info('Parsing documentation inheritence for {}'.format(function))
     try:
         from custom_inherit import doc_inherit
         return doc_inherit(function, _doc_merger)
     except:
+        logger.info('custom_inherit is not available. Using default documentation')
         return lambda x: x  # If unavailable, just return the function
 
 
@@ -37,7 +51,9 @@ def sanitize_packet(packet):
     """
     if isinstance(packet, type(u'')):
         return packet.encode('utf-8')
-    elif not isinstance(packet, (bytes, bytearray)):
+    elif isinstance(packet, bytearray):
+        return bytes(packet)
+    elif not isinstance(packet, bytes):
         return packet.encode('raw_unicode_escape')
     return packet
 

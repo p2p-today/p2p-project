@@ -16,9 +16,11 @@ import uuid
 
 from collections import namedtuple
 from itertools import chain
+from logging import (getLogger, INFO, DEBUG)
 
 from .utils import (
-    getUTC, intersect, get_lan_ip, get_socket, sanitize_packet, inherit_doc)
+    getUTC, intersect, get_lan_ip, get_socket, sanitize_packet, inherit_doc,
+    log_entry)
 
 protocol_version = "0.5"
 node_policy_version = "607"
@@ -573,6 +575,7 @@ class InternalMessage(object):
 
 class base_connection(object):
     """The base class for a connection"""
+    @log_entry('py2p.base.base_connection.__init__', DEBUG)
     def __init__(self, sock, server, outgoing=False):
         """Sets up a connection to another peer-to-peer socket
 
@@ -744,6 +747,7 @@ class base_connection(object):
 
 class base_daemon(object):
     """The base class for a daemon"""
+    @log_entry('py2p.base.base_daemon.__init__', DEBUG)
     def __init__(self, addr, port, server):
         """Sets up a daemon process for your peer-to-peer socket
 
@@ -764,6 +768,11 @@ class base_daemon(object):
         self.sock.settimeout(0.1)
         self.exceptions = []
         self.alive = True
+        self._logger = getLogger(
+            '{}.{}.{}'.format(
+                self.__class__.__module__,
+                self.__class__.__name__,
+                self.server.id))
         self.main_thread = threading.current_thread()
         self.daemon = threading.Thread(target=self.mainloop)
         self.daemon.start()
@@ -828,6 +837,7 @@ class base_daemon(object):
 
 class base_socket(object):
     """The base class for a peer-to-peer socket abstractor"""
+    @log_entry('py2p.base.base_socket.__init__', DEBUG)
     def __init__(self, addr, port, prot=default_protocol, out_addr=None,
                  debug_level=0):
         """Initializes a peer to peer socket
@@ -861,6 +871,11 @@ class base_socket(object):
         info = (str(self.out_addr).encode(), prot.id, user_salt)
         h = hashlib.sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
+        self._logger = getLogger(
+            '{}.{}.{}'.format(
+                self.__class__.__module__,
+                self.__class__.__name__,
+                self.id))
         self.__handlers = []
         self.__closed = False
 
@@ -1051,15 +1066,20 @@ class message(object):
                        prefixed with base.flags.whisper, so the other end will
                        receive ``[base.flags.whisper, *args]``
         """
+        self.server._logger.debug('Initiating a direct reply to message ID {}'.format(self.id))
         if self.server.routing_table.get(self.sender):
             self.server.routing_table.get(self.sender).send(
                 flags.whisper, flags.whisper, *args)
         else:
+            self.server._logger.debug('Requesting connection for direct reply '
+                                      'to message ID {}'.format(self.id))
             request_hash = hashlib.sha384(
                 self.sender + to_base_58(getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
             self.server.requests[request_id] = (flags.whisper, flags.whisper) + tuple(args)
-            print("You aren't connected to the original sender. This reply "
-                  "is not guarunteed, but we're trying to make a connection"
-                  " and put the message through.")
+            self.server._logger.critical("You aren't connected to the original "
+                                         "sender. This reply is not guarunteed,"
+                                         " but we're trying to make a "
+                                         "connection and put the message "
+                                         "through.")
