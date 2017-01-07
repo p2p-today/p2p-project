@@ -13,6 +13,7 @@ import traceback
 
 from collections import deque
 from itertools import chain
+from logging import (INFO, DEBUG)
 
 try:
     from .cbase import protocol
@@ -22,7 +23,7 @@ from .base import (
     flags, compression, to_base_58, from_base_58, base_connection, message,
     base_daemon, base_socket, InternalMessage, json_compressions)
 from .utils import (
-    getUTC, get_socket, intersect, inherit_doc)
+    getUTC, get_socket, intersect, inherit_doc, log_entry)
 
 max_outgoing = 4
 default_protocol = protocol('mesh', "Plaintext")  # SSL")
@@ -96,6 +97,7 @@ class mesh_daemon(base_daemon):
     """The class for mesh daemon.
     This inherits from :py:class:`py2p.base.base_daemon`
     """
+    @log_entry('py2p.mesh.mesh_daemon', DEBUG)
     @inherit_doc(base_daemon.__init__)
     def __init__(self, *args, **kwargs):
         super(mesh_daemon, self).__init__(*args, **kwargs)
@@ -165,6 +167,7 @@ class mesh_socket(base_socket):
     """The class for mesh socket abstraction.
     This inherits from :py:class:`py2p.base.base_socket`
     """
+    @log_entry('py2p.mesh.mesh_socket', DEBUG)
     def __init__(self, addr, port, prot=default_protocol, out_addr=None,
                  debug_level=0):
         """Initializes a mesh socket
