@@ -335,7 +335,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     __handle_meta(msg, conn)   {
         const packets = msg.packets;
         if (packets[0].toString() === base.flags.handshake && packets.length === 2) {
-            let new_meta = (packets[1].toString === '1');
+            let new_meta = (packets[1].toString() === '1');
             if (new_meta !== conn.leeching)  {
                 this._send_meta(conn);
                 conn.leeching = new_meta;
