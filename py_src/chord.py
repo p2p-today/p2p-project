@@ -14,8 +14,6 @@ import warnings
 
 from itertools import chain
 
-from logging import (DEBUG, INFO)
-
 try:
     from .cbase import protocol
 except:
@@ -72,7 +70,6 @@ class chord_connection(mesh_connection):
     """The class for chord connection abstraction. This inherits from
     :py:class:`py2p.mesh.mesh_connection`
     """
-    @log_entry('py2p.chord.chord_connection.__init__', DEBUG)
     @inherit_doc(mesh_connection.__init__)
     def __init__(self, *args, **kwargs):
         super(chord_connection, self).__init__(*args, **kwargs)
@@ -94,7 +91,6 @@ class chord_daemon(mesh_daemon):
     """The class for chord daemon.
     This inherits from :py:class:`py2p.mesh.mesh_daemon`
     """
-    @log_entry('py2p.chord.chord_daemon.__init__', DEBUG)
     @inherit_doc(mesh_daemon.__init__)
     def __init__(self, *args, **kwargs):
         super(chord_daemon, self).__init__(*args, **kwargs)
@@ -109,7 +105,6 @@ class chord_daemon(mesh_daemon):
 
 class chord_socket(mesh_socket):
     """The class for chord socket abstraction. This inherits from :py:class:`py2p.mesh.mesh_socket`"""
-    @log_entry('py2p.chord.chord_socket.__init__', DEBUG)
     @inherit_doc(mesh_socket.__init__)
     def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
         if not hasattr(self, 'daemon'):
@@ -386,7 +381,6 @@ class chord_socket(mesh_socket):
         """
         if not isinstance(key, (bytes, bytearray)):
             key = str(key).encode()
-        self._logger.debug('Getting value of {}'.format(key))
         keys = get_hashes(key)
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
         common, count = most_common(vals)
@@ -465,7 +459,6 @@ class chord_socket(mesh_socket):
             key = str(key).encode()
         if not isinstance(value, (bytes, bytearray)):
             value = str(value).encode()
-        self._logger.debug('Setting value of {} to {}'.format(key, value))
         keys = get_hashes(key)
         for method, x in zip(hashes, keys):
             self.__store(method, x, value)
@@ -592,7 +585,6 @@ class chord_socket(mesh_socket):
     def join(self):
         """Tells the node to start seeding the chord table"""
         # for handler in self.awaiting_ids:
-        self._logger.debug('Joining the network data store')
         self.leeching = False
         for handler in tuple(self.routing_table.values()) + tuple(self.awaiting_ids):
             self._send_handshake(handler)
@@ -601,7 +593,6 @@ class chord_socket(mesh_socket):
 
     def unjoin(self):
         """Tells the node to stop seeding the chord table"""
-        self._logger.debug('Unjoining the network data store')
         self.leeching = True
         for handler in tuple(self.routing_table.values()) + tuple(self.awaiting_ids):
             self._send_handshake(handler)
@@ -631,48 +622,73 @@ class chord_socket(mesh_socket):
     def __iter__(self):
         return self.keys()
 
-    def values(self):
+    def values(self, _iterable=None):
         """Returns:
             an iterator of the underlying :py:class:`dict`'s values
+
         Raises:
             KeyError:       If the key does not have a majority-recognized
                                 value
             socket.timeout: See KeyError
         """
+        from multiprocessing.pool import ThreadPool
+        pool = ThreadPool()
+        keys = _iterable or self.keys()
+        keys = iter(keys)
         self._logger.debug('Retrieving all values')
-        return (self[key] for key in self.keys())
+        try:
+            nxt = pool.apply_async(self.__getitem__, (next(keys),))
+            for key in keys:
+                _nxt = key
+                yield nxt.get()
+                nxt = _nxt
+                _nxt = pool.apply_async(self.__getitem__, (next(keys),))
+            yield nxt.get()
+        except:
+            self._logger.warning('Value retrival fell back to generator')
+            for _key in (self[key] for key in keys):
+                yield _key
+        finally:
+            pool.terminate()
 
     def items(self):
         """Returns:
             an iterator of the underlying :py:class:`dict`'s items
+
         Raises:
             KeyError:       If the key does not have a majority-recognized
                                 value
             socket.timeout: See KeyError
         """
         self._logger.debug('Retrieving all items')
-        return ((key, self[key]) for key in self.keys())
+        keys = tuple(self.keys())
+        return ((key, value) for key, value in zip(keys, self.values(keys)))
 
     def pop(self, key, *args):
         """Returns a value, with the side effect of deleting that association
+
         Args:
             Key:        The key you wish to look up. Must be a :py:class:`str`
                             or :py:class:`bytes`-like object
             ifError:    The value you wish to return on Exception
                             (default: raise an Exception)
+
         Returns:
             The value of the supplied key, or ``ifError``
+
         Raises:
             KeyError:       If the key does not have a majority-recognized
                                 value
             socket.timeout: See KeyError
         """
-        self._logger.debug('Popping key {}'.format(key))
         if len(args):
+            self._logger.debug(
+                'Popping key {} with fallback value {}'.format(key, args[0]))
             ret = self.get(key, args[0])
             if ret != args[0]:
                 del self[key]
         else:
+            self._logger.debug('Popping key {}'.format(key))
             ret = self[key]
             del self[key]
         return ret
@@ -680,8 +696,10 @@ class chord_socket(mesh_socket):
     def popitem(self):
         """Returns an association, with the side effect of deleting that
         association
+
         Returns:
             An arbitrary association
+
         Raises:
             KeyError:       If the key does not have a majority-recognized
                                 value
@@ -694,10 +712,25 @@ class chord_socket(mesh_socket):
 
     def copy(self):
         """Returns a :py:class:`dict` copy of this DHT
-        .. warning::
-            This is a *very* slow operation. It's a far better idea to use
-            :py:meth:`~py2p.chord.chord_socket.items`, as this produces an
-            iterator. That should even out lag times
+
+        .. note::
+
+            This method attempts to speed things up by using a
+            :py:class:`multiprocessing.pool.ThreadPool`. This *can* produce
+            a copy much faster than ``dict(conn.items())``, but sometimes
+            this optimization fails. When that happens, it will fall back
+            to ``dict(conn.items())``. That is why this method will have
+            varying performance.
         """
         self._logger.debug('Producing a dictionary copy')
-        return dict(self.items())
+        from multiprocessing.pool import ThreadPool
+        pool = ThreadPool()
+        try:
+            keys = tuple(self.keys())
+            values = pool.map(self.__getitem__, keys, chunksize=1)
+            return dict(zip(keys, values))
+        except:
+            self._logger.warning('Dictionary copying fell back to generator')
+            return dict(self.items())
+        finally:
+            pool.terminate()
