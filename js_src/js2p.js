@@ -16,6 +16,7 @@ else {
 m.base = require('./base.js');
 m.mesh = require('./mesh.js');
 m.sync = require('./sync.js');
+m.chord = require('./chord.js');
 m.version = m.base.version;
 m.version_info = m.base.version_info;
 
