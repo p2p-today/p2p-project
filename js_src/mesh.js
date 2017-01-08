@@ -264,7 +264,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         return ret;
     }
 
-    _send_handshake(handler)   {
+    _send_peers(handler)   {
         /**
         *     .. js:function:: js2p.mesh.mesh_socket._send_handshake(handler)
         *
@@ -272,7 +272,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :js:meth:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
         *         inheritence from :js:class:`js2p.sync.sync_socket`
         */
-        handler.send(base.flags.whisper, [base.flags.whisper, JSON.stringify(this.__get_peer_list())]);
+        handler.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
     }
 
     _send_handshake(handler)   {
@@ -454,7 +454,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                 this.awaiting_ids.splice(this.awaiting_ids.indexOf(conn), 1);
             }
             this.routing_table[packets[1]] = conn;
-            conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
+            this._send_peers(conn);
             return true;
         }
     }
@@ -541,7 +541,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         //console.log(packets[1].toString());
         if (packets[0].toString() === base.flags.request)  {
             if (packets[1].toString() === '*')  {
-                conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
+                this._send_peers(conn);
             }
             else if (this.routing_table[packets[2]])    {
                 conn.send(base.flags.broadcast, [base.flags.response, packets[1], JSON.stringify([this.routing_table[packets[2]].addr, packets[2]])]);

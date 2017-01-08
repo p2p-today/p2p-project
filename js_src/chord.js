@@ -32,7 +32,7 @@ m.limit = BigInt('g0000000000000000000000000000000000000000000000000000000000000
 m.max_outgoing = mesh.max_outgoing;
 
 m.distance = function distance(a, b, limit) {
-    let raw = BigInt(a).minus(b);
+    let raw = BigInt(b).minus(a);
     if (limit !== undefined)    {
         if (raw.lesser(0))  {
             return raw.mod(limit).plus(limit).mod(limit);
@@ -215,7 +215,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     get data_storing()  {
         const self = this;
-        function *_data_storing()   {
+        function* _data_storing()   {
             for (let key in self.routing_table) {
                 let node = self.routing_table[key];
                 if (!node.leeching) {
@@ -280,7 +280,24 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             this._send_peers(handler);
             this._send_meta(handler);
         }
-        for (let key in Object.keys(this.routing_table))    {
+        for (let key of Object.keys(this.routing_table))    {
+            let handler = this.routing_table[key];
+            if (handler)    {
+                this._send_handshake(handler);
+                this._send_peers(handler);
+                this._send_meta(handler);
+            }
+        }
+    }
+
+    unjoin()    {
+        this.leeching = true;
+        for (let handler in this.awaiting_ids)  {
+            this._send_handshake(handler);
+            this._send_peers(handler);
+            this._send_meta(handler);
+        }
+        for (let key of Object.keys(this.routing_table))    {
             let handler = this.routing_table[key];
             if (handler)    {
                 this._send_handshake(handler);
@@ -340,7 +357,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
                 this._send_meta(conn);
                 conn.leeching = new_meta;
                 if (!this.leeching && !conn.leeching)    {
-                    conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
+                    this._send_peers(conn);
                     let update = this.dump_data(conn.id_10, this.id_10);
                     for (let method in update)  {
                         let table = update[method];
