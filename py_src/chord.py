@@ -13,7 +13,6 @@ import traceback
 import warnings
 
 from itertools import chain
-from promise import Promise
 from logging import (DEBUG, INFO)
 
 try:
@@ -426,13 +425,14 @@ class chord_socket(mesh_socket):
         try:
             self._logger.debug('Getting value of {}, with fallback'.format(key, ifError))
             return self.__getitem__(key, timeout=timeout)
-        except Exception:
+        except (KeyError, socket.timeout):
             return ifError
 
     def getPromise(self, key, ifError=None, timeout=10):
         def resolver(resolve, reject):
             resolve(self.get(key, ifError=ifError, timeout=timeout))
 
+        from promise import Promise
         self._logger.debug('Getting Promise of {}, with fallback'.format(key, ifError))
         return Promise(resolver)
 
@@ -732,4 +732,8 @@ class chord_socket(mesh_socket):
             iterator. That should even out lag times
         """
         self._logger.debug('Producing a dictionary copy')
-        return dict(self.items())
+        try:
+            promises = [(key, self.getPromise(key)) for key in self.keys()]
+            return dict((key, p.get()) for key, p in promises)
+        except ImportError:
+            return dict(self.items())
