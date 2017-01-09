@@ -660,7 +660,8 @@ class chord_socket(mesh_socket):
             if nxt.get():
                 yield nxt.get()
         except ImportError:
-            return (self[key] for key in self.keys())
+            for key in self.keys():
+                yield self[key]
 
     def items(self):
         """Returns:
@@ -684,7 +685,8 @@ class chord_socket(mesh_socket):
             if nxt.get():
                 yield (p_key, nxt.get())
         except ImportError:
-            return ((key, self[key]) for key in self.keys())
+            for key in self.keys():
+                yield (key, self[key])
 
     def pop(self, key, *args):
         """Returns a value, with the side effect of deleting that association
