@@ -66,7 +66,7 @@ def has_environment_marker_support():
 def main():
     ext_modules = []
     install_requires = open(os.path.join(loc, 'requirements.txt'), 'r').read().split()
-    install_requires = [req for req in install_requires if not req.starts_with('git+')]
+    install_requires = [req for req in install_requires if not req.startswith('git+')]
     extras_require = {'SSL': ['cryptography'],
                       'snappy': ['python-snappy'],
                       'promises': ['git+https://github.com/p2p-today/promise']}
