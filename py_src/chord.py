@@ -13,7 +13,7 @@ import traceback
 import warnings
 
 from itertools import chain
-
+from promise import Promise
 from logging import (DEBUG, INFO)
 
 try:
@@ -353,9 +353,10 @@ class chord_socket(mesh_socket):
             The value at said key, or an :py:class:`py2p.utils.awaiting_value`
             object, which will eventually contain its result
         """
+        node = self
         if self.routing_table:
             node = self.find(key)
-        else:
+        elif self.awaiting_ids:
             node = random.choice(self.awaiting_ids)
         if node in (self, None):
             return awaiting_value(self.data[method].get(key, ''))
@@ -423,9 +424,17 @@ class chord_socket(mesh_socket):
             The value at said key, or the value at ifError if there's an Exception
         """
         try:
+            self._logger.debug('Getting value of {}, with fallback'.format(key, ifError))
             return self.__getitem__(key, timeout=timeout)
         except Exception:
             return ifError
+
+    def getPromise(self, key, ifError=None, timeout=10):
+        def resolver(resolve, reject):
+            resolve(self.get(key, ifError=ifError, timeout=timeout))
+
+        self._logger.debug('Getting Promise of {}, with fallback'.format(key, ifError))
+        return Promise(resolver)
 
     def __store(self, method, key, value):
         """Updates the value at a given key. This method deals with just *one*
@@ -440,7 +449,7 @@ class chord_socket(mesh_socket):
                         or :py:class:`bytes`-like object
         """
         node = self.find(key)
-        if self.leeching and node is self:
+        if self.leeching and node is self and len(self.awaiting_ids):
             node = random.choice(self.awaiting_ids)
         if node in (self, None):
             if value == b'':
@@ -640,7 +649,18 @@ class chord_socket(mesh_socket):
             socket.timeout: See KeyError
         """
         self._logger.debug('Retrieving all values')
-        return (self[key] for key in self.keys())
+        try:
+            keys = self.keys()
+            nxt = self.getPromise(next(keys))
+            for key in keys:
+                _nxt = self.getPromise(key)
+                if nxt.get():
+                    yield nxt.get()
+                nxt = _nxt
+            if nxt.get():
+                yield nxt.get()
+        except ImportError:
+            return (self[key] for key in self.keys())
 
     def items(self):
         """Returns:
@@ -651,7 +671,20 @@ class chord_socket(mesh_socket):
             socket.timeout: See KeyError
         """
         self._logger.debug('Retrieving all items')
-        return ((key, self[key]) for key in self.keys())
+        try:
+            keys = self.keys()
+            p_key = next(keys)
+            nxt = self.getPromise(p_key)
+            for key in keys:
+                _nxt = self.getPromise(key)
+                if nxt.get():
+                    yield (p_key, nxt.get())
+                p_key = key
+                nxt = _nxt
+            if nxt.get():
+                yield (p_key, nxt.get())
+        except ImportError:
+            return ((key, self[key]) for key in self.keys())
 
     def pop(self, key, *args):
         """Returns a value, with the side effect of deleting that association
@@ -688,9 +721,8 @@ class chord_socket(mesh_socket):
             socket.timeout: See KeyError
         """
         self._logger.debug('Popping an item')
-        key, value = next(self.items())
-        del self[key]
-        return (key, value)
+        for key in self.keys():
+            return (key, self.pop(key))
 
     def copy(self):
         """Returns a :py:class:`dict` copy of this DHT

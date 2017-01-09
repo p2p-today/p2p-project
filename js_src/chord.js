@@ -497,7 +497,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         if (Object.keys(this.routing_table).length) {
             node = this.find(key);
         }
-        else    {
+        else if (this.awaiting_ids.length)  {
             node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
         }
         if (Object.is(node, this))  {

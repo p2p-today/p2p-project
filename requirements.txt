@@ -1,1 +1,2 @@
 custom_inherit==2.0.2
+git+https://github.com/p2p-today/promise
