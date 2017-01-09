@@ -208,14 +208,14 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                     self.__on_TCP_Connection(sock);
                 });
             }
-            else if (self.protocol.encryption === 'Plaintext')  {
-                this.incoming.on('connection', (sock)=>{
-                    self.__on_TCP_Connection(sock);
-                });
-            }
             else    {
                 this.incoming.on('connection', (sock)=>{
-                    self.__on_WS_Connection(sock);
+                    if (self.protocol.encryption === 'Plaintext')   {
+                        self.__on_TCP_Connection(sock);
+                    }
+                    else    {
+                        self.__on_WS_Connection(sock);
+                    }
                 });
             }
         }
@@ -229,12 +229,12 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     }
 
     __on_WS_Connection(sock)  {
-        var conn = new this.conn_type(sock, this, false);
+        let conn = new this.conn_type(sock, this, false);
+        this.awaiting_ids.push(conn);
         const self = this;
         sock.on("connect", ()=>{
             self._send_handshake(conn);
         });
-        this.awaiting_ids.push(conn);
         return conn;
     }
 
@@ -266,9 +266,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     _send_peers(handler)   {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket._send_handshake(handler)
+        *     .. js:function:: js2p.mesh.mesh_socket._send_peers(handler)
         *
-        *         Shortcut method to send a handshake response. This method is extracted from
+        *         Shortcut method to send a peerlist message. This method is extracted from
         *         :js:meth:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
         *         inheritence from :js:class:`js2p.sync.sync_socket`
         */
@@ -452,6 +452,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             // self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
             if (this.awaiting_ids.indexOf(conn) > -1)   {  // handler in this.awaiting_ids
                 this.awaiting_ids.splice(this.awaiting_ids.indexOf(conn), 1);
+                this._send_handshake(conn);
             }
             this.routing_table[packets[1]] = conn;
             this._send_peers(conn);
