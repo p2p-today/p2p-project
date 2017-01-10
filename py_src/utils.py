@@ -19,17 +19,13 @@ def log_entry(name, level):
             function(*args, **kwargs)
             log.log(level, "Exiting function {}".format(name))
 
+        caller.__doc__ = function.__doc__
+        caller.__name__ = function.__name__
         return caller
 
     metalogger = getLogger('py2p.utils.log_entry')
     metalogger.info('Adding log handler to {} at level {}'.format(name, level))
     return annotation
-
-
-def _doc_merger(parent, child):
-    if child:
-        return child
-    return parent
 
 
 def inherit_doc(function):
@@ -38,8 +34,8 @@ def inherit_doc(function):
     logger = getLogger('py2p.utils.inherit_doc')
     logger.info('Parsing documentation inheritence for {}'.format(function))
     try:
-        from custom_inherit import doc_inherit
-        return doc_inherit(function, _doc_merger)
+        from custom_inherit import doc_inherit, google
+        return doc_inherit(function, google)
     except:
         logger.info('custom_inherit is not available. Using default documentation')
         return lambda x: x  # If unavailable, just return the function

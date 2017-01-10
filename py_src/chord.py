@@ -27,7 +27,7 @@ from .mesh import (
     mesh_connection, mesh_daemon, mesh_socket)
 from .utils import (
     inherit_doc, getUTC, get_socket, intersect, awaiting_value, most_common,
-    log_entry)
+    log_entry, sanitize_packet)
 
 max_outgoing = 4
 default_protocol = protocol('chord', "Plaintext")  # SSL")
@@ -85,9 +85,6 @@ class chord_connection(mesh_connection):
             self.__id_10 = from_base_58(self.id)
         return self.__id_10
 
-    def __hash__(self):
-        return self.id_10 or id(self)
-
 
 class chord_daemon(mesh_daemon):
     """The class for chord daemon.
@@ -111,6 +108,7 @@ class chord_socket(mesh_socket):
     @log_entry('py2p.chord.chord_socket.__init__', DEBUG)
     @inherit_doc(mesh_socket.__init__)
     def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
+        """Initialize a chord socket"""
         if not hasattr(self, 'daemon'):
             self.daemon = 'chord reserved'
         super(chord_socket, self).__init__(addr, port, prot, out_addr, debug_level)
@@ -384,8 +382,7 @@ class chord_socket(mesh_socket):
             socket.timeout: If the request goes partly-unanswered for >=timeout seconds
             KeyError:       If the request is made for a key with no agreed-upon value
         """
-        if not isinstance(key, (bytes, bytearray)):
-            key = str(key).encode()
+        key = sanitize_packet(key)
         self._logger.debug('Getting value of {}'.format(key))
         keys = get_hashes(key)
         vals = [self.__lookup(method, x) for method, x in zip(hashes, keys)]
@@ -487,10 +484,8 @@ class chord_socket(mesh_socket):
             value:  The value you wish to put at this key. Must be a :py:class:`str`
                         or :py:class:`bytes`-like object
         """
-        if not isinstance(key, (bytes, bytearray)):
-            key = str(key).encode()
-        if not isinstance(value, (bytes, bytearray)):
-            value = str(value).encode()
+        key = sanitize_packet(key)
+        value = sanitize_packet(value)
         self._logger.debug('Setting value of {} to {}'.format(key, value))
         keys = get_hashes(key)
         for method, x in zip(hashes, keys):
@@ -507,8 +502,7 @@ class chord_socket(mesh_socket):
         return self.__setitem__(key, value)
 
     def __delitem__(self, key):
-        if not isinstance(key, (bytes, bytearray)):
-            key = str(key).encode()
+        key = sanitize_packet(key)
         if key not in self.__keys:
             raise KeyError(key)
         self.set(key, '')

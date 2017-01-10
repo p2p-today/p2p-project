@@ -1,5 +1,5 @@
-from . import mesh
-from .utils import (inherit_doc, getUTC, sanitize_packet)
+from .mesh import mesh_socket
+from .utils import (inherit_doc, getUTC, sanitize_packet, log_entry)
 from .base import (flags, to_base_58, from_base_58)
 
 try:
@@ -8,6 +8,7 @@ except:
     from .base import protocol
 
 from collections import namedtuple
+from logging import (DEBUG, INFO)
 
 default_protocol = protocol('sync', "Plaintext")  # SSL")
 
@@ -17,7 +18,7 @@ class metatuple(namedtuple('meta', ('owner', 'timestamp'))):
     pass
 
 
-class sync_socket(mesh.mesh_socket):
+class sync_socket(mesh_socket):
     """This class is used to sync dictionaries between programs. It extends
     :py:class:`py2p.mesh.mesh_socket`
 
@@ -29,8 +30,11 @@ class sync_socket(mesh.mesh_socket):
 
     This may be turned off by adding ``leasing=False`` to the constructor.
     """
+    @log_entry('py2p.sync.sync_socket.__init__', DEBUG)
+    @inherit_doc(mesh_socket.__init__)
     def __init__(self, addr, port, prot=default_protocol, out_addr=None,
                  debug_level=0, leasing=True):
+        """Initialize a chord socket"""
         protocol_used = protocol(prot[0] + str(int(leasing)), prot[1])
         self.__leasing = leasing
         super(sync_socket, self).__init__(
@@ -76,11 +80,8 @@ class sync_socket(mesh.mesh_socket):
         elif error:
             raise KeyError("You don't have permission to change this yet")
 
+    @inherit_doc(mesh_socket._send_peers)
     def _send_peers(self, handler):
-        """Shortcut method to send a handshake response. This method is
-        extracted from :py:meth:`.__handle_handshake` in order to allow
-        cleaner inheritence from :py:class:`py2p.sync.sync_socket`
-        """
         super(sync_socket, self)._send_peers(handler)
         for key in self:
             meta = self.metadata[key]
@@ -152,8 +153,7 @@ class sync_socket(mesh.mesh_socket):
             KeyError: If you do not have the lease for this slot. Lease is
                           given automatically for one hour if the slot is open.
         """
-        for key in update_dict:
-            value = update_dict[key]
+        for key, value in update_dict.items():
             self.__setitem__(key, value)
 
     def __getitem__(self, key):
