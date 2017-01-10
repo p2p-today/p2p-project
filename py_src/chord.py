@@ -414,13 +414,15 @@ class chord_socket(mesh_socket):
         returns the most common value given.
 
         Args:
-            key:     The key that you wish to check. Must be a :py:class:`str` or
-                        :py:class:`bytes`-like object
-            ifError: The value you wish to return on exception (default: ``None``)
+            key:     The key that you wish to check. Must be a :py:class:`str`
+                        or :py:class:`bytes`-like object
+            ifError: The value you wish to return on exception (default:
+                        ``None``)
             timeout: The longest you would like to await a value (default: 10s)
 
         Returns:
-            The value at said key, or the value at ifError if there's an Exception
+            The value at said key, or the value at ifError if there's an
+            :py:class:`Exception`
         """
         try:
             self._logger.debug('Getting value of {}, with fallback'.format(key, ifError))
@@ -429,6 +431,21 @@ class chord_socket(mesh_socket):
             return ifError
 
     def getPromise(self, key, ifError=None, timeout=10):
+        """Looks up the value at a given key.
+        Under the covers, this actually checks five different hash tables, and
+        returns the most common value given.
+
+        Args:
+            key:     The key that you wish to check. Must be a :py:class:`str`
+                        or :py:class:`bytes`-like object
+            ifError: The value you wish to return on exception (default:
+                        ``None``)
+            timeout: The longest you would like to await a value (default: 10s)
+
+        Returns:
+            A :py:class:`~promise.Promise` of the value at said key, or the
+            value at ifError if there's an :py:class:`Exception`
+        """
         def resolver(resolve, reject):
             resolve(self.get(key, ifError=ifError, timeout=timeout))
 
