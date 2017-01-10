@@ -173,7 +173,7 @@ try:
         decompress(compress(b'test', flags.snappy), flags.snappy)
         compression.append(flags.snappy)
 except:  # pragma: no cover
-    pass
+    getLogger('py2p.base').info("Unable to load snappy compression")
 
 try:
     import zlib
@@ -182,7 +182,7 @@ try:
         decompress(compress(b'test', flags.gzip), flags.gzip)
         compression.extend((flags.zlib, flags.gzip))
 except:  # pragma: no cover
-    pass
+    getLogger('py2p.base').info("Unable to load gzip/zlib compression")
 
 try:
     import bz2
@@ -190,7 +190,7 @@ try:
         decompress(compress(b'test', flags.bz2), flags.bz2)
         compression.append(flags.bz2)
 except:  # pragma: no cover
-    pass
+    getLogger('py2p.base').info("Unable to load bz2 compression")
 
 try:
     import lzma
@@ -198,7 +198,7 @@ try:
         decompress(compress(b'test', flags.lzma), flags.lzma)
         compression.append(flags.lzma)
 except:  # pragma: no cover
-    pass
+    getLogger('py2p.base').info("Unable to load lzma compression")
 
 json_compressions = json.dumps([method.decode() for method in compression])
 
@@ -282,8 +282,7 @@ else:
             big-endian, unsigned integral
         """
         val = 0
-        if not isinstance(string, (bytes, bytearray)):
-            string = bytes(string, 'raw_unicode_escape')
+        string = sanitize_packet(string)
         val = 0
         for char in string:
             val = val << 8
@@ -326,8 +325,7 @@ def from_base_58(string):
         Returns integral value which corresponds to the fed string
     """
     decimal = 0
-    if isinstance(string, (bytes, bytearray)):
-        string = string.decode()
+    string = sanitize_packet(string)
     for char in string:
         decimal = decimal * 58 + base_58.index(char)
     return decimal
@@ -371,8 +369,7 @@ class InternalMessage(object):
            AttributeError: Fed a non-string, non-bytes argument
            AssertionError: Initial size header is incorrect
         """
-        if not isinstance(string, (bytes, bytearray)):
-            string = string.encode()
+        string = sanitize_packet(string)
         if not sizeless:
             if unpack_value(string[:4]) != len(string[4:]):
                 raise AssertionError(
