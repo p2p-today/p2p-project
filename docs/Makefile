@@ -47,7 +47,7 @@ help:
 .PHONY: clean
 clean:
 	find $(BUILDDIR) ! -name 'keybase.txt' -type f -exec rm -f {} +
-	find $(BUILDDIR) -type d -empty -delete
+	find $(BUILDDIR) -type d -empty -delete || echo "cannot remove empty directories"
 
 .PHONY: html
 html:
