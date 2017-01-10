@@ -16,8 +16,9 @@ def log_entry(name, level):
 
         def caller(*args, **kwargs):
             log.log(level, "Entering function {}".format(name))
-            function(*args, **kwargs)
+            ret = function(*args, **kwargs)
             log.log(level, "Exiting function {}".format(name))
+            return ret
 
         caller.__doc__ = function.__doc__
         caller.__name__ = function.__name__
