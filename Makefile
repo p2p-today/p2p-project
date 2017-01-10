@@ -47,7 +47,7 @@ jsdeps: LICENSE
 browser: LICENSE jsdeps
 	mkdir -p build
 	npm install browserify
-	node node_modules/browserify/bin/cmd.js -e . -o ./build/js2p-browser.js -u snappy -u nodejs-websocket -u node-forge -s js2p
+	node node_modules/browserify/bin/cmd.js -e . -o ./build/js2p-browser.js -u zlibjs -u snappy -u nodejs-websocket -u node-forge -s js2p
 
 browser-min: browser
 	node node_modules/babel-cli/bin/babel.js ./build/js2p-browser.js -o ./build/js2p-browser.min.js --minified --no-comments

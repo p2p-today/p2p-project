@@ -21,7 +21,7 @@ var util = require('util');
 *     This shouldn't be a problem for most applications, but you can discuss it in :issue:`83`.
 */
 if (buffer.kMaxLength < 4294967299) {
-    console.log(`WARNING: This implementation of javascript does not support the maximum protocol length. The largest message you may receive is 4294967299 bytes, but you can only allocate ${buffer.kMaxLength}, or ${(buffer.kMaxLength / 4294967299 * 100).toFixed(2)}% of that.`);
+    console.warn(`This implementation of javascript does not support the maximum protocol length. The largest message you may receive is 4294967299 bytes, but you can only allocate ${buffer.kMaxLength}, or ${(buffer.kMaxLength / 4294967299 * 100).toFixed(2)}% of that.`);
 }
 
 var base;
@@ -128,19 +128,27 @@ base.compression = []; //base.flags.snappy, base.flags.zlib, base.flags.gzip];
 
 try {
     base.snappy = require('snappy');
-    base.compression = base.compression.concat(base.flags.snappy);
+    base.compression.push(base.flags.snappy);
 }
 catch (e) {
-    console.log("Couldn't load snappy compression (Ignore if in browser)");
+    console.warn("Couldn't load snappy compression (Ignore if in browser)");
 }
 
 try {
     base.zlib = require('zlibjs');
-    base.compression = base.compression.concat(base.flags.zlib);
-    base.compression = base.compression.concat(base.flags.gzip);
+    base.compression.push(base.flags.zlib);
+    base.compression.push(base.flags.gzip);
 }
 catch (e) {
-    console.log("Couldn't load zlib/gzip compression");
+    console.warn("Couldn't load zlib/gzip compression (Ignore if in browser)");
+}
+
+try {
+    base.lzma = require('lzma');
+    base.compression.push(base.flags.lzma);
+}
+catch (e) {
+    console.warn("Couldn't load lzma compression (Ignore if in browser)");
 }
 
 base.json_compressions = JSON.stringify(base.compression);
@@ -160,11 +168,14 @@ base.compress = function compress(text, method) {
     if (method === base.flags.zlib) {
         return base.zlib.deflateSync(new Buffer(text));
     }
-    else if (method === base.flags.gzip) {
+    else if (method === base.flags.gzip)    {
         return base.zlib.gzipSync(new Buffer(text));
     }
-    else if (method === base.flags.snappy) {
+    else if (method === base.flags.snappy)  {
         return base.snappy.compressSync(new Buffer(text));
+    }
+    else if (method === base.flags.lzma)    {
+        return new Buffer(base.lzma.compress(text));
     }
     else {
         throw new Error("Unknown compression method");
@@ -191,6 +202,9 @@ base.decompress = function decompress(text, method) {
     }
     else if (method === base.flags.snappy) {
         return base.snappy.uncompressSync(new Buffer(text));
+    }
+    else if (method === base.flags.lzma)    {
+        return new Buffer(base.lzma.decompress(text));
     }
     else {
         throw new Error("Unknown compression method");
