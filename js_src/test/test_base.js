@@ -48,8 +48,13 @@ describe('base', function() {
                 var len = Math.floor(Math.random() * 40);
                 var test_string = get_random_buffer(len);
                 // Then: For each flag in compression, assert that the compressed then decompressed version equals the original
-                for (var j = 0; j < base.compression.length; j++)   {
-                    assert(test_string.equals( base.decompress( base.compress(test_string, base.compression[j]), base.compression[j] ) ));
+                for (let flag of base.compression)   {
+                    try {
+                        assert(test_string.equals( base.decompress( base.compress(test_string, flag), flag ) ));
+                    }
+                    catch (e)   {
+                        throw new Error(`${util.inspect(test_string)}, ${util.inspect(flag)}`, e);
+                    }
                 }
             }
         });
