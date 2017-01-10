@@ -143,14 +143,6 @@ catch (e) {
     console.warn("Couldn't load zlib/gzip compression (Ignore if in browser)");
 }
 
-try {
-    base.lzma = require('lzma');
-    base.compression.push(base.flags.lzma);
-}
-catch (e) {
-    console.warn("Couldn't load lzma compression (Ignore if in browser)");
-}
-
 base.json_compressions = JSON.stringify(base.compression);
 
 
@@ -173,9 +165,6 @@ base.compress = function compress(text, method) {
     }
     else if (method === base.flags.snappy)  {
         return base.snappy.compressSync(new Buffer(text));
-    }
-    else if (method === base.flags.lzma)    {
-        return new Buffer(base.lzma.compress(text));
     }
     else {
         throw new Error("Unknown compression method");
@@ -202,9 +191,6 @@ base.decompress = function decompress(text, method) {
     }
     else if (method === base.flags.snappy) {
         return base.snappy.uncompressSync(new Buffer(text));
-    }
-    else if (method === base.flags.lzma)    {
-        return new Buffer(base.lzma.decompress(text));
     }
     else {
         throw new Error("Unknown compression method");
