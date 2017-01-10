@@ -740,8 +740,8 @@ class chord_socket(mesh_socket):
             socket.timeout: See KeyError
         """
         self._logger.debug('Popping an item')
-        for key in self.keys():
-            return (key, self.pop(key))
+        key = next(self.keys())
+        return (key, self.pop(key))
 
     def copy(self):
         """Returns a :py:class:`dict` copy of this DHT

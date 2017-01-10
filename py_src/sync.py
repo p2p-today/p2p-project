@@ -241,9 +241,8 @@ class sync_socket(mesh.mesh_socket):
         Returns:
             An arbitrary association
         """
-        key, value = next(self.items())
-        del self[key]
-        return (key, value)
+        key = next(self.keys())
+        return (key, self.pop(key))
 
     def copy(self):
         """Returns a :py:class:`dict` copy of this synchronized hash table"""
