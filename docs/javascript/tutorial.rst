@@ -8,3 +8,5 @@ Contents:
 
     tutorial/mesh
     tutorial/sync
+    tutorial/chord
+    tutorial/browser

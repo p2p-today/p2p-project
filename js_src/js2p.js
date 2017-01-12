@@ -14,9 +14,24 @@ else {
 }
 
 m.base = require('./base.js');
-m.mesh = require('./mesh.js');
-m.sync = require('./sync.js');
-m.chord = require('./chord.js');
+try {
+    m.mesh = require('./mesh.js');
+}
+catch (e) {
+    console.warn('js2p.mesh module not loaded');
+}
+try {
+    m.sync = require('./sync.js');
+}
+catch (e) {
+    console.warn('js2p.sync module not loaded (Did js2p.mesh not load?)');
+}
+try {
+    m.chord = require('./chord.js');
+}
+catch (e) {
+    console.warn('js2p.chord module not loaded (Did js2p.mesh not load?)');
+}
 m.version = m.base.version;
 m.version_info = m.base.version_info;
 

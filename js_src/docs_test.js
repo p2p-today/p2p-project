@@ -52,7 +52,12 @@ function gen_walker(folder) {
         var docs_folder = path.resolve('docs', folder_map[folder]);
         for (var i = 0; i < res.length; i++)  {
             var file = path.resolve('.', folder, res[i]);
-            if (fs.lstatSync(file).isDirectory())   {
+            try {
+                if (fs.lstatSync(file).isDirectory())   {
+                    continue;
+                }
+            }
+            catch (e) {
                 continue;
             }
             var ending = res[i].substr(res[i].lastIndexOf(".") && res[i].indexOf("wrapper") < 0);

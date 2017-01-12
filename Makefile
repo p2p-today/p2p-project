@@ -45,11 +45,21 @@ jsdeps: LICENSE
 	yarn || npm install
 
 browser: LICENSE jsdeps
-	mkdir -p build
-	node node_modules/browserify/bin/cmd.js -e . -o ./build/js2p-browser.js -u zlibjs -u snappy -u nodejs-websocket -u node-forge -s js2p
+	mkdir -p build/browser
+	cd js_src;\
+	node ../node_modules/browserify/bin/cmd.js -r ./base.js -o ../build/browser/js2p-browser-base.js -u zlibjs -u snappy -u nodejs-websocket -u node-forge;\
+	node ../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../build/browser/js2p-browser-mesh.js -u zlibjs -u snappy -u nodejs-websocket -u node-forge;\
+	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-sync.js -u zlibjs -u snappy -u nodejs-websocket -u node-forge;\
+	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-chord.js -u zlibjs -u snappy -u nodejs-websocket -u node-forge;\
+	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../build/browser/js2p-browser.js -s js2p
 
 browser-min: browser
-	node node_modules/babel-cli/bin/babel.js ./build/js2p-browser.js -o ./build/js2p-browser.min.js --minified --no-comments
+	mkdir -p build/browser-min
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser.js       -o ./build/browser-min/js2p-browser.min.js       --minified --no-comments
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-base.js  -o ./build/browser-min/js2p-browser-base.min.js  --minified --no-comments
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-mesh.js  -o ./build/browser-min/js2p-browser-mesh.min.js  --minified --no-comments
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-sync.js  -o ./build/browser-min/js2p-browser-sync.min.js  --minified --no-comments
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-chord.js -o ./build/browser-min/js2p-browser-chord.min.js --minified --no-comments
 
 jsdocs:
 	node js_src/docs_test.js
