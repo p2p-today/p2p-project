@@ -1,7 +1,7 @@
 Sync Socket
 ~~~~~~~~~~~
 
-This is an extension of the :doc:`mesh_socket <./mesh>` which syncronizes a common :js:class:`Object`. It works by providing an extra handler to store data. This does not expose the entire :js:class:`Object` API, but it exposes a substantial subset, and we're working to expose more.
+This is an extension of the :doc:`mesh_socket <./mesh>` which syncronizes a common :js:class:`Object`. It works by providing an extra handler to store data. This exposes the entire :py:class:`dict` API.
 
 .. note::
 

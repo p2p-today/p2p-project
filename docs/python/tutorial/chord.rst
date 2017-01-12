@@ -1,7 +1,7 @@
 Chord Socket
 ~~~~~~~~~~~~
 
-This is an extension of the :doc:`mesh_socket <./mesh>` which chordronizes a common :py:class:`dict`. It works by providing an extra handler to store data. This does not expose the entire :py:class:`dict` API, but it exposes a substantial subset, and we're working to expose more.
+This is an extension of the :doc:`mesh_socket <./mesh>` which syncronizes a common :py:class:`dict`. It works by providing some extra handlers to store data. This exposes the entire :py:class:`dict` API.
 
 .. note::
 
@@ -44,12 +44,10 @@ A value can be stored by using the :py:meth:`~py2p.chord.chord_socket.set` metho
 
 Like above, keys and values are all translated to :py:class:`bytes` before being used, so it is required that you use a :py:class:`bytes`-like object.
 
-Any node which sets a value can change this value as well. Changing the value renews the lease on it.
-
 :py:meth:`~py2p.chord.chord_socket.__delitem__`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is about ``O(log(n))``.
+This deletes an association. Like the above, this call is about ``O(log(n))``.
 
 .. code-block:: python
 
