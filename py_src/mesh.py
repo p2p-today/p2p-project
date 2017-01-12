@@ -230,9 +230,12 @@ class mesh_socket(base_socket):
         Args:
             handler: A :py:class:`~py2p.mesh.mesh_connection`
         """
+        tmp_compress = handler.compression
+        handler.compression = []
         json_out_addr = '["{}", {}]'.format(*self.out_addr)
         handler.send(flags.whisper, flags.handshake, self.id, self.protocol.id,
                      json_out_addr, json_compressions)
+        handler.compression = tmp_compress
 
     def __resolve_connection_conflict(self, handler, h_id):
         """Sometimes in trying to recover a network a race condition is

@@ -47,7 +47,7 @@ jsdeps: LICENSE
 browser: LICENSE jsdeps
 	mkdir -p build/browser
 	cd js_src;\
-	node ../node_modules/browserify/bin/cmd.js -r ./base.js -o ../build/browser/js2p-browser-base.js -u zlibjs -u snappy -u nodejs-websocket -u node-forge;\
+	node ../node_modules/browserify/bin/cmd.js -r ./base.js -o ../build/browser/js2p-browser-base.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../build/browser/js2p-browser-mesh.js -u zlibjs -u snappy -u nodejs-websocket -u node-forge;\
 	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-sync.js -u zlibjs -u snappy -u nodejs-websocket -u node-forge;\
 	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-chord.js -u zlibjs -u snappy -u nodejs-websocket -u node-forge;\

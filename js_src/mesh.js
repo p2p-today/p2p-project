@@ -291,7 +291,10 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :js:meth:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
         *         inheritence from :js:class:`js2p.sync.sync_socket`
         */
+        let tmp_compress = handler.compression;
+        handler.compression = [];
         handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, `["${this.out_addr[0]}", ${this.out_addr[1]}]`, base.json_compressions]);
+        handler.compression = tmp_compress;
     }
 
     connect(addr, port, id) {

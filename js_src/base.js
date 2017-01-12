@@ -140,7 +140,7 @@ try {
     base.compression.push(base.flags.gzip);
 }
 catch (e) {
-    console.warn("Couldn't load zlib/gzip compression (Ignore if in browser)");
+    console.warn("Couldn't load zlib/gzip compression");
 }
 
 base.json_compressions = JSON.stringify(base.compression);
