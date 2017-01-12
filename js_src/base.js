@@ -899,7 +899,6 @@ base.base_connection = class base_connection   {
         *
         *         This function is run when a connection experiences an error
         */
-        console.log(`Error: ${err}`);
         if (this.sock.end)  {
             this.sock.end();
             this.sock.destroy(); //These implicitly remove from routing table
@@ -1016,11 +1015,11 @@ base.base_connection = class base_connection   {
         *         :returns: The deserialized message received
         */
         //console.log("I got called");
-        var msg = base.InternalMessage.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
+        let msg_data = this.buffer.slice(0, this.expected);
         this.buffer = this.buffer.slice(this.expected);
         this.expected = 4;
         this.active = false;
-        return msg;
+        return base.InternalMessage.feed_string(msg_data, false, this.compression);
     }
 
     handle_renegotiate(packets) {

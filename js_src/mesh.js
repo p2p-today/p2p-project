@@ -85,6 +85,10 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
             if (this.sock.emit) {
                 this.sock.emit('error');
             }
+            else    {
+                // This means it must be browser websockets
+                this.onError(err);
+            }
         }
     }
 
@@ -112,6 +116,10 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
             this.server.exceptions.push(err);
             if (this.sock.emit) {
                 this.sock.emit('error');
+            }
+            else    {
+                // This means it must be browser websockets
+                this.onError(err);
             }
         }
     }
