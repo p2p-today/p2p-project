@@ -290,7 +290,7 @@ else:
         return val
 
 
-base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+base_58 = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
 
 def to_base_58(i):
@@ -305,13 +305,14 @@ def to_base_58(i):
     Raises:
         TypeError: If you feed a non-integral value
     """
-    string = ""
+    string = b""
     while i:
-        string = base_58[i % 58] + string
-        i = i // 58
+        idx = i % 58
+        string = base_58[idx:idx+1] + string
+        i //= 58
     if not string:
-        string = base_58[0]
-    return string.encode()
+        string = base_58[0:1]
+    return string
 
 
 def from_base_58(string):
