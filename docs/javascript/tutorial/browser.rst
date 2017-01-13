@@ -13,24 +13,22 @@ Your page will look something like:
         <script type="text/javascript" src="./build/browser-min/js2p-browser.min.js"></script>
     </head>
 
-The two scripts shown are the only required. The module will automatically load any other components.
+The two scripts shown are the only required. The library will automatically load any other provided components.
 
-Including these scripts maps the library to the global object ``js2p``, rather than making you :js:func:`require` it. Each component is then mapped to a section of ``js2p``. So in this example, :js:data:`js2p.base` would be the only included component.
+Including these scripts maps the library to the global object ``js2p``. Each component is then mapped to a section of ``js2p``. So in this example, :js:data:`js2p.base` would be the only included component.
 
 Caveats
 =======
 
-1. Browser nodes cannot receive connections. This is due to browser policy, not the library. This means that at some point you *must* connect to a server node
+1. Browsers cannot receive incoming connections. This means that at some point you **must** connect to a server node. To avoid confusion, a good practice is to provide your ``addr`` and ``port`` as ``null``.
 
-#. Because of the above, a good practice is to provide your ``addr`` and ``port`` as ``null``
+#. Browser nodes may **only** be used with the WebSocket transport layer. This means that you **must** specify a custom :js:class:`js2p.base.protocol`, where the second argument is ``'ws'``.
 
-#. Browser nodes may *only* be used with the Websocket transport layer. This means that you *must* specify a custom protcol, where the second argument is ``'ws'``. Support for ``'wss'`` is not yet ready.
-
-#. Scripts must be included in the correct load order. This means that dependencies come first. As of this document's last update, the preferred order is:
+#. Scripts **must** be included in the correct load order. This means that dependencies come first. As of this document's last update, the preferred order is:
 
     1. ``js2p-browser-base.js`` (required)
     #. ``js2p-browser-mesh.js``
-    #. ``js2p-browser-sync.js`` AND/OR ``js2p-browser-chord.js``
+    #. ``js2p-browser-sync.js`` and/or ``js2p-browser-chord.js``
     #. ``js2p-browser.js`` (required)
 
 Example
