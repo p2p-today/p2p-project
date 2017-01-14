@@ -341,6 +341,8 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
         encryption: The encryption method this protocol uses
         id:         The SHA-256 based ID of this protocol
     """
+    __slots__ = ()
+
     @property
     def id(self):
         """The SHA-256-based ID of the protocol"""
@@ -353,6 +355,8 @@ default_protocol = protocol('', "Plaintext")  # SSL")
 
 class InternalMessage(object):
     """An object used to build and parse protocol-defined message structures"""
+    __slots__ = ('msg_type', 'time', 'sender', '__payload', 'compression_fail', 'compression')
+
     @classmethod
     def __sanitize_string(cls, string, sizeless=False):
         """Removes the size header for further processing.
@@ -573,6 +577,9 @@ class InternalMessage(object):
 
 class base_connection(object):
     """The base class for a connection"""
+    __slots__ = ('sock', 'server', 'outgoing', 'buffer', 'id', 'time', 'addr',
+                 'compression', 'last_sent', 'expected', 'active')
+
     @log_entry('py2p.base.base_connection.__init__', DEBUG)
     def __init__(self, sock, server, outgoing=False):
         """Sets up a connection to another peer-to-peer socket
@@ -745,6 +752,9 @@ class base_connection(object):
 
 class base_daemon(object):
     """The base class for a daemon"""
+    __slots__ = ('server', 'sock', 'exceptions', 'alive', '_logger',
+                 'main_thread', 'daemon', 'conn_type')
+
     @log_entry('py2p.base.base_daemon.__init__', DEBUG)
     def __init__(self, addr, port, server):
         """Sets up a daemon process for your peer-to-peer socket
@@ -835,6 +845,9 @@ class base_daemon(object):
 
 class base_socket(object):
     """The base class for a peer-to-peer socket abstractor"""
+    __slots__ = ('protocol', 'debug_level', 'routing_table', 'awaiting_ids',
+                 'out_addr', 'id', '_logger', '__handlers', '__closed')
+
     @log_entry('py2p.base.base_socket.__init__', DEBUG)
     def __init__(self, addr, port, prot=default_protocol, out_addr=None,
                  debug_level=0):
@@ -1007,6 +1020,8 @@ class message(object):
     """An object which gets returned to a user, containing all necessary
     information to parse and reply to a message
     """
+    __slots__ = ('msg', 'server')
+
     def __init__(self, msg, server):
         """Initializes a message object
 

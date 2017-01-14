@@ -167,6 +167,7 @@ class mesh_socket(base_socket):
     """The class for mesh socket abstraction.
     This inherits from :py:class:`py2p.base.base_socket`
     """
+    __slots__ = ('requests', 'waterfalls', 'queue', 'daemon')
     @log_entry('py2p.mesh.mesh_socket', DEBUG)
     def __init__(self, addr, port, prot=default_protocol, out_addr=None,
                  debug_level=0):

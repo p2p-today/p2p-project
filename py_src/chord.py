@@ -71,6 +71,8 @@ class chord_connection(mesh_connection):
     """The class for chord connection abstraction. This inherits from
     :py:class:`py2p.mesh.mesh_connection`
     """
+    __slots__ = mesh_connection.__slots__ + ('leeching', '__id_10')
+
     @log_entry('py2p.chord.chord_connection.__init__', DEBUG)
     @inherit_doc(mesh_connection.__init__)
     def __init__(self, *args, **kwargs):
@@ -105,6 +107,8 @@ class chord_daemon(mesh_daemon):
 
 class chord_socket(mesh_socket):
     """The class for chord socket abstraction. This inherits from :py:class:`py2p.mesh.mesh_socket`"""
+    __slots__ = mesh_socket.__slots__ + ('id_10', 'data', '__keys', 'leeching')
+
     @log_entry('py2p.chord.chord_socket.__init__', DEBUG)
     @inherit_doc(mesh_socket.__init__)
     def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):

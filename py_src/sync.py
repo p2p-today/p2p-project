@@ -30,6 +30,8 @@ class sync_socket(mesh_socket):
 
     This may be turned off by adding ``leasing=False`` to the constructor.
     """
+    __slots__ = mesh_socket.__slots__ + ('__leasing', 'data', 'metadata')
+
     @log_entry('py2p.sync.sync_socket.__init__', DEBUG)
     @inherit_doc(mesh_socket.__init__)
     def __init__(self, addr, port, prot=default_protocol, out_addr=None,
