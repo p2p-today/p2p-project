@@ -217,7 +217,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         Because this data is changed asynchronously, the key is
         *         only garunteed to be present at the time of generation.
         *
-        *         :returns: A generator which yields :js:class:`Buffer`s
+        *         :returns: A generator which yields :js:class:`Buffer` s
         */
         for (let key of Object.keys(this.data)) {
             if (this.get(key, null) !== null)    {
@@ -236,7 +236,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         Because this data is changed asynchronously, the value is
         *         only garunteed to be accurate at the time of generation.
         *
-        *         :returns: A generator which yields :js:class:`Buffer`s
+        *         :returns: A generator which yields :js:class:`Buffer` s
         */
         for (let key of this.keys())  {
             let val = this.get(key);
@@ -257,7 +257,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         is only garunteed to be present at the time of generation.
         *
         *         :returns: A generator which yields pairs of
-        *                   :js:class:`Buffer`s
+        *                   :js:class:`Buffer` s
         */
         for (let key of this.keys())  {
             let val = this.get(key);
@@ -290,7 +290,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         Returns the association at a key. As a side effect, it
         *         it deletes that key.
         *
-        *         :returns: A pair of :js:class:`Buffer`s
+        *         :returns: A pair of :js:class:`Buffer` s
         */
         for (let key of this.keys())  {
             return [key, this.pop(key)];

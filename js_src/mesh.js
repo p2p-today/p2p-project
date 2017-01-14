@@ -277,7 +277,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *     .. js:function:: js2p.mesh.mesh_socket._send_peers(handler)
         *
         *         Shortcut method to send a peerlist message. This method is extracted from
-        *         :js:meth:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
+        *         :js:func:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
         *         inheritence from :js:class:`js2p.sync.sync_socket`
         */
         handler.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
@@ -288,7 +288,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *     .. js:function:: js2p.mesh.mesh_socket._send_handshake(handler)
         *
         *         Shortcut method to send a handshake response. This method is extracted from
-        *         :js:meth:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
+        *         :js:func:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
         *         inheritence from :js:class:`js2p.sync.sync_socket`
         */
         let tmp_compress = handler.compression;

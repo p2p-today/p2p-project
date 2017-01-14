@@ -4,7 +4,9 @@
 *
 * This header contains the C functions needed for using the message format in the p2p.today project.
 *
-* It automatically includes :doc:`base.h <./base>`.
+* It automatically includes :doc:`base.h <./base>` and :doc:`BaseConverter.h <./BaseConverter>`
+*
+* Using this requires a compiled copy of the sha2 hashes, provided in ``c_src/sha/sha2.c``
 */
 
 #include "./base.h"

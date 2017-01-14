@@ -25,7 +25,11 @@ A value can be retrieved by using the :js:func:`~js2p.chord.chord_socket.get` me
 
 .. code-block:: javascript
 
-    > let foo = sock.get('test key', null);  // Returns null if there is nothing at that key
+    > let foo = sock.get('test key', null);
+    > console.log(foo)
+    Promise { <pending> }
+    > foo.then(console.log)  // prints the value, if it exists, or ``null``
+    null
 
 It is important to note that keys are all translated to :js:class:`Buffer` before being used, so it is required that you use a :js:class:`string` or :js:class:`Buffer`-like object.
 
@@ -51,8 +55,6 @@ This deletes an association. Like the above, this call is about ``O(log(n))``.
     > sock.del('test')
 
 :js:func:`~js2p.chord.chord_socket.update`
-
-:js:func:`~js2p.sync.sync_socket.update`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The update method is simply a wrapper which updates based on a fed :js:class:`Object`. Essentially it runs the following:
@@ -63,13 +65,17 @@ The update method is simply a wrapper which updates based on a fed :js:class:`Ob
     ... sock.set(key, update_dict[key]);
     ... }
 
-:js:func:`~py2p.sync.sync_socket.keys` / :js:func:`~py2p.sync.sync_socket.values` / :js:func:`~py2p.sync.sync_socket.items`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:js:func:`~js2p.chord.chord_socket.keys` / :js:func:`~js2p.chord.chord_socket.values` / :js:func:`~js2p.chord.chord_socket.items`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-These methods are analagous to the ones in Python's :py:class:`dict`. The main difference is that they emulate the Python 3 behavior. So, they will still return an generator, rather than a list.
+These methods are analagous to the ones in Python's :py:class:`dict`. There are three main differences:
 
-:js:func:`~py2p.sync.sync_socket.pop` / :js:func:`~py2p.sync.sync_socket.popitem`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1. They emulate the Python 3 behavior. So, they will still return an generator, rather than a list.
+2. :js:func:`~js2p.chord.chord_socket.values` will return a generator of :js:class:`Promise` s
+3. :js:func:`~js2p.chord.chord_socket.items` will return a generator of :js:class:`Buffer` :js:class:`Promise` pairs
+
+:js:func:`~js2p.chord.chord_socket.pop` / :js:func:`~js2p.chord.chord_socket.popitem`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods are also analagous to the ones in Python's :py:class:`dict`. The main difference is that if the leasing system is active, calling this method may throw an error if you don't "own" whatever key is popped.
 

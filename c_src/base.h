@@ -383,11 +383,11 @@ static int process_string(const char *str, size_t len, char ***packets, size_t *
     *     Transforms a serialized string into an array of packets. This is formatted as an array of strings, an array of lengths,
     *     and a number of packets. You must provide a pointer to these. Packets must be initialized as an array of :c:type:`char *`.
     *
-    *     :param str:       The string to deserialize
-    *     :param len:       The length of this string
-    *     :param packets:   A pointer to the returned array of packets. This will be initialized for you
-    *     :param lens:      A pointer to the returned array of packet lengths. This will be initiaized for you
-    *     :num_packets:     A pointer to the number of packets. This will be initialized for you
+    *     :param str:           The string to deserialize
+    *     :param len:           The length of this string
+    *     :param packets:       A pointer to the returned array of packets. This will be initialized for you
+    *     :param lens:          A pointer to the returned array of packet lengths. This will be initiaized for you
+    *     :param num_packets:   A pointer to the number of packets. This will be initialized for you
     *
     *     :returns: ``0`` if successful, any other number if not. If it returns non-``0``, ``packets`` and ``lens`` will point to ``NULL``
     *

@@ -62,9 +62,9 @@ Chord Table
 
 This is a type of `distributed hash table <https://en.wikipedia.org/wiki/Distributed_hash_table>`_ based on an `MIT paper <https://pdos.csail.mit.edu/papers/chord:sigcomm01/chord_sigcomm.pdf>`_ which defined it.
 
-The idea is that you can use this as a dictionary-like object. The only caveat is that all keys and values *must* be strings. It uses five separate hash tables for hash collision avoidance and data backup in case a node unexpectedly exits.
+The idea is that you can use this as a dictionary-like object. The only limitation is that it can only have string-like keys and values. It uses five separate hash tables for hash collision avoidance and data backup in case a node unexpectedly exits.
 
-Currently there is only an implementation in Python and it is highly experimental. This section will be updated when it's ready for more general use.
+Currently there is an implementation in :doc:`Python <./python/chord>` and :doc:`Javascript <./javascript/chord>`. More tractable documentation can be found in their tutorial sections. Protocol specifications are in progress.
 
 Contributing, Credits, and Licenses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
