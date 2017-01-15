@@ -70,15 +70,10 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
 
     __check_lease(key, new_data, new_meta)  {
         let meta = this.metadata[key];
-        if ( (!meta) || (meta.owner.toString() === new_meta.owner.toString()) ||
-            (meta.timestamp < base.getUTC() - 3600) ||
-            (meta.timestamp === new_meta.timestamp && meta.owner.toString() > new_meta.owner.toString()) ||
-            ((meta.timestamp < new_meta.timestamp) && (!this.__leasing)) )    {
-            return true;
-        }
-        else    {
-            return false;
-        }
+        return ((!meta) || (meta.owner.toString() === new_meta.owner.toString()) ||
+                (meta.timestamp < base.getUTC() - 3600) ||
+                (meta.timestamp === new_meta.timestamp && meta.owner.toString() > new_meta.owner.toString()) ||
+                ((meta.timestamp < new_meta.timestamp) && (!this.__leasing)));
     }
 
     __store(key, new_data, new_meta, error) {

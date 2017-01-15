@@ -47,16 +47,13 @@ class sync_socket(mesh_socket):
 
     def __check_lease(self, key, new_data, new_meta):
         meta = self.metadata.get(key, None)
-        if ((not meta) or
+        return ((meta is None) or
                 (meta.owner == new_meta.owner) or
                 (meta.timestamp < getUTC() - 3600) or
                 (meta.timestamp == new_meta.timestamp and
                     meta.owner > new_meta.owner) or
                 (meta.timestamp < new_meta.timestamp and
-                    not self.__leasing)):
-            return True
-        else:
-            return False
+                    not self.__leasing))
 
     def __store(self, key, new_data, new_meta, error=True):
         """Private API method for storing data. You have permission to store
