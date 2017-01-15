@@ -64,18 +64,8 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         try {
             var msg = super.send(msg_type, packs, id, time);
             //add msg to waterfall
-            var contained = false;
             const mid = msg.id;
-            this.server.waterfalls.some(function(entry)    {
-                if (!BigInt.isInstance(entry[1])) {
-                    entry[1] = new BigInt(entry[1]);
-                }
-                if (entry[0] === mid && entry[1].equals(msg.time))   {
-                    contained = true;
-                    return true;
-                }
-            });
-            if (!contained) {
+            if (!this.server._in_waterfalls(mid, msg.time))    {
                 this.server.waterfalls.unshift([mid, msg.time]);
             }
         }
@@ -168,13 +158,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         This function is run when a connection is ended
         */
-        if (this.sock.end)  {
-            this.sock.end();
-            this.sock.destroy(); //These implicitly remove from routing table
-        }
-        else    {
-            this.sock.close();
-        }
+        this.onError();
     }
 }
 
@@ -352,7 +336,6 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var handler = new this.conn_type(conn, this, true);
         handler.id = id;
         if (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss')    {
-            var self = this;
             if (conn.on)    {
                 conn.on('connect', ()=>{
                     self._send_handshake(handler);
@@ -586,6 +569,20 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         });
     }
 
+    _in_waterfalls(id, time)    {
+        let contained = false;
+        this.waterfalls.some(function(entry)    {
+            if (!BigInt.isInstance(entry[1])) {
+                entry[1] = new BigInt(entry[1]);
+            }
+            if (entry[0] === id && entry[1].equals(time))   {
+                contained = true;
+                return true;
+            }
+        });
+        return contained;
+    }
+
     __clean_waterfalls()    {
         /**
         *     .. js:function:: js2p.mesh.mesh_socket.__clean_waterfalls()
@@ -618,15 +615,8 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *
         *         :returns: ``true`` if the message was then forwarded. ``false`` if not.
         */
-        var contained = false;
         const id = msg.id;
-        this.waterfalls.some(function(entry)    {
-            if (entry[0] === id && entry[1].equals(msg.time))   {
-                contained = true;
-                return true;
-            }
-        });
-        if (!contained)  {
+        if (!this._in_waterfalls(id, msg.time)) {
             this.waterfalls.unshift([id, msg.time]);
             var self = this;
             Object.keys(this.routing_table).forEach(function(key)   {

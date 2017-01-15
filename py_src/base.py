@@ -172,7 +172,7 @@ try:
     if hasattr(snappy, 'compress'):
         decompress(compress(b'test', flags.snappy), flags.snappy)
         compression.append(flags.snappy)
-except:  # pragma: no cover
+except Exception:  # pragma: no cover
     getLogger('py2p.base').info("Unable to load snappy compression")
 
 try:
@@ -181,7 +181,7 @@ try:
         decompress(compress(b'test', flags.zlib), flags.zlib)
         decompress(compress(b'test', flags.gzip), flags.gzip)
         compression.extend((flags.zlib, flags.gzip))
-except:  # pragma: no cover
+except Exception:  # pragma: no cover
     getLogger('py2p.base').info("Unable to load gzip/zlib compression")
 
 try:
@@ -189,7 +189,7 @@ try:
     if hasattr(bz2, 'compress'):
         decompress(compress(b'test', flags.bz2), flags.bz2)
         compression.append(flags.bz2)
-except:  # pragma: no cover
+except Exception:  # pragma: no cover
     getLogger('py2p.base').info("Unable to load bz2 compression")
 
 try:
@@ -197,7 +197,7 @@ try:
     if hasattr(lzma, 'compress'):
         decompress(compress(b'test', flags.lzma), flags.lzma)
         compression.append(flags.lzma)
-except:  # pragma: no cover
+except Exception:  # pragma: no cover
     getLogger('py2p.base').info("Unable to load lzma compression")
 
 json_compressions = json.dumps([method.decode() for method in compression])
