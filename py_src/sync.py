@@ -15,7 +15,7 @@ default_protocol = protocol('sync', "Plaintext")  # SSL")
 
 class metatuple(namedtuple('meta', ('owner', 'timestamp'))):
     """This class is used to store metadata for a particular key"""
-    pass
+    __slots__ = ()
 
 
 class sync_socket(mesh_socket):
@@ -45,6 +45,19 @@ class sync_socket(mesh_socket):
         self.metadata = {}
         self.register_handler(self.__handle_store)
 
+    def __check_lease(self, key, new_data, new_meta):
+        meta = self.metadata.get(key, None)
+        if ((not meta) or
+                (meta.owner == new_meta.owner) or
+                (meta.timestamp < getUTC() - 3600) or
+                (meta.timestamp == new_meta.timestamp and
+                    meta.owner > new_meta.owner) or
+                (meta.timestamp < new_meta.timestamp and
+                    not self.__leasing)):
+            return True
+        else:
+            return False
+
     def __store(self, key, new_data, new_meta, error=True):
         """Private API method for storing data. You have permission to store
         something if:
@@ -65,20 +78,13 @@ class sync_socket(mesh_socket):
             KeyError: If someone else has a lease at this value, and ``error``
                           is ``True``
         """
-        meta = self.metadata.get(key, None)
-        if ((not meta) or
-                (meta.owner == new_meta.owner) or
-                (meta.timestamp < getUTC() - 3600) or
-                (meta.timestamp == new_meta.timestamp and
-                    meta.owner > new_meta.owner) or
-                (meta.timestamp < new_meta.timestamp and
-                    not self.__leasing)):
-            if new_data not in ('', b''):
-                self.metadata[key] = new_meta
-                self.data[key] = new_data
-            else:
+        if self.__check_lease(key, new_data, new_meta):
+            if new_data == b'':
                 del self.data[key]
                 del self.metadata[key]
+            else:
+                self.metadata[key] = new_meta
+                self.data[key] = new_data
         elif error:
             raise KeyError("You don't have permission to change this yet")
 
@@ -131,10 +137,7 @@ class sync_socket(mesh_socket):
         key = sanitize_packet(key)
         data = sanitize_packet(data)
         self.__store(key, data, new_meta)
-        if data in ('', b''):
-            self.send(key, '', type=flags.store)
-        else:
-            self.send(key, data, type=flags.store)
+        self.send(key, data, type=flags.store)
 
     @inherit_doc(__setitem__)
     def set(self, key, data):
@@ -178,12 +181,14 @@ class sync_socket(mesh_socket):
         """Retrieves the value at a given key.
 
         Args:
-            key:     The key that you wish to check. Must be a :py:class:`str` or
-                        :py:class:`bytes`-like object
-            ifError: The value you wish to return on exception (default: ``None``)
+            key:     The key that you wish to check. Must be a :py:class:`str`
+                        or :py:class:`bytes`-like object
+            ifError: The value you wish to return on exception (default:
+                        ``None``)
 
         Returns:
-            The value at said key, or the value at ifError if there's an Exception
+            The value at said key, or the value at ifError if there's an
+            :py:clas:`Exception`
         """
         key = sanitize_packet(key)
         return self.data.get(key, ifError)
@@ -192,13 +197,13 @@ class sync_socket(mesh_socket):
         return len(self.data)
 
     def __delitem__(self, key):
-        self[key] = ''
+        self[key] = b''
 
     def keys(self):
         """Returns an iterator of the underlying :py:class:`dict`s keys"""
         if hasattr(self.data, 'iterkeys'):
-            return (key for key in self.data.keys() if key in self.data)
-        return (key for key in tuple(self.data.keys()) if key in self.data)
+            return self.data.iterkeys()
+        return self.keys()
 
     @inherit_doc(keys)
     def __iter__(self):

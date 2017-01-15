@@ -68,7 +68,20 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         this.register_handler(function handle_store(msg, conn)  {return self.__handle_store(msg, conn);});
     }
 
-    __store(key, new_data, new_meta, error)   {
+    __check_lease(key, new_data, new_meta)  {
+        let meta = this.metadata[key];
+        if ( (!meta) || (meta.owner.toString() === new_meta.owner.toString()) ||
+            (meta.timestamp < base.getUTC() - 3600) ||
+            (meta.timestamp === new_meta.timestamp && meta.owner.toString() > new_meta.owner.toString()) ||
+            ((meta.timestamp < new_meta.timestamp) && (!this.__leasing)) )    {
+            return true;
+        }
+        else    {
+            return false;
+        }
+    }
+
+    __store(key, new_data, new_meta, error) {
         /**
         *     .. js:function:: js2p.sync.sync_socket.__store(key, new_data, new_meta, error)
         *
@@ -81,18 +94,14 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *
         *         :raises Error: If someone else has a lease at this value, and ``error`` is not ``false``
         */
-        let meta = this.metadata[key];
-        if ( (!meta) || (meta.owner.toString() === new_meta.owner.toString()) ||
-                (meta.timestamp < base.getUTC() - 3600) ||
-                (meta.timestamp === new_meta.timestamp && meta.owner.toString() > new_meta.owner.toString()) ||
-                ((meta.timestamp < new_meta.timestamp) && (!this.__leasing)) )    {
-            if (new_data.toString() !== '')    {
-                this.metadata[key] = new_meta;
-                this.data[key] = new_data;
-            }
-            else    {
+        if (this.__check_lease(key, new_data, new_meta))    {
+            if (new_data.toString() === '')    {
                 delete this.data[key];
                 delete this.metadata[key];
+            }
+            else    {
+                this.metadata[key] = new_meta;
+                this.data[key] = new_data;
             }
         }
         else if (error !== false) {
