@@ -28,7 +28,7 @@ __DEBUG__ = [("CP2P_DEBUG_FLAG", "a")] if ('--debug' in sys.argv and __USE_C__) 
 
 # This sets up the program's classifiers
 
-classifiers = ['Development Status :: 3 - Alpha',
+classifiers = ['Development Status :: 4 - Beta',
                'Intended Audience :: Developers',
                'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
                'Operating System :: OS Independent',
