@@ -200,7 +200,7 @@ class sync_socket(mesh_socket):
         """Returns an iterator of the underlying :py:class:`dict`s keys"""
         if hasattr(self.data, 'iterkeys'):
             return self.data.iterkeys()
-        return self.keys()
+        return self.data.keys()
 
     @inherit_doc(keys)
     def __iter__(self):
