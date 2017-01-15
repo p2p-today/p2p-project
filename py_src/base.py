@@ -355,7 +355,8 @@ default_protocol = protocol('', "Plaintext")  # SSL")
 
 class InternalMessage(object):
     """An object used to build and parse protocol-defined message structures"""
-    __slots__ = ('msg_type', 'time', 'sender', '__payload', 'compression_fail', 'compression')
+    __slots__ = ('msg_type', 'time', 'sender', '__payload', 'compression',
+                 'compression_fail')
 
     @classmethod
     def __sanitize_string(cls, string, sizeless=False):
@@ -378,7 +379,8 @@ class InternalMessage(object):
         if not sizeless:
             if unpack_value(string[:4]) != len(string[4:]):
                 raise AssertionError(
-                    "Real message size {} != expected size {}. Buffer given: {}".format(
+                    "Real message size {} != expected size {}. "
+                    "Buffer given: {}".format(
                         len(string),
                         unpack_value(string[:4]) + 4,
                         string
@@ -546,7 +548,7 @@ class InternalMessage(object):
         encoded as :py:class:`bytes`, excluding the header
         """
         return ((self.msg_type, self.sender, self.id, self.time_58) +
-                    self.payload)
+                self.payload)
 
     @property
     def __non_len_string(self):
@@ -688,7 +690,8 @@ class base_connection(object):
 
     def found_terminator(self):
         """Processes received messages"""
-        raw_msg, self.buffer = bytes(self.buffer[:self.expected]), self.buffer[self.expected:]
+        raw_msg, self.buffer = bytes(self.buffer[:self.expected]), \
+                               self.buffer[self.expected:]
         self.__print__("Received: %s" % repr(raw_msg), level=6)
         self.active = len(self.buffer) > 4
         if self.active:
@@ -906,7 +909,9 @@ class base_socket(object):
                 self.daemon.sock.shutdown(socket.SHUT_RDWR)
             except:
                 pass
-            for conn in chain(tuple(self.routing_table.values()), self.awaiting_ids):
+            for conn in chain(
+                            tuple(self.routing_table.values()),
+                            self.awaiting_ids):
                 self.disconnect(conn)
             self.__closed = True
 
@@ -1079,20 +1084,22 @@ class message(object):
                        prefixed with base.flags.whisper, so the other end will
                        receive ``[base.flags.whisper, *args]``
         """
-        self.server._logger.debug('Initiating a direct reply to message ID {}'.format(self.id))
+        self.server._logger.debug(
+            'Initiating a direct reply to message ID {}'.format(self.id)
+        )
         if self.server.routing_table.get(self.sender):
             self.server.routing_table.get(self.sender).send(
                 flags.whisper, flags.whisper, *args)
         else:
-            self.server._logger.debug('Requesting connection for direct reply '
-                                      'to message ID {}'.format(self.id))
+            self.server._logger.debug('Requesting connection for direct reply'
+                                      ' to message ID {}'.format(self.id))
             request_hash = hashlib.sha384(
                 self.sender + to_base_58(getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
             self.server.requests[request_id] = (flags.whisper, flags.whisper) + tuple(args)
-            self.server._logger.critical("You aren't connected to the original "
-                                         "sender. This reply is not guarunteed,"
-                                         " but we're trying to make a "
-                                         "connection and put the message "
-                                         "through.")
+            self.server._logger.critical(
+                "You aren't connected to the original sender. This reply is "
+                "not guarunteed, but we're trying to make a connection and "
+                "put the message through."
+            )
