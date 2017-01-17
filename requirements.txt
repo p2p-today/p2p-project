@@ -1,2 +1,2 @@
 custom_inherit==2.1.0
-git+https://github.com/p2p-today/promise
+async_promises==1.1.1

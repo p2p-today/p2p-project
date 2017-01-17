@@ -450,7 +450,7 @@ class chord_socket(mesh_socket):
         def resolver(resolve, reject):
             resolve(self.get(key, ifError=ifError, timeout=timeout))
 
-        from promise import Promise
+        from async_promises import Promise
         self._logger.debug('Getting Promise of {}, with fallback'.format(key, ifError))
         return Promise(resolver)
 
@@ -664,19 +664,15 @@ class chord_socket(mesh_socket):
             socket.timeout: See KeyError
         """
         self._logger.debug('Retrieving all values')
-        try:
-            keys = self.keys()
-            nxt = self.getPromise(next(keys))
-            for key in keys:
-                _nxt = self.getPromise(key)
-                if nxt.get():
-                    yield nxt.get()
-                nxt = _nxt
+        keys = self.keys()
+        nxt = self.getPromise(next(keys))
+        for key in keys:
+            _nxt = self.getPromise(key)
             if nxt.get():
                 yield nxt.get()
-        except ImportError:
-            for key in self.keys():
-                yield self[key]
+            nxt = _nxt
+        if nxt.get():
+            yield nxt.get()
 
     def items(self):
         """Returns:
@@ -687,21 +683,17 @@ class chord_socket(mesh_socket):
             socket.timeout: See KeyError
         """
         self._logger.debug('Retrieving all items')
-        try:
-            keys = self.keys()
-            p_key = next(keys)
-            nxt = self.getPromise(p_key)
-            for key in keys:
-                _nxt = self.getPromise(key)
-                if nxt.get():
-                    yield (p_key, nxt.get())
-                p_key = key
-                nxt = _nxt
+        keys = self.keys()
+        p_key = next(keys)
+        nxt = self.getPromise(p_key)
+        for key in keys:
+            _nxt = self.getPromise(key)
             if nxt.get():
                 yield (p_key, nxt.get())
-        except ImportError:
-            for key in self.keys():
-                yield (key, self[key])
+            p_key = key
+            nxt = _nxt
+        if nxt.get():
+            yield (p_key, nxt.get())
 
     def pop(self, key, *args):
         """Returns a value, with the side effect of deleting that association
@@ -749,8 +741,5 @@ class chord_socket(mesh_socket):
             iterator. That should even out lag times
         """
         self._logger.debug('Producing a dictionary copy')
-        try:
-            promises = [(key, self.getPromise(key)) for key in self.keys()]
-            return dict((key, p.get()) for key, p in promises)
-        except ImportError:
-            return dict(self.items())
+        promises = [(key, self.getPromise(key)) for key in self.keys()]
+        return dict((key, p.get()) for key, p in promises)
