@@ -47,7 +47,7 @@ version_info = tuple(map(int, __version__.split(".")))
 
 
 def bootstrap(socket_type, proto, addr, port, *args, **kargs):
-    raise NotImplementedError
+    raise NotImplementedError("See #130")
     # global seed
     # seed = dht_socket(addr, port, out_addr = kargs.get('out_addr'))
     # seed.connect(standard_starting_conn)
