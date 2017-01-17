@@ -46,12 +46,6 @@ help:
 
 .PHONY: clean
 clean:
-	find c          ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	find cpp        ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	find java       ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	find javascript ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	find go         ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	rm -rf py2p
 	find $(BUILDDIR) ! -name 'keybase.txt' -type f -exec rm -f {} +
 	find $(BUILDDIR) -type d -empty -delete || echo "cannot remove empty directories"
 

@@ -35,6 +35,22 @@ catch (e) {
 m.version = m.base.version;
 m.version_info = m.base.version_info;
 
-m.bootstrap = function bootstrap()  {
-    throw "Not Implemented";
+m.bootstrap = function bootstrap(net_id, constrcutor, addr, port, protocol, seeding)  {
+    let conn = new m.chord.chord_socket('0.0.0.0', 44565, new m.base.protocol('bootstrapper', 'SSL'));
+    if (seeding !== false)  {
+        conn.join();
+    }
+    conn.connect('euclid.nmu.edu', 44565);
+    let ret = new constructor(addr, port, protocol);
+    conn.get(net_id).then((val)=>{
+        for (let addr of JSON.parse(val)) {
+            ret.connect(addr[0], addr[1]);
+        }
+        if (seeding === false) {
+            conn.close();
+        }
+    }, (err)=>{
+        console.critical(err);
+    });
+    return ret;
 }
