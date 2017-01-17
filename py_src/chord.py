@@ -15,6 +15,8 @@ import warnings
 from itertools import chain
 from logging import (DEBUG, INFO)
 
+from async_promises import Promise
+
 try:
     from .cbase import protocol
 except:
@@ -42,7 +44,7 @@ def distance(a, b, limit=None):
     defined k, the key size. The largest possible node id is limit (or
     ``2**384``).
     """
-    return (b - a) % (limit or \
+    return (b - a) % (limit or
         0x1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000)
 
 
@@ -409,7 +411,7 @@ class chord_socket(mesh_socket):
                 len(hashes) // 2 + 1,
                 common))
 
-    def get(self, key, ifError=None, timeout=10):
+    def getSync(self, key, ifError=None, timeout=10):
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -431,7 +433,7 @@ class chord_socket(mesh_socket):
         except (KeyError, socket.timeout):
             return ifError
 
-    def getPromise(self, key, ifError=None, timeout=10):
+    def get(self, key, ifError=None, timeout=10):
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -444,13 +446,12 @@ class chord_socket(mesh_socket):
             timeout: The longest you would like to await a value (default: 10s)
 
         Returns:
-            A :py:class:`~promise.Promise` of the value at said key, or the
-            value at ifError if there's an :py:class:`Exception`
+            A :py:class:`~async_promises.Promise` of the value at said key, or
+            the value at ifError if there's an :py:class:`Exception`
         """
         def resolver(resolve, reject):
-            resolve(self.get(key, ifError=ifError, timeout=timeout))
+            resolve(self.getSync(key, ifError=ifError, timeout=timeout))
 
-        from async_promises import Promise
         self._logger.debug('Getting Promise of {}, with fallback'.format(key, ifError))
         return Promise(resolver)
 
@@ -665,9 +666,9 @@ class chord_socket(mesh_socket):
         """
         self._logger.debug('Retrieving all values')
         keys = self.keys()
-        nxt = self.getPromise(next(keys))
+        nxt = self.get(next(keys))
         for key in keys:
-            _nxt = self.getPromise(key)
+            _nxt = self.get(key)
             if nxt.get():
                 yield nxt.get()
             nxt = _nxt
@@ -685,9 +686,9 @@ class chord_socket(mesh_socket):
         self._logger.debug('Retrieving all items')
         keys = self.keys()
         p_key = next(keys)
-        nxt = self.getPromise(p_key)
+        nxt = self.get(p_key)
         for key in keys:
-            _nxt = self.getPromise(key)
+            _nxt = self.get(key)
             if nxt.get():
                 yield (p_key, nxt.get())
             p_key = key
@@ -711,7 +712,7 @@ class chord_socket(mesh_socket):
         """
         self._logger.debug('Popping key {}'.format(key))
         if len(args):
-            ret = self.get(key, args[0])
+            ret = self.getSync(key, args[0])
             if ret != args[0]:
                 del self[key]
         else:
@@ -741,5 +742,5 @@ class chord_socket(mesh_socket):
             iterator. That should even out lag times
         """
         self._logger.debug('Producing a dictionary copy')
-        promises = [(key, self.getPromise(key)) for key in self.keys()]
+        promises = [(key, self.get(key)) for key in self.keys()]
         return dict((key, p.get()) for key, p in promises)
