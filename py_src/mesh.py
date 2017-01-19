@@ -37,7 +37,7 @@ class mesh_connection(base_connection):
     def send(self, msg_type, *args, **kargs):
         msg = super(mesh_connection, self).send(msg_type, *args, **kargs)
         if msg and (msg.id, msg.time) not in self.server.waterfalls:
-            self.server.waterfalls.appendleft((msg.id, msg.time))
+            self.server.waterfalls.add((msg.id, msg.time))
         return msg
 
     def found_terminator(self):
@@ -196,7 +196,7 @@ class mesh_socket(base_socket):
         # Metadata about msg replies where you aren't connected to the sender
         self.requests = {}
         # Metadata of messages to waterfall
-        self.waterfalls = deque()
+        self.waterfalls = set()
         # Queue of received messages. Access through recv()
         self.queue = deque()
         if self.daemon == 'mesh reserved':
@@ -429,15 +429,12 @@ class mesh_socket(base_socket):
             handler.send(main_flag, send_type, *args)
 
     def __clean_waterfalls(self):
-        """This function cleans the :py:class:`deque` of recently relayed
+        """This function cleans the :py:class:`set` of recently relayed
         messages based on the following heuristics:
 
-        * Delete all duplicates
         * Delete all older than 60 seconds
         """
-        self.waterfalls = deque(set(self.waterfalls))
-        self.waterfalls = deque(
-            (i for i in self.waterfalls if i[1] > getUTC() - 60))
+        self.waterfalls = {i for i in self.waterfalls if i[1] > getUTC() - 60}
 
     def waterfall(self, msg):
         """This function handles message relays. Its return value is based on
@@ -449,8 +446,8 @@ class mesh_socket(base_socket):
         Returns:
             ``True`` if the message was then forwarded. ``False`` if not.
         """
-        if msg.id not in (i for i, t in self.waterfalls):
-            self.waterfalls.appendleft((msg.id, msg.time))
+        if (msg.id, msg.time) not in self.waterfalls:
+            self.waterfalls.add((msg.id, msg.time))
             for handler in tuple(self.routing_table.values()):
                 if handler.id != msg.sender:
                     handler.send_InternalMessage(msg.msg)

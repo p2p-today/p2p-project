@@ -23,8 +23,10 @@
     "zlibjs": "^0.2.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.16.0",
+    "babel-cli": "^6.18.0",
+    "babel-plugin-transform-runtime": "^6.15.0",
     "babel-preset-es2015": "^6.16.0",
+    "babel-preset-latest": "^6.16.0",
     "browserify": "^13.3.0",
     "mocha": "^3.1.0"
   }

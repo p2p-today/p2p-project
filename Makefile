@@ -1,7 +1,7 @@
 #Python setup section
 
 pip = -m pip install
-py_deps = $(pip) cryptography
+py_deps = $(pip) cryptography --upgrade
 py_test_deps = $(pip) pytest-coverage
 docs_deps = $(pip) sphinx sphinxcontrib-napoleon sphinx_rtd_theme
 
@@ -44,7 +44,7 @@ endif
 jsdeps: LICENSE
 	yarn || npm install
 
-browser: LICENSE jsdeps
+browser: jsdeps
 	mkdir -p build/browser
 	cd js_src;\
 	node ../node_modules/browserify/bin/cmd.js -r ./base.js -o ../build/browser/js2p-browser-base.js -u snappy -u nodejs-websocket -u node-forge;\
@@ -55,16 +55,35 @@ browser: LICENSE jsdeps
 
 browser-min: browser
 	mkdir -p build/browser-min
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser.js       -o ./build/browser-min/js2p-browser.min.js       --minified --no-comments
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-base.js  -o ./build/browser-min/js2p-browser-base.min.js  --minified --no-comments
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-mesh.js  -o ./build/browser-min/js2p-browser-mesh.min.js  --minified --no-comments
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-sync.js  -o ./build/browser-min/js2p-browser-sync.min.js  --minified --no-comments
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-chord.js -o ./build/browser-min/js2p-browser-chord.min.js --minified --no-comments
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser.js       -o ./build/browser-min/js2p-browser.min.js       --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-base.js  -o ./build/browser-min/js2p-browser-base.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-mesh.js  -o ./build/browser-min/js2p-browser-mesh.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-sync.js  -o ./build/browser-min/js2p-browser-sync.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-chord.js -o ./build/browser-min/js2p-browser-chord.min.js --minified --no-comments --no-babelrc
+
+browser-compat: browser
+	mkdir -p build/browser-compat build/babel
+	node node_modules/babel-cli/bin/babel.js js_src -d build/babel
+	node node_modules/mocha/bin/mocha build/babel/test/*
+	cd build/babel;\
+	node ../../node_modules/browserify/bin/cmd.js -r ./base.js -o ../browser-compat/js2p-browser-base.babel.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../browser-compat/js2p-browser-mesh.babel.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../browser-compat/js2p-browser-sync.babel.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../browser-compat/js2p-browser-chord.babel.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../browser-compat/js2p-browser.babel.js -s js2p
+
+browser-compat-min: browser-compat
+	mkdir -p build/browser-compat-min
+	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser.babel.js       -o ./build/browser-compat-min/js2p-browser.babel.min.js       --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-base.babel.js  -o ./build/browser-compat-min/js2p-browser-base.babel.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-mesh.babel.js  -o ./build/browser-compat-min/js2p-browser-mesh.babel.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-sync.babel.js  -o ./build/browser-compat-min/js2p-browser-sync.babel.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-chord.babel.js -o ./build/browser-compat-min/js2p-browser-chord.babel.min.js --minified --no-comments --no-babelrc
 
 jsdocs:
 	node js_src/docs_test.js
 
-jstest: LICENSE jsdeps
+jstest: jsdeps
 	node node_modules/mocha/bin/mocha js_src/test/*
 
 #End Javascript section
@@ -72,18 +91,22 @@ jstest: LICENSE jsdeps
 
 python: LICENSE setup.py
 	python $(py_deps)
+	python $(pip) -r requirements.txt
 	python setup.py build --universal
 
 python3: LICENSE setup.py
 	$(python3) $(py_deps)
+	$(python3) $(pip) -r requirements.txt
 	$(python3) setup.py build --universal
 
 python2: LICENSE setup.py
 	$(python2) $(py_deps)
+	$(python2) $(pip) -r requirements.txt
 	$(python2) setup.py build --universal
 
 pypy: LICENSE setup.py
 	pypy $(py_deps)
+	pypy $(pip) -r requirements.txt
 	pypy setup.py build --universal
 
 ifeq ($(pypy), True)
