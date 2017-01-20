@@ -41,44 +41,51 @@ endif
 
 #Begin Javascript section
 
+jsver = $(shell node -p "require('./js_src/base.js').version" 2> /dev/null)
+
+test:
+	echo $(jsver)
+
 jsdeps: LICENSE
 	yarn || npm install
 
 browser: jsdeps
 	mkdir -p build/browser
 	cd js_src;\
-	node ../node_modules/browserify/bin/cmd.js -r ./base.js -o ../build/browser/js2p-browser-base.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../build/browser/js2p-browser-mesh.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-sync.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-chord.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../build/browser/js2p-browser.js -s js2p
+	node ../node_modules/browserify/bin/cmd.js -r ./base.js -o ../build/browser/js2p-browser-$(jsver)-base.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../build/browser/js2p-browser-$(jsver)-mesh.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-$(jsver)-sync.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-$(jsver)-chord.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../build/browser/js2p-browser-$(jsver).js -s js2p
 
 browser-min: browser
 	mkdir -p build/browser-min
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser.js       -o ./build/browser-min/js2p-browser.min.js       --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-base.js  -o ./build/browser-min/js2p-browser-base.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-mesh.js  -o ./build/browser-min/js2p-browser-mesh.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-sync.js  -o ./build/browser-min/js2p-browser-sync.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-chord.js -o ./build/browser-min/js2p-browser-chord.min.js --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver).js       -o ./build/browser-min/js2p-browser-$(jsver).min.js       --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-base.js  -o ./build/browser-min/js2p-browser-$(jsver)-base.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-mesh.js  -o ./build/browser-min/js2p-browser-$(jsver)-mesh.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-sync.js  -o ./build/browser-min/js2p-browser-$(jsver)-sync.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-chord.js -o ./build/browser-min/js2p-browser-$(jsver)-chord.min.js --minified --no-comments --no-babelrc
 
 browser-compat: browser
 	mkdir -p build/browser-compat build/babel
 	node node_modules/babel-cli/bin/babel.js js_src -d build/babel
 	node node_modules/mocha/bin/mocha build/babel/test/*
 	cd build/babel;\
-	node ../../node_modules/browserify/bin/cmd.js -r ./base.js -o ../browser-compat/js2p-browser-base.babel.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../browser-compat/js2p-browser-mesh.babel.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../browser-compat/js2p-browser-sync.babel.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../browser-compat/js2p-browser-chord.babel.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../browser-compat/js2p-browser.babel.js -s js2p
+	node ../../node_modules/browserify/bin/cmd.js -r ./base.js -o ../browser-compat/js2p-browser-$(jsver)-base.babel.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../browser-compat/js2p-browser-$(jsver)-mesh.babel.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../browser-compat/js2p-browser-$(jsver)-sync.babel.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../browser-compat/js2p-browser-$(jsver)-chord.babel.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../browser-compat/js2p-browser-$(jsver).babel.js -s js2p
 
 browser-compat-min: browser-compat
 	mkdir -p build/browser-compat-min
-	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser.babel.js       -o ./build/browser-compat-min/js2p-browser.babel.min.js       --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-base.babel.js  -o ./build/browser-compat-min/js2p-browser-base.babel.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-mesh.babel.js  -o ./build/browser-compat-min/js2p-browser-mesh.babel.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-sync.babel.js  -o ./build/browser-compat-min/js2p-browser-sync.babel.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-chord.babel.js -o ./build/browser-compat-min/js2p-browser-chord.babel.min.js --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver).babel.js       -o ./build/browser-compat-min/js2p-browser-$(jsver).babel.min.js       --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-base.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-base.babel.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-mesh.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-mesh.babel.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-sync.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-sync.babel.min.js  --minified --no-comments --no-babelrc
+	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-chord.babel.js -o ./build/browser-compat-min/js2p-browser-$(jsver)-chord.babel.min.js --minified --no-comments --no-babelrc
+
+browser-min-compat: browser-compat-min
 
 jsdocs:
 	node js_src/docs_test.js
