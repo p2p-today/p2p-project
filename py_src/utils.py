@@ -64,12 +64,18 @@ def intersect(*args):
     Returns:
         A :py:class:`tuple` containing the ordered intersection of all given
         iterables, where the order is defined by the first iterable
+
+    Note:
+        All items in your iterable must be hashable. In other words, they must
+        fit in a :py:class:`set`
     """
     if not all(args):
         return ()
-    intersection = args[0]
-    for l in args[1:]:
-        intersection = (item for item in intersection if item in l)
+    iterator = iter(args)
+    intersection = next(iterator)
+    for l in iterator:
+        s = set(l)
+        intersection = (item for item in intersection if item in s)
     return tuple(intersection)
 
 
