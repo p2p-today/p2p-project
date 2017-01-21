@@ -2,7 +2,7 @@
 
 pip = -m pip install
 py_deps = $(pip) cryptography --upgrade
-py_test_deps = $(pip) pytest-coverage
+py_test_deps = $(pip) pytest-coverage pytest-benchmark
 docs_deps = $(pip) sphinx sphinxcontrib-napoleon sphinx_rtd_theme
 
 ifeq ($(shell python -c 'import sys; print(int(hasattr(sys, "real_prefix")))'), 0) # check for virtualenv
@@ -41,7 +41,7 @@ endif
 
 #Begin Javascript section
 
-jsver = $(shell node -p "require('./js_src/base.js').version" 2> /dev/null)
+jsver = $(shell node -p "require('./package.json').version")
 
 test:
 	echo $(jsver)

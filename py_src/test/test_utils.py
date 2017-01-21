@@ -14,20 +14,26 @@ if sys.version_info >= (3, ):
     xrange = range
 
 
-def test_intersect(iters=200):
+def test_intersect(benchmark, iters=200):
     max_val = 2**12 - 1
-    for _ in xrange(iters):
+    def test(pair1, pair2, cross1, cross2):
+        if max(cross1) < min(cross2):
+            assert (utils.intersect(range(*pair1), range(*pair2)) ==
+                    tuple(range(max(cross1), min(cross2))))
+        else:
+            assert utils.intersect(range(*pair1), range(*pair2)) == ()
+
+    def setup():
         pair1 = sorted(
             (random.randint(0, max_val), random.randint(0, max_val)))
         pair2 = sorted(
             (random.randint(0, max_val), random.randint(0, max_val)))
         cross1 = (pair1[0], pair2[0])
         cross2 = (pair1[1], pair2[1])
-        if max(cross1) < min(cross2):
-            assert (utils.intersect(range(*pair1), range(*pair2)) ==
-                    tuple(range(max(cross1), min(cross2))))
-        else:
-            assert utils.intersect(range(*pair1), range(*pair2)) == ()
+        return (pair1, pair2, cross1, cross2), {}
+
+    benchmark.pedantic(test, setup=setup, rounds=iters)
+
 
 
 def test_getUTC(iters=20):

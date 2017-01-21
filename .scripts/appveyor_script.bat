@@ -3,7 +3,7 @@ IF DEFINED PIP (
     set HOME=%APPVEYOR_BUILD_FOLDER%
     %PYPY%
     %PIP% install --upgrade setuptools
-    %PIP% install pytest-coverage codecov cryptography wheel
+    %PIP% install pytest-coverage pytest-benchmark codecov cryptography wheel
     %PIP% install -r requirements.txt
     cd %HOME%
     %RUN% -m pytest -c setup.cfg --cov=./py_src/ ./py_src/ || goto :error

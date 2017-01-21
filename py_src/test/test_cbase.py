@@ -41,11 +41,11 @@ try:
         # common compression methods
         assert (bf.zlib, bf.gzip, bf.snappy) == (cf.zlib, cf.gzip, cf.snappy)
 
-    def test_protocol():
-        test_base.test_protocol(impl=cbase)
+    def test_protocol(benchmark):
+        test_base.test_protocol(benchmark, impl=cbase)
 
-    def test_InternalMessage():
-        test_base.test_InternalMessage(impl=cbase)
+    def test_InternalMessage(benchmark):
+        test_base.test_InternalMessage(benchmark, impl=cbase)
 
 except ImportError:
     pass
