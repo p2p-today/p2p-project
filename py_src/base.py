@@ -355,8 +355,8 @@ default_protocol = protocol('', "Plaintext")  # SSL")
 
 class InternalMessage(object):
     """An object used to build and parse protocol-defined message structures"""
-    __slots__ = ('msg_type', 'time', 'sender', '__payload', 'compression',
-                 'compression_fail')
+    __slots__ = ('__msg_type', '__time', '__sender', '__payload',
+                 '__compression', '__id', 'compression_fail', '__string')
 
     @classmethod
     def __sanitize_string(cls, string, sizeless=False):
@@ -479,6 +479,7 @@ class InternalMessage(object):
                   compression=compressions)
         msg.time = from_base_58(packets[3])
         msg.compression_fail = compression_fail
+        # msg.__string = string
         assert packets[2] == msg.id, "Checksum failed"
         return msg
 
@@ -505,16 +506,18 @@ class InternalMessage(object):
             All other objects are treated as raw bytes. If you desire a
             particular codec, encode it yourself before feeding it in.
         """
-        self.msg_type = sanitize_packet(msg_type)
-        self.sender = sanitize_packet(sender)
+        self.__msg_type = sanitize_packet(msg_type)
+        self.__sender = sanitize_packet(sender)
         self.__payload = tuple(sanitize_packet(packet) for packet in payload)
-        self.time = timestamp or getUTC()
+        self.__time = timestamp or getUTC()
+        self.__id = None
+        self.__string = None
         self.compression_fail = False
 
         if compression:
-            self.compression = compression
+            self.__compression = tuple(compression)
         else:
-            self.compression = []
+            self.__compression = ()
 
     @property
     def payload(self):
@@ -531,23 +534,64 @@ class InternalMessage(object):
         return None
 
     @property
+    def msg_type(self):
+        return self.__msg_type
+
+    @msg_type.setter
+    def msg_type(self, val):
+        self.__id = None
+        self.__msg_type = val
+
+    @property
+    def sender(self):
+        return self.__sender
+
+    @sender.setter
+    def sender(self, val):
+        self.__id = None
+        self.__sender = val
+
+    @property
+    def compression(self):
+        return self.__compression
+
+    @compression.setter
+    def compression(self, val):
+        new_comps = intersect(compression, val)
+        old_comp = self.compression_used
+        if (old_comp,) != new_comps[0:1]:
+            self.__string = None
+        self.__compression = tuple(val)
+
+    @property
+    def time(self):
+        return self.__time
+
+    @time.setter
+    def time(self, val):
+        self.__id = None
+        self.__time = val
+
+    @property
     def time_58(self):
         """Returns this message's timestamp in base_58"""
-        return to_base_58(self.time)
+        return to_base_58(self.__time)
 
     @property
     def id(self):
         """Returns the message id"""
-        payload_string = b''.join(bytes(pac) for pac in self.payload)
-        payload_hash = hashlib.sha384(payload_string + self.time_58)
-        return to_base_58(int(payload_hash.hexdigest(), 16))
+        if not self.__id:
+            payload_string = b''.join(self.__payload)
+            payload_hash = hashlib.sha384(payload_string + self.time_58)
+            self.__id = to_base_58(int(payload_hash.hexdigest(), 16))
+        return self.__id
 
     @property
     def packets(self):
         """Returns the full :py:class:`tuple` of packets in this message
         encoded as :py:class:`bytes`, excluding the header
         """
-        return ((self.msg_type, self.sender, self.id, self.time_58) +
+        return ((self.__msg_type, self.__sender, self.id, self.time_58) +
                 self.payload)
 
     @property
@@ -555,12 +599,14 @@ class InternalMessage(object):
         """Returns a :py:class:`bytes` object containing the entire message,
         excepting the total length header
         """
-        packets = self.packets
-        headers = (pack_value(4, len(x)) for x in packets)
-        string = b''.join(chain.from_iterable(zip(headers, packets)))
-        if self.compression_used:
-            string = compress(string, self.compression_used)
-        return string
+        if not self.__id or not self.__string:
+            packets = self.packets
+            headers = (pack_value(4, len(x)) for x in packets)
+            self.__string = b''.join(chain.from_iterable(zip(headers, packets)))
+            compression_used = self.compression_used
+            if compression_used:
+                self.__string = compress(self.__string, compression_used)
+        return self.__string
 
     @property
     def string(self):
