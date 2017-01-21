@@ -139,16 +139,26 @@ describe('base', function() {
         });
 
         it('should serialize and deserialize', function()   {
+            let iters = 250;
             this.timeout(0);
-            for (var i = 0; i < 250; i++)   {
-                for (var j = 0; j <= base.compression.length; j++)  {
-                    var compressions = [];
-                    if (j < base.compression.length)    {
-                        compressions.push(base.compression[j]);
-                    }
+            this.slow(1000 * iters);
+            for (var i = 0; i < iters; i++)   {
+                var payload = get_random_array(Math.floor(Math.random() * 16));
+                var msg = new base.InternalMessage(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload, []);
+                var deserialized = base.InternalMessage.feed_string(msg.string, false, []);
+                test_InternalMessage(payload, deserialized);
+            }
+        });
+
+        it('should serialize and deserialize (with compression)', function()    {
+            let iters = 250;
+            this.timeout(0);
+            this.slow(1500 * iters * base.compression.length);
+            for (var i = 0; i < iters; i++)   {
+                for (var j = 0; j < base.compression.length; j++)  {
                     var payload = get_random_array(Math.floor(Math.random() * 16));
-                    var msg = new base.InternalMessage(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload, compressions);
-                    var deserialized = base.InternalMessage.feed_string(msg.string, false, compressions);
+                    var msg = new base.InternalMessage(base.flags.broadcast, new Buffer('\u00ff', 'ascii'), payload, [base.compression[j]]);
+                    var deserialized = base.InternalMessage.feed_string(msg.string, false, [base.compression[j]]);
                     test_InternalMessage(payload, deserialized);
                 }
             }
