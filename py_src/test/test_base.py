@@ -35,17 +35,21 @@ def test_base_58(benchmark, iters=1000):
     benchmark.pedantic(identity, setup=data_gen, rounds=iters)
 
 
-def test_compression(benchmark, iters=500):
-    def test(data):
+def test_pack_value(benchmark, iters=1000):
+    def data_gen():
+        return (partial(base.pack_value, 128//8),
+                base.unpack_value,
+                random.randint(0, 2**128 - 1)), {}
+    benchmark.pedantic(identity, setup=data_gen, rounds=iters)
+
+
+def test_compression(iters=500):
+    for _ in xrange(iters):
+        data = os.urandom(36)
         for method in base.compression:
             compress = partial(base.compress, method=method)
             decompress = partial(base.decompress, method=method)
             identity(compress, decompress, data)
-
-    def data_gen():
-        return (os.urandom(36),), dict()
-
-    benchmark.pedantic(test, setup=data_gen, rounds=iters//len(base.compression))
 
 
 def test_compression_exceptions(iters=100):

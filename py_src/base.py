@@ -203,91 +203,47 @@ except Exception:  # pragma: no cover
 json_compressions = json.dumps([method.decode() for method in compression])
 
 
-if sys.version_info < (3, ):
-    def pack_value(l, i):
-        """For value i, pack it into bytes of size length
+def pack_value(l, i):
+    """For value i, pack it into bytes of size length
 
-        Args:
-            length: A positive, integral value describing how long to make
-                        the packed array
-            i:      A positive, integral value to pack into said array
+    Args:
+        length: A positive, integral value describing how long to make
+                    the packed array
+        i:      A positive, integral value to pack into said array
 
-        Returns:
-            A bytes object containing the given value
+    Returns:
+        A bytes object containing the given value
 
-        Raises:
-            ValueError: If length is not large enough to contain the value
-                            provided
-        """
-        ret = b""
-        for x in range(l):
-            ret = chr(i & 0xFF) + ret
-            i = i >> 8
-            if i == 0:
-                break
-        if i:
-            raise ValueError("Value not allocatable in size given")
-        return ("\x00" * (l - len(ret))) + ret
+    Raises:
+        ValueError: If length is not large enough to contain the value
+                        provided
+    """
+    ret = bytearray(l)
+    for x in range(l-1, -1, -1):  # Iterate over length backwards
+        ret[x] = i & 0xFF
+        i >>= 8
+        if i == 0:
+            break
+    if i:
+        raise ValueError("Value not allocatable in size given")
+    return bytes(ret)
 
-    def unpack_value(string):
-        """For a string, return the packed value inside of it
 
-        Args:
-            string: A string or bytes-like object
+def unpack_value(string):
+    """For a string, return the packed value inside of it
 
-        Returns:
-            An integral value interpreted from this, as if it were a
-            big-endian, unsigned integral
-        """
-        val = 0
-        for char in string:
-            val = val << 8
-            val += ord(char)
-        return val
+    Args:
+        string: A string or bytes-like object
 
-else:
-    def pack_value(l, i):
-        """For value i, pack it into bytes of size length
-
-        Args:
-            length: A positive, integral value describing how long to make
-                        the packed array
-            i:      A positive, integral value to pack into said array
-
-        Returns:
-            A :py:class:`bytes` object containing the given value
-
-        Raises:
-            ValueError: If length is not large enough to contain the value
-                            provided
-        """
-        ret = b""
-        for x in range(l):
-            ret = bytes([i & 0xFF]) + ret
-            i = i >> 8
-            if i == 0:
-                break
-        if i:
-            raise ValueError("Value not allocatable in size given")
-        return (b"\x00" * (l - len(ret))) + ret
-
-    def unpack_value(string):
-        """For a string, return the packed value inside of it
-
-        Args:
-            string: A string or bytes-like object
-
-        Returns:
-            An integral value interpreted from this, as if it were a
-            big-endian, unsigned integral
-        """
-        val = 0
-        string = sanitize_packet(string)
-        val = 0
-        for char in string:
-            val = val << 8
-            val += char
-        return val
+    Returns:
+        An integral value interpreted from this, as if it were a
+        big-endian, unsigned integral
+    """
+    val = 0
+    for char in bytearray(sanitize_packet(string)):
+        val = val << 8
+        val += char
+    return val
 
 
 base_58 = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
@@ -601,7 +557,7 @@ class InternalMessage(object):
         """
         if not self.__id or not self.__string:
             packets = self.packets
-            headers = (pack_value(4, len(x)) for x in packets)
+            headers = (struct.pack(">L", len(x)) for x in packets)
             self.__string = b''.join(chain.from_iterable(zip(headers, packets)))
             compression_used = self.compression_used
             if compression_used:
