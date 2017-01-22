@@ -21,5 +21,6 @@ elif [ $jsver ]; then
     nvm install $jsver
     nvm use $jsver
     node --version
+    export CODECOV_TOKEN=":d89f9bd9-27a3-4560-8dbb-39ee3ba020a5"
     make js_codecov
 fi
