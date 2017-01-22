@@ -43,15 +43,13 @@ endif
 
 jsver = $(shell node -p "require('./package.json').version")
 
-test:
-	echo $(jsver)
-
 jsdeps: LICENSE
-	yarn || npm install
+	@yarn || npm install
 
 browser: jsdeps
-	mkdir -p build/browser
-	cd js_src;\
+	@mkdir -p build/browser
+	@echo "Building browser version..."
+	@cd js_src;\
 	node ../node_modules/browserify/bin/cmd.js -r ./base.js -o ../build/browser/js2p-browser-$(jsver)-base.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../build/browser/js2p-browser-$(jsver)-mesh.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-$(jsver)-sync.js -u snappy -u nodejs-websocket -u node-forge;\
@@ -59,18 +57,22 @@ browser: jsdeps
 	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../build/browser/js2p-browser-$(jsver).js -s js2p
 
 browser-min: browser
-	mkdir -p build/browser-min
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver).js       -o ./build/browser-min/js2p-browser-$(jsver).min.js       --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-base.js  -o ./build/browser-min/js2p-browser-$(jsver)-base.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-mesh.js  -o ./build/browser-min/js2p-browser-$(jsver)-mesh.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-sync.js  -o ./build/browser-min/js2p-browser-$(jsver)-sync.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-chord.js -o ./build/browser-min/js2p-browser-$(jsver)-chord.min.js --minified --no-comments --no-babelrc
+	@mkdir -p build/browser-min
+	@echo "Minifying..."
+	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver).js       -o ./build/browser-min/js2p-browser-$(jsver).min.js       --minified --no-comments --no-babelrc
+	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-base.js  -o ./build/browser-min/js2p-browser-$(jsver)-base.min.js  --minified --no-comments --no-babelrc
+	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-mesh.js  -o ./build/browser-min/js2p-browser-$(jsver)-mesh.min.js  --minified --no-comments --no-babelrc
+	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-sync.js  -o ./build/browser-min/js2p-browser-$(jsver)-sync.min.js  --minified --no-comments --no-babelrc
+	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-chord.js -o ./build/browser-min/js2p-browser-$(jsver)-chord.min.js --minified --no-comments --no-babelrc
 
-browser-compat: browser
-	mkdir -p build/browser-compat build/babel
-	node node_modules/babel-cli/bin/babel.js js_src -d build/babel
-	node node_modules/mocha/bin/mocha build/babel/test/*
-	cd build/babel;\
+browser-compat: jsdeps
+	@mkdir -p build/browser-compat build/babel
+	@echo "Transpiling..."
+	@node node_modules/babel-cli/bin/babel.js js_src -d build/babel
+	@echo "Testing transpilation..."
+	@node node_modules/mocha/bin/mocha build/babel/test/*
+	@echo "Building browser version..."
+	@cd build/babel;\
 	node ../../node_modules/browserify/bin/cmd.js -r ./base.js -o ../browser-compat/js2p-browser-$(jsver)-base.babel.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../browser-compat/js2p-browser-$(jsver)-mesh.babel.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../browser-compat/js2p-browser-$(jsver)-sync.babel.js -u snappy -u nodejs-websocket -u node-forge;\
@@ -78,102 +80,118 @@ browser-compat: browser
 	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../browser-compat/js2p-browser-$(jsver).babel.js -s js2p
 
 browser-compat-min: browser-compat
-	mkdir -p build/browser-compat-min
-	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver).babel.js       -o ./build/browser-compat-min/js2p-browser-$(jsver).babel.min.js       --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-base.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-base.babel.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-mesh.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-mesh.babel.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-sync.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-sync.babel.min.js  --minified --no-comments --no-babelrc
-	node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-chord.babel.js -o ./build/browser-compat-min/js2p-browser-$(jsver)-chord.babel.min.js --minified --no-comments --no-babelrc
+	@mkdir -p build/browser-compat-min
+	@echo "Minifying..."
+	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver).babel.js       -o ./build/browser-compat-min/js2p-browser-$(jsver).babel.min.js       --minified --no-comments --no-babelrc
+	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-base.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-base.babel.min.js  --minified --no-comments --no-babelrc
+	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-mesh.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-mesh.babel.min.js  --minified --no-comments --no-babelrc
+	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-sync.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-sync.babel.min.js  --minified --no-comments --no-babelrc
+	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-chord.babel.js -o ./build/browser-compat-min/js2p-browser-$(jsver)-chord.babel.min.js --minified --no-comments --no-babelrc
 
 browser-min-compat: browser-compat-min
 
 jsdocs:
-	node js_src/docs_test.js
+	@echo "Copying documentation comments..."
+	@node js_src/docs_test.js
 
 jstest: jsdeps
-	node node_modules/mocha/bin/mocha js_src/test/*
+	@node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha js_src/test/*
+
+js_codecov: jstest
+	@node node_modules/codecov/bin/codecov -f coverage/coverage.json -t d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
 
 #End Javascript section
 #Begin Python section
 
 python: LICENSE setup.py
-	python $(py_deps)
-	python $(pip) -r requirements.txt
-	python setup.py build --universal
+	@echo "Checking dependencies..."
+	@python $(py_deps)
+	@python $(pip) -r requirements.txt
+	@echo "Building python-only version..."
+	@python setup.py build --universal
 
 python3: LICENSE setup.py
-	$(python3) $(py_deps)
-	$(python3) $(pip) -r requirements.txt
-	$(python3) setup.py build --universal
+	@echo "Checking dependencies..."
+	@$(python3) $(py_deps)
+	@$(python3) $(pip) -r requirements.txt
+	@echo "Building python-only version..."
+	@$(python3) setup.py build --universal
 
 python2: LICENSE setup.py
-	$(python2) $(py_deps)
-	$(python2) $(pip) -r requirements.txt
-	$(python2) setup.py build --universal
+	@echo "Checking dependencies..."
+	@$(python2) $(py_deps)
+	@$(python2) $(pip) -r requirements.txt
+	@echo "Building python-only version..."
+	@$(python2) setup.py build --universal
 
 pypy: LICENSE setup.py
-	pypy $(py_deps)
-	pypy $(pip) -r requirements.txt
-	pypy setup.py build --universal
+	@echo "Checking dependencies..."
+	@pypy $(py_deps)
+	@pypy $(pip) -r requirements.txt
+	@echo "Building python-only version..."
+	@pypy setup.py build --universal
 
 ifeq ($(pypy), True)
 cpython: python
 
 else
-cpython: LICENSE setup.py
-	python $(py_deps)
+cpython: python
+	@echo "Building with C extensions..."
 ifeq ($(debug), true)
-	python setup.py build --debug
+	@python setup.py build --debug
 else
-	python setup.py build
+	@python setup.py build
 endif
 endif
 
-cpython3: LICENSE setup.py
-	$(python3) $(py_deps)
+cpython3: python3
+	@echo "Building with C extensions..."
 ifeq ($(debug), true)
-	$(python3) setup.py build --debug
+	@$(python3) setup.py build --debug
 else
-	$(python3) setup.py build
+	@$(python3) setup.py build
 endif
 
-cpython2: LICENSE setup.py
-	$(python2) $(py_deps)
+cpython2: python2
+	@echo "Building with C extensions..."
 ifeq ($(debug), true)
-	$(python2) setup.py build --debug
+	@$(python2) setup.py build --debug
 else
-	$(python2) setup.py build
+	@$(python2) setup.py build
 endif
 
 pytestdeps:
-	python $(py_test_deps)
+	@echo "Checking test dependencies..."
+	@python $(py_test_deps)
 
 py2testdeps:
-	$(python2) $(py_test_deps)
+	@echo "Checking test dependencies..."
+	@$(python2) $(py_test_deps)
 
 py3testdeps:
-	$(python3) $(py_test_deps)
+	@echo "Checking test dependencies..."
+	@$(python3) $(py_test_deps)
 
 pytest: LICENSE setup.py setup.cfg python pytestdeps
 ifeq ($(cov), true)
-	python -m pytest -c ./setup.cfg --cov=build/$(pyunvlibdir) build/$(pyunvlibdir)
+	@python -m pytest -c ./setup.cfg --cov=build/$(pyunvlibdir) build/$(pyunvlibdir)
 else
-	python -m pytest -c ./setup.cfg build/$(pyunvlibdir)
+	@python -m pytest -c ./setup.cfg build/$(pyunvlibdir)
 endif
 
 py2test: LICENSE setup.py setup.cfg python2 py2testdeps
 ifeq ($(cov), true)
-	$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
+	@$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
 else
-	$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
+	@$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
 endif
 
 py3test: LICENSE setup.py setup.cfg python3 py3testdeps
 	@echo $(py3libdir)
 ifeq ($(cov), true)
-	$(python3) -m pytest -c ./setup.cfg --cov=build/lib build/lib
+	@$(python3) -m pytest -c ./setup.cfg --cov=build/lib build/lib
 else
-	$(python3) -m pytest -c ./setup.cfg build/lib
+	@$(python3) -m pytest -c ./setup.cfg build/lib
 endif
 
 ifeq ($(pypy), True)
@@ -182,46 +200,41 @@ cpytest: pytest
 else
 cpytest: LICENSE setup.py setup.cfg cpython pytestdeps
 ifeq ($(cov), true)
-	python -m pytest -c ./setup.cfg --cov=build/$(pylibdir) build/$(pylibdir)
+	@python -m pytest -c ./setup.cfg --cov=build/$(pylibdir) build/$(pylibdir)
 else
-	python -m pytest -c ./setup.cfg build/$(pylibdir)
+	@python -m pytest -c ./setup.cfg build/$(pylibdir)
 endif
 endif
 
 cpy2test: LICENSE setup.py setup.cfg cpython2 py2testdeps
 ifeq ($(cov), true)
-	$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
+	@$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
 else
-	$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
+	@$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
 endif
 
 cpy3test: LICENSE setup.py setup.cfg cpython3 py3testdeps
 ifeq ($(cov), true)
-	$(python3) -m pytest -c ./setup.cfg --cov=build/$(py3libdir) build/$(py3libdir)
+	@$(python3) -m pytest -c ./setup.cfg --cov=build/$(py3libdir) build/$(py3libdir)
 else
-	$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
+	@$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
 endif
 
 html: jsdocs
-	python $(docs_deps)
-	cd docs; $(MAKE) clean html
+	@python $(docs_deps)
+	@cd docs; $(MAKE) clean html
 
 #End Python section
 #Begin General section
 
 clean:
-	rm -rf build
-	rm -rf dist
-	rm -rf node_modules
-	rm -rf py2p.egg-info
-	rm -rf .cache
-	find docs/c          ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	find docs/cpp        ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	find docs/java       ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	find docs/javascript ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	find docs/go         ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	rm -rf docs/py2p
-	cd docs; $(MAKE) clean
+	@rm -rf .benchmarks .cache build coverage dist docs/py2p node_modules py2p venv
+	@find docs/c          ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
+	@find docs/cpp        ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
+	@find docs/java       ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
+	@find docs/javascript ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
+	@find docs/go         ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
+	@cd docs; $(MAKE) clean
 
 py_all: LICENSE setup.py setup.cfg python2 python3 html cpython2 cpython3 pypy
 

@@ -23,8 +23,9 @@ IF DEFINED PIP (
     dir C:\avvm\node
     powershell -Command "Install-Product node $env:NODE"
     npm install .
-    npm install -g mocha
-    mocha js_src\\test\\* || goto :error
+    npm install -g mocha istanbul codecov
+    istanbul cover _mocha js_src\\test\\* || goto :error
+    codecov -f coverage\\coverage.json -t d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
 )
 goto :EOF
 
