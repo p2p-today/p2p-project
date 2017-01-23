@@ -98,7 +98,7 @@ jstest: jsdeps
 	@node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha js_src/test/*
 
 js_codecov: jstest
-	@node node_modules/codecov/bin/codecov -f coverage/coverage.json --token=:d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
+	@node node_modules/codecov/bin/codecov -f coverage/coverage.json --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
 
 #End Javascript section
 #Begin Python section
