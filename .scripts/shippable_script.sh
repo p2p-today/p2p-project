@@ -21,5 +21,5 @@ elif [ $jsver ]; then
     nvm install $jsver
     nvm use $jsver
     node --version
-    make js_codecov
+    make jstest
 fi
