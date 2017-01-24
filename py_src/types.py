@@ -46,6 +46,11 @@ class SerializableTuple(tuple):
     def __repr__(self):
         return "SerializableTuple{}".format(tuple(self.values()))
 
+    def __eq__(self, tup):
+        if isinstance(tup, SerializableTuple):
+            return tuple.__eq__(self, tup)
+        return tuple.__eq__(tuple(self), tup) or tuple.__eq__(tuple(self.values()), tup)
+
     def values(self):
         return (self.get(x) for x in range(len(self)))
 

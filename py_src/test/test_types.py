@@ -98,6 +98,6 @@ def gen_random_items(i):
 def test_SerializableTuple():
     serialize = types.array.serialize
     deserialize = types.array.deserialize
-    for i in (randint(0, 1000) for _ in xrange(1000)):
+    for i in (randint(0, 100) for _ in xrange(1000)):
         items = tuple(gen_random_items(i))
         assert tuple(deserialize(serialize(items)).values()) == items, items
