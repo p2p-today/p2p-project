@@ -1,6 +1,7 @@
 "use strict";
 
 const assert = require('assert');
+const base = require('../base.js');
 const types = require('../types.js');
 const BigInt = require('big-integer');
 
@@ -12,13 +13,36 @@ function get_random_buffer(len) {
     return new Buffer(pre_buffer);
 }
 
+function get_random_array(len)  {
+    var ret = [];
+    for (var i = 0; i < len; i++)   {
+        if (i % 4 == 0) {
+            let val = base.unpack_value(get_random_buffer(Math.ceil(Math.random() * 32)))
+            if (Math.round(Math.random()))  {
+                val = val.negate()
+            }
+            ret.push(val);
+        }
+        else if (i % 4 == 3)    {
+            ret.push(get_random_array(Math.floor(Math.random() * (len / 2))));
+        }
+        else if (i % 4 == 2)    {
+            ret.push(get_random_buffer(Math.floor(Math.random() * 20)).toString());
+        }
+        else    {
+            ret.push(get_random_buffer(Math.floor(Math.random() * 20)));
+        }
+    }
+    return ret;
+}
+
 describe('types', function()    {
 
     describe('char', function() {
 
         it('should always be reversible', function()    {
             for (var i = 0; i < 500; i++)  {
-                let val = Math.ceil(Math.random() * 0xff - 0x80);
+                let val = Math.ceil((Math.random() * 0xff) - 0x80);
                 try {
                     assert(types.types.char.deserialize(types.types.char.serialize(val)).equals(val));
                 }
@@ -137,7 +161,10 @@ describe('types', function()    {
 
         it('should always be reversible', function()    {
             for (var i = 0; i < 500; i++)  {
-                let val = Math.ceil(Math.random() * (0xffffffffffffffff - 0x8000000000000000) * 0xffff);
+                let val = base.unpack_value(get_random_buffer(Math.ceil(Math.random() * 32)));
+                if (Math.round(Math.random()))  {
+                    val = val.negate();
+                }
                 try {
                     assert(types.types.bigint.deserialize(types.types.bigint.serialize(val)).equals(val));
                 }
@@ -173,6 +200,22 @@ describe('types', function()    {
                 }
                 catch (e)   {
                     throw new Error(val, e);
+                }
+            }
+        });
+    });
+
+    describe('array', function() {
+
+        it('should always be reversible', function()    {
+            for (var i = 0; i < 500; i++)  {
+                let val = get_random_array(Math.ceil(Math.random() * 32));
+                try {
+                    assert(JSON.stringify(types.types.array.deserialize(types.types.array.serialize(val))) == JSON.stringify(val));
+                }
+                catch (e)   {
+                    console.error(JSON.stringify(val));
+                    throw e;
                 }
             }
         });
