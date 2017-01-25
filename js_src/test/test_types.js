@@ -208,15 +208,11 @@ describe('types', function()    {
     describe('array', function() {
 
         it('should always be reversible', function()    {
-            for (var i = 0; i < 500; i++)  {
+            this.timeout(5000);
+            for (var i = 0; i < 100; i++)  {
                 let val = get_random_array(Math.ceil(Math.random() * 32));
-                try {
-                    assert(JSON.stringify(types.types.array.deserialize(types.types.array.serialize(val))) == JSON.stringify(val));
-                }
-                catch (e)   {
-                    console.error(JSON.stringify(val));
-                    throw e;
-                }
+                let transformed = types.types.array.deserialize(types.types.array.serialize(val));
+                assert.deepEqual(Array.from(transformed.values()), val);
             }
         });
     });

@@ -108,8 +108,8 @@ function determine_int_subtype(i)   {
 }
 
 function determine_type(x)  {
-    if (Number(parseFloat(x))===x)  {
-        return determine_int_subtype(new BigInt(x));
+    if (Buffer.isBuffer(x)) {
+        return types.types.buffer;
     }
     else if (typeof x === 'string' || x instanceof String)  {
         return types.types.string;
@@ -117,9 +117,13 @@ function determine_type(x)  {
     else if (x instanceof Array)    {
         return types.types.array;
     }
-    else    {
-        return types.types.buffer;
+    else if (BigInt.isInstance(x))  {
+        return determine_int_subtype(x);
     }
+    else if (Number(parseFloat(x))===x) {
+        return determine_int_subtype(new BigInt(x));
+    }
+    return types.types.buffer;
 }
 
 types.SerializableArray = class SerializableArray   {
@@ -176,7 +180,13 @@ types.SerializableArray = class SerializableArray   {
     *values()   {
         for (let i in this) {
             if (i !== 'types' && i !== 'length')    {
-                yield this.get(i);
+                let x = this.get(i);
+                if (x instanceof SerializableArray) {
+                    yield Array.from(x.values());
+                }
+                else    {
+                    yield x;
+                }
             }
         }
     }
