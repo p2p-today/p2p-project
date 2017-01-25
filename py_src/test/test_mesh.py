@@ -104,7 +104,7 @@ def handler_registry_validation(iters, start_port, encryption, reg):
         g.connect('localhost', start_port + i*2)
         time.sleep(1)
         print("----------------------1st  event----------------------")
-        g.send('test')
+        g.send(b'test')
         time.sleep(1)
         print("----------------------1st  ended----------------------")
         assert all((not f.recv(), g.recv()))

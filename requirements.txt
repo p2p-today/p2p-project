@@ -1,2 +1,3 @@
 custom_inherit==2.1.0
 async_promises==1.1.1
+u-msgpack-python==2.3.0

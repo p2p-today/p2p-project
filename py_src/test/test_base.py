@@ -11,6 +11,7 @@ import uuid
 import pytest
 
 from functools import partial
+from umsgpack import packb
 from .. import base
 
 if sys.version_info >= (3, ):
@@ -80,9 +81,9 @@ def test_InternalMessage(benchmark, iters=500, impl=base):
 def InternalMessage_constructor_validation(array, impl):
     msg = impl.InternalMessage(base.flags.broadcast, u'\xff', array)
     assert array == msg.payload
-    assert msg.packets == (base.flags.broadcast, u'\xff'.encode('utf-8'),
-                           msg.id, msg.time_58) + array
-    p_hash = hashlib.sha384(b''.join(array + (msg.time_58, )))
+    assert msg.packets == (base.flags.broadcast, u'\xff',
+                           msg.time) + array
+    p_hash = hashlib.sha384(msg._InternalMessage__non_len_string)
     assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id
     assert impl.InternalMessage.feed_string(msg.string).id == msg.id
 
@@ -146,7 +147,7 @@ def test_message_sans_network(benchmark, iters=1000):
         item = base.message(base_msg, None)
         assert item.packets == pac
         assert item.msg == base_msg
-        assert item.sender == sen.encode()
+        assert item.sender == sen
         assert item.id == base_msg.id
         assert (item.time == base_msg.time ==
                 base.from_base_58(item.time_58) ==

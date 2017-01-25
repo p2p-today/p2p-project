@@ -18,12 +18,14 @@ from collections import namedtuple
 from itertools import chain
 from logging import (getLogger, INFO, DEBUG)
 
+from umsgpack import (packb, unpackb)
+
 from .utils import (
     getUTC, intersect, get_lan_ip, get_socket, sanitize_packet, inherit_doc,
     log_entry)
 
-protocol_version = "0.5"
-node_policy_version = "607"
+protocol_version = "0.6"
+node_policy_version = "676"
 
 version = '.'.join((protocol_version, node_policy_version))
 
@@ -33,51 +35,51 @@ plock = threading.Lock()
 class flags():
     """A namespace to hold protocol-defined flags"""
     # Reserved set of bytes
-    reserved = [struct.pack('!B', x) for x in range(0x30)]
+    reserved = tuple(range(0x30))
 
     # main flags
-    broadcast = b'\x00'     # also sub-flag
-    renegotiate = b'\x01'
-    whisper = b'\x02'       # also sub-flag
-    ping = b'\x03'          # Unused, but reserved
-    pong = b'\x04'          # Unused, but reserved
+    broadcast = 0x00     # also sub-flag
+    renegotiate = 0x01
+    whisper = 0x02       # also sub-flag
+    ping = 0x03          # Unused, but reserved
+    pong = 0x04          # Unused, but reserved
 
     # sub-flags
-    # broadcast = b'\x00'
-    compression = b'\x01'
-    # whisper = b'\x02'
-    # ping = b'\x03'
-    # pong = b'\x04'
-    handshake = b'\x05'
-    notify = b'\x06'
-    peers = b'\x07'
-    request = b'\x08'
-    resend = b'\x09'
-    response = b'\x0A'
-    store = b'\x0B'
-    retrieve = b'\x0C'
-    retrieved = b'\x0D'
+    # broadcast = 0x00
+    compression = 0x01
+    # whisper = 0x02
+    # ping = 0x03
+    # pong = 0x04
+    handshake = 0x05
+    notify = 0x06
+    peers = 0x07
+    request = 0x08
+    resend = 0x09
+    response = 0x0A
+    store = 0x0B
+    retrieve = 0x0C
+    retrieved = 0x0D
 
     # implemented compression methods
-    bz2 = b'\x10'
-    gzip = b'\x11'
-    lzma = b'\x12'
-    zlib = b'\x13'
-    snappy = b'\x20'
+    bz2 = 0x10
+    gzip = 0x11
+    lzma = 0x12
+    zlib = 0x13
+    snappy = 0x20
 
     # non-implemented compression methods (based on list from compressjs):
-    bwtc = b'\x14'
-    context1 = b'\x15'
-    defsum = b'\x16'
-    dmc = b'\x17'
-    fenwick = b'\x18'
-    huffman = b'\x19'
-    lzjb = b'\x1A'
-    lzjbr = b'\x1B'
-    lzp3 = b'\x1C'
-    mtf = b'\x1D'
-    ppmd = b'\x1E'
-    simple = b'\x1F'
+    bwtc = 0x14
+    context1 = 0x15
+    defsum = 0x16
+    dmc = 0x17
+    fenwick = 0x18
+    huffman = 0x19
+    lzjb = 0x1A
+    lzjbr = 0x1B
+    lzp3 = 0x1C
+    mtf = 0x1D
+    ppmd = 0x1E
+    simple = 0x1F
 
 
 user_salt = str(uuid.uuid4()).encode()
@@ -200,7 +202,7 @@ try:
 except Exception:  # pragma: no cover
     getLogger('py2p.base').info("Unable to load lzma compression")
 
-json_compressions = json.dumps([method.decode() for method in compression])
+json_compressions = json.dumps(compression)
 
 
 def pack_value(l, i):
@@ -376,33 +378,6 @@ class InternalMessage(object):
         return (string, compression_fail)
 
     @classmethod
-    def __process_string(cls, string):
-        """Given a sanitized, plaintext string, returns a list of its packets
-
-        Args:
-            string: The message you wish to parse
-
-        Returns:
-            A list containing the message's packets
-
-        Raises:
-           IndexError: Packet headers are incorrect OR not fed plaintext
-
-        Warning:
-            Do not feed a message with the size header.
-            Do not feed a compressed message.
-        """
-        processed = 0
-        packets = []
-        while processed < len(string):
-            pack_len = unpack_value(string[processed:processed+4])
-            processed += 4
-            end = processed + pack_len
-            packets.append(string[processed:end])
-            processed = end
-        return packets
-
-    @classmethod
     def feed_string(cls, string, sizeless=False, compressions=None):
         """Constructs a InternalMessage from a string or bytes object.
 
@@ -429,14 +404,16 @@ class InternalMessage(object):
         # Then we attempt to decompress
         string, compression_fail = cls.__decompress_string(
             string, compressions)
+        id_len = unpack_value(string[:1])
+        id_ = string[1:1+id_len]
         # After this, we process the packet size headers
-        packets = cls.__process_string(string)
-        msg = cls(packets[0], packets[1], packets[4:],
+        packets = unpackb(string[1+id_len:])
+        msg = cls(packets[0], packets[1], packets[3:],
                   compression=compressions)
-        msg.time = from_base_58(packets[3])
+        msg.time = packets[2]
         msg.compression_fail = compression_fail
         # msg.__string = string
-        assert packets[2] == msg.id, "Checksum failed"
+        assert id_ == msg.id, "Checksum failed: {} != {}".format(id_, msg.id)
         return msg
 
     def __init__(self, msg_type, sender, payload, compression=None,
@@ -462,9 +439,9 @@ class InternalMessage(object):
             All other objects are treated as raw bytes. If you desire a
             particular codec, encode it yourself before feeding it in.
         """
-        self.__msg_type = sanitize_packet(msg_type)
-        self.__sender = sanitize_packet(sender)
-        self.__payload = tuple(sanitize_packet(packet) for packet in payload)
+        self.__msg_type = msg_type
+        self.__sender = sender
+        self.__payload = tuple(payload)
         self.__time = timestamp or getUTC()
         self.__id = None
         self.__string = None
@@ -537,8 +514,7 @@ class InternalMessage(object):
     def id(self):
         """Returns the message id"""
         if not self.__id:
-            payload_string = b''.join(self.__payload)
-            payload_hash = hashlib.sha384(payload_string + self.time_58)
+            payload_hash = hashlib.sha384(self.__non_len_string)
             self.__id = to_base_58(int(payload_hash.hexdigest(), 16))
         return self.__id
 
@@ -547,7 +523,7 @@ class InternalMessage(object):
         """Returns the full :py:class:`tuple` of packets in this message
         encoded as :py:class:`bytes`, excluding the header
         """
-        return ((self.__msg_type, self.__sender, self.id, self.time_58) +
+        return ((self.__msg_type, self.__sender, self.time) +
                 self.payload)
 
     @property
@@ -555,28 +531,26 @@ class InternalMessage(object):
         """Returns a :py:class:`bytes` object containing the entire message,
         excepting the total length header
         """
-        if not self.__id or not self.__string:
-            packets = self.packets
-            headers = (struct.pack(">L", len(x)) for x in packets)
-            self.__string = b''.join(chain.from_iterable(zip(headers, packets)))
-            compression_used = self.compression_used
-            if compression_used:
-                self.__string = compress(self.__string, compression_used)
+        if not self.__string:
+            self.__string = packb(self.packets)
         return self.__string
 
     @property
     def string(self):
         """Returns a :py:class:`bytes` representation of the message"""
         string = self.__non_len_string
-        return pack_value(4, len(string)) + string
+        id_ = self.id
+        ret = b''.join((
+            pack_value(1, len(id_)),
+            id_,
+            string))
+        compression_used = self.compression_used
+        if compression_used:
+            ret = compress(ret, compression_used)
+        return b''.join((pack_value(4, len(ret)), ret))
 
     def __len__(self):
-        return len(self.__non_len_string)
-
-    @property
-    def len(self):
-        """Return the struct-encoded length header"""
-        return pack_value(4, self.__len__())
+        return len(self.string)
 
 
 class base_connection(object):
@@ -619,7 +593,7 @@ class base_connection(object):
         if msg.msg_type in (flags.whisper, flags.broadcast):
             self.last_sent = msg.payload
         self.__print__(
-            "Sending %s to %s" % ((msg.len,) + msg.packets, self), level=4)
+            "Sending %s to %s" % (msg.packets, self), level=4)
         if msg.compression_used:
             self.__print__(
                 "Compressing with %s" % repr(msg.compression_used), level=4)

@@ -82,7 +82,7 @@ class mesh_connection(base_connection):
             Either ``True`` or ``False``
         """
         if packets[0] == flags.broadcast:
-            if from_base_58(packets[3]) < getUTC() - 60:
+            if msg.time < getUTC() - 60:
                 self.__print__("Waterfall expired", level=2)
                 return True
             elif not self.server.waterfall(message(msg, self.server)):
@@ -305,10 +305,8 @@ class mesh_socket(base_socket):
                     "Connection conflict detected. Trying to resolve", level=2)
                 self.__resolve_connection_conflict(handler, packets[1])
             handler.id = packets[1]
-            handler.addr = json.loads(packets[3].decode())
-            handler.compression = json.loads(packets[4].decode())
-            handler.compression = [
-                algo.encode() for algo in handler.compression]
+            handler.addr = json.loads(packets[3])
+            handler.compression = json.loads(packets[4])
             self.__print__(
                 "Compression methods changed to %s" %
                 repr(handler.compression), level=4)
@@ -332,7 +330,7 @@ class mesh_socket(base_socket):
         """
         packets = msg.packets
         if packets[0] == flags.peers:
-            new_peers = json.loads(packets[1].decode())
+            new_peers = json.loads(packets[1])
             for addr, id in new_peers:
                 if len(tuple(self.outgoing)) < max_outgoing:
                     try:
