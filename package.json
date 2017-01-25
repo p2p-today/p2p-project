@@ -14,7 +14,8 @@
     "big-integer": "^1.6.16",
     "buffer": "^4.9.1",
     "ip": "^1.1.4",
-    "jssha": "^2.2.0"
+    "jssha": "^2.2.0",
+    "msgpack-lite": "^0.1.26"
   },
   "optionalDependencies": {
     "node-forge": "^0.6.46",

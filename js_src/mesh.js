@@ -128,8 +128,8 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         :returns: ``true`` or ``undefined``
         */
-        if (packets[0].toString() === base.flags.broadcast) {
-            if (base.from_base_58(packets[3]) < base.getUTC() - 60) {
+        if (packets[0] === base.flags.broadcast) {
+            if (msg.time < base.getUTC() - 60) {
                 // this.__print__("Waterfall expired", level=2);
                 return true;
             }
@@ -388,7 +388,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     handle_msg(msg, conn)    {
         if (!super.handle_msg(msg, conn))   {
             var packs = msg.packets;
-            if (packs[0].toString() === base.flags.whisper || packs[0].toString() === base.flags.broadcast) {
+            if (packs[0] === base.flags.whisper || packs[0] === base.flags.broadcast) {
                 this.queue = this.queue.concat(msg);
             }
             // else    {
@@ -431,7 +431,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.handshake && packets.length === 5) {
+        if (packets[0] === base.flags.handshake && packets.length === 5) {
             if (packets[2].toString() !== msg.protocol.id) {
                 this.disconnect(conn);
                 return true;
@@ -466,7 +466,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.peers)  {
+        if (packets[0] === base.flags.peers)  {
             var new_peers = JSON.parse(packets[1]);
             var self = this;
             new_peers.forEach(function(peer_array)  {
@@ -500,7 +500,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.response)  {
+        if (packets[0] === base.flags.response)  {
             // self.__print__("Response received for request id %s" % packets[1], level=1)
             if (this.requests[packets[1]])  {
                 var addr = JSON.parse(packets[2]);
@@ -534,7 +534,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var packets = msg.packets;
         //console.log(packets[0].toString());
         //console.log(packets[1].toString());
-        if (packets[0].toString() === base.flags.request)  {
+        if (packets[0] === base.flags.request)  {
             if (packets[1].toString() === '*')  {
                 this._send_peers(conn);
             }

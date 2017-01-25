@@ -234,7 +234,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.peers)  {
+        if (packets[0] === base.flags.peers)  {
             var new_peers = JSON.parse(packets[1]);
             var self = this;
 
@@ -347,7 +347,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_meta(msg, conn)   {
         const packets = msg.packets;
-        if (packets[0].toString() === base.flags.handshake && packets.length === 2) {
+        if (packets[0] === base.flags.handshake && packets.length === 2) {
             let new_meta = (packets[1].toString() === '1');
             if (new_meta !== conn.leeching)  {
                 this._send_meta(conn);
@@ -374,7 +374,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_key(msg, conn)   {
         let packets = msg.packets;
-        if (packets[0].toString() === base.flags.notify) {
+        if (packets[0] === base.flags.notify) {
             if (packets.length === 3)   {
                 if (this.__keys.has(key))   {
                     this.__keys.remove(packets[1]);
@@ -389,7 +389,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_retrieved(msg, conn)   {
         const packets = msg.packets;
-        if (packets[0].toString() === base.flags.retrieved) {
+        if (packets[0] === base.flags.retrieved) {
             // self.__print__("Response received for request id %s" % packets[1],
             //                level=1)
             if (this.requests[[packets[1].toString(), packets[2]]]) {
@@ -405,7 +405,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_retrieve(msg, conn)   {
         const packets = msg.packets;
-        if (packets[0].toString() === base.flags.retrieve)  {
+        if (packets[0] === base.flags.retrieve)  {
             let val = this.__lookup(packets[1].toString(), base.from_base_58(packets[2]), conn);
             try {
                 conn.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], val.value]);
@@ -419,7 +419,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_store(msg, conn)   {
         let packets = msg.packets;
-        if (packets[0].toString() === base.flags.store)  {
+        if (packets[0] === base.flags.store)  {
             let method = packets[1].toString();
             let key = base.from_base_58(packets[2]);
             this.__store(method, key, packets[3]);

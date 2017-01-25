@@ -134,7 +134,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *            :returns: Either ``true`` or ``undefined``
         */
         const packets = msg.packets;
-        if (packets[0].toString() === base.flags.store) {
+        if (packets[0] === base.flags.store) {
             let meta = new m.metatuple(msg.sender, msg.time);
             if (packets.length === 5)   {
                 if (this.data[packets[1]])  {
