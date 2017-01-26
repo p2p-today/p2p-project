@@ -105,29 +105,29 @@ js_codecov: jstest
 
 python: LICENSE setup.py
 	@echo "Checking dependencies..."
-	@python $(py_deps)
-	@python $(pip) -r requirements.txt
+	@python $(py_deps) --upgrade
+	@python $(pip) -r requirements.txt --upgrade
 	@echo "Building python-only version..."
 	@python setup.py build --universal
 
 python3: LICENSE setup.py
 	@echo "Checking dependencies..."
-	@$(python3) $(py_deps)
-	@$(python3) $(pip) -r requirements.txt
+	@$(python3) $(py_deps) --upgrade
+	@$(python3) $(pip) -r requirements.txt --upgrade
 	@echo "Building python-only version..."
 	@$(python3) setup.py build --universal
 
 python2: LICENSE setup.py
 	@echo "Checking dependencies..."
-	@$(python2) $(py_deps)
-	@$(python2) $(pip) -r requirements.txt
+	@$(python2) $(py_deps) --upgrade
+	@$(python2) $(pip) -r requirements.txt --upgrade
 	@echo "Building python-only version..."
 	@$(python2) setup.py build --universal
 
 pypy: LICENSE setup.py
 	@echo "Checking dependencies..."
-	@pypy $(py_deps)
-	@pypy $(pip) -r requirements.txt
+	@pypy $(py_deps) --upgrade
+	@pypy $(pip) -r requirements.txt --upgrade
 	@echo "Building python-only version..."
 	@pypy setup.py build --universal
 
@@ -162,15 +162,15 @@ endif
 
 pytestdeps:
 	@echo "Checking test dependencies..."
-	@python $(py_test_deps)
+	@python $(py_test_deps) --upgrade
 
 py2testdeps:
 	@echo "Checking test dependencies..."
-	@$(python2) $(py_test_deps)
+	@$(python2) $(py_test_deps) --upgrade
 
 py3testdeps:
 	@echo "Checking test dependencies..."
-	@$(python3) $(py_test_deps)
+	@$(python3) $(py_test_deps) --upgrade
 
 pytest: LICENSE setup.py setup.cfg python pytestdeps
 ifeq ($(cov), true)
