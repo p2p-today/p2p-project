@@ -313,8 +313,8 @@ default_protocol = protocol('', "Plaintext")  # SSL")
 
 class InternalMessage(object):
     """An object used to build and parse protocol-defined message structures"""
-    __slots__ = ('__msg_type', '__time', '__sender', '__payload',
-                 '__compression', '__id', 'compression_fail', '__string')
+    __slots__ = ('__msg_type', '__time', '__sender', '__payload', '__string',
+                 '__compression', '__id', 'compression_fail', '__full_string')
 
     @classmethod
     def __sanitize_string(cls, string, sizeless=False):
@@ -445,6 +445,7 @@ class InternalMessage(object):
         self.__time = timestamp or getUTC()
         self.__id = None
         self.__string = None
+        self.__full_string = None
         self.compression_fail = False
 
         if compression:
@@ -472,6 +473,8 @@ class InternalMessage(object):
 
     @msg_type.setter
     def msg_type(self, val):
+        self.__full_string = None
+        self.__string = None
         self.__id = None
         self.__msg_type = val
 
@@ -481,6 +484,8 @@ class InternalMessage(object):
 
     @sender.setter
     def sender(self, val):
+        self.__full_string = None
+        self.__string = None
         self.__id = None
         self.__sender = val
 
@@ -493,7 +498,7 @@ class InternalMessage(object):
         new_comps = intersect(compression, val)
         old_comp = self.compression_used
         if (old_comp,) != new_comps[0:1]:
-            self.__string = None
+            self.__full_string = None
         self.__compression = tuple(val)
 
     @property
@@ -502,6 +507,8 @@ class InternalMessage(object):
 
     @time.setter
     def time(self, val):
+        self.__full_string = None
+        self.__string = None
         self.__id = None
         self.__time = val
 
@@ -538,16 +545,17 @@ class InternalMessage(object):
     @property
     def string(self):
         """Returns a :py:class:`bytes` representation of the message"""
-        string = self.__non_len_string
-        id_ = self.id
-        ret = b''.join((
-            pack_value(1, len(id_)),
-            id_,
-            string))
-        compression_used = self.compression_used
-        if compression_used:
-            ret = compress(ret, compression_used)
-        return b''.join((pack_value(4, len(ret)), ret))
+        if not all ((self.__id, self.__string, self.__full_string)):
+            id_ = self.id
+            ret = b''.join((
+                pack_value(1, len(id_)),
+                id_,
+                self.__non_len_string))
+            compression_used = self.compression_used
+            if compression_used:
+                ret = compress(ret, compression_used)
+            self.__full_string = b''.join((pack_value(4, len(ret)), ret))
+        return self.__full_string
 
     def __len__(self):
         return len(self.string)
