@@ -83,6 +83,15 @@ static PyObject *pytuple_from_msgpack_array(msgpack_object_array array, size_t s
     return tup;
 }
 
+static PyObject *pytuple_from_array_char(const unsigned char *flags, size_t num_flags)  {
+    PyObject *tup = PyTuple_New((Py_ssize_t) num_flags);
+    size_t i = 0;
+    for (; i < num_flags; ++i)  {
+        PyTuple_SET_ITEM(tup, i, PyLong_FromUnsignedLongLong(flags[i]));
+    }
+    return tup;
+}
+
 static PyObject *pybytes_from_chars(const unsigned char *str, size_t len)   {
     Py_buffer buffer;
     PyObject *memview;
