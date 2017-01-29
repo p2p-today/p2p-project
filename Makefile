@@ -233,7 +233,8 @@ html: jsdocs
 #Begin General section
 
 clean:
-	@rm -rf .benchmarks .cache build coverage dist docs/py2p node_modules py2p venv
+	@rm -rf .benchmarks .cache build coverage dist docs/py2p node_modules py2p venv py_src/__pycache__ \
+	py_src/test/__pycache__ py_src/*.pyc py_src/test/*.pyc py_src/*.so
 	@find docs/c          ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/cpp        ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/java       ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
