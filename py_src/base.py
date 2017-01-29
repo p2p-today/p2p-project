@@ -300,10 +300,10 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
 
     @property
     def id(self):
-        """The SHA-256-based ID of the protocol"""
+        """TESTETSETESTSETThe SHA-256-based ID of the protocol"""
         h = hashlib.sha256(''.join(str(x) for x in self).encode())
         h.update(protocol_version.encode())
-        return to_base_58(int(h.hexdigest(), 16))
+        return to_base_58(int(h.hexdigest(), 16)).decode()
 
 default_protocol = protocol('', "Plaintext")  # SSL")
 
@@ -859,7 +859,7 @@ class base_socket(object):
             self.out_addr = get_lan_ip(), port
         else:
             self.out_addr = addr, port
-        info = (str(self.out_addr).encode(), prot.id, user_salt)
+        info = (str(self.out_addr).encode(), prot.id.encode(), user_salt)
         h = hashlib.sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
         self._logger = getLogger(

@@ -1,6 +1,5 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from __future__ import unicode_literals
 
 import inspect
 import platform
@@ -220,7 +219,7 @@ class mesh_socket(base_socket):
         """This function is used to generate a list-formatted group of your
         peers. It goes in format ``[ ((addr, port), ID), ...]``
         """
-        peer_list = [(node.addr, key.decode())
+        peer_list = [(node.addr, key)
                      for key, node in self.routing_table.items() if node.addr]
         random.shuffle(peer_list)
         return peer_list

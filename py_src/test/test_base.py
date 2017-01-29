@@ -131,7 +131,7 @@ def test_protocol(benchmark, iters=200, impl=base):
         enc = str(uuid.uuid4())
         p_hash = hashlib.sha256(''.join(
             (sub, enc, base.protocol_version)).encode())
-        return (sub, enc, base.to_base_58(int(p_hash.hexdigest(), 16))), {}
+        return (sub, enc, base.to_base_58(int(p_hash.hexdigest(), 16)).decode()), {}
 
     benchmark.pedantic(test, setup=setup, rounds=iters)
 

@@ -1,6 +1,5 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from __future__ import unicode_literals
 
 from .mesh import mesh_socket
 from .utils import (inherit_doc, getUTC, sanitize_packet, log_entry)
