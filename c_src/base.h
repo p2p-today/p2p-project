@@ -65,6 +65,7 @@
 //End macro
 
 #include <time.h>
+#include <string.h>
 
 #ifdef _cplusplus
 extern "C" {
@@ -332,7 +333,7 @@ static int sanitize_string(char *str, size_t *len, int sizeless)    {
     /**
     * .. c:function:: static int sanitize_string(char *str, size_t *len, int sizeless)
     *
-    *     Mutates str to be clean for processing by process_string.
+    *     Mutates str to be clean for processing by :c:func:`deserializeInternalMessage`.
     *
     *     :param str:       The string you wish to mutate
     *     :param len:       The length of said string
@@ -373,61 +374,6 @@ static int decompress_string(char *str, size_t len, char **result, size_t *res_l
     *result = (char *) malloc(sizeof(char) * len);
     memcpy(result, str, len);
     *res_len = len;
-    return 0;
-}
-
-static int process_string(const char *str, size_t len, char ***packets, size_t **lens, size_t *num_packets)  {
-    /**
-    * .. c:function:: static int process_string(const char *str, size_t len, char **packets, size_t **lens, size_t *num_packets)
-    *
-    *     Transforms a serialized string into an array of packets. This is formatted as an array of strings, an array of lengths,
-    *     and a number of packets. You must provide a pointer to these. Packets must be initialized as an array of :c:type:`char *`.
-    *
-    *     :param str:           The string to deserialize
-    *     :param len:           The length of this string
-    *     :param packets:       A pointer to the returned array of packets. This will be initialized for you
-    *     :param lens:          A pointer to the returned array of packet lengths. This will be initiaized for you
-    *     :param num_packets:   A pointer to the number of packets. This will be initialized for you
-    *
-    *     :returns: ``0`` if successful, any other number if not. If it returns non-``0``, ``packets`` and ``lens`` will point to ``NULL``
-    *
-    *     .. warning::
-    *
-    *         If you do not :c:func:`free` ``packets`` and ``lens`` you will develop a memory leak
-    */
-    size_t processed = 0;
-    size_t factor = 16;
-    size_t i;
-    *num_packets = 0;
-    *lens = (size_t *) malloc(sizeof(size_t) * factor);
-    CP2P_DEBUG("Entering while loop\n");
-    while (processed < len)   {
-        size_t tmp = unpack_value(str + processed, 4);
-        CP2P_DEBUG("Processing for packet %i\n", *num_packets);
-        if (!(*num_packets % factor))    {
-            factor *= 2;
-            *lens = (size_t *) realloc(*lens, sizeof(size_t) * factor);
-        }
-        (*lens)[*num_packets] = tmp;
-        processed += tmp + 4;
-        *num_packets += 1;
-    }
-    if (processed > len)    {
-        free(*lens);
-        *lens = NULL;
-        *packets = NULL;
-        return -1;
-    }
-    CP2P_DEBUG("Exited while loop\n");
-    *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets));
-    *packets = (char **) realloc(*packets, sizeof(char *) * (*num_packets));
-    processed = 4;
-    CP2P_DEBUG("Entering for loop\n");
-    for (i = 0; i < *num_packets; i++)    {
-        (*packets)[i] = (char *) malloc(sizeof(char) * (*lens)[i]);
-        memcpy((*packets)[i], str + processed, (*lens)[i]);
-        processed += (*lens)[i] + 4;
-    }
     return 0;
 }
 

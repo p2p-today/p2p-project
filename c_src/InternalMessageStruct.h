@@ -9,6 +9,7 @@
 * Using this requires a compiled copy of the sha2 hashes, provided in ``c_src/sha/sha2.c``
 */
 
+#include <msgpack.h>
 #include "./base.h"
 #include "./sha/sha2.h"
 #include "./BaseConverter.h"
@@ -21,11 +22,9 @@ typedef struct  {
     /**
     * .. c:type:: typedef struct InternalMessageStruct
     *
-    *     .. c:member:: char *msg_type
+    *     .. c:member:: unsigned char msg_type
     *
     *         The type of message this is. These are described in :doc:`protocol/flags <../../protocol/flags>`.
-    *
-    *     .. c:member:: size_t msg_type_len
     *
     *     .. c:member:: char *sender
     *
@@ -36,18 +35,6 @@ typedef struct  {
     *     .. c:member:: unsigned long long timestamp
     *
     *         The time at which this message was sent, in UTC seconds since 1/1/1970.
-    *
-    *     .. c:member:: char **payload
-    *
-    *         An array of "payload" packets in this message. In other words, every item which *isn't* metadata.
-    *
-    *     .. c:member:: size_t *payload_lens
-    *
-    *         The length of each payload item, in the same order
-    *
-    *     .. c:member:: size_t num_payload
-    *
-    *         The number of payload packets
     *
     *     .. note::
     *
@@ -82,14 +69,13 @@ typedef struct  {
     *
     *     .. c:member:: size_t str_len
     */
-    char *msg_type;
-    size_t msg_type_len;
+    unsigned char msg_type;
     char *sender;
     size_t sender_len;
     unsigned long long timestamp;
-    char **payload;
-    size_t *payload_lens;
-    size_t num_payload;
+    msgpack_sbuffer* buffer;
+    msgpack_packer* packer;
+    msgpack_unpacker unpacker;
     char **compression;
     size_t *compression_lens;
     size_t num_compressions;
@@ -102,19 +88,16 @@ typedef struct  {
 } InternalMessageStruct;
 
 
-static InternalMessageStruct *constructInternalMessage(const char *type, size_t type_len, const char *sender, size_t sender_len, char **payload, size_t *payload_lens, size_t num_payload)   {
+static InternalMessageStruct *startInternalMessage(const size_t num_packets, const unsigned char type, const char *sender, size_t sender_len)    {
     /**
-    * .. c:function:: static InternalMessageStruct *constructInternalMessage(const char *type, size_t type_len, const char *sender, size_t sender_len, char **payload, size_t *payload_lens, size_t num_payload)
+    * .. c:function:: static InternalMessageStruct *startInternalMessage(const size_t num_packets, const char *type, size_t type_len, const char *sender, size_t sender_len)
     *
     *     Constructs an InternalMessageStruct. This copies all given data into a struct, then returns this struct's pointer.
     *
+    *     :param num_packets    The number of items you will pack (must be exact)
     *     :param type:          The item to place in :c:member:`InternalMessageStruct.msg_type`
-    *     :param type_len:      The length of the above
     *     :param sender:        The item to place in :c:member:`InternalMessageStruct.sender`
     *     :param sender_len:    The length of the above
-    *     :param payload:       The array to place in :c:member:`InternalMessageStruct.payload`
-    *     :param payload_lens:  The length for each string in the above
-    *     :param num_payload:   The number of items in the above
     *
     *     :returns: A pointer to the resulting :c:type:`InternalMessageStruct`
     *
@@ -123,27 +106,21 @@ static InternalMessageStruct *constructInternalMessage(const char *type, size_t 
     *          You must use :c:func:`destroyInternalMessage` on the resulting object, or you will develop a memory leak
     */
     InternalMessageStruct *ret;
-    size_t i;
-    CP2P_DEBUG("Inside real constructor. num_payload=%i\n", num_payload);
+    CP2P_DEBUG("Inside real constructor. num_packets=%i\n", num_packets);
     ret = (InternalMessageStruct *) malloc(sizeof(InternalMessageStruct));
-    ret->msg_type = (char *) malloc(sizeof(char) * type_len);
-    memcpy(ret->msg_type, type, type_len);
-    ret->msg_type_len = type_len;
+    ret->msg_type = type;
     ret->sender = (char *) malloc(sizeof(char) * sender_len);
     memcpy(ret->sender, sender, sender_len);
     ret->sender_len = sender_len;
     ret->timestamp = getUTC();
-    ret->num_payload = num_payload;
-    ret->payload = (char **) malloc(sizeof(char *) * num_payload);
-    ret->payload_lens = (size_t *) malloc(sizeof(size_t) * num_payload);
-    CP2P_DEBUG("At for loop\n");
-    for (i = 0; i < num_payload; i++)    {
-        ret->payload[i] = (char *) malloc(sizeof(char) * payload_lens[i]);
-        ret->payload_lens[i] = payload_lens[i];
-        memcpy(ret->payload[i], payload[i], payload_lens[i]);
-        CP2P_DEBUG("%s\n", ret->payload[i]);
-    }
-    CP2P_DEBUG("Exited for loop\n");
+    ret->buffer = msgpack_sbuffer_new();
+    ret->packer = msgpack_packer_new(ret->buffer, msgpack_sbuffer_write);
+    msgpack_pack_array(ret->packer, num_packets + 3);
+    msgpack_pack_int(ret->packer, ret->msg_type);
+    msgpack_pack_bin(ret->packer, ret->sender_len);
+    msgpack_pack_bin_body(ret->packer, ret->sender, ret->sender_len);
+    msgpack_pack_int(ret->packer, ret->timestamp);
+    msgpack_unpacker_init(&(ret->unpacker), MSGPACK_UNPACKER_INIT_BUFFER_SIZE);
     ret->compression = NULL;
     ret->compression_lens = NULL;
     ret->num_compressions = 0;
@@ -167,35 +144,29 @@ static void destroyInternalMessage(InternalMessageStruct *des)    {
     */
     size_t i;
     CP2P_DEBUG("1\n");
-    free(des->msg_type);
+    msgpack_sbuffer_free(des->buffer);
     CP2P_DEBUG("2\n");
-    for (i = 0; i < des->num_payload; i++)   {
-        free(des->payload[i]);
-    }
+    msgpack_packer_free(des->packer);
     CP2P_DEBUG("3\n");
-    free(des->payload);
-    CP2P_DEBUG("4\n");
-    free(des->payload_lens);
-    CP2P_DEBUG("5\n");
     if (des->compression != NULL)   {
-        CP2P_DEBUG("6\n");
+        CP2P_DEBUG("4\n");
         for (i = 0; i < des->num_compressions; i++)  {
             free(des->compression[i]);
         }
-        CP2P_DEBUG("7\n");
+        CP2P_DEBUG("5\n");
         free(des->compression);
-        CP2P_DEBUG("8\n");
+        CP2P_DEBUG("6\n");
         free(des->compression_lens);
     }
-    CP2P_DEBUG("9\n");
+    CP2P_DEBUG("7\n");
     if (des->id != NULL)    {
         free(des->id);
     }
-    CP2P_DEBUG("10\n");
+    CP2P_DEBUG("8\n");
     if (des->str != NULL)   {
         free(des->str);
     }
-    CP2P_DEBUG("11\n");
+    CP2P_DEBUG("9\n");
     free(des);
 }
 
@@ -212,6 +183,9 @@ static void setInternalMessageCompressions(InternalMessageStruct *des, char **co
     *     :param num_compressions:  The number of compression methods
     */
     size_t i;
+    if (des->str != NULL)   {
+        free(des->str);
+    }
     if (des->compression != NULL)   {
         for (i = 0; i < des->num_compressions; i++)  {
             free(des->compression[i]);
@@ -235,28 +209,18 @@ static void ensureInternalMessageID(InternalMessageStruct *des)  {
     *
     *     :param des: A pointer to the relevant InternalMessageStruct
     */
-    unsigned char digest[SHA384_DIGEST_LENGTH];
-    SHA384_CTX ctx;
-    size_t i;
-    size_t t58_len = 0;
-    char *t58;
+    SHA256_CTX ctx;
 
     if (des->id != NULL)   {
         CP2P_DEBUG("ID already exists\n")
         return;
     }
 
-    memset(digest, 0, SHA384_DIGEST_LENGTH);
-    SHA384_Init(&ctx);
-
-    for (i = 0; i < des->num_payload; i++)
-        SHA384_Update(&ctx, (const unsigned char *) des->payload[i], des->payload_lens[i]);
-
-    t58 = to_base_58(des->timestamp, &t58_len);
-    SHA384_Update(&ctx, (const unsigned char *) t58, t58_len);
-    free(t58);
-    SHA384_Final(digest, &ctx);
-    des->id = ascii_to_base_58((const char *)digest, (size_t) SHA384_DIGEST_LENGTH, &(des->id_len), 1);
+    des->id = calloc(SHA256_DIGEST_LENGTH, sizeof(char));
+    SHA256_Init(&ctx);
+    SHA256_Update(&ctx, (const unsigned char *) des->buffer->data, des->buffer->size);
+    SHA256_Final(des->id, &ctx);
+    des->id_len = SHA256_DIGEST_LENGTH;
 }
 
 static void ensureInternalMessageStr(InternalMessageStruct *des) {
@@ -267,13 +231,6 @@ static void ensureInternalMessageStr(InternalMessageStruct *des) {
     *
     *     :param des: A pointer to the relevant InternalMessageStruct
     */
-    size_t *lens;
-    size_t processed = 4;
-    size_t size;
-    size_t num;
-    size_t i;
-    char *str;
-    char **packets;
     if (des->str != NULL)   {
         CP2P_DEBUG("str already exists\n");
         return;
@@ -281,36 +238,11 @@ static void ensureInternalMessageStr(InternalMessageStruct *des) {
     CP2P_DEBUG("Building str\n");
 
     ensureInternalMessageID(des);
-    num = 4 + des->num_payload;
-    packets = (char **) malloc(sizeof(char *) * num);
-    lens = (size_t *) malloc(sizeof(size_t) * num);
-    packets[0] = des->msg_type;
-    lens[0] = des->msg_type_len;
-    packets[1] = des->sender;
-    lens[1] = des->sender_len;
-    packets[2] = des->id;
-    lens[2] = des->id_len;
-    packets[3] = to_base_58(des->timestamp, lens + 3);
-    size = lens[0] + lens[1] + lens[2] + lens[3];
-    for (i = 0; i < des->num_payload; i++) {
-        packets[4+i] = des->payload[i];
-        lens[4+i] = des->payload_lens[i];
-        size += lens[4+i];
-    }
-    size += 4 * (num + 1);
-
-    str = (char *) malloc(sizeof(char) * size);
-
-    for (i = 0; i < num; i++)   {
-        pack_value(4, str + processed, lens[i]);
-        processed += 4;
-        memcpy(str + processed, packets[i], lens[i]);
-        processed += lens[i];
-    }
-
-    des->str_len = processed;
-    pack_value(4, str, processed - 4);
-    des->str = str;
+    des->str_len = 4 + des->id_len + des->buffer->size;
+    des->str = (char *) malloc(des->str_len * sizeof(char));
+    pack_value(4, des->str, des->str_len - 4);
+    memcpy(des->str + 4, des->id, des->id_len);
+    memcpy(des->str + 4 + des->id_len, des->buffer->data, des->buffer->size);
 }
 
 static InternalMessageStruct *deserializeInternalMessage(const char *serialized, size_t len, int sizeless, int *errored)  {
@@ -328,45 +260,43 @@ static InternalMessageStruct *deserializeInternalMessage(const char *serialized,
     *     :returns: An equivalent :c:type:`InternalMessageStruct`, or ``NULL`` if there was an error
     */
     char *tmp = (char *) malloc(sizeof(char) * len);
-    char **packets = (char **) malloc(sizeof(char *) * 4);
-    size_t *lens;
-    size_t num_packets;
-    size_t i;
-    InternalMessageStruct *ret;
+    InternalMessageStruct *ret = malloc(sizeof(InternalMessageStruct));
+    size_t id_len;
+    msgpack_unpacker streamer;
+    msgpack_unpacked result;
     memcpy(tmp, serialized, len);
     sanitize_string(tmp, &len, sizeless);
-    CP2P_DEBUG("Entering process_string\n");
-    process_string(tmp, len, &packets, &lens, &num_packets);
-    CP2P_DEBUG("Exiting process_string\n");
-    if (packets == NULL)    {
-        *errored = 2;
-        return NULL;
-    }
-    ret = constructInternalMessage(
-        packets[0], lens[0],
-        packets[1], lens[1],
-        packets + 4, lens + 4, num_packets - 4);
-    CP2P_DEBUG("Message deserialized\n");
-    ret->timestamp = from_base_58(packets[3], lens[3]);
-    ret->str_len = len + 4;
-    ret->str = (char *) malloc(sizeof(char) * (len + 4));
-    memcpy(ret->str, serialized, len + 4);
-    CP2P_DEBUG("Known attributes cached\n");
-
+    id_len = unpack_value(tmp, 1);
+    ret->buffer->size = len - 1 - id_len;
+    ret->buffer->data = malloc(sizeof(char) * ret->buffer->size);
+    memcpy(ret->buffer->data, tmp + 1 + id_len, ret->buffer->size);
     ensureInternalMessageID(ret);
-    *errored = memcmp(ret->id, packets[2], ret->id_len);
-    CP2P_DEBUG("Error attribute set\n");
-
-    for (i = 0; i < num_packets; i++)    {
-        free(packets[i]);
-    }
-    free(packets);
-    free(lens);
-    CP2P_DEBUG("Temporary memory freed\n");
-
-    if (*errored)
+    if (memcmp(ret->id, tmp + 1, id_len))   {
+        *errored = -1;
+        destroyInternalMessage(ret);
         return NULL;
-    return ret;
+    }
+
+    // start streaming for metadata
+    msgpack_unpacker_init(&streamer, MSGPACK_UNPACKER_INIT_BUFFER_SIZE);
+    msgpack_unpacker_reserve_buffer(&streamer, ret->buffer->size);
+    memcpy(msgpack_unpacker_buffer(&streamer), ret->buffer->data, ret->buffer->size);
+    msgpack_unpacker_buffer_consumed(&streamer, ret->buffer->size);
+    msgpack_unpacked_init(&result);
+    msgpack_unpacker_next(&streamer, &result);
+    msgpack_object_array array = result.data.via.array;
+    if (array.size < 3) {
+        *errored = -1;
+        destroyInternalMessage(ret);
+        return NULL;
+    }
+    ret->msg_type = array.ptr[0].via.u64;
+    ret->sender = (char *) malloc(array.ptr[1].via.str.size * sizeof(char));
+    memcpy(ret->sender, array.ptr[1].via.str.ptr, array.ptr[1].via.str.size);
+    ret->sender_len = array.ptr[1].via.str.size;
+    ret->timestamp = array.ptr[2].via.u64;
+    // stop streaming for metadata
+    ret->packer = NULL;
 }
 
 static InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, int *errored, char **compression, size_t *compression_lens, size_t num_compressions)    {

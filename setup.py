@@ -79,7 +79,11 @@ def main():
             Extension(
                 'py2p.cbase',
                 sources=[os.path.join(loc, 'c_src', 'base_wrapper.c'),
-                         os.path.join(loc, 'c_src', 'sha', 'sha2.c')],
+                         os.path.join(loc, 'c_src', 'sha', 'sha2.c')] +
+                        [os.path.join(loc, 'c_src', 'msgpack-c', 'src', file_)
+                          for file_ in os.listdir(os.path.join(loc, 'c_src', 'msgpack-c', 'src'))
+                          if file_.endswith('.c')],
+                include_dirs=[os.path.join(loc, 'c_src', 'msgpack-c', 'include')],
                 define_macros=__DEBUG__))
 
     try:

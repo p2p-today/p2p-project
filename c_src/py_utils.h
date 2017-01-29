@@ -4,11 +4,84 @@
 #include <Python.h>
 #include <bytesobject.h>
 #include <string.h>
+#include <msgpack.h>
 
 #ifdef _cplusplus
 
 extern "C"  {
 #endif
+
+static PyObject *pytuple_from_msgpack_array(msgpack_object_array array, size_t start_offset)    {
+    size_t i = start_offset;
+    PyObject *tup = PyTuple_New((Py_ssize_t) array.size - start_offset);
+    for (; i < array.size; ++i) {
+        switch(array.ptr[i].type) {
+            case MSGPACK_OBJECT_NIL:
+                PyTuple_SET_ITEM(tup, i - start_offset, Py_None);
+                break;
+
+            case MSGPACK_OBJECT_BOOLEAN:
+                if(array.ptr[i].via.boolean) {
+                    PyTuple_SET_ITEM(tup, i - start_offset, Py_True);
+                } else {
+                    PyTuple_SET_ITEM(tup, i - start_offset, Py_False);
+                }
+                break;
+
+            case MSGPACK_OBJECT_POSITIVE_INTEGER:
+                PyTuple_SET_ITEM(tup, i - start_offset, PyLong_FromUnsignedLongLong(array.ptr[i].via.u64));
+                break;
+
+            case MSGPACK_OBJECT_NEGATIVE_INTEGER:
+                PyTuple_SET_ITEM(tup, i - start_offset, PyLong_FromLongLong(array.ptr[i].via.i64));
+                break;
+
+            case MSGPACK_OBJECT_FLOAT32:
+                PyTuple_SET_ITEM(tup, i - start_offset, PyFloat_FromDouble((float)array.ptr[i].via.f64));
+                break;
+
+            case MSGPACK_OBJECT_FLOAT64:
+                PyTuple_SET_ITEM(tup, i - start_offset, PyFloat_FromDouble(array.ptr[i].via.f64));
+                break;
+
+            case MSGPACK_OBJECT_STR:
+                PyTuple_SET_ITEM(tup, i - start_offset, PyUnicode_FromStringAndSize(array.ptr[i].via.str.ptr, array.ptr[i].via.str.size));
+                break;
+
+            case MSGPACK_OBJECT_BIN:
+                PyTuple_SET_ITEM(tup, i - start_offset, PyBytes_FromStringAndSize(array.ptr[i].via.bin.ptr, array.ptr[i].via.bin.size));
+                break;
+
+            case MSGPACK_OBJECT_ARRAY:
+                PyTuple_SET_ITEM(tup, i - start_offset, pytuple_from_msgpack_array(array.ptr[i].via.array, 0));
+                break;
+
+            // case MSGPACK_OBJECT_MAP:
+            //     {
+            //         int ret = msgpack_pack_map(pk, array.ptr[i].via.map.size);
+            //         if(ret < 0) {
+            //             return ret;
+            //         }
+            //         else {
+            //             msgpack_object_kv* kv = array.ptr[i].via.map.ptr;
+            //             msgpack_object_kv* const kvenarray.ptr[i].= array.ptr[i].via.map.ptr + array.ptr[i].via.map.size;
+            //             for(; kv != kvenarray.ptr[i]. ++kv) {
+            //                 ret = msgpack_pack_object(pk, kv->key);
+            //                 if(ret < 0) { return ret; }
+            //                 ret = msgpack_pack_object(pk, kv->val);
+            //                 if(ret < 0) { return ret; }
+            //             }
+
+            //             return 0;
+            //         }
+            //     }
+
+            default:
+                return NULL;
+        }
+    }
+    return tup;
+}
 
 static PyObject *pybytes_from_chars(const unsigned char *str, size_t len)   {
     Py_buffer buffer;

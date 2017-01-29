@@ -38,7 +38,12 @@ else
 endif
 
 #End python setup section
+#Begin C section
 
+msgpack_module:
+	@git submodule update --init
+
+#End C section
 #Begin Javascript section
 
 jsver = $(shell node -p "require('./package.json').version")
@@ -135,7 +140,7 @@ ifeq ($(pypy), True)
 cpython: python
 
 else
-cpython: python
+cpython: python msgpack_module
 	@echo "Building with C extensions..."
 ifeq ($(debug), true)
 	@python setup.py build --debug
@@ -144,7 +149,7 @@ else
 endif
 endif
 
-cpython3: python3
+cpython3: python3 msgpack_module
 	@echo "Building with C extensions..."
 ifeq ($(debug), true)
 	@$(python3) setup.py build --debug
@@ -152,7 +157,7 @@ else
 	@$(python3) setup.py build
 endif
 
-cpython2: python2
+cpython2: python2 msgpack_module
 	@echo "Building with C extensions..."
 ifeq ($(debug), true)
 	@$(python2) setup.py build --debug
