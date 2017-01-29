@@ -83,8 +83,8 @@ def InternalMessage_constructor_validation(array, impl):
     assert array == msg.payload
     assert msg.packets == (base.flags.broadcast, u'\xff',
                            msg.time) + array
-    p_hash = hashlib.sha384(msg._InternalMessage__non_len_string)
-    assert base.to_base_58(int(p_hash.hexdigest(), 16)) == msg.id
+    p_hash = hashlib.sha256(msg._InternalMessage__non_len_string)
+    assert p_hash.digest() == msg.id
     assert impl.InternalMessage.feed_string(msg.string).id == msg.id
 
 def InternalMessage_serialization_validation(array, impl):

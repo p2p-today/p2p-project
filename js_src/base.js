@@ -530,14 +530,13 @@ base.InternalMessage = class InternalMessage {
         var compression_return = base.InternalMessage.decompress_string(string, compressions);
         var compression_fail = compression_return[1];
         string = compression_return[0];
-        var id_len = base.unpack_value(string.slice(0, 1));
-        var id = string.slice(1, 1 + id_len);
-        var packets = msgpack.decode(string.slice(1 + id_len));
+        var id = string.slice(0, 32);
+        var packets = msgpack.decode(string.slice(32));
         var msg = new base.InternalMessage(packets[0], packets[1], packets.slice(3), compressions);
         msg.time = packets[2];
         msg.compression_fail = compression_fail;
-        if (msg.id !== id.toString())   {
-            throw new Error(`ID check failed. ${msg.id} !== ${id.toString()}`);
+        if (Buffer.compare(msg.id, id)) {
+            throw new Error(`ID check failed. ${util.inspect(msg.id)} !== ${util.inspect(id)}`);
         }
         return msg;
     }
@@ -617,8 +616,8 @@ base.InternalMessage = class InternalMessage {
         *         Returns the ID/checksum associated with this message
         */
         try     {
-            var payload_hash = base.SHA384(this.__non_len_string);
-            return base.to_base_58(new BigInt(payload_hash, 16));
+            var payload_hash = base.SHA256(this.__non_len_string);
+            return Buffer.from(payload_hash, "hex");
         }
         catch (err) {
             console.log(err);
@@ -655,7 +654,7 @@ base.InternalMessage = class InternalMessage {
         */
         var string = this.__non_len_string;
         var id = new Buffer(this.id);
-        var total = Buffer.concat([base.pack_value(1, id.length), id, string]);
+        var total = Buffer.concat([id, string]);
         if (this.compression_used) {
             total = base.compress(total, this.compression_used);
         }

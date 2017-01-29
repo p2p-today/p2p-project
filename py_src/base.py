@@ -401,10 +401,9 @@ class InternalMessage(object):
         # Then we attempt to decompress
         string, compression_fail = cls.__decompress_string(
             string, compressions)
-        id_len = unpack_value(string[:1])
-        id_ = string[1:1+id_len]
+        id_ = string[0:32]
         # After this, we process the packet size headers
-        packets = unpackb(string[1+id_len:])
+        packets = unpackb(string[32:])
         msg = cls(packets[0], packets[1], packets[3:],
                   compression=compressions)
         msg.time = packets[2]
@@ -518,8 +517,8 @@ class InternalMessage(object):
     def id(self):
         """Returns the message id"""
         if not self.__id:
-            payload_hash = hashlib.sha384(self.__non_len_string)
-            self.__id = to_base_58(int(payload_hash.hexdigest(), 16))
+            payload_hash = hashlib.sha256(self.__non_len_string)
+            self.__id = payload_hash.digest()
         return self.__id
 
     @property
@@ -544,10 +543,7 @@ class InternalMessage(object):
         """Returns a :py:class:`bytes` representation of the message"""
         if not all ((self.__id, self.__string, self.__full_string)):
             id_ = self.id
-            ret = b''.join((
-                pack_value(1, len(id_)),
-                id_,
-                self.__non_len_string))
+            ret = b''.join((id_, self.__non_len_string))
             compression_used = self.compression_used
             if compression_used:
                 ret = compress(ret, compression_used)

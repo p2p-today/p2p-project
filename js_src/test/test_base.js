@@ -1,8 +1,9 @@
 "use strict";
 
-var assert = require('assert');
-var base = require('../base.js');
-var BigInt = require('big-integer');
+const assert = require('assert');
+const base = require('../base.js');
+const BigInt = require('big-integer');
+const util = require('util');
 
 function get_random_buffer(len) {
     var pre_buffer = [];
@@ -32,8 +33,8 @@ function test_InternalMessage(payload, instance)  {
     for (var j = 0; j < packets.length; j++)    {
         assert.equal(packets[j].toString(), expected_packets[j].toString(), `At position ${j}: ${packets[j]} != ${expected_packets[j]}`);
     }
-    var p_hash = base.SHA384(msg.__non_len_string);
-    assert.equal(msg.id, base.to_base_58(new BigInt(p_hash, 16)));
+    var p_hash = base.SHA256(msg.__non_len_string);
+    assert.equal(util.inspect(msg.id), util.inspect(Buffer.from(p_hash, "hex")));
 }
 
 describe('base', function() {
@@ -156,7 +157,7 @@ describe('base', function() {
                 assert.equal(test.packets, pac);
                 assert.equal(test.msg, base_msg);
                 assert.equal(test.sender.toString(), sen);
-                assert.equal(test.id, base_msg.id);
+                assert.equal(util.inspect(test.id), util.inspect(base_msg.id));
                 assert.equal(test.time, base_msg.time);
                 assert.equal(test.time_58, base_msg.time_58);
                 assert(base.from_base_58(test.time_58).equals(test.time));
