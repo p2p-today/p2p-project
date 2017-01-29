@@ -463,15 +463,18 @@ class InternalMessage(object):
             return method
         return None
 
+    def __clear_cache(self):
+        self.__full_string = None
+        self.__string = None
+        self.__id = None
+
     @property
     def msg_type(self):
         return self.__msg_type
 
     @msg_type.setter
     def msg_type(self, val):
-        self.__full_string = None
-        self.__string = None
-        self.__id = None
+        self.__clear_cache()
         self.__msg_type = val
 
     @property
@@ -480,9 +483,7 @@ class InternalMessage(object):
 
     @sender.setter
     def sender(self, val):
-        self.__full_string = None
-        self.__string = None
-        self.__id = None
+        self.__clear_cache()
         self.__sender = val
 
     @property
@@ -503,9 +504,7 @@ class InternalMessage(object):
 
     @time.setter
     def time(self, val):
-        self.__full_string = None
-        self.__string = None
-        self.__id = None
+        self.__clear_cache()
         self.__time = val
 
     @property
@@ -541,7 +540,7 @@ class InternalMessage(object):
     @property
     def string(self):
         """Returns a :py:class:`bytes` representation of the message"""
-        if not all ((self.__id, self.__string, self.__full_string)):
+        if not all((self.__id, self.__string, self.__full_string)):
             id_ = self.id
             ret = b''.join((id_, self.__non_len_string))
             compression_used = self.compression_used
