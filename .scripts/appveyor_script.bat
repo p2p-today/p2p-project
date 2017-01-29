@@ -5,6 +5,7 @@ IF DEFINED PIP (
     %PIP% install --upgrade setuptools
     %PIP% install pytest-coverage pytest-benchmark codecov cryptography wheel
     %PIP% install -r requirements.txt
+    git submodule update --init
     cd %HOME%
     %RUN% -m pytest -c setup.cfg --cov=./py_src/ ./py_src/ || goto :error
     %RUN% setup.py sdist --universal
