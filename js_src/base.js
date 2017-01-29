@@ -144,8 +144,6 @@ catch (e) {
     console.warn("Couldn't load zlib/gzip compression");
 }
 
-base.json_compressions = JSON.stringify(base.compression);
-
 
 base.compress = function compress(text, method) {
     /**
@@ -1015,13 +1013,12 @@ base.base_connection = class base_connection   {
         */
         if (packets[0].toString() === base.flags.renegotiate)    {
             if (packets[4].toString() === base.flags.compression)   {
-                var encoded_methods = JSON.parse(packets[5]);
-                var respond = (base.intersect(this.compression, encoded_methods).length !== this.compression.length);
-                this.compression = encoded_methods;
+                var respond = (base.intersect(this.compression, packets[5]).length !== this.compression.length);
+                this.compression = packets[5];
                 // self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
                 if (respond)    {
-                    var decoded_methods = base.intersect(base.compression, this.compression);
-                    self.send(base.flags.renegotiate, base.flags.compression, JSON.stringify(decoded_methods))
+                    var new_methods = base.intersect(base.compression, this.compression);
+                    self.send(base.flags.renegotiate, base.flags.compression, new_methods)
                 }
                 return true;
             }

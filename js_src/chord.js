@@ -235,7 +235,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         */
         var packets = msg.packets;
         if (packets[0] === base.flags.peers)  {
-            var new_peers = JSON.parse(packets[1]);
+            var new_peers = packets[1];
             var self = this;
 
             function is_prev(id)    {

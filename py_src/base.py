@@ -6,7 +6,6 @@ from __future__ import with_statement
 
 import hashlib
 import inspect
-import json
 import socket
 import struct
 import sys
@@ -201,8 +200,6 @@ try:
         compression.append(flags.lzma)
 except Exception:  # pragma: no cover
     getLogger('py2p.base').info("Unable to load lzma compression")
-
-json_compressions = json.dumps(compression)
 
 
 def pack_value(l, i):
@@ -702,18 +699,14 @@ class base_connection(object):
         """
         if packets[0] == flags.renegotiate:
             if packets[4] == flags.compression:
-                encoded_methods = [
-                    algo.encode() for algo in json.loads(packets[5].decode())]
+                encoded_methods = packets[5]
                 respond = (self.compression != encoded_methods)
                 self.compression = encoded_methods
                 self.__print__("Compression methods changed to: %s" %
                                repr(self.compression), level=2)
                 if respond:
-                    decoded_methods = [
-                        algo.decode() for algo in intersect(
-                            compression, self.compression)]
                     self.send(flags.renegotiate, flags.compression,
-                              json.dumps(decoded_methods))
+                              intersect(compression, self.compression))
                 return True
             elif packets[4] == flags.resend:
                 self.send(*self.last_sent)

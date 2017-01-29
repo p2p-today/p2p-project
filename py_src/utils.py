@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import with_statement
+from __future__ import unicode_literals
 
 import calendar
 import os

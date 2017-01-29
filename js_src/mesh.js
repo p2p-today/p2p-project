@@ -264,7 +264,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :js:func:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
         *         inheritence from :js:class:`js2p.sync.sync_socket`
         */
-        handler.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
+        handler.send(base.flags.whisper, [base.flags.peers, this.__get_peer_list()]);
     }
 
     _send_handshake(handler)   {
@@ -277,7 +277,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         */
         let tmp_compress = handler.compression;
         handler.compression = [];
-        handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, `["${this.out_addr[0]}", ${this.out_addr[1]}]`, base.json_compressions]);
+        handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, this.out_addr, base.compression]);
         handler.compression = tmp_compress;
     }
 
@@ -440,9 +440,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             //     this.__resolve_connection_conflict(handler, packets[1]);
             // }
             conn.id = packets[1];
-            conn.addr = JSON.parse(packets[3]);
+            conn.addr = packets[3];
             //console.log(`changed compression methods to: ${packets[4]}`);
-            conn.compression = JSON.parse(packets[4]);
+            conn.compression = packets[4];
             // self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
             if (this.awaiting_ids.indexOf(conn) > -1)   {  // handler in this.awaiting_ids
                 this.awaiting_ids.splice(this.awaiting_ids.indexOf(conn), 1);
@@ -467,7 +467,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         */
         var packets = msg.packets;
         if (packets[0] === base.flags.peers)  {
-            var new_peers = JSON.parse(packets[1]);
+            var new_peers = packets[1];
             var self = this;
             new_peers.forEach(function(peer_array)  {
                 if (self.outgoing.length < m.max_outgoing)  {
@@ -503,7 +503,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         if (packets[0] === base.flags.response)  {
             // self.__print__("Response received for request id %s" % packets[1], level=1)
             if (this.requests[packets[1]])  {
-                var addr = JSON.parse(packets[2]);
+                var addr = packets[2];
                 if (addr)   {
                     var info = this.requests[packets[1]];
                     // console.log(msg);
@@ -539,7 +539,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                 this._send_peers(conn);
             }
             else if (this.routing_table[packets[2]])    {
-                conn.send(base.flags.broadcast, [base.flags.response, packets[1], JSON.stringify([this.routing_table[packets[2]].addr, packets[2]])]);
+                conn.send(base.flags.broadcast, [base.flags.response, packets[1], [this.routing_table[packets[2]].addr, packets[2]]]);
             }
             return true;
         }

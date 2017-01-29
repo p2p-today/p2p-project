@@ -1,8 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import inspect
-import json
 import platform
 import random
 import select
@@ -21,7 +21,7 @@ except:
     from .base import protocol
 from .base import (
     flags, compression, to_base_58, from_base_58, base_connection, message,
-    base_daemon, base_socket, InternalMessage, json_compressions)
+    base_daemon, base_socket, InternalMessage, )
 from .utils import (
     getUTC, get_socket, intersect, inherit_doc, log_entry)
 
@@ -52,7 +52,7 @@ class mesh_connection(base_connection):
             self.__print__(
                 "Failed to decode message. Expected first compression of: %s."
                 % intersect(compression, self.compression), level=1)
-            self.send(flags.renegotiate, flags.compression, json.dumps([]))
+            self.send(flags.renegotiate, flags.compression, [])
             self.send(flags.renegotiate, flags.resend)
             return
         packets = msg.packets
@@ -233,9 +233,8 @@ class mesh_socket(base_socket):
         """
         tmp_compress = handler.compression
         handler.compression = []
-        json_out_addr = '["{}", {}]'.format(*self.out_addr)
         handler.send(flags.whisper, flags.handshake, self.id, self.protocol.id,
-                     json_out_addr, json_compressions)
+                     self.out_addr, compression)
         handler.compression = tmp_compress
 
     def __resolve_connection_conflict(self, handler, h_id):
@@ -274,8 +273,7 @@ class mesh_socket(base_socket):
         extracted from :py:meth:`.__handle_handshake` in order to allow
         cleaner inheritence from :py:class:`py2p.sync.sync_socket`
         """
-        handler.send(flags.whisper, flags.peers,
-                     json.dumps(self._get_peer_list()))
+        handler.send(flags.whisper, flags.peers, self._get_peer_list())
 
     def __handle_handshake(self, msg, handler):
         """This callback is used to deal with handshake signals. Its three
@@ -305,8 +303,8 @@ class mesh_socket(base_socket):
                     "Connection conflict detected. Trying to resolve", level=2)
                 self.__resolve_connection_conflict(handler, packets[1])
             handler.id = packets[1]
-            handler.addr = json.loads(packets[3])
-            handler.compression = json.loads(packets[4])
+            handler.addr = packets[3]
+            handler.compression = packets[4]
             self.__print__(
                 "Compression methods changed to %s" %
                 repr(handler.compression), level=4)
@@ -330,7 +328,7 @@ class mesh_socket(base_socket):
         """
         packets = msg.packets
         if packets[0] == flags.peers:
-            new_peers = json.loads(packets[1])
+            new_peers = packets[1]
             for addr, id in new_peers:
                 if len(tuple(self.outgoing)) < max_outgoing:
                     try:
@@ -360,7 +358,7 @@ class mesh_socket(base_socket):
             self.__print__("Response received for request id %s" % packets[1],
                            level=1)
             if self.requests.get(packets[1]):
-                addr = json.loads(packets[2].decode())
+                addr = packets[2]
                 if addr:
                     msg = self.requests.get(packets[1])
                     self.requests.pop(packets[1])
@@ -386,13 +384,11 @@ class mesh_socket(base_socket):
         packets = msg.packets
         if packets[0] == flags.request:
             if packets[1] == b'*':
-                handler.send(flags.whisper, flags.peers,
-                             json.dumps(self._get_peer_list()))
+                handler.send(flags.whisper, flags.peers, self._get_peer_list())
             elif self.routing_table.get(packets[2]):
                 handler.send(
                     flags.broadcast, flags.response, packets[1],
-                    json.dumps([self.routing_table.get(packets[2]).addr,
-                                packets[2].decode()]))
+                    [self.routing_table.get(packets[2]).addr, packets[2]])
             return True
 
     def send(self, *args, **kargs):

@@ -1,8 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import hashlib
-import json
 import random
 import select
 import socket
@@ -24,7 +24,7 @@ except:
 
 from .base import (
     flags, compression, to_base_58, from_base_58, base_connection, message,
-    base_daemon, base_socket, InternalMessage, json_compressions)
+    base_daemon, base_socket, InternalMessage, compression)
 from .mesh import (
     mesh_connection, mesh_daemon, mesh_socket)
 from .utils import (
@@ -192,7 +192,7 @@ class chord_socket(mesh_socket):
                 self._send_meta(handler)
                 handler.leeching = new_meta
                 if not self.leeching and not handler.leeching:
-                    handler.send(flags.whisper, flags.peers, json.dumps(self._get_peer_list()))
+                    handler.send(flags.whisper, flags.peers, self._get_peer_list())
                     update = self.dump_data(handler.id_10, self.id_10)
                     for method, table in update.items():
                         for key, value in table.items():
@@ -238,7 +238,7 @@ class chord_socket(mesh_socket):
         """
         packets = msg.packets
         if packets[0] == flags.peers:
-            new_peers = json.loads(packets[1].decode())
+            new_peers = packets[1]
 
             def is_prev(id):
                 return distance(from_base_58(id), self.id_10) <= distance(self.prev.id_10, self.id_10)
