@@ -88,16 +88,17 @@ typedef struct  {
 } InternalMessageStruct;
 
 
-static InternalMessageStruct *startInternalMessage(const size_t num_packets, const unsigned char type, const char *sender, size_t sender_len)    {
+static InternalMessageStruct *startInternalMessage(const size_t num_packets, const unsigned char type, const char *sender, size_t sender_len, char sender_is_unicode)   {
     /**
     * .. c:function:: static InternalMessageStruct *startInternalMessage(const size_t num_packets, const char *type, size_t type_len, const char *sender, size_t sender_len)
     *
     *     Constructs an InternalMessageStruct. This copies all given data into a struct, then returns this struct's pointer.
     *
-    *     :param num_packets    The number of items you will pack (must be exact)
-    *     :param type:          The item to place in :c:member:`InternalMessageStruct.msg_type`
-    *     :param sender:        The item to place in :c:member:`InternalMessageStruct.sender`
-    *     :param sender_len:    The length of the above
+    *     :param num_packets        The number of items you will pack (must be exact)
+    *     :param type:              The item to place in :c:member:`InternalMessageStruct.msg_type`
+    *     :param sender:            The item to place in :c:member:`InternalMessageStruct.sender`
+    *     :param sender_len:        The length of the above
+    *     :param sender_is_unicode: If true, pack sender as a string, not a buffer
     *
     *     :returns: A pointer to the resulting :c:type:`InternalMessageStruct`
     *
@@ -117,8 +118,14 @@ static InternalMessageStruct *startInternalMessage(const size_t num_packets, con
     ret->packer = msgpack_packer_new(ret->buffer, msgpack_sbuffer_write);
     msgpack_pack_array(ret->packer, num_packets + 3);
     msgpack_pack_int(ret->packer, ret->msg_type);
-    msgpack_pack_bin(ret->packer, ret->sender_len);
-    msgpack_pack_bin_body(ret->packer, ret->sender, ret->sender_len);
+    if (sender_is_unicode)  {
+        msgpack_pack_str(ret->packer, ret->sender_len);
+        msgpack_pack_str_body(ret->packer, ret->sender, ret->sender_len);
+    }
+    else    {
+        msgpack_pack_bin(ret->packer, ret->sender_len);
+        msgpack_pack_bin_body(ret->packer, ret->sender, ret->sender_len);
+    }
     msgpack_pack_int(ret->packer, ret->timestamp);
     msgpack_unpacker_init(&(ret->unpacker), MSGPACK_UNPACKER_INIT_BUFFER_SIZE);
     ret->compression = NULL;

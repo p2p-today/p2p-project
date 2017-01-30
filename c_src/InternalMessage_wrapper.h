@@ -33,10 +33,11 @@ static PyObject *pmessage_wrapper_new(PyTypeObject *type, PyObject *args, PyObje
 }
 
 static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObject *kwds)  {
-    char *sender, **load, **comp;
-    unsigned char msg_type;
+    char *sender, **comp;
+    unsigned char msg_type, sender_is_unicode;
     size_t i, sender_len, num_load, *load_lens, num_comp, *comp_lens;
     PyObject *py_msg=NULL, *py_sender=NULL, *payload=NULL, *compression=NULL;
+    msgpack_object_array load;
 
     static char *kwlist[] = {(char*)"msg_type", (char*)"sender", (char*)"payload", (char*)"compressions", NULL};
 
@@ -53,11 +54,12 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
 
     CP2P_DEBUG("Parsing sender\n")
     sender = chars_from_pybytes(py_sender, &sender_len);
+    sender_is_unicode = PyUnicode_Check(py_sender);
     if (PyErr_Occurred())
         return -1;
 
     CP2P_DEBUG("Parsing payload\n")
-    load = array_string_from_pylist(payload, &load_lens, &num_load);
+    load = msgpack_array_from_PyTuple(payload);
     if (PyErr_Occurred())
         return -1;
 
@@ -68,14 +70,12 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
     }
 
     Py_BEGIN_ALLOW_THREADS
-    self->msg = startInternalMessage(num_load, msg_type, sender, sender_len);
-    for (i = 0; i < num_load; i++)  {
-        msgpack_pack_bin(self->msg->packer, load_lens[i]);
-        msgpack_pack_bin_body(self->msg->packer, load[i], load_lens[i]);
-        free(load[i]);
+    self->msg = startInternalMessage(load.size, msg_type, sender, sender_len, sender_is_unicode);
+    for (i = 0; i < load.size; ++i)  {
+        msgpack_pack_object(self->msg->packer, load.ptr[i]);
     }
     free(sender);
-    free(load);
+    free(load.ptr);
     free(load_lens);
     CP2P_DEBUG("Parsing compression list\n")
     if (compression)    {
@@ -185,6 +185,21 @@ static PyObject *pmessage_packets(pmessage_wrapper *self)    {
     return tup;
 }
 
+static PyObject *_InternalMessage__non_len_string(pmessage_wrapper *self)   {
+    PyObject *ret;
+    if (self->msg->str_len == 0)    {
+        Py_BEGIN_ALLOW_THREADS
+        ensureInternalMessageStr(self->msg);
+        Py_END_ALLOW_THREADS
+    }
+    ret = pybytes_from_chars(
+        (unsigned char*) self->msg->str + 4 + SHA256_DIGEST_LENGTH,
+        self->msg->str_len - 4 - SHA256_DIGEST_LENGTH);
+    if (PyErr_Occurred())
+        return NULL;
+    return ret;
+}
+
 static PyObject *pmessage_str(pmessage_wrapper *self)    {
     PyObject *ret;
     if (self->msg->str_len == 0)    {
@@ -236,7 +251,17 @@ static PyObject *pmessage_timestamp_58(pmessage_wrapper *self)    {
 }
 
 static PyObject *pmessage_timestamp(pmessage_wrapper *self)    {
-    PyObject *ret = PyLong_FromUnsignedLong(self->msg->timestamp);
+    PyObject *ret;
+#if PY_MAJOR_VERSION < 3
+    if (self->msg->timestamp < PyInt_GetMax())  {
+        ret = PyInt_FromLong(self->msg->timestamp);
+    }
+    else    {
+#endif
+        ret = PyLong_FromUnsignedLong(self->msg->timestamp);
+#if PY_MAJOR_VERSION < 3
+    }
+#endif
     if (PyErr_Occurred())
         return NULL;
     return ret;
@@ -311,6 +336,9 @@ static PyGetSetDef pmessage_wrapper_getsets[] = {
     },
     {(char*)"id", (getter)pmessage_id, NULL,
         (char*)"Return the message ID"
+    },
+    {(char*)"_InternalMessage__non_len_string", (getter)_InternalMessage__non_len_string, NULL,
+        (char*)"Internal method for getting the serialized string without header information"
     },
     {(char*)"compression_used", (getter)pmessage_compression_used, NULL,
         (char*)"Return the compression method used, or None if there is none"},
