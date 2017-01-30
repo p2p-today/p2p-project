@@ -506,12 +506,66 @@ base.InternalMessage = class InternalMessage {
     *     :param number timestamp:  The time at which this message will be sent in seconds UTC
     */
     constructor(msg_type, sender, payload, compression, timestamp) {
-        this.msg_type = msg_type;
-        this.sender = sender;
-        this.payload = payload || [];
-        this.time = timestamp || base.getUTC();
-        this.compression = compression || [];
+        this.__msg_type = msg_type;
+        this.__sender = sender;
+        this.__payload = payload || [];
+        this.__time = timestamp || base.getUTC();
+        this.__compression = compression || [];
         this.compression_fail = false
+        this.__str = null;
+        this.__id = null;
+        this.__full_str = null;
+    }
+
+    __clear_cache() {
+        this.__str = null;
+        this.__id = null;
+        this.__full_str = null;
+    }
+
+    get msg_type()  {
+        return this.__msg_type;
+    }
+
+    set msg_type(x) {
+        this.__clear_cache();
+        this.__msg_type = x;
+    }
+
+    get sender()    {
+        return this.__sender;
+    }
+
+    set sender(x)   {
+        this.__clear_cache();
+        this.__sender = x;
+    }
+
+    get payload()   {
+        return Array.from(this.__payload);
+    }
+
+    set payload(x)  {
+        this.__clear_cache();
+        this.__payload = Array.from(x);
+    }
+
+    get time()  {
+        return this.__time;
+    }
+
+    set time(x) {
+        this.__clear_cache();
+        this.__time = x;
+    }
+
+    get compression()   {
+        return Array.from(this.__compression);
+    }
+
+    set compression(x)  {
+        this.__full_str = null;
+        this.__compression = Array.from(x);
     }
 
     static feed_string(string, sizeless, compressions) {
@@ -531,13 +585,18 @@ base.InternalMessage = class InternalMessage {
         var compression_fail = compression_return[1];
         string = compression_return[0];
         var id = string.slice(0, 32);
-        var packets = msgpack.decode(string.slice(32));
+        let serialized = string.slice(32);
+        let hash = Buffer.from(base.SHA256(serialized), "hex");
+        if (Buffer.compare(id, hash)) {
+            throw new Error(`ID check failed. ${util.inspect(hash)} !== ${util.inspect(id)}`);
+        }
+        var packets = msgpack.decode(serialized);
         var msg = new base.InternalMessage(packets[0], packets[1], packets.slice(3), compressions);
         msg.time = packets[2];
         msg.compression_fail = compression_fail;
-        if (Buffer.compare(msg.id, id)) {
-            throw new Error(`ID check failed. ${util.inspect(msg.id)} !== ${util.inspect(id)}`);
-        }
+        msg.__id = id;
+        msg.__str = serialized;
+        msg.__full_str = string;
         return msg;
     }
 
@@ -615,14 +674,17 @@ base.InternalMessage = class InternalMessage {
         *
         *         Returns the ID/checksum associated with this message
         */
-        try     {
-            var payload_hash = base.SHA256(this.__non_len_string);
-            return Buffer.from(payload_hash, "hex");
+        if (this.__id === null) {
+            try     {
+                let payload_hash = base.SHA256(this.__non_len_string);
+                this.__id = Buffer.from(payload_hash, "hex");
+            }
+            catch (err) {
+                console.log(err);
+                console.log(this.payload);
+            }
         }
-        catch (err) {
-            console.log(err);
-            console.log(this.payload);
-        }
+        return this.__id;
     }
 
     get packets() {
@@ -641,9 +703,10 @@ base.InternalMessage = class InternalMessage {
     }
 
     get __non_len_string() {
-        var buf_array = [];
-        var total = msgpack.encode(this.packets);
-        return total;
+        if (this.__str === null)  {
+            this.__str = msgpack.encode(this.packets);
+        }
+        return this.__str;
     }
 
     get string() {
@@ -652,13 +715,16 @@ base.InternalMessage = class InternalMessage {
         *
         *         Returns a Buffer containing the serialized version of this message
         */
-        var string = this.__non_len_string;
-        var id = new Buffer(this.id);
-        var total = Buffer.concat([id, string]);
-        if (this.compression_used) {
-            total = base.compress(total, this.compression_used);
+        if (this.__full_str === null)   {
+            var string = this.__non_len_string;
+            var id = new Buffer(this.id);
+            var total = Buffer.concat([id, string]);
+            if (this.compression_used) {
+                total = base.compress(total, this.compression_used);
+            }
+            this.__full_str = Buffer.concat([base.pack_value(4, total.length), total]);
         }
-        return Buffer.concat([base.pack_value(4, total.length), total]);
+        return this.__full_str;
     }
 
     get length() {

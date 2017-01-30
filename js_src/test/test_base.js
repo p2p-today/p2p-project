@@ -154,7 +154,7 @@ describe('base', function() {
                 var pac = get_random_array(36);
                 var base_msg = new base.InternalMessage(base.flags.broadcast, sen, pac);
                 var test = new base.message(base_msg, null);
-                assert.equal(test.packets, pac);
+                assert.equal(util.inspect(test.packets), util.inspect(pac));
                 assert.equal(test.msg, base_msg);
                 assert.equal(test.sender.toString(), sen);
                 assert.equal(util.inspect(test.id), util.inspect(base_msg.id));
