@@ -400,11 +400,9 @@ base.protocol = class protocol {
 base.default_protocol = new base.protocol('', 'Plaintext');
 
 function getCertKeyPair()   {
-    console.log("Creating key pair");
     const pki = require('node-forge').pki;
-    var keys = pki.rsa.generateKeyPair(2048);
+    var keys = pki.rsa.generateKeyPair(1024);
     var cert = pki.createCertificate();
-    console.log("Setting attributes");
     cert.publicKey = keys.publicKey;
     cert.serialNumber = '01';
     cert.validity.notBefore = new Date();
@@ -435,9 +433,7 @@ function getCertKeyPair()   {
         name: 'basicConstraints',
         cA: false
     }]);
-    console.log("Signing");
     cert.sign(keys.privateKey);
-    console.log("Returning");
     return [pki.certificateToPem(cert), pki.privateKeyToPem(keys.privateKey)];
 }
 
