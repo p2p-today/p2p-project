@@ -274,11 +274,11 @@ static msgpack_object_array msgpack_array_from_PyTuple(PyObject *tup)   {
         }
         else if (PyBytes_Check(item))   {
             arr.ptr[i].type = MSGPACK_OBJECT_BIN;
-            arr.ptr[i].via.bin.ptr = chars_from_pybytes(item, &(arr.ptr[i].via.bin.size));
+            arr.ptr[i].via.bin.ptr = chars_from_pybytes(item, (size_t *) &(arr.ptr[i].via.bin.size));
         }
         else if (PyUnicode_Check(item)) {
             arr.ptr[i].type = MSGPACK_OBJECT_STR;
-            arr.ptr[i].via.str.ptr = chars_from_pybytes(item, &(arr.ptr[i].via.str.size));
+            arr.ptr[i].via.str.ptr = chars_from_pybytes(item, (size_t *) &(arr.ptr[i].via.str.size));
         }
 #if PY_MAJOR_VERSION < 3
         else if (PyInt_Check(item)) {

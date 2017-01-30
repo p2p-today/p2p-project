@@ -35,8 +35,8 @@ static PyObject *pmessage_wrapper_new(PyTypeObject *type, PyObject *args, PyObje
 static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObject *kwds)  {
     char *sender, **comp;
     unsigned char msg_type, sender_is_unicode;
-    size_t i, sender_len, num_load, *load_lens, num_comp, *comp_lens;
-    PyObject *py_msg=NULL, *py_sender=NULL, *payload=NULL, *compression=NULL;
+    size_t i, sender_len, num_comp, *comp_lens;
+    PyObject *py_sender=NULL, *payload=NULL, *compression=NULL;
     msgpack_object_array load;
 
     static char *kwlist[] = {(char*)"msg_type", (char*)"sender", (char*)"payload", (char*)"compressions", NULL};
@@ -70,13 +70,12 @@ static int pmessage_wrapper_init(pmessage_wrapper *self, PyObject *args, PyObjec
     }
 
     Py_BEGIN_ALLOW_THREADS
-    self->msg = startInternalMessage(load.size, msg_type, sender, sender_len, sender_is_unicode);
+    self->msg = startInternalMessage(load.size, msg_type, sender, sender_len, sender_is_unicode, 0);
     for (i = 0; i < load.size; ++i)  {
         msgpack_pack_object(self->msg->packer, load.ptr[i]);
     }
     free(sender);
     free(load.ptr);
-    free(load_lens);
     CP2P_DEBUG("Parsing compression list\n")
     if (compression)    {
         setInternalMessageCompressions(self->msg, comp, comp_lens, num_comp);
@@ -106,8 +105,10 @@ static pmessage_wrapper *pmessage_feed_string(PyTypeObject *type, PyObject *args
         return NULL;
 
     str = chars_from_pybytes(py_str, &str_len);
-    if (PyErr_Occurred())
+    if (PyErr_Occurred())   {
+        CP2P_DEBUG("Python error occurred\n")
         return NULL;
+    }
 
     ret = (pmessage_wrapper *)type->tp_alloc(type, 0);
 
@@ -158,7 +159,6 @@ static PyObject *pmessage_payload(pmessage_wrapper *self)    {
     msgpack_unpacker_buffer_consumed(&streamer, self->msg->buffer->size);
     msgpack_unpacked_init(&result);
     msgpack_unpacker_next(&streamer, &result);
-    msgpack_object_print(stdout, result.data);
 
     tup = pytuple_from_msgpack_array(result.data.via.array, 3);
 
@@ -279,7 +279,7 @@ static PyObject *pmessage_compression_used(pmessage_wrapper *self)  {
 }
 
 static PyObject *pmessage_compression_get(pmessage_wrapper *self)   {
-    PyObject *ret = pylist_from_array_string(self->msg->compression, self->msg->compression_lens, self->msg->num_compressions);
+    PyObject *ret = pytuple_from_array_string(self->msg->compression, self->msg->compression_lens, self->msg->num_compressions);
     if (PyErr_Occurred())
         return NULL;
     return ret;

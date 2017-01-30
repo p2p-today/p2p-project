@@ -155,8 +155,7 @@ static unsigned char RESERVED_FLAGS[] = {
     (unsigned char ) 0x2C,
     (unsigned char ) 0x2D,
     (unsigned char ) 0x2E,
-    (unsigned char ) 0x2F,
-    NULL /* sentinel */
+    (unsigned char ) 0x2F
 };
 
 static size_t NUM_COMPRESSIONS = 0;

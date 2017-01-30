@@ -88,9 +88,9 @@ typedef struct  {
 } InternalMessageStruct;
 
 
-static InternalMessageStruct *startInternalMessage(const size_t num_packets, const unsigned char type, const char *sender, size_t sender_len, char sender_is_unicode)   {
+static InternalMessageStruct *startInternalMessage(const size_t num_packets, const unsigned char type, const char *sender, size_t sender_len, const char sender_is_unicode, const unsigned long long timestamp)   {
     /**
-    * .. c:function:: static InternalMessageStruct *startInternalMessage(const size_t num_packets, const char *type, size_t type_len, const char *sender, size_t sender_len)
+    * .. c:function:: static InternalMessageStruct *startInternalMessage(const size_t num_packets, const char *type, size_t type_len, const char *sender, const size_t sender_len, const unsigned long long timestamp)
     *
     *     Constructs an InternalMessageStruct. This copies all given data into a struct, then returns this struct's pointer.
     *
@@ -99,6 +99,7 @@ static InternalMessageStruct *startInternalMessage(const size_t num_packets, con
     *     :param sender:            The item to place in :c:member:`InternalMessageStruct.sender`
     *     :param sender_len:        The length of the above
     *     :param sender_is_unicode: If true, pack sender as a string, not a buffer
+    *     :param timestamp:         If non-zero, pack timestamp as this value
     *
     *     :returns: A pointer to the resulting :c:type:`InternalMessageStruct`
     *
@@ -113,7 +114,7 @@ static InternalMessageStruct *startInternalMessage(const size_t num_packets, con
     ret->sender = (char *) malloc(sizeof(char) * sender_len);
     memcpy(ret->sender, sender, sender_len);
     ret->sender_len = sender_len;
-    ret->timestamp = getUTC();
+    ret->timestamp = timestamp || getUTC();
     ret->buffer = msgpack_sbuffer_new();
     ret->packer = msgpack_packer_new(ret->buffer, msgpack_sbuffer_write);
     msgpack_pack_array(ret->packer, num_packets + 3);
@@ -226,7 +227,7 @@ static void ensureInternalMessageID(InternalMessageStruct *des)  {
     des->id = calloc(SHA256_DIGEST_LENGTH, sizeof(char));
     SHA256_Init(&ctx);
     SHA256_Update(&ctx, (const unsigned char *) des->buffer->data, des->buffer->size);
-    SHA256_Final(des->id, &ctx);
+    SHA256_Final((unsigned char *) des->id, &ctx);
     des->id_len = SHA256_DIGEST_LENGTH;
 }
 
@@ -267,44 +268,54 @@ static InternalMessageStruct *deserializeInternalMessage(const char *serialized,
     *     :returns: An equivalent :c:type:`InternalMessageStruct`, or ``NULL`` if there was an error
     */
     char *tmp = (char *) malloc(sizeof(char) * len);
-    InternalMessageStruct *ret = malloc(sizeof(InternalMessageStruct));
-    size_t id_len;
+    unsigned char digest[SHA256_DIGEST_LENGTH];
+    SHA256_CTX ctx;
+    InternalMessageStruct *ret;
     msgpack_unpacker streamer;
     msgpack_unpacked result;
     msgpack_object_array array;
+    unsigned char *sender;
+    size_t sender_len, i;
+    unsigned long long msg_type, timestamp;
+    CP2P_DEBUG("Entering deserializeInternalMessage\n")
     memcpy(tmp, serialized, len);
     sanitize_string(tmp, &len, sizeless);
-    id_len = unpack_value(tmp, 1);
-    ret->buffer->size = len - 1 - id_len;
-    ret->buffer->data = malloc(sizeof(char) * ret->buffer->size);
-    memcpy(ret->buffer->data, tmp + 1 + id_len, ret->buffer->size);
-    ensureInternalMessageID(ret);
-    if (memcmp(ret->id, tmp + 1, id_len))   {
+    CP2P_DEBUG("string sanitized\n")
+    memset(digest, 0, SHA256_DIGEST_LENGTH);
+    SHA256_Init(&ctx);
+    SHA256_Update(&ctx, (const unsigned char *) tmp + SHA256_DIGEST_LENGTH, len - SHA256_DIGEST_LENGTH);
+    SHA256_Final(digest, &ctx);
+    if (memcmp(digest, tmp, SHA256_DIGEST_LENGTH))   {
+        CP2P_DEBUG("Checksum not matched\n")
         *errored = -1;
-        destroyInternalMessage(ret);
+        free(tmp);
         return NULL;
     }
+    CP2P_DEBUG("Checksum matched\n")
 
     // start streaming for metadata
     msgpack_unpacker_init(&streamer, MSGPACK_UNPACKER_INIT_BUFFER_SIZE);
-    msgpack_unpacker_reserve_buffer(&streamer, ret->buffer->size);
-    memcpy(msgpack_unpacker_buffer(&streamer), ret->buffer->data, ret->buffer->size);
-    msgpack_unpacker_buffer_consumed(&streamer, ret->buffer->size);
+    msgpack_unpacker_reserve_buffer(&streamer, len - SHA256_DIGEST_LENGTH);
+    memcpy(msgpack_unpacker_buffer(&streamer), tmp + SHA256_DIGEST_LENGTH, len - SHA256_DIGEST_LENGTH);
+    msgpack_unpacker_buffer_consumed(&streamer, len - SHA256_DIGEST_LENGTH);
     msgpack_unpacked_init(&result);
     msgpack_unpacker_next(&streamer, &result);
     array = result.data.via.array;
+    free(tmp);
     if (array.size < 3) {
         *errored = -1;
-        destroyInternalMessage(ret);
         return NULL;
     }
-    ret->msg_type = array.ptr[0].via.u64;
-    ret->sender = (char *) malloc(array.ptr[1].via.str.size * sizeof(char));
-    memcpy(ret->sender, array.ptr[1].via.str.ptr, array.ptr[1].via.str.size);
-    ret->sender_len = array.ptr[1].via.str.size;
-    ret->timestamp = array.ptr[2].via.u64;
-    // stop streaming for metadata
-    ret->packer = NULL;
+    msg_type = array.ptr[0].via.u64;
+    sender = array.ptr[1].via.str.ptr;
+    sender_len = array.ptr[1].via.str.size;
+    timestamp = array.ptr[2].via.u64;
+    ret = startInternalMessage(array.size - 3, msg_type, (const char *) sender, sender_len, (array.ptr[1].type == MSGPACK_OBJECT_STR), timestamp);
+    // start packing rest of stuff
+    for (i = 3; i < array.size; ++i)    {
+        msgpack_pack_object(ret->packer, array.ptr[i]);
+    }
+    return ret;
 }
 
 static InternalMessageStruct *deserializeCompressedInternalMessage(const char *serialized, size_t len, int sizeless, int *errored, char **compression, size_t *compression_lens, size_t num_compressions)    {
