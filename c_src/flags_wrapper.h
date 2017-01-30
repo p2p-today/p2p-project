@@ -25,7 +25,7 @@ static void addConstants(PyObject *cbase, PyObject *flags_wrapper)  {
     PyModule_AddObject(cbase, "user_salt", pybytes_from_chars((unsigned char *)user_salt, 36));
 
     // Add reserved flags
-    PyModule_AddObject(flags_wrapper, "reserved", pytuple_from_array_char((char **)RESERVED_FLAGS, NUM_RESERVED));
+    PyModule_AddObject(flags_wrapper, "reserved", pytuple_from_array_char((const unsigned char *)RESERVED_FLAGS, NUM_RESERVED));
 
     // Main flags
     PyModule_AddObject(flags_wrapper, "broadcast",   PyLong_FromUnsignedLongLong(BROADCAST_FLAG));

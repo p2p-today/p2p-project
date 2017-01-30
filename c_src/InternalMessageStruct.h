@@ -264,6 +264,7 @@ static InternalMessageStruct *deserializeInternalMessage(const char *serialized,
     size_t id_len;
     msgpack_unpacker streamer;
     msgpack_unpacked result;
+    msgpack_object_array array;
     memcpy(tmp, serialized, len);
     sanitize_string(tmp, &len, sizeless);
     id_len = unpack_value(tmp, 1);
@@ -284,7 +285,7 @@ static InternalMessageStruct *deserializeInternalMessage(const char *serialized,
     msgpack_unpacker_buffer_consumed(&streamer, ret->buffer->size);
     msgpack_unpacked_init(&result);
     msgpack_unpacker_next(&streamer, &result);
-    msgpack_object_array array = result.data.via.array;
+    array = result.data.via.array;
     if (array.size < 3) {
         *errored = -1;
         destroyInternalMessage(ret);
