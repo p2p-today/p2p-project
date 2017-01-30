@@ -596,7 +596,6 @@ base.InternalMessage = class InternalMessage {
         msg.compression_fail = compression_fail;
         msg.__id = id;
         msg.__str = serialized;
-        msg.__full_str = string;
         return msg;
     }
 

@@ -402,14 +402,17 @@ class InternalMessage(object):
         string, compression_fail = cls.__decompress_string(
             string, compressions)
         id_ = string[0:32]
-        # After this, we process the packet size headers
-        packets = unpackb(string[32:])
+        serialized = string[32:]
+        checksum = hashlib.sha256(serialized).digest()
+        assert id_ == checksum, "Checksum failed: {} != {}".format(id_, checksum)
+        packets = unpackb(serialized)
         msg = cls(packets[0], packets[1], packets[3:],
                   compression=compressions)
         msg.time = packets[2]
         msg.compression_fail = compression_fail
+        msg._InternalMessage__id = checksum
+        msg._InternalMessage__string = serialized
         # msg.__string = string
-        assert id_ == msg.id, "Checksum failed: {} != {}".format(id_, msg.id)
         return msg
 
     def __init__(self, msg_type, sender, payload, compression=None,
