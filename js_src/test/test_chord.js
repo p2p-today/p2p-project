@@ -12,7 +12,7 @@ describe('chord', function() {
         let transports = {
             'plaintext': 'Plaintext',
             'SSL/TLS': 'SSL',
-            'websocket': 'wss'
+            'websocket': 'ws'
         };
 
         for (let text in transports)    {
@@ -62,7 +62,7 @@ describe('chord', function() {
                                         done();
                                     }
                                     else {
-                                        done(errs);
+                                        done(new Error(errs));
                                     }
                                 }
                                 else {

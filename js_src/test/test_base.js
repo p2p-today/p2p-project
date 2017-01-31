@@ -53,7 +53,7 @@ describe('base', function() {
                         assert(test_string.equals( base.decompress( base.compress(test_string, flag), flag ) ));
                     }
                     catch (e)   {
-                        throw new Error(`${util.inspect(test_string)}, ${util.inspect(flag)}`, e);
+                        throw new Error(`${util.inspect(test_string)}, ${util.inspect(flag)}: ${util.inspect(e)}`);
                     }
                 }
             }

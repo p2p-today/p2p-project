@@ -12,7 +12,7 @@ describe('sync', function() {
         let transports = {
             'plaintext': 'Plaintext',
             'SSL/TLS': 'SSL',
-            'websocket': 'wss'
+            'websocket': 'ws'
         };
 
         for (let text in transports)    {
