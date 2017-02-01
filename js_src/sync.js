@@ -171,16 +171,15 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         Sets the value at a given key
         *
         *         :param key:   The key you wish to look up (must be transformable into a :js:class:`Buffer` )
-        *         :param value: The key you wish to store (must be transformable into a :js:class:`Buffer` )
+        *         :param value: The key you wish to store
         *
         *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
         *         :raises:              See :js:func:`~js2p.sync.sync_socket.__store`
         */
         let new_meta = new m.metatuple(this.id, base.getUTC());
         let s_key = new Buffer(key);
-        let s_data = (data) ? new Buffer(data) : new Buffer('')
-        this.__store(s_key, s_data, new_meta);
-        this.send([s_key, s_data], undefined, base.flags.store);
+        this.__store(s_key, data, new_meta);
+        this.send([s_key, data], undefined, base.flags.store);
     }
 
     update(update_dict) {

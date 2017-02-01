@@ -44,7 +44,7 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
             print(node.status, len(node.routing_table))
             assert b"store" == node['store']
             assert b"hello" == node['test']
-            assert b'\xe6\x88\x90\xe5\x8a\x9f' == node[u'测试']
+            assert u'成功' == node[u'测试']
             if leasing:
                 with pytest.raises(KeyError):
                     node['test'] = b"This shouldn't work"

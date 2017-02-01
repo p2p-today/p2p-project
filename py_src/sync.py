@@ -126,8 +126,7 @@ class sync_socket(mesh_socket):
         Args:
             key:    The key that you wish to update. Must be a :py:class:`str`
                         or :py:class:`bytes`-like object
-            value:  The value you wish to put at this key. Must be a
-                        :py:class:`str` or :py:class:`bytes`-like object
+            value:  The value you wish to put at this key.
 
         Raises:
             KeyError: If you do not have the lease for this slot. Lease is
@@ -135,7 +134,6 @@ class sync_socket(mesh_socket):
         """
         new_meta = metatuple(self.id, getUTC())
         key = sanitize_packet(key)
-        data = sanitize_packet(data)
         self.__store(key, data, new_meta)
         self.send(key, data, type=flags.store)
 
