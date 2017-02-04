@@ -28,7 +28,7 @@ function test_InternalMessage(payload, instance)  {
     else    {
         var msg = instance;
     }
-    var expected_packets = [base.flags.broadcast, new Buffer('\u00ff', 'ascii'), msg.time].concat(payload);
+    var expected_packets = [base.flags.broadcast, new Buffer('\u00ff', 'ascii'), msg.time, ...payload];
     var packets = msg.packets;
     for (var j = 0; j < packets.length; j++)    {
         assert.equal(packets[j].toString(), expected_packets[j].toString(), `At position ${j}: ${packets[j]} != ${expected_packets[j]}`);

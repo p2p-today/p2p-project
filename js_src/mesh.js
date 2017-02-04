@@ -321,7 +321,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                 (addr === this.addr[0] && port === this.addr[1]));
         var self = this;
         Object.keys(this.routing_table).some(function(key)   {
-            if (key.toString() === id.toString() || self.routing_table[key].addr[0] === addr ||
+            if (key === id || self.routing_table[key].addr[0] === addr ||
                 self.routing_table[key].addr[1] === port)   {
                 shouldBreak = true;
             }
@@ -364,7 +364,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             this.routing_table[id] = handler;
         }
         else    {
-            this.awaiting_ids = this.awaiting_ids.concat(handler);
+            this.awaiting_ids.push(handler);
         }
     }
 
@@ -389,7 +389,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         if (!super.handle_msg(msg, conn))   {
             var packs = msg.packets;
             if (packs[0] === base.flags.whisper || packs[0] === base.flags.broadcast) {
-                this.queue = this.queue.concat(msg);
+                this.queue.push(msg);
             }
             // else    {
             //     this.__print__("Ignoring message with invalid subflag", level=4);
@@ -409,7 +409,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
             if (self.routing_table[key].addr)   {
-                ret = ret.concat([[self.routing_table[key].addr, key]]);
+                ret.push([[self.routing_table[key].addr, key]]);
             }
         });
         return ret;
@@ -508,7 +508,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                     var info = this.requests[packets[1]];
                     // console.log(msg);
                     this.connect(addr[0][0], addr[0][1], addr[1]);
-                    this.routing_table[addr[1]].send(info[1], [info[2]].concat(info[0]));
+                    this.routing_table[addr[1]].send(info[1], [...info[2], ...info[0]]);
                     delete this.requests[packets[1]];
                 }
             }
@@ -565,7 +565,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var main_flag = flag || base.flags.broadcast;
         var self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
-            self.routing_table[key].send(main_flag, [send_type].concat(packets));
+            self.routing_table[key].send(main_flag, [send_type, ...packets]);
         });
     }
 

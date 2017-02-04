@@ -538,7 +538,7 @@ base.InternalMessage = class InternalMessage {
     }
 
     get payload()   {
-        return Array.from(this.__payload);
+        return [...this.__payload];
     }
 
     set payload(x)  {
@@ -556,7 +556,7 @@ base.InternalMessage = class InternalMessage {
     }
 
     get compression()   {
-        return Array.from(this.__compression);
+        return [...this.__compression];
     }
 
     set compression(x)  {
@@ -693,8 +693,7 @@ base.InternalMessage = class InternalMessage {
         *
         *         Returns the total "packets" associated with this message
         */
-        var meta = [this.msg_type, this.sender, this.time];
-        return meta.concat(this.payload);
+        return [this.msg_type, this.sender, this.time, ...this.payload];
     }
 
     get __non_len_string() {
@@ -840,7 +839,7 @@ base.message = class message {
         *         :param packs: A list of packets you want the other user to receive
         */
         if (this.server.routing_table[this.sender]) {
-            this.server.routing_table[this.sender].send(base.flags.whisper, [base.flags.whisper].concat(packs));
+            this.server.routing_table[this.sender].send(base.flags.whisper, [base.flags.whisper, ...packs]);
         }
         else    {
             var request_hash = base.SHA384(this.sender + base.to_base_58(base.getUTC()));
@@ -865,7 +864,7 @@ base.base_connection = class base_connection   {
     constructor(sock, server, outgoing)   {
         this.sock = sock;
         this.server = server;
-        this.outgoing = outgoing | false;
+        this.outgoing = outgoing || false;
         this.buffer = new Buffer(0);
         this.id = null;
         this.time = base.getUTC();
@@ -901,7 +900,7 @@ base.base_connection = class base_connection   {
                 self.onClose();
             });
         }
-        else    {
+        else    {  // This part handles browser receives
             this.sock.onmessage = (evt)=>{
                 var fileReader = new FileReader();
                 fileReader.onload = function() {
@@ -968,7 +967,7 @@ base.base_connection = class base_connection   {
         msg.compression = this.compression;
         // console.log(msg.payload);
         if (msg.msg_type === base.flags.whisper || msg.msg_type === base.flags.broadcast) {
-            this.last_sent = [msg.msg_type].concat(msg.packets);
+            this.last_sent = [msg.msg_type, ...msg.packets];
         }
         // this.__print__(`Sending ${[msg.len()].concat(msg.packets)} to ${this}`, 4);
         if (msg.compression_used)   {
@@ -1071,8 +1070,8 @@ base.base_connection = class base_connection   {
         *
         *         :returns: ``true`` if action was taken, ``undefined`` if not
         */
-        if (packets[0].toString() === base.flags.renegotiate)    {
-            if (packets[4].toString() === base.flags.compression)   {
+        if (packets[0] === base.flags.renegotiate)  {
+            if (packets[4] === base.flags.compression)  {
                 var respond = (base.intersect(this.compression, packets[5]).length !== this.compression.length);
                 this.compression = packets[5];
                 // self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
@@ -1082,7 +1081,7 @@ base.base_connection = class base_connection   {
                 }
                 return true;
             }
-            else if (packets[4].toString() === base.flags.resend)   {
+            else if (packets[4] === base.flags.resend)  {
                 var type = self.last_sent[0];
                 var packs = self.last_sent.slice(1);
                 self.send(type, packs);
@@ -1162,7 +1161,7 @@ base.base_socket = class base_socket   {
         *         whether the "socket" should automatically initiate connections
         */
         var outs = [];
-        for (let key of Object.keys(this.routing_table))   {
+        for (let key in this.routing_table) {
             let node = this.routing_table[key];
             if (node.outgoing)  {
                 outs.push(node);
@@ -1206,21 +1205,19 @@ base.base_socket = class base_socket   {
         *
         *         :param function callback: A function formatted like the above
         */
-        this.__handlers = this.__handlers.concat(callback);
+        this.__handlers.push(callback);
     }
 
     handle_msg(msg, conn) {
-        var ret = false;
-        this.__handlers.some(function(handler)  {
+        for (let handler of this.__handlers)    {
             // self.__print__("Checking handler: %s" % handler.__name__, level=4)
             // console.log(`Entering handler ${handler.name}`);
             if (handler(msg, conn)) {
                 // self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
                 // console.log(`breaking from ${handler.name}`);
-                ret = true;
                 return true
             }
-        });
-        return ret;
+        }
+        return false;
     }
 };
