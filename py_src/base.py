@@ -19,9 +19,8 @@ from logging import (getLogger, INFO, DEBUG)
 
 from umsgpack import (packb, unpackb)
 
-from .utils import (
-    getUTC, intersect, get_lan_ip, get_socket, sanitize_packet, inherit_doc,
-    log_entry)
+from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet,
+                    inherit_doc, log_entry)
 
 protocol_version = "0.6"
 node_policy_version = "676"
@@ -37,11 +36,11 @@ class flags():
     reserved = tuple(range(0x30))
 
     # main flags
-    broadcast = 0x00     # also sub-flag
+    broadcast = 0x00  # also sub-flag
     renegotiate = 0x01
-    whisper = 0x02       # also sub-flag
-    ping = 0x03          # Unused, but reserved
-    pong = 0x04          # Unused, but reserved
+    whisper = 0x02  # also sub-flag
+    ping = 0x03  # Unused, but reserved
+    pong = 0x04  # Unused, but reserved
 
     # sub-flags
     # broadcast = 0x00
@@ -112,8 +111,8 @@ def compress(msg, method):
     """
     if method in (flags.gzip, flags.zlib):
         wbits = 15 + (16 * (method == flags.gzip))
-        compressor = zlib.compressobj(
-            zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, wbits)
+        compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
+                                      zlib.DEFLATED, wbits)
         return compressor.compress(msg) + compressor.flush()
     elif method == flags.bz2:
         return bz2.compress(msg)
@@ -218,7 +217,7 @@ def pack_value(l, i):
                         provided
     """
     ret = bytearray(l)
-    for x in range(l-1, -1, -1):  # Iterate over length backwards
+    for x in range(l - 1, -1, -1):  # Iterate over length backwards
         ret[x] = i & 0xFF
         i >>= 8
         if i == 0:
@@ -263,7 +262,7 @@ def to_base_58(i):
     string = b""
     while i:
         idx = i % 58
-        string = base_58[idx:idx+1] + string
+        string = base_58[idx:idx + 1] + string
         i //= 58
     if not string:
         string = base_58[0:1]
@@ -305,6 +304,7 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
         h.update(protocol_version.encode())
         return to_base_58(int(h.hexdigest(), 16)).decode()
 
+
 default_protocol = protocol('', "Plaintext")  # SSL")
 
 
@@ -336,10 +336,7 @@ class InternalMessage(object):
                 raise AssertionError(
                     "Real message size {} != expected size {}. "
                     "Buffer given: {}".format(
-                        len(string),
-                        unpack_value(string[:4]) + 4,
-                        string
-                    ))
+                        len(string), unpack_value(string[:4]) + 4, string))
             string = string[4:]
         return string
 
@@ -399,14 +396,17 @@ class InternalMessage(object):
         # First section checks size header
         string = cls.__sanitize_string(string, sizeless)
         # Then we attempt to decompress
-        string, compression_fail = cls.__decompress_string(
-            string, compressions)
+        string, compression_fail = cls.__decompress_string(string,
+                                                           compressions)
         id_ = string[0:32]
         serialized = string[32:]
         checksum = hashlib.sha256(serialized).digest()
-        assert id_ == checksum, "Checksum failed: {} != {}".format(id_, checksum)
+        assert id_ == checksum, "Checksum failed: {} != {}".format(id_,
+                                                                   checksum)
         packets = unpackb(serialized)
-        msg = cls(packets[0], packets[1], packets[3:],
+        msg = cls(packets[0],
+                  packets[1],
+                  packets[3:],
                   compression=compressions)
         msg.time = packets[2]
         msg.compression_fail = compression_fail
@@ -415,7 +415,11 @@ class InternalMessage(object):
         # msg.__string = string
         return msg
 
-    def __init__(self, msg_type, sender, payload, compression=None,
+    def __init__(self,
+                 msg_type,
+                 sender,
+                 payload,
+                 compression=None,
                  timestamp=None):
         """Initializes a InternalMessage instance
 
@@ -497,7 +501,7 @@ class InternalMessage(object):
     def compression(self, val):
         new_comps = intersect(compression, val)
         old_comp = self.compression_used
-        if (old_comp,) != new_comps[0:1]:
+        if (old_comp, ) != new_comps[0:1]:
             self.__full_string = None
         self.__compression = tuple(val)
 
@@ -528,8 +532,7 @@ class InternalMessage(object):
         """Returns the full :py:class:`tuple` of packets in this message
         encoded as :py:class:`bytes`, excluding the header
         """
-        return ((self.__msg_type, self.__sender, self.time) +
-                self.payload)
+        return ((self.__msg_type, self.__sender, self.time) + self.payload)
 
     @property
     def __non_len_string(self):
@@ -595,8 +598,7 @@ class base_connection(object):
         msg.compression = self.compression
         if msg.msg_type in (flags.whisper, flags.broadcast):
             self.last_sent = msg.payload
-        self.__print__(
-            "Sending %s to %s" % (msg.packets, self), level=4)
+        self.__print__("Sending %s to %s" % (msg.packets, self), level=4)
         if msg.compression_used:
             self.__print__(
                 "Compressing with %s" % repr(msg.compression_used), level=4)
@@ -700,8 +702,10 @@ class base_connection(object):
                 encoded_methods = packets[5]
                 respond = (self.compression != encoded_methods)
                 self.compression = encoded_methods
-                self.__print__("Compression methods changed to: %s" %
-                               repr(self.compression), level=2)
+                self.__print__(
+                    "Compression methods changed to: %s" %
+                    repr(self.compression),
+                    level=2)
                 if respond:
                     self.send(flags.renegotiate, flags.compression,
                               intersect(compression, self.compression))
@@ -755,10 +759,8 @@ class base_daemon(object):
         self.exceptions = []
         self.alive = True
         self._logger = getLogger(
-            '{}.{}.{}'.format(
-                self.__class__.__module__,
-                self.__class__.__name__,
-                self.server.id))
+            '{}.{}.{}'.format(self.__class__.__module__,
+                              self.__class__.__name__, self.server.id))
         self.main_thread = threading.current_thread()
         self.daemon = threading.Thread(target=self.mainloop)
         self.daemon.start()
@@ -827,7 +829,11 @@ class base_socket(object):
                  'out_addr', 'id', '_logger', '__handlers', '__closed')
 
     @log_entry('py2p.base.base_socket.__init__', DEBUG)
-    def __init__(self, addr, port, prot=default_protocol, out_addr=None,
+    def __init__(self,
+                 addr,
+                 port,
+                 prot=default_protocol,
+                 out_addr=None,
                  debug_level=0):
         """Initializes a peer to peer socket
 
@@ -850,7 +856,7 @@ class base_socket(object):
         self.protocol = prot
         self.debug_level = debug_level
         self.routing_table = {}  # In format {ID: handler}
-        self.awaiting_ids = []   # Connected, but not handshook yet
+        self.awaiting_ids = []  # Connected, but not handshook yet
         if out_addr:  # Outward facing address, if you're port forwarding
             self.out_addr = out_addr
         elif addr == '0.0.0.0':
@@ -860,11 +866,8 @@ class base_socket(object):
         info = (str(self.out_addr).encode(), prot.id.encode(), user_salt)
         h = hashlib.sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
-        self._logger = getLogger(
-            '{}.{}.{}'.format(
-                self.__class__.__module__,
-                self.__class__.__name__,
-                self.id))
+        self._logger = getLogger('{}.{}.{}'.format(
+            self.__class__.__module__, self.__class__.__name__, self.id))
         self.__handlers = []
         self.__closed = False
 
@@ -885,12 +888,12 @@ class base_socket(object):
             except:
                 pass
             for conn in chain(
-                            tuple(self.routing_table.values()),
-                            self.awaiting_ids):
+                    tuple(self.routing_table.values()), self.awaiting_ids):
                 self.disconnect(conn)
             self.__closed = True
 
     if sys.version_info >= (3, ):
+
         def register_handler(self, method):
             """Register a handler for incoming method.
 
@@ -908,13 +911,14 @@ class base_socket(object):
             """
             args = inspect.signature(method)
             if (len(args.parameters) !=
-                    (3 if args.parameters.get('self') else 2)):
+                (3 if args.parameters.get('self') else 2)):
                 raise ValueError(
                     "This method must contain exactly two arguments "
                     "(or three if first is self)")
             self.__handlers.append(method)
 
     else:
+
         def register_handler(self, method):
             """Register a handler for incoming method.
 
@@ -931,8 +935,8 @@ class base_socket(object):
                 ValueError: If the method signature doesn't parse correctly
             """
             args = inspect.getargspec(method)
-            if (args[1:] != (None, None, None) or len(args[0]) !=
-                    (3 if args[0][0] == 'self' else 2)):
+            if (args[1:] != (None, None, None) or
+                    len(args[0]) != (3 if args[0][0] == 'self' else 2)):
                 raise ValueError(
                     "This method must contain exactly two arguments "
                     "(or three if first is self)")
@@ -1060,21 +1064,20 @@ class message(object):
                        receive ``[base.flags.whisper, *args]``
         """
         self.server._logger.debug(
-            'Initiating a direct reply to message ID {}'.format(self.id)
-        )
+            'Initiating a direct reply to message ID {}'.format(self.id))
         if self.server.routing_table.get(self.sender):
             self.server.routing_table.get(self.sender).send(
                 flags.whisper, flags.whisper, *args)
         else:
             self.server._logger.debug('Requesting connection for direct reply'
                                       ' to message ID {}'.format(self.id))
-            request_hash = hashlib.sha384(
-                self.sender + to_base_58(getUTC())).hexdigest()
+            request_hash = hashlib.sha384(self.sender + to_base_58(
+                getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
-            self.server.requests[request_id] = (flags.whisper, flags.whisper) + tuple(args)
+            self.server.requests[request_id] = (flags.whisper, flags.whisper
+                                                ) + tuple(args)
             self.server._logger.critical(
                 "You aren't connected to the original sender. This reply is "
                 "not guarunteed, but we're trying to make a connection and "
-                "put the message through."
-            )
+                "put the message through.")

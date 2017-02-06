@@ -225,6 +225,11 @@ else
 	@$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
 endif
 
+pyformat: clean
+	@python3 -m pip install yapf --user --upgrade
+	@python3 -m yapf py_src -ri
+	@$(MAKE) pytest
+
 html: jsdocs
 	@python $(docs_deps)
 	@cd docs; $(MAKE) clean html

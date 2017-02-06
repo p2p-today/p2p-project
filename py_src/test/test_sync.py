@@ -20,17 +20,23 @@ if sys.version_info >= (3, ):
 def storage_validation(iters, start_port, num_nodes, encryption, leasing):
     for i in xrange(iters):
         print("----------------------Test start----------------------")
-        nodes = [sync.sync_socket(
-            'localhost', start_port + i*num_nodes,
-            prot=sync.protocol('', encryption),
-            debug_level=5, leasing=leasing)]
+        nodes = [
+            sync.sync_socket(
+                'localhost',
+                start_port + i * num_nodes,
+                prot=sync.protocol('', encryption),
+                debug_level=5,
+                leasing=leasing)
+        ]
         nodes[0].set('store', b"store")
         for j in xrange(1, num_nodes):
             new_node = sync.sync_socket(
-                'localhost', start_port + i*num_nodes + j,
+                'localhost',
+                start_port + i * num_nodes + j,
                 prot=sync.protocol('', encryption),
-                debug_level=5, leasing=leasing)
-            nodes[-1].connect('localhost', start_port + i*num_nodes + j)
+                debug_level=5,
+                leasing=leasing)
+            nodes[-1].connect('localhost', start_port + i * num_nodes + j)
             nodes.append(new_node)
             time.sleep(0.5)
         print("----------------------Test event----------------------")

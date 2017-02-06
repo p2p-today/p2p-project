@@ -17,6 +17,7 @@ from .. import base
 if sys.version_info >= (3, ):
     xrange = range
 
+
 def identity(in_func, out_func, data):
     assert data == out_func(in_func(data))
 
@@ -32,15 +33,17 @@ def gen_random_list(item_size, list_size):
 
 def test_base_58(benchmark, iters=1000):
     def data_gen():
-        return (base.to_base_58, base.from_base_58, random.randint(0, 2**32 - 1)), {}
+        return (base.to_base_58, base.from_base_58,
+                random.randint(0, 2**32 - 1)), {}
+
     benchmark.pedantic(identity, setup=data_gen, rounds=iters)
 
 
 def test_pack_value(benchmark, iters=1000):
     def data_gen():
-        return (partial(base.pack_value, 128//8),
-                base.unpack_value,
+        return (partial(base.pack_value, 128 // 8), base.unpack_value,
                 random.randint(0, 2**128 - 1)), {}
+
     benchmark.pedantic(identity, setup=data_gen, rounds=iters)
 
 
@@ -65,6 +68,7 @@ def test_compression_exceptions(iters=100):
 
 def test_InternalMessage(benchmark, iters=500, impl=base):
     max_val = 2**8
+
     def setup():
         length = random.randint(0, max_val)
         array = gen_random_list(36, length)
@@ -73,19 +77,17 @@ def test_InternalMessage(benchmark, iters=500, impl=base):
         return (array, impl), {}
 
     benchmark.pedantic(
-        InternalMessage_constructor_validation,
-        setup=setup,
-        rounds=iters)
+        InternalMessage_constructor_validation, setup=setup, rounds=iters)
 
 
 def InternalMessage_constructor_validation(array, impl):
     msg = impl.InternalMessage(base.flags.broadcast, u'\xff', array)
     assert array == msg.payload
-    assert msg.packets == (base.flags.broadcast, u'\xff',
-                           msg.time) + array
+    assert msg.packets == (base.flags.broadcast, u'\xff', msg.time) + array
     p_hash = hashlib.sha256(msg._InternalMessage__non_len_string)
     assert p_hash.digest() == msg.id
     assert impl.InternalMessage.feed_string(msg.string).id == msg.id
+
 
 def InternalMessage_serialization_validation(array, impl):
     msg = impl.InternalMessage(base.flags.broadcast, u'\xff', array)
@@ -129,9 +131,10 @@ def test_protocol(benchmark, iters=200, impl=base):
     def setup():
         sub = str(uuid.uuid4())
         enc = str(uuid.uuid4())
-        p_hash = hashlib.sha256(''.join(
-            (sub, enc, base.protocol_version)).encode())
-        return (sub, enc, base.to_base_58(int(p_hash.hexdigest(), 16)).decode()), {}
+        p_hash = hashlib.sha256(
+            ''.join((sub, enc, base.protocol_version)).encode())
+        return (sub, enc,
+                base.to_base_58(int(p_hash.hexdigest(), 16)).decode()), {}
 
     benchmark.pedantic(test, setup=setup, rounds=iters)
 
@@ -149,9 +152,8 @@ def test_message_sans_network(benchmark, iters=1000):
         assert item.msg == base_msg
         assert item.sender == sen
         assert item.id == base_msg.id
-        assert (item.time == base_msg.time ==
-                base.from_base_58(item.time_58) ==
-                base.from_base_58(base_msg.time_58))
+        assert (item.time == base_msg.time == base.from_base_58(item.time_58)
+                == base.from_base_58(base_msg.time_58))
         assert sen in repr(item)
 
     benchmark.pedantic(test, setup=setup, rounds=iters)

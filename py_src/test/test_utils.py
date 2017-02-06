@@ -16,10 +16,11 @@ if sys.version_info >= (3, ):
 
 def test_intersect(benchmark, iters=200):
     max_val = 2**12 - 1
+
     def test(pair1, pair2, cross1, cross2):
         if max(cross1) < min(cross2):
-            assert (utils.intersect(range(*pair1), range(*pair2)) ==
-                    tuple(range(max(cross1), min(cross2))))
+            assert (utils.intersect(range(*pair1), range(*pair2)) == tuple(
+                range(max(cross1), min(cross2))))
         else:
             assert utils.intersect(range(*pair1), range(*pair2)) == ()
 
@@ -35,13 +36,12 @@ def test_intersect(benchmark, iters=200):
     benchmark.pedantic(test, setup=setup, rounds=iters)
 
 
-
 def test_getUTC(iters=20):
     while iters:
-        nowa, nowb = (datetime.datetime.utcnow() -
-                      datetime.datetime(1970, 1, 1)), utils.getUTC()
+        nowa, nowb = (datetime.datetime.utcnow() - datetime.datetime(
+            1970, 1, 1)), utils.getUTC()
         # 1 second error margin
-        assert nowa.days * 86400 + nowa.seconds in xrange(nowb-1, nowb+2)
+        assert nowa.days * 86400 + nowa.seconds in xrange(nowb - 1, nowb + 2)
         time.sleep(random.random())
         iters -= 1
 

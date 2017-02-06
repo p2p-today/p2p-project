@@ -37,26 +37,29 @@ class sync_socket(mesh_socket):
 
     @log_entry('py2p.sync.sync_socket.__init__', DEBUG)
     @inherit_doc(mesh_socket.__init__)
-    def __init__(self, addr, port, prot=default_protocol, out_addr=None,
-                 debug_level=0, leasing=True):
+    def __init__(self,
+                 addr,
+                 port,
+                 prot=default_protocol,
+                 out_addr=None,
+                 debug_level=0,
+                 leasing=True):
         """Initialize a chord socket"""
         protocol_used = protocol(prot[0] + str(int(leasing)), prot[1])
         self.__leasing = leasing
-        super(sync_socket, self).__init__(
-            addr, port, protocol_used, out_addr, debug_level)
+        super(sync_socket, self).__init__(addr, port, protocol_used, out_addr,
+                                          debug_level)
         self.data = {}
         self.metadata = {}
         self.register_handler(self.__handle_store)
 
     def __check_lease(self, key, new_data, new_meta):
         meta = self.metadata.get(key, None)
-        return ((meta is None) or
-                (meta.owner == new_meta.owner) or
+        return ((meta is None) or (meta.owner == new_meta.owner) or
                 (meta.timestamp < getUTC() - 3600) or
                 (meta.timestamp == new_meta.timestamp and
-                    meta.owner > new_meta.owner) or
-                (meta.timestamp < new_meta.timestamp and
-                    not self.__leasing))
+                 meta.owner > new_meta.owner) or
+                (meta.timestamp < new_meta.timestamp and not self.__leasing))
 
     def __store(self, key, new_data, new_meta, error=True):
         """Private API method for storing data. You have permission to store
