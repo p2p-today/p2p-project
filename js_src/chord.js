@@ -384,12 +384,12 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             if (packets.length === 3)   {
                 if (this.__keys.has(packets[1]))    {
                     this.__keys.remove(packets[1]);
-                    this.emit('delete', packets[1]);
+                    this.emit('delete', this, packets[1]);
                 }
             }
             else    {
                 this.__keys.add(packets[1]);
-                this.emit('add', packets[1]);
+                this.emit('add', this, packets[1]);
             }
             return true;
         }

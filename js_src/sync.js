@@ -93,12 +93,12 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
             if (new_data.toString() === '')    {
                 delete this.data[key];
                 delete this.metadata[key];
-                this.emit('delete', key);
+                this.emit('delete', this, key);
             }
             else    {
                 this.metadata[key] = new_meta;
                 this.data[key] = new_data;
-                this.emit('update', key, new_data, new_meta);
+                this.emit('update', this, key, new_data, new_meta);
             }
         }
         else if (error !== false) {
