@@ -10,6 +10,7 @@
 const buffer = require('buffer');  // These ensure parser compatability with browserify
 const Buffer = buffer.Buffer;
 const BigInt = require('big-integer');
+const EventEmitter = require('events');
 const SHA = require('jssha');
 const util = require('util');
 const msgpack = require('msgpack-lite');
@@ -851,7 +852,7 @@ base.message = class message {
     }
 };
 
-base.base_connection = class base_connection   {
+base.base_connection = class base_connection    {
     /**
     * .. js:class:: js2p.base.base_connection(sock, server, outgoing)
     *
@@ -1095,7 +1096,7 @@ base.base_connection = class base_connection   {
     }
 };
 
-base.base_socket = class base_socket   {
+base.base_socket = class base_socket extends EventEmitter   {
     /**
     * .. js:class:: js2p.base.base_socket(addr, port [, protocol [, out_addr [, debug_level]]])
     *
@@ -1116,6 +1117,7 @@ base.base_socket = class base_socket   {
     *         An array which contains :js:class:`~js2p.base.base_connection` s that are awaiting handshake information
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
+        super();
         var self = this;
         if (addr === '0.0.0.0') {
             let ip = require('ip');

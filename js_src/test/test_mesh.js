@@ -3,6 +3,7 @@
 var assert = require('assert');
 var base = require('../base.js');
 var mesh = require('../mesh.js');
+const util = require('util');
 var start_port = 44565;
 
 describe('mesh', function() {
@@ -29,14 +30,24 @@ describe('mesh', function() {
                     nodes.push(node);
                 }
                 setTimeout(function()   {
+                    let errs = [];
+                    for (let h = 1; h < count; h++) {
+                        nodes[h].on('message', ()=>{
+                            try {
+                                assert.ok(nodes[h].recv());
+                            }
+                            catch (e)   {
+                                errs.push(e);
+                            }
+                            if (--count == 0)   {
+                                if (errs.length)
+                                    done(new Error(util.inspect(errs)));
+                                else
+                                    done();
+                            }
+                        });
+                    }
                     nodes[0].send(['hello']);
-                    setTimeout(function()   {
-                        for (var h = 1; h < count; h++) {
-                            var msg = nodes[h].recv();
-                            assert.ok(msg);
-                        }
-                        done();
-                    }, count * 500);
                 }, count * 250);
             });
 
@@ -69,11 +80,16 @@ describe('mesh', function() {
                 }
             }
 
-            function test_callback(callback, done)    {
+            function test_callback(callback, register, done)    {
                 var node1 = new mesh.mesh_socket('localhost', start_port++, new base.protocol('mesh', transports[text]));
                 var node2 = new mesh.mesh_socket('localhost', start_port++, new base.protocol('mesh', transports[text]));
 
-                node2.register_handler(callback);
+                if (register)   {
+                    node2.register_handler(callback);
+                }
+                else    {
+                    node2.on('message', callback);
+                }
                 node1.connect(node2.addr[0], node2.addr[1]);
 
                 setTimeout(function()   {
@@ -84,7 +100,9 @@ describe('mesh', function() {
                         node1.send(['not test']);
                         setTimeout(function()   {
                             assert.ok(!node1.recv());
-                            assert.ok(node2.recv());
+                            if (register)   {
+                                assert.ok(node2.recv());
+                            }
                             done();
                         }, 500);
                     }, 500);
@@ -93,12 +111,26 @@ describe('mesh', function() {
 
             it(`should be able to register and use message callbacks (over ${text})`, function(done)  {
                 this.timeout(2000 * (3 && text === 'SSL/TLS' + 1));
-                test_callback(register_1, done);
+                test_callback(register_1, true, done);
             });
 
             it(`should let you reply to messages via the message object (over ${text})`, function(done)   {
                 this.timeout(2000 * (3 && text === 'SSL/TLS' + 1));
-                test_callback(register_2, done);
+                test_callback(register_2, true, done);
+            });
+
+            function on_2(conn) {
+                let msg = conn.recv();
+                let packets = msg.packets;
+                if (packets[1].toString() === 'test')   {
+                    msg.reply(['success']);
+                    return true;
+                }
+            }
+
+            it(`should be able to register and use event emitter (over ${text})`, function(done)  {
+                this.timeout(2000 * (3 && text === 'SSL/TLS' + 1));
+                test_callback(on_2, false, done);
             });
         }
 

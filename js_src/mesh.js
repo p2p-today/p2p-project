@@ -390,6 +390,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             var packs = msg.packets;
             if (packs[0] === base.flags.whisper || packs[0] === base.flags.broadcast) {
                 this.queue.push(msg);
+                this.emit('message', this);
             }
             // else    {
             //     this.__print__("Ignoring message with invalid subflag", level=4);
@@ -440,6 +441,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             //     this.__resolve_connection_conflict(handler, packets[1]);
             // }
             conn.id = packets[1];
+            if (!conn.addr && Object.keys(this.awaiting_ids).length === 0)  {
+                this.emit('connect', this);
+            }
             conn.addr = packets[3];
             //console.log(`changed compression methods to: ${packets[4]}`);
             conn.compression = packets[4];

@@ -376,12 +376,14 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         let packets = msg.packets;
         if (packets[0] === base.flags.notify) {
             if (packets.length === 3)   {
-                if (this.__keys.has(key))   {
+                if (this.__keys.has(packets[1]))    {
                     this.__keys.remove(packets[1]);
+                    this.emit('delete', key);
                 }
             }
             else    {
                 this.__keys.add(packets[1]);
+                this.emit('add', key);
             }
             return true;
         }
