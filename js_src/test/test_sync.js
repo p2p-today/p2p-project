@@ -25,20 +25,24 @@ describe('sync', function() {
 
                 setTimeout(function()   {
                     node1.set('test', 'value');
+                    node2.update({
+                        '测试': '成功',
+                        'store': 'store',
+                        'array': [1,2,3,4,5,6,7,8,9],
+                        'number': 256
+                    });
                     setTimeout(function()   {
                         assert.ok(node1.get('test'));
                         assert.ok(node2.get('test'));
-                        node2.update({
-                            '测试': '成功',
-                            'store': 'store'
-                        });
-                        setTimeout(function()   {
-                            assert.equal(node1.get('测试').toString(), '成功');
-                            assert.equal(node2.get('测试').toString(), '成功');
-                            assert.equal(node1.get('store').toString(), 'store');
-                            assert.equal(node2.get('store').toString(), 'store');
-                            done();
-                        }, 500);
+                        assert.equal(node1.get('测试'), '成功');
+                        assert.equal(node2.get('测试'), '成功');
+                        assert.equal(node1.get('store'), 'store');
+                        assert.equal(node2.get('store'), 'store');
+                        assert.equal(node1.get('number'), 256);
+                        assert.equal(node2.get('number'), 256);
+                        assert.deepEqual(node1.get('array'), [1,2,3,4,5,6,7,8,9]);
+                        assert.deepEqual(node2.get('array'), [1,2,3,4,5,6,7,8,9]);
+                        done();
                     }, 500);
                 }, 250);
             };

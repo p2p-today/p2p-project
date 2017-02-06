@@ -8,6 +8,7 @@
 const base = require('./base.js');
 const mesh = require('./mesh.js');
 const Buffer = require('buffer').Buffer;
+const equal = require('equal');
 const SHA = require('jssha');
 const BigInt = require('big-integer');
 const util = require('util');
@@ -102,19 +103,10 @@ function most_common(tmp)   {
     for (let item of tmp)   {
         if (item === null || item === undefined)    {}
         else if (item.__is_awaiting_value)  {
-            if (Buffer.isBuffer(item.value))  {
-                lst.push(item.value);
-            }
-            else if (item.value !== null &&
-                     item.value !== undefined)  {
-                lst.push(new Buffer(item.value));
-            }
-        }
-        else if (Buffer.isBuffer(item)) {
-            lst.push(item);
+            lst.push(item.value);
         }
         else    {
-            lst.push(new Buffer(item));
+            lst.push(item);
         }
     }
 
@@ -124,7 +116,7 @@ function most_common(tmp)   {
 
     function comparator(o)  {
         return function(v)  {
-            return !Buffer.compare(v,o);
+            return equal(v,o);
         }
     }
 
@@ -274,7 +266,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     join()  {
         this.leeching = false;
-        for (let handler in this.awaiting_ids)  {
+        for (let handler of this.awaiting_ids)  {
             this._send_handshake(handler);
             this._send_peers(handler);
             this._send_meta(handler);
@@ -400,6 +392,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         if (packets[0] === base.flags.retrieved) {
             // self.__print__("Response received for request id %s" % packets[1],
             //                level=1)
+            console.log(`Retrieved ${packets[1]}, ${packets[2]}`);
             if (this.requests[[packets[1].toString(), packets[2]]]) {
                 let value = this.requests[[packets[1].toString(), packets[2]]];
                 value.value = packets[3];
@@ -414,6 +407,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     __handle_retrieve(msg, conn)   {
         const packets = msg.packets;
         if (packets[0] === base.flags.retrieve)  {
+            console.log(`Retrieve ${packets[1]}, ${packets[2]}`);
             let val = this.__lookup(packets[1].toString(), base.from_base_58(packets[2]), conn);
             try {
                 conn.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], val.value]);
@@ -535,7 +529,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             let count = ctuple[1];
             let iters = 0
             let limit = Math.floor(timeout / 0.1) || 100;
-            let fails = new Set([undefined, null, '', -1]);
+            let fails = new Set([undefined, null, '']);
 
             function check()    {
                 if ((fails.has(common) || count <= 2) && iters < limit)   {
@@ -587,7 +581,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
         }
         if (Object.is(node, this))  {
-            if (value.toString() === '')    {
+            if (value === '')    {
                 delete this.data[method][key];
             }
             else    {
@@ -612,18 +606,17 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *         :raises:              See :js:func:`~js2p.chord.chord_socket.__store`
         */
         key = new Buffer(key);
-        value = new Buffer(value);
         let keys = m.get_hashes(key);
         this.__store('sha1', keys[0], value);
         this.__store('sha224', keys[1], value);
         this.__store('sha256', keys[2], value);
         this.__store('sha384', keys[3], value);
         this.__store('sha512', keys[4], value);
-        if (!this.__keys.has(key) && value.toString() !== '')   {
+        if (!this.__keys.has(key) && value !== '')   {
             this.__keys.add(key);
             this.send([key], undefined, base.flags.notify);
         }
-        else if (this.__keys.has(key) && value.toString() === '')   {
+        else if (this.__keys.has(key) && value === '')   {
             this.__keys.add(key);
             this.send([key, 'del'], undefined, base.flags.notify);
         }

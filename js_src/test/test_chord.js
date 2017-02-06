@@ -30,12 +30,12 @@ describe('chord', function() {
                 setTimeout(()=>{
                     node1.set('test', 'value');
                     setTimeout(()=>{
-                        let count = 6;
+                        let count = 10;
                         let errs = [];
                         function shouldEqual(desired) {
                             return function(val) {
                                 try {
-                                    assert.equal(val.toString(), desired);
+                                    assert.deepEqual(val, desired);
                                 } catch(e) {
                                     errs.push(e);
                                 }
@@ -46,17 +46,23 @@ describe('chord', function() {
                             --count;
                             errs.push(e);
                         }
-                        node1.get('test').then(shouldEqual('value'), onError);
-                        node2.get('test').then(shouldEqual('value'), onError);
+                        node1.get('test').then(shouldEqual('value')).catch(onError);
+                        node2.get('test').then(shouldEqual('value')).catch(onError);
                         node2.update({
                             '测试': '成功',
-                            'store': 'store'
+                            'store': 'store',
+                            'array': [1,2,3,4,5,6,7,8,9],
+                            'number': 256
                         });
                         setTimeout(()=>{
-                            node1.get('测试').then(shouldEqual('成功'), onError);
-                            node2.get('测试').then(shouldEqual('成功'), onError);
-                            node1.get('store').then(shouldEqual('store'), onError);
-                            node2.get('store').then(shouldEqual('store'), onError);
+                            node1.get('测试').then(shouldEqual('成功')).catch(onError);
+                            node2.get('测试').then(shouldEqual('成功')).catch(onError);
+                            node1.get('store').then(shouldEqual('store')).catch(onError);
+                            node2.get('store').then(shouldEqual('store')).catch(onError);
+                            node1.get('number').then(shouldEqual(256)).catch(onError);
+                            node2.get('number').then(shouldEqual(256)).catch(onError);
+                            node1.get('array').then(shouldEqual([1,2,3,4,5,6,7,8,9])).catch(onError);
+                            node2.get('array').then(shouldEqual([1,2,3,4,5,6,7,8,9])).catch(onError);
                             function check() {
                                 if (!count) {
                                     if (!errs.length) {

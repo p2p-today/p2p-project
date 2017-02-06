@@ -13,6 +13,7 @@
   "dependencies": {
     "big-integer": "^1.6.16",
     "buffer": "^4.9.1",
+    "equal": "^0.1.1",
     "ip": "^1.1.4",
     "jssha": "^2.2.0",
     "msgpack-lite": "^0.1.26"
