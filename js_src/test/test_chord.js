@@ -3,6 +3,7 @@
 const assert = require('assert');
 const base = require('../base.js');
 const chord = require('../chord.js');
+const util = require('util');
 var start_port = 44765;
 
 describe('chord', function() {
@@ -62,7 +63,10 @@ describe('chord', function() {
                                         done();
                                     }
                                     else {
-                                        done(new Error(errs));
+                                        done(new Error(errs.concat([
+                                            util.inspect(node1.status),
+                                            util.inspect(node2.status)
+                                        ])));
                                     }
                                 }
                                 else {

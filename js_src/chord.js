@@ -153,7 +153,10 @@ m.chord_connection = class chord_connection extends mesh.mesh_connection    {
     }
 
     get id_10() {
-        if (!BigInt.isInstance(this.__id_10))   {
+        if (this.id === null)   {
+            return null;
+        }
+        else if (!BigInt.isInstance(this.__id_10))   {
             this.__id_10 = base.from_base_58(this.id);
         }
         return this.__id_10;
@@ -348,11 +351,14 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     __handle_meta(msg, conn)   {
         const packets = msg.packets;
         if (packets[0] === base.flags.handshake && packets.length === 2) {
+            if (!conn.id)   {
+                conn.id = msg.sender;
+            }
             let new_meta = (packets[1].toString() === '1');
             if (new_meta !== conn.leeching)  {
                 this._send_meta(conn);
                 conn.leeching = new_meta;
-                if (!this.leeching && !conn.leeching)    {
+                if (!this.leeching && !conn.leeching)   {
                     this._send_peers(conn);
                     let update = this.dump_data(conn.id_10, this.id_10);
                     for (let method in update)  {
@@ -378,12 +384,12 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             if (packets.length === 3)   {
                 if (this.__keys.has(packets[1]))    {
                     this.__keys.remove(packets[1]);
-                    this.emit('delete', key);
+                    this.emit('delete', packets[1]);
                 }
             }
             else    {
                 this.__keys.add(packets[1]);
-                this.emit('add', key);
+                this.emit('add', packets[1]);
             }
             return true;
         }
