@@ -108,7 +108,27 @@ class chord_daemon(mesh_daemon):
 
 
 class chord_socket(mesh_socket):
-    """The class for chord socket abstraction. This inherits from :py:class:`py2p.mesh.mesh_socket`"""
+    """
+    The class for chord socket abstraction. This inherits from :py:class:`py2p.mesh.mesh_socket`
+
+    Added Events:
+
+    .. py:function:: on('add', func)
+
+        This event is triggered when a key is added to the distributed
+        dictionary. Because value information is not transmitted in this
+        message, you must specifically request it.
+
+        :param py2p.chord.chord_socket conn: A reference to this abstract socket
+        :param bytes key: The key which has a new value
+
+    .. py:function:: on('delete', func)
+
+        This event is triggered when a key is deleted from your distributed
+        dictionary.
+
+        :param py2p.chord.chord_socket conn: A reference to this abstract socket
+        :param bytes key: The key which has a new value"""
     __slots__ = mesh_socket.__slots__ + ('id_10', 'data', '__keys', 'leeching')
 
     @log_entry('py2p.chord.chord_socket.__init__', DEBUG)

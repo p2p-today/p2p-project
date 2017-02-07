@@ -163,10 +163,37 @@ class mesh_daemon(base_daemon):
         except exceptions:
             pass
 
-
 class mesh_socket(base_socket):
     """The class for mesh socket abstraction.
     This inherits from :py:class:`py2p.base.base_socket`
+
+    Added Events:
+
+    .. py:function:: on('connect', func)
+
+        This event is called whenever you have a *new* connection to the
+        service network. In other words, whenever the length of your routing
+        table is increased from one to zero.
+
+        If you call ``on('connect')``, that will be executed on every
+        connection to the network. So if you are suddenly disconnected, and
+        manage to recover, that function will execute again.
+
+        To avoid this, call ``once('connect')``. That will usually be more correct.
+
+        :param py2p.mesh.mesh_socket conn: A reference to this abstract socket
+
+    .. py:function:: on('message', func)
+
+        This event is called whenever you receive a new message. A reference
+        to the message is *not* passed to you. This is to prevent potential
+        memory leaks.
+
+        If you want to register a "priveleged" handler which *does* get a
+        reference to the message, see
+        :py:func:`~py2p.mesh.mesh_socket.register_handler`
+
+        :param py2p.mesh.mesh_socket conn: A reference to this abstract socket
     """
     __slots__ = ('requests', 'waterfalls', 'queue', 'daemon')
 
@@ -538,7 +565,7 @@ class mesh_socket(base_socket):
         :py:class:`~py2p.base.message` object, or ``None``
 
         Args:
-            quantity:   The maximum number of :py:class:`~py2p.base.message`s
+            quantity:   The maximum number of :py:class:`~py2p.base.message` s
                             you would like to pull (default: 1)
 
         Returns:
