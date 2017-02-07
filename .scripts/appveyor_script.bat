@@ -25,7 +25,7 @@ IF DEFINED PIP (
     powershell -Command "Install-Product node $env:NODE"
     npm install
     npm install -g mocha istanbul codecov
-    IF $env:NODE==4 (
+    IF DEFINED NODE_COMPAT (
         mkdir build\\babel
         node node_modules\\babel-cli\\bin\\babel.js js_src -d build\\babel
         istanbul cover --hook-run-in-context node_modules\\mocha\\bin\\_mocha build\\babel\\test\\* || goto :error
