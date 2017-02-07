@@ -167,9 +167,27 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
+    *     .. js:function:: Event 'add'(conn, key)
+    *
+    *         This event is triggered when a key is added to the distributed
+    *         dictionary. Because value information is not transmitted in this
+    *         message, you must specifically request it.
+    *
+    *         :param js2p.chord.chord_socket conn: A reference to this abstract socket
+    *         :param Buffer key: The key which has a new value
+    *
+    *     .. js:function:: Event 'delete'(conn, key)
+    *
+    *         This event is triggered when a key is deleted from your distributed
+    *         dictionary.
+    *
+    *         :param js2p.chord.chord_socket conn: A reference to this abstract socket
+    *         :param Buffer key: The key which has a new value
+    *
     *     .. js:attribute:: js2p.chord.chord_socket.id_10
     *
     *         This socket's ID as a :js:class:`big-integer`
+    *
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);

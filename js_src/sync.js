@@ -28,6 +28,9 @@ m.metatuple = class metatuple   {
     * .. js:class:: js2p.sync.metatuple(owner, timestamp)
     *
     *     This class is used to store metadata for a particular key
+    *
+    *     :param string owner: The owner of this change
+    *     :param Number timestamp: The time of this change
     */
     constructor(owner, timestamp)   {
         this.owner = owner;
@@ -53,6 +56,26 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
     *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
+    *
+    *     .. js:function:: Event 'update'(conn, key, new_data, metatuple)
+    *
+    *         This event is triggered when a key is updated in your synchronized
+    *         dictionary. ``new_meta`` will be an object containing metadata of this
+    *         change, including the time of change, and who initiated the change.
+    *
+    *         :param js2p.sync.sync_socket conn: A reference to this abstract socket
+    *         :param Buffer key: The key which has a new value
+    *         :param new_data: The new value at that key
+    *         :param js2p.sync.metatuple new_meta: Metadata on the key changer
+    *
+    *     .. js:function:: Event 'delete'(conn, key)
+    *
+    *         This event is triggered when a key is deleted from your synchronized
+    *         dictionary.
+    *
+    *         :param js2p.sync.sync_socket conn: A reference to this abstract socket
+    *         :param Buffer key: The key which has a new value
+    *
     */
     constructor(addr, port, leasing, protocol, out_addr, debug_level)   {
         if (!protocol)  {

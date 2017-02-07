@@ -189,7 +189,7 @@ class mesh_socket(base_socket):
         to the message is *not* passed to you. This is to prevent potential
         memory leaks.
 
-        If you want to register a "priveleged" handler which *does* get a
+        If you want to register a "privileged" handler which *does* get a
         reference to the message, see
         :py:func:`~py2p.mesh.mesh_socket.register_handler`
 

@@ -174,6 +174,32 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
+    *     .. js:function:: Event 'connect'(conn)
+    *
+    *         This event is called whenever you have a *new* connection to the
+    *         service network. In other words, whenever the length of your routing
+    *         table is increased from one to zero.
+    *
+    *         If you call ``on('connect')``, that will be executed on every
+    *         connection to the network. So if you are suddenly disconnected, and
+    *         manage to recover, that function will execute again.
+    *
+    *         To avoid this, call ``once('connect')``. That will usually be more correct.
+    *
+    *         :param js2p.mesh.mesh_socket conn: A reference to this abstract socket
+    *
+    *     .. js:function:: Event 'message'(conn)
+    *
+    *         This event is called whenever you receive a new message. A reference
+    *         to the message is *not* passed to you. This is to prevent potential
+    *         memory leaks.
+    *
+    *         If you want to register a "privileged" handler which *does* get a
+    *         reference to the message, see
+    *         :js:func:`~js2p.base.base_socket.register_handler`
+    *
+    *         :param js2p.mesh.mesh_socket conn: A reference to this abstract socket
+    *
     *     .. js:attribute:: js2p.mesh.mesh_socket.routing_table
     *
     *         An object which contains :js:class:`~js2p.mesh.mesh_connection` s keyed by their IDs
@@ -181,6 +207,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *     .. js:attribute:: js2p.mesh.mesh_socket.awaiting_ids
     *
     *         An array which contains :js:class:`~js2p.mesh.mesh_connection` s that are awaiting handshake information
+    *
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
