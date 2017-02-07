@@ -1100,7 +1100,7 @@ base.base_socket = class base_socket extends EventEmitter   {
     /**
     * .. js:class:: js2p.base.base_socket(addr, port [, protocol [, out_addr [, debug_level]]])
     *
-    *     This is the template class for socket abstracters.
+    *     This is the template class for socket abstracters. This class extends :js:class:`EventEmitter`.
     *
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
