@@ -232,8 +232,10 @@ class chord_socket(mesh_socket):
             if len(packets) == 3:
                 if key in self.__keys:
                     self.__keys.remove(packets[1])
+                    self.emit('delete', self, key)
             else:
                 self.__keys.add(packets[1])
+                self.emit('add', self, key)
             return True
 
     def _handle_peers(self, msg, handler):

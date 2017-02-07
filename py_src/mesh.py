@@ -217,6 +217,7 @@ class mesh_socket(base_socket):
         if not super(mesh_socket, self).handle_msg(msg, conn):
             if msg.packets[0] in (flags.whisper, flags.broadcast):
                 self.queue.appendleft(msg)
+                self.emit('message', self)
             else:
                 self.__print__(
                     "Ignoring message with invalid subflag", level=4)
@@ -304,6 +305,8 @@ class mesh_socket(base_socket):
                     level=2)
                 self.disconnect(handler)
                 return True
+            elif not handler.addr and len(self.routing_table) == 0:
+                self.emit('connect', self)
             elif handler is not self.routing_table.get(packets[1], handler):
                 self.__print__(
                     "Connection conflict detected. Trying to resolve", level=2)

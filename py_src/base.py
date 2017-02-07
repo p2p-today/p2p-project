@@ -18,6 +18,7 @@ from itertools import chain
 from logging import (getLogger, INFO, DEBUG)
 
 from umsgpack import (packb, unpackb)
+from pyee import EventEmitter
 
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet,
                     inherit_doc, log_entry)
@@ -823,7 +824,7 @@ class base_daemon(object):
         self.server.__print__(*args, **kargs)
 
 
-class base_socket(object):
+class base_socket(EventEmitter, object):
     """The base class for a peer-to-peer socket abstractor"""
     __slots__ = ('protocol', 'debug_level', 'routing_table', 'awaiting_ids',
                  'out_addr', 'id', '_logger', '__handlers', '__closed')
@@ -853,6 +854,8 @@ class base_socket(object):
             socket.error: The address you wanted could not be bound, or is
             otherwise used
         """
+        object.__init__(self)
+        EventEmitter.__init__(self)
         self.protocol = prot
         self.debug_level = debug_level
         self.routing_table = {}  # In format {ID: handler}

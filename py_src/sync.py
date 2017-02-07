@@ -85,9 +85,11 @@ class sync_socket(mesh_socket):
             if new_data == b'':
                 del self.data[key]
                 del self.metadata[key]
+                self.emit('delete', self, key)
             else:
                 self.metadata[key] = new_meta
                 self.data[key] = new_data
+                self.emit('delete', self, key, new_data, new_meta)
         elif error:
             raise KeyError("You don't have permission to change this yet")
 
