@@ -39,7 +39,6 @@ function execAll(re, string) {
 var folder_map = {
     js_src: "javascript",
     jv_src: "java",
-    go_src: "go",
     cp_src: "cpp",
     c_src: "c"
 };
