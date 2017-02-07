@@ -392,7 +392,6 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         if (packets[0] === base.flags.retrieved) {
             // self.__print__("Response received for request id %s" % packets[1],
             //                level=1)
-            console.log(`Retrieved ${packets[1]}, ${packets[2]}`);
             if (this.requests[[packets[1].toString(), packets[2]]]) {
                 let value = this.requests[[packets[1].toString(), packets[2]]];
                 value.value = packets[3];
@@ -407,7 +406,6 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     __handle_retrieve(msg, conn)   {
         const packets = msg.packets;
         if (packets[0] === base.flags.retrieve)  {
-            console.log(`Retrieve ${packets[1]}, ${packets[2]}`);
             let val = this.__lookup(packets[1].toString(), base.from_base_58(packets[2]), conn);
             try {
                 conn.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], val.value]);

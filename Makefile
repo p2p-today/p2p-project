@@ -51,6 +51,16 @@ jsver = $(shell node -p "require('./package.json').version")
 jsdeps: LICENSE
 	@yarn || npm install
 
+jsdocs:
+	@echo "Copying documentation comments..."
+	@node js_src/docs_test.js
+
+jstest: jsdeps
+	@node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha js_src/test/*
+
+js_codecov: jstest
+	@node node_modules/codecov/bin/codecov -f coverage/coverage.json --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
+
 browser: jsdeps
 	@mkdir -p build/browser
 	@echo "Building browser version..."
@@ -70,12 +80,19 @@ browser-min: browser
 	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-sync.js  -o ./build/browser-min/js2p-browser-$(jsver)-sync.min.js  --minified --no-comments --no-babelrc
 	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-chord.js -o ./build/browser-min/js2p-browser-$(jsver)-chord.min.js --minified --no-comments --no-babelrc
 
-browser-compat: jsdeps
+js-compat: jsdeps
 	@mkdir -p build/browser-compat build/babel
 	@echo "Transpiling..."
 	@node node_modules/babel-cli/bin/babel.js js_src -d build/babel
+
+js_compat_test: js-compat
 	@echo "Testing transpilation..."
-	@node node_modules/mocha/bin/mocha build/babel/test/*
+	@node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha build/babel/test/*
+
+js_compat_codecov: js_compat_test
+	@node node_modules/codecov/bin/codecov -f coverage/coverage.json --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
+
+browser-compat: js-compat
 	@echo "Building browser version..."
 	@cd build/babel;\
 	node ../../node_modules/browserify/bin/cmd.js -r ./base.js -o ../browser-compat/js2p-browser-$(jsver)-base.babel.js -u snappy -u nodejs-websocket -u node-forge;\
@@ -94,16 +111,6 @@ browser-compat-min: browser-compat
 	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-chord.babel.js -o ./build/browser-compat-min/js2p-browser-$(jsver)-chord.babel.min.js --minified --no-comments --no-babelrc
 
 browser-min-compat: browser-compat-min
-
-jsdocs:
-	@echo "Copying documentation comments..."
-	@node js_src/docs_test.js
-
-jstest: jsdeps
-	@node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha js_src/test/*
-
-js_codecov: jstest
-	@node node_modules/codecov/bin/codecov -f coverage/coverage.json --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
 
 #End Javascript section
 #Begin Python section

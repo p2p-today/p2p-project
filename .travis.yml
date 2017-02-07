@@ -44,12 +44,15 @@ matrix:
     - language: node_js
       node_js: "6"
       os: osx
+      env: jsver=6
     - language: node_js
       node_js: "5"
       os: osx
+      env: jsver=5
     - language: node_js
       node_js: "4"
       os: osx
+      env: jsver=4
 
 script:
   - sh ./.scripts/travis_script.sh
