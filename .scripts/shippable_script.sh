@@ -24,6 +24,6 @@ elif [ $jsver ]; then
     if [ $jsver == 4 ]; then
         make js_compat_test
     else
-        make js_codecov
+        make jstest
     fi
 fi
