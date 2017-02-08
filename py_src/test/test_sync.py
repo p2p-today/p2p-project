@@ -42,10 +42,7 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
         print("----------------------Test event----------------------")
         nodes[0]['test'] = b"hello"
         nodes[1][u'测试'] = u'成功'
-        nodes[0].update({
-            'array': [1,2,3,4,5,6,7,8,9],
-            'number': 256
-            })
+        nodes[0].update({'array': [1, 2, 3, 4, 5, 6, 7, 8, 9], 'number': 256})
         time.sleep(num_nodes)
         print("----------------------Test ended----------------------")
         print(nodes[0].id)
@@ -56,7 +53,7 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
             assert b"hello" == node['test']
             assert u'成功' == node[u'测试']
             assert 256 == node['number']
-            assert [1,2,3,4,5,6,7,8,9] == node['array']
+            assert [1, 2, 3, 4, 5, 6, 7, 8, 9] == node['array']
             if leasing:
                 with pytest.raises(KeyError):
                     node['test'] = b"This shouldn't work"

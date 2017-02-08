@@ -163,6 +163,7 @@ class mesh_daemon(base_daemon):
         except exceptions:
             pass
 
+
 class mesh_socket(base_socket):
     """The class for mesh socket abstraction.
     This inherits from :py:class:`py2p.base.base_socket`
