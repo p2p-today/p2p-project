@@ -21,7 +21,7 @@ elif [ $jsver ]; then
     nvm install $jsver
     nvm use $jsver
     node --version
-    if [ $jsver eq 4 ]; then
+    if [ $jsver -eq 4 ]; then
         make js_compat_test
     else
         make jstest
