@@ -157,6 +157,20 @@ class sync_socket(mesh_socket):
         Raises:
             KeyError: If you do not have the lease for this slot. Lease is
                           given automatically for one hour if the slot is open.
+
+            TypeError: If your key is not :py:class:`bytes` -like OR if your
+                        value is not serializable. This means your value must
+                        be one of the following:
+
+                        - :py:class:`bool`
+                        - :py:class:`float`
+                        - :py:class:`int` (if ``2**64 > x > -2**63``)
+                        - :py:class:`str`
+                        - :py:class:`bytes`
+                        - :py:class:`unicode`
+                        - :py:class:`tuple`
+                        - :py:class:`list`
+                        - :py:class:`dict` (if all keys are :py:class:`unicode`)
         """
         new_meta = metatuple(self.id, getUTC())
         key = sanitize_packet(key)

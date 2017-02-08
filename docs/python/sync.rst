@@ -4,7 +4,7 @@ Sync Module
 
 .. autoclass:: py2p.sync.sync_socket
     :members:
-    :special-members: __init__, __iter__
+    :special-members: __init__, __iter__, __setitem__, __getitem__
     :private-members:
     :undoc-members:
     :inherited-members:

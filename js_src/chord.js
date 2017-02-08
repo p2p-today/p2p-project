@@ -616,9 +616,9 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *         Sets the value at a given key
         *
         *         :param key:   The key you wish to look up (must be transformable into a :js:class:`Buffer` )
-        *         :param value: The key you wish to store (must be transformable into a :js:class:`Buffer` )
+        *         :param value: The value you wish to store
         *
-        *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
+        *         :raises TypeError:    If a key could not be transformed into a :js:class:`Buffer`
         *         :raises:              See :js:func:`~js2p.chord.chord_socket.__store`
         */
         key = new Buffer(key);

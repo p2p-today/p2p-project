@@ -15,7 +15,7 @@ Chord Module
 
 .. autoclass:: py2p.chord.chord_socket
     :members:
-    :special-members: __init__, __iter__
+    :special-members: __init__, __iter__, __setitem__, __getitem__
     :private-members:
     :undoc-members:
     :inherited-members:
@@ -23,5 +23,5 @@ Chord Module
 .. automodule:: py2p.chord
     :members:
     :exclude-members: flags, chord_connection, chord_daemon, chord_socket
-    :special-members: __init__, __iter__
+    :special-members: __init__, __iter__, __setitem__, __getitem__
     :undoc-members:

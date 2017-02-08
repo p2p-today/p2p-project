@@ -17,7 +17,7 @@ from collections import namedtuple
 from itertools import chain
 from logging import (getLogger, INFO, DEBUG)
 
-from umsgpack import (packb, unpackb)
+from umsgpack import (packb, unpackb, UnsupportedTypeException)
 from pyee import EventEmitter
 
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet,
@@ -539,14 +539,36 @@ class InternalMessage(object):
     def __non_len_string(self):
         """Returns a :py:class:`bytes` object containing the entire message,
         excepting the total length header
+
+        Raises:
+
+            TypeError: If any of the arguments are not serializable. This
+                        means your objects must be one of the following:
+
+                        - :py:class:`bool`
+                        - :py:class:`float`
+                        - :py:class:`int` (if ``2**64 > x > -2**63``)
+                        - :py:class:`str`
+                        - :py:class:`bytes`
+                        - :py:class:`unicode`
+                        - :py:class:`tuple`
+                        - :py:class:`list`
+                        - :py:class:`dict` (if all keys are :py:class:`unicode`)
         """
         if not self.__string:
-            self.__string = packb(self.packets)
+            try:
+                self.__string = packb(self.packets)
+            except UnsupportedTypeException as e:
+                raise TypeError(*e.args)
         return self.__string
 
     @property
     def string(self):
-        """Returns a :py:class:`bytes` representation of the message"""
+        """Returns a :py:class:`bytes` representation of the message
+
+        Raises:
+            TypeError: See :py:func:`~py2p.base.InternalMessage._InternalMessage__non_len_string`
+        """
         if not all((self.__id, self.__string, self.__full_string)):
             id_ = self.id
             ret = b''.join((id_, self.__non_len_string))

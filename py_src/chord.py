@@ -428,6 +428,9 @@ class chord_socket(mesh_socket):
         Raises:
             socket.timeout: If the request goes partly-unanswered for >=timeout seconds
             KeyError:       If the request is made for a key with no agreed-upon value
+
+        Note:
+            It's probably much better to use :py:func:`~py2p.chord.chord_socket.get`
         """
         key = sanitize_packet(key)
         self._logger.debug('Getting value of {}'.format(key))
@@ -465,6 +468,9 @@ class chord_socket(mesh_socket):
         Returns:
             The value at said key, or the value at ifError if there's an
             :py:class:`Exception`
+
+        Note:
+            It's probably much better to use :py:func:`~py2p.chord.chord_socket.get`
         """
         try:
             self._logger.debug(
@@ -529,11 +535,25 @@ class chord_socket(mesh_socket):
         Args:
             key:    The key that you wish to update. Must be a :py:class:`str` or
                         :py:class:`bytes`-like object
-            value:  The value you wish to put at this key. Must be a :py:class:`str`
-                        or :py:class:`bytes`-like object
+            value:  The value you wish to put at this key.
+
+        Raises:
+
+            TypeError: If your key is not :py:class:`bytes` -like OR if your
+                        value is not serializable. This means your value must
+                        be one of the following:
+
+                        - :py:class:`bool`
+                        - :py:class:`float`
+                        - :py:class:`int` (if ``2**64 > x > -2**63``)
+                        - :py:class:`str`
+                        - :py:class:`bytes`
+                        - :py:class:`unicode`
+                        - :py:class:`tuple`
+                        - :py:class:`list`
+                        - :py:class:`dict` (if all keys are :py:class:`unicode`)
         """
         key = sanitize_packet(key)
-        value = sanitize_packet(value)
         self._logger.debug('Setting value of {} to {}'.format(key, value))
         keys = get_hashes(key)
         for method, x in zip(hashes, keys):
@@ -553,7 +573,7 @@ class chord_socket(mesh_socket):
         key = sanitize_packet(key)
         if key not in self.__keys:
             raise KeyError(key)
-        self.set(key, '')
+        self.set(key, b'')
 
     def update(self, update_dict):
         """Equivalent to :py:meth:`dict.update`

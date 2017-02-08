@@ -435,14 +435,28 @@ class mesh_socket(base_socket):
         values it will send it to everyone on the network
 
         Args:
-            *args:      A list of strings or bytes-like objects you want your
-                            peers to receive
+            *args:      A list of objects you want your peers to receive
             **kargs:    There are two keywords available:
             flag:       A string or bytes-like object which defines your flag.
                             In other words, this defines packet 0.
             type:       A string or bytes-like object which defines your
                             message type. Changing this from default can have
                             adverse effects.
+
+        Raises:
+
+            TypeError: If any of the arguments are not serializable. This
+                        means your objects must be one of the following:
+
+                        - :py:class:`bool`
+                        - :py:class:`float`
+                        - :py:class:`int` (if ``2**64 > x > -2**63``)
+                        - :py:class:`str`
+                        - :py:class:`bytes`
+                        - :py:class:`unicode`
+                        - :py:class:`tuple`
+                        - :py:class:`list`
+                        - :py:class:`dict` (if all keys are :py:class:`unicode`)
 
         Warning:
 
