@@ -25,50 +25,50 @@ static void addConstants(PyObject *cbase, PyObject *flags_wrapper)  {
     PyModule_AddObject(cbase, "user_salt", pybytes_from_chars((unsigned char *)user_salt, 36));
 
     // Add reserved flags
-    PyModule_AddObject(flags_wrapper, "reserved", pylist_from_array_string((char **)RESERVED_FLAGS, RESERVED_LENS, NUM_RESERVED));
+    PyModule_AddObject(flags_wrapper, "reserved", pytuple_from_array_char((const unsigned char *)RESERVED_FLAGS, NUM_RESERVED));
 
     // Main flags
-    PyModule_AddObject(flags_wrapper, "broadcast",   pybytes_from_chars(BROADCAST_FLAG, BROADCAST_LEN));
-    PyModule_AddObject(flags_wrapper, "renegotiate", pybytes_from_chars(RENEGOTIATE_FLAG, RENEGOTIATE_LEN));
-    PyModule_AddObject(flags_wrapper, "whisper",     pybytes_from_chars(WHISPER_FLAG, WHISPER_LEN));
-    PyModule_AddObject(flags_wrapper, "ping",        pybytes_from_chars(PING_FLAG, PING_LEN));
-    PyModule_AddObject(flags_wrapper, "pong",        pybytes_from_chars(PONG_FLAG, PONG_LEN));
+    PyModule_AddObject(flags_wrapper, "broadcast",   PyLong_FromUnsignedLongLong(BROADCAST_FLAG));
+    PyModule_AddObject(flags_wrapper, "renegotiate", PyLong_FromUnsignedLongLong(RENEGOTIATE_FLAG));
+    PyModule_AddObject(flags_wrapper, "whisper",     PyLong_FromUnsignedLongLong(WHISPER_FLAG));
+    PyModule_AddObject(flags_wrapper, "ping",        PyLong_FromUnsignedLongLong(PING_FLAG));
+    PyModule_AddObject(flags_wrapper, "pong",        PyLong_FromUnsignedLongLong(PONG_FLAG));
 
     // Sub-flags
-    /*PyModule_AddObject(flags_wrapper, "broadcast",   pybytes_from_chars(BROADCAST_FLAG, BROADCAST_LEN));*/
-    PyModule_AddObject(flags_wrapper, "compression", pybytes_from_chars(COMPRESSION_FLAG, COMPRESSION_LEN));
-    /*PyModule_AddObject(flags_wrapper, "whisper",     pybytes_from_chars(WHISPER_FLAG, WHISPER_LEN));*/
-    /*PyModule_AddObject(flags_wrapper, "ping",        pybytes_from_chars(PING_FLAG, PING_LEN));*/
-    /*PyModule_AddObject(flags_wrapper, "pong",        pybytes_from_chars(PONG_FLAG, PONG_LEN));*/
-    PyModule_AddObject(flags_wrapper, "handshake",   pybytes_from_chars(HANDSHAKE_FLAG, HANDSHAKE_LEN));
-    PyModule_AddObject(flags_wrapper, "notify",      pybytes_from_chars(NOTIFY_FLAG, NOTIFY_LEN));
-    PyModule_AddObject(flags_wrapper, "peers",       pybytes_from_chars(PEERS_FLAG, PEERS_LEN));
-    PyModule_AddObject(flags_wrapper, "request",     pybytes_from_chars(REQUEST_FLAG, REQUEST_LEN));
-    PyModule_AddObject(flags_wrapper, "resend",      pybytes_from_chars(RESEND_FLAG, RESEND_LEN));
-    PyModule_AddObject(flags_wrapper, "response",    pybytes_from_chars(RESPONSE_FLAG, RESPONSE_LEN));
-    PyModule_AddObject(flags_wrapper, "store",       pybytes_from_chars(STORE_FLAG, STORE_LEN));
-    PyModule_AddObject(flags_wrapper, "retrieve",    pybytes_from_chars(RETRIEVE_FLAG, RETRIEVE_LEN));
+    /*PyModule_AddObject(flags_wrapper, "broadcast",   PyLong_FromUnsignedLongLong(BROADCAST_FLAG));*/
+    PyModule_AddObject(flags_wrapper, "compression", PyLong_FromUnsignedLongLong(COMPRESSION_FLAG));
+    /*PyModule_AddObject(flags_wrapper, "whisper",     PyLong_FromUnsignedLongLong(WHISPER_FLAG));*/
+    /*PyModule_AddObject(flags_wrapper, "ping",        PyLong_FromUnsignedLongLong(PING_FLAG));*/
+    /*PyModule_AddObject(flags_wrapper, "pong",        PyLong_FromUnsignedLongLong(PONG_FLAG));*/
+    PyModule_AddObject(flags_wrapper, "handshake",   PyLong_FromUnsignedLongLong(HANDSHAKE_FLAG));
+    PyModule_AddObject(flags_wrapper, "notify",      PyLong_FromUnsignedLongLong(NOTIFY_FLAG));
+    PyModule_AddObject(flags_wrapper, "peers",       PyLong_FromUnsignedLongLong(PEERS_FLAG));
+    PyModule_AddObject(flags_wrapper, "request",     PyLong_FromUnsignedLongLong(REQUEST_FLAG));
+    PyModule_AddObject(flags_wrapper, "resend",      PyLong_FromUnsignedLongLong(RESEND_FLAG));
+    PyModule_AddObject(flags_wrapper, "response",    PyLong_FromUnsignedLongLong(RESPONSE_FLAG));
+    PyModule_AddObject(flags_wrapper, "store",       PyLong_FromUnsignedLongLong(STORE_FLAG));
+    PyModule_AddObject(flags_wrapper, "retrieve",    PyLong_FromUnsignedLongLong(RETRIEVE_FLAG));
 
     // Implemented compression methods
-    PyModule_AddObject(flags_wrapper, "gzip", pybytes_from_chars(GZIP_FLAG, GZIP_LEN));
-    PyModule_AddObject(flags_wrapper, "zlib", pybytes_from_chars(ZLIB_FLAG, ZLIB_LEN));
-    PyModule_AddObject(flags_wrapper, "snappy",   pybytes_from_chars(SNAPPY_FLAG, SNAPPY_LEN));
+    PyModule_AddObject(flags_wrapper, "gzip",     PyLong_FromUnsignedLongLong(GZIP_FLAG));
+    PyModule_AddObject(flags_wrapper, "zlib",     PyLong_FromUnsignedLongLong(ZLIB_FLAG));
+    PyModule_AddObject(flags_wrapper, "snappy",   PyLong_FromUnsignedLongLong(SNAPPY_FLAG));
 
     // non-implemented compression methods (based on list from compressjs):
-    PyModule_AddObject(flags_wrapper, "bwtc",     pybytes_from_chars(BWTC_FLAG, BWTC_LEN));
-    PyModule_AddObject(flags_wrapper, "bz2",      pybytes_from_chars(BZ2_FLAG, BZ2_LEN));
-    PyModule_AddObject(flags_wrapper, "context1", pybytes_from_chars(CONTEXT1_FLAG, CONTEXT1_LEN));
-    PyModule_AddObject(flags_wrapper, "defsum",   pybytes_from_chars(DEFSUM_FLAG, DEFSUM_LEN));
-    PyModule_AddObject(flags_wrapper, "dmc",      pybytes_from_chars(DMC_FLAG, DMC_LEN));
-    PyModule_AddObject(flags_wrapper, "fenwick",  pybytes_from_chars(FENWICK_FLAG, FENWICK_LEN));
-    PyModule_AddObject(flags_wrapper, "huffman",  pybytes_from_chars(HUFFMAN_FLAG, HUFFMAN_LEN));
-    PyModule_AddObject(flags_wrapper, "lzjb",     pybytes_from_chars(LZJB_FLAG, LZJB_LEN));
-    PyModule_AddObject(flags_wrapper, "lzjbr",    pybytes_from_chars(LZJBR_FLAG, LZJBR_LEN));
-    PyModule_AddObject(flags_wrapper, "lzma",     pybytes_from_chars(LZMA_FLAG, LZMA_LEN));
-    PyModule_AddObject(flags_wrapper, "lzp3",     pybytes_from_chars(LZP3_FLAG, LZP3_LEN));
-    PyModule_AddObject(flags_wrapper, "mtf",      pybytes_from_chars(MTF_FLAG, MTF_LEN));
-    PyModule_AddObject(flags_wrapper, "ppmd",     pybytes_from_chars(PPMD_FLAG, PPMD_LEN));
-    PyModule_AddObject(flags_wrapper, "simple",   pybytes_from_chars(SIMPLE_FLAG, SIMPLE_LEN));
+    PyModule_AddObject(flags_wrapper, "bwtc",     PyLong_FromUnsignedLongLong(BWTC_FLAG));
+    PyModule_AddObject(flags_wrapper, "bz2",      PyLong_FromUnsignedLongLong(BZ2_FLAG));
+    PyModule_AddObject(flags_wrapper, "context1", PyLong_FromUnsignedLongLong(CONTEXT1_FLAG));
+    PyModule_AddObject(flags_wrapper, "defsum",   PyLong_FromUnsignedLongLong(DEFSUM_FLAG));
+    PyModule_AddObject(flags_wrapper, "dmc",      PyLong_FromUnsignedLongLong(DMC_FLAG));
+    PyModule_AddObject(flags_wrapper, "fenwick",  PyLong_FromUnsignedLongLong(FENWICK_FLAG));
+    PyModule_AddObject(flags_wrapper, "huffman",  PyLong_FromUnsignedLongLong(HUFFMAN_FLAG));
+    PyModule_AddObject(flags_wrapper, "lzjb",     PyLong_FromUnsignedLongLong(LZJB_FLAG));
+    PyModule_AddObject(flags_wrapper, "lzjbr",    PyLong_FromUnsignedLongLong(LZJBR_FLAG));
+    PyModule_AddObject(flags_wrapper, "lzma",     PyLong_FromUnsignedLongLong(LZMA_FLAG));
+    PyModule_AddObject(flags_wrapper, "lzp3",     PyLong_FromUnsignedLongLong(LZP3_FLAG));
+    PyModule_AddObject(flags_wrapper, "mtf",      PyLong_FromUnsignedLongLong(MTF_FLAG));
+    PyModule_AddObject(flags_wrapper, "ppmd",     PyLong_FromUnsignedLongLong(PPMD_FLAG));
+    PyModule_AddObject(flags_wrapper, "simple",   PyLong_FromUnsignedLongLong(SIMPLE_FLAG));
 
 
     cbase_dict = PyModule_GetDict(cbase);

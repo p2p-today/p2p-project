@@ -17,7 +17,6 @@ from cryptography.hazmat.primitives.serialization import (
     Encoding, PrivateFormat, NoEncryption)
 from cryptography.x509.oid import NameOID
 
-
 if sys.version_info < (3, ):
     import atexit
     cleanup_files = []
@@ -39,36 +38,33 @@ def generate_self_signed_cert(cert_file, key_file):
     """
     one_day = datetime.timedelta(1, 0, 0)
     private_key = rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048,
-        backend=default_backend()
-    )
+        public_exponent=65537, key_size=2048, backend=default_backend())
     public_key = private_key.public_key()
     builder = x509.CertificateBuilder()
-    builder = builder.subject_name(x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, u'cryptography.io'),
-    ]))
-    builder = builder.issuer_name(x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, u'cryptography.io'),
-    ]))
+    builder = builder.subject_name(
+        x509.Name([
+            x509.NameAttribute(NameOID.COMMON_NAME, u'cryptography.io'),
+        ]))
+    builder = builder.issuer_name(
+        x509.Name([
+            x509.NameAttribute(NameOID.COMMON_NAME, u'cryptography.io'),
+        ]))
     builder = builder.not_valid_before(datetime.datetime.today() - one_day)
     builder = builder.not_valid_after(datetime.datetime.today() +
-                                      datetime.timedelta(365*10))
+                                      datetime.timedelta(365 * 10))
     builder = builder.serial_number(int(uuid.uuid4()))
     builder = builder.public_key(public_key)
     builder = builder.add_extension(
-        x509.BasicConstraints(ca=False, path_length=None), critical=True,
-    )
+        x509.BasicConstraints(ca=False, path_length=None),
+        critical=True, )
     certificate = builder.sign(
-        private_key=private_key, algorithm=hashes.SHA256(),
-        backend=default_backend()
-    )
+        private_key=private_key,
+        algorithm=hashes.SHA256(),
+        backend=default_backend())
 
-    key_file.write(private_key.private_bytes(
-        Encoding.PEM,
-        PrivateFormat.TraditionalOpenSSL,
-        NoEncryption()
-    ))
+    key_file.write(
+        private_key.private_bytes(
+            Encoding.PEM, PrivateFormat.TraditionalOpenSSL, NoEncryption()))
     cert_file.write(certificate.public_bytes(Encoding.PEM))
 
 
@@ -87,9 +83,12 @@ def get_socket(server_side):
             with NamedTemporaryFile(delete=False, suffix=".key") as key_file:
                 generate_self_signed_cert(cert_file, key_file)
                 names = (cert_file.name, key_file.name)
-        sock = ssl.wrap_socket(socket.socket(), suppress_ragged_eofs=True,
-                               server_side=True, keyfile=names[1],
-                               certfile=names[0])
+        sock = ssl.wrap_socket(
+            socket.socket(),
+            suppress_ragged_eofs=True,
+            server_side=True,
+            keyfile=names[1],
+            certfile=names[0])
         if sys.version_info >= (3, ):
             os.remove(names[0])
             os.remove(names[1])
@@ -97,5 +96,5 @@ def get_socket(server_side):
             cleanup_files.extend(names)
         return sock
     else:
-        return ssl.wrap_socket(socket.socket(), server_side=False,
-                               suppress_ragged_eofs=True)
+        return ssl.wrap_socket(
+            socket.socket(), server_side=False, suppress_ragged_eofs=True)

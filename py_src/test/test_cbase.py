@@ -23,19 +23,17 @@ try:
         assert bf.reserved == cf.reserved
 
         # main flags
-        bf_main = (bf.broadcast, bf.whisper,
-                   bf.renegotiate, bf.ping, bf.pong)
-        cf_main = (cf.broadcast, cf.whisper,
-                   cf.renegotiate, cf.ping, cf.pong)
+        bf_main = (bf.broadcast, bf.whisper, bf.renegotiate, bf.ping, bf.pong)
+        cf_main = (cf.broadcast, cf.whisper, cf.renegotiate, cf.ping, cf.pong)
         assert bf_main == cf_main
 
         # sub-flags
         bf_sub = (bf.broadcast, bf.compression, bf.whisper, bf.handshake,
-                  bf.ping, bf.pong, bf.notify, bf.peers, bf.request,
-                  bf.resend, bf.response, bf.store, bf.retrieve)
+                  bf.ping, bf.pong, bf.notify, bf.peers, bf.request, bf.resend,
+                  bf.response, bf.store, bf.retrieve)
         cf_sub = (cf.broadcast, cf.compression, cf.whisper, cf.handshake,
-                  cf.ping, cf.pong, cf.notify, cf.peers, cf.request,
-                  cf.resend, cf.response, cf.store, cf.retrieve)
+                  cf.ping, cf.pong, cf.notify, cf.peers, cf.request, cf.resend,
+                  cf.response, cf.store, cf.retrieve)
         assert bf_sub == cf_sub
 
         # common compression methods

@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import with_statement
+from __future__ import unicode_literals
 
 import calendar
 import os
@@ -10,7 +11,6 @@ from logging import (getLogger, INFO, DEBUG)
 
 
 def log_entry(name, level):
-
     def annotation(function):
         log = getLogger(name)
 
@@ -38,7 +38,8 @@ def inherit_doc(function):
         from custom_inherit import doc_inherit, google
         return doc_inherit(function, google)
     except:
-        logger.info('custom_inherit is not available. Using default documentation')
+        logger.info(
+            'custom_inherit is not available. Using default documentation')
         return lambda x: x  # If unavailable, just return the function
 
 
@@ -131,14 +132,15 @@ def get_socket(protocol, serverside=False):
 
 class awaiting_value(object):
     """Proxy object for an asynchronously retrieved item"""
+
     def __init__(self, value=-1):
         self.value = value
         self.callback = False
 
     def callback_method(self, method, key):
         from .base import flags
-        self.callback.send(
-            flags.whisper, flags.retrieved, method, key, self.value)
+        self.callback.send(flags.whisper, flags.retrieved, method, key,
+                           self.value)
 
     def __repr__(self):
         return "<" + repr(self.value) + ">"

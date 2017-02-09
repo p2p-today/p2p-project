@@ -1,8 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import hashlib
-import json
 import random
 import select
 import socket
@@ -22,20 +22,18 @@ try:
 except:
     from .base import protocol
 
-from .base import (
-    flags, compression, to_base_58, from_base_58, base_connection, message,
-    base_daemon, base_socket, InternalMessage, json_compressions)
-from .mesh import (
-    mesh_connection, mesh_daemon, mesh_socket)
-from .utils import (
-    inherit_doc, getUTC, get_socket, intersect, awaiting_value, most_common,
-    log_entry, sanitize_packet)
+from .base import (flags, compression, to_base_58, from_base_58,
+                   base_connection, message, base_daemon, base_socket,
+                   InternalMessage, compression)
+from .mesh import (mesh_connection, mesh_daemon, mesh_socket)
+from .utils import (inherit_doc, getUTC, get_socket, intersect, awaiting_value,
+                    most_common, log_entry, sanitize_packet)
 
 max_outgoing = 4
 default_protocol = protocol('chord', "Plaintext")  # SSL")
 hashes = [b'sha1', b'sha224', b'sha256', b'sha384', b'sha512']
 
-if sys.version_info >= (3,):
+if sys.version_info >= (3, ):
     xrange = range
 
 
@@ -44,8 +42,10 @@ def distance(a, b, limit=None):
     defined k, the key size. The largest possible node id is limit (or
     ``2**384``).
     """
-    return (b - a) % (limit or
-        0x1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000)
+    return (b - a) % (
+        limit or
+        0x1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+    )
 
 
 def get_hashes(key):
@@ -65,8 +65,7 @@ def get_hashes(key):
         int(hashlib.sha224(key).hexdigest(), 16) << 160,  # 384 - 224
         int(hashlib.sha256(key).hexdigest(), 16) << 128,  # 384 - 256
         int(hashlib.sha384(key).hexdigest(), 16),
-        int(hashlib.sha512(key).hexdigest(), 16)
-    )
+        int(hashlib.sha512(key).hexdigest(), 16))
 
 
 class chord_connection(mesh_connection):
@@ -94,6 +93,7 @@ class chord_daemon(mesh_daemon):
     """The class for chord daemon.
     This inherits from :py:class:`py2p.mesh.mesh_daemon`
     """
+
     @log_entry('py2p.chord.chord_daemon.__init__', DEBUG)
     @inherit_doc(mesh_daemon.__init__)
     def __init__(self, *args, **kwargs):
@@ -108,16 +108,42 @@ class chord_daemon(mesh_daemon):
 
 
 class chord_socket(mesh_socket):
-    """The class for chord socket abstraction. This inherits from :py:class:`py2p.mesh.mesh_socket`"""
+    """
+    The class for chord socket abstraction. This inherits from :py:class:`py2p.mesh.mesh_socket`
+
+    Added Events:
+
+    .. py:function:: on('add', func)
+
+        This event is triggered when a key is added to the distributed
+        dictionary. Because value information is not transmitted in this
+        message, you must specifically request it.
+
+        :param py2p.chord.chord_socket conn: A reference to this abstract socket
+        :param bytes key: The key which has a new value
+
+    .. py:function:: on('delete', func)
+
+        This event is triggered when a key is deleted from your distributed
+        dictionary.
+
+        :param py2p.chord.chord_socket conn: A reference to this abstract socket
+        :param bytes key: The key which has a new value"""
     __slots__ = mesh_socket.__slots__ + ('id_10', 'data', '__keys', 'leeching')
 
     @log_entry('py2p.chord.chord_socket.__init__', DEBUG)
     @inherit_doc(mesh_socket.__init__)
-    def __init__(self, addr, port, prot=default_protocol, out_addr=None, debug_level=0):
+    def __init__(self,
+                 addr,
+                 port,
+                 prot=default_protocol,
+                 out_addr=None,
+                 debug_level=0):
         """Initialize a chord socket"""
         if not hasattr(self, 'daemon'):
             self.daemon = 'chord reserved'
-        super(chord_socket, self).__init__(addr, port, prot, out_addr, debug_level)
+        super(chord_socket, self).__init__(addr, port, prot, out_addr,
+                                           debug_level)
         if self.daemon == 'chord reserved':
             self.daemon = chord_daemon(addr, port, self)
         self.id_10 = from_base_58(self.id)
@@ -138,7 +164,8 @@ class chord_socket(mesh_socket):
 
     @property
     def data_storing(self):
-        return (node for node in self.routing_table.values() if not node.leeching)
+        return (node for node in self.routing_table.values()
+                if not node.leeching)
 
     def disconnect_least_efficient(self):
         """Disconnects the node which provides the least value.
@@ -149,6 +176,7 @@ class chord_socket(mesh_socket):
         Returns:
             A :py:class:`bool` that describes whether a node was disconnected
         """
+
         @inherit_doc(chord_connection.id_10)
         def get_id(o):
             return o.id_10
@@ -156,7 +184,9 @@ class chord_socket(mesh_socket):
         def smallest_gap(lst):
             coll = sorted(lst, key=get_id)
             coll_len = len(coll)
-            circular_triplets = ((coll[x], coll[(x+1)%coll_len], coll[(x+2)%coll_len]) for x in range(coll_len))
+            circular_triplets = (
+                (coll[x], coll[(x + 1) % coll_len], coll[(x + 2) % coll_len])
+                for x in range(coll_len))
             narrowest = None
             gap = 2**384
             for beg, mid, end in circular_triplets:
@@ -165,7 +195,8 @@ class chord_socket(mesh_socket):
                     narrowest = mid
             return narrowest
 
-        relevant_nodes = (node for node in self.data_storing if not node.leeching)
+        relevant_nodes = (node for node in self.data_storing
+                          if not node.leeching)
         to_kill = smallest_gap(relevant_nodes)
         if to_kill:
             self.disconnect(to_kill)
@@ -192,7 +223,8 @@ class chord_socket(mesh_socket):
                 self._send_meta(handler)
                 handler.leeching = new_meta
                 if not self.leeching and not handler.leeching:
-                    handler.send(flags.whisper, flags.peers, json.dumps(self._get_peer_list()))
+                    handler.send(flags.whisper, flags.peers,
+                                 self._get_peer_list())
                     update = self.dump_data(handler.id_10, self.id_10)
                     for method, table in update.items():
                         for key, value in table.items():
@@ -220,8 +252,10 @@ class chord_socket(mesh_socket):
             if len(packets) == 3:
                 if key in self.__keys:
                     self.__keys.remove(packets[1])
+                    self.emit('delete', self, key)
             else:
                 self.__keys.add(packets[1])
+                self.emit('add', self, key)
             return True
 
     def _handle_peers(self, msg, handler):
@@ -238,21 +272,26 @@ class chord_socket(mesh_socket):
         """
         packets = msg.packets
         if packets[0] == flags.peers:
-            new_peers = json.loads(packets[1].decode())
+            new_peers = packets[1]
 
             def is_prev(id):
-                return distance(from_base_58(id), self.id_10) <= distance(self.prev.id_10, self.id_10)
+                return distance(from_base_58(id), self.id_10) <= distance(
+                    self.prev.id_10, self.id_10)
 
             def is_next(id):
-                return distance(self.id_10, from_base_58(id)) <= distance(self.id_10, self.next.id_10)
+                return distance(self.id_10, from_base_58(id)) <= distance(
+                    self.id_10, self.next.id_10)
 
             for addr, id in new_peers:
-                if len(tuple(self.outgoing)) < max_outgoing or is_prev(id) or is_next(id):
+                if len(tuple(self.outgoing)) < max_outgoing or is_prev(
+                        id) or is_next(id):
                     try:
                         self.__connect(addr[0], addr[1], id.encode())
                     except:  # pragma: no cover
-                        self.__print__("Could not connect to %s because\n%s" %
-                                       (addr, traceback.format_exc()), level=1)
+                        self.__print__(
+                            "Could not connect to %s because\n%s" %
+                            (addr, traceback.format_exc()),
+                            level=1)
                         continue
             return True
 
@@ -272,8 +311,8 @@ class chord_socket(mesh_socket):
         """
         packets = msg.packets
         if packets[0] == flags.retrieved:
-            self.__print__("Response received for request id %s" % packets[1],
-                           level=1)
+            self.__print__(
+                "Response received for request id %s" % packets[1], level=1)
             if self.requests.get((packets[1], packets[2])):
                 value = self.requests.get((packets[1], packets[2]))
                 value.value = packets[3]
@@ -297,10 +336,12 @@ class chord_socket(mesh_socket):
         packets = msg.packets
         if packets[0] == flags.retrieve:
             if packets[1] in hashes:
-                val = self.__lookup(packets[1], from_base_58(packets[2]), handler)
+                val = self.__lookup(packets[1],
+                                    from_base_58(packets[2]), handler)
                 if isinstance(val.value, (str, bytes, bytearray)):
                     self.__print__(val.value, level=1)
-                    handler.send(flags.whisper, flags.retrieved, packets[1], packets[2], val.value)
+                    handler.send(flags.whisper, flags.retrieved, packets[1],
+                                 packets[2], val.value)
                 return True
 
     def __handle_store(self, msg, handler):
@@ -387,6 +428,9 @@ class chord_socket(mesh_socket):
         Raises:
             socket.timeout: If the request goes partly-unanswered for >=timeout seconds
             KeyError:       If the request is made for a key with no agreed-upon value
+
+        Note:
+            It's probably much better to use :py:func:`~py2p.chord.chord_socket.get`
         """
         key = sanitize_packet(key)
         self._logger.debug('Getting value of {}'.format(key))
@@ -404,12 +448,10 @@ class chord_socket(mesh_socket):
             return common
         elif iters == limit:
             raise socket.timeout()
-        raise KeyError("This key does not have an agreed-upon value. "
+        raise KeyError(
+            "This key does not have an agreed-upon value. "
             "values={}, count={}, majority={}, most common ={}".format(
-                vals,
-                count,
-                len(hashes) // 2 + 1,
-                common))
+                vals, count, len(hashes) // 2 + 1, common))
 
     def getSync(self, key, ifError=None, timeout=10):
         """Looks up the value at a given key.
@@ -426,9 +468,13 @@ class chord_socket(mesh_socket):
         Returns:
             The value at said key, or the value at ifError if there's an
             :py:class:`Exception`
+
+        Note:
+            It's probably much better to use :py:func:`~py2p.chord.chord_socket.get`
         """
         try:
-            self._logger.debug('Getting value of {}, with fallback'.format(key, ifError))
+            self._logger.debug(
+                'Getting value of {}, with fallback'.format(key, ifError))
             return self.__getitem__(key, timeout=timeout)
         except (KeyError, socket.timeout):
             return ifError
@@ -449,10 +495,12 @@ class chord_socket(mesh_socket):
             A :py:class:`~async_promises.Promise` of the value at said key, or
             the value at ifError if there's an :py:class:`Exception`
         """
+
         def resolver(resolve, reject):
             resolve(self.getSync(key, ifError=ifError, timeout=timeout))
 
-        self._logger.debug('Getting Promise of {}, with fallback'.format(key, ifError))
+        self._logger.debug(
+            'Getting Promise of {}, with fallback'.format(key, ifError))
         return Promise(resolver)
 
     def __store(self, method, key, value):
@@ -476,7 +524,8 @@ class chord_socket(mesh_socket):
             else:
                 self.data[method][key] = value
         else:
-            node.send(flags.whisper, flags.store, method, to_base_58(key), value)
+            node.send(flags.whisper, flags.store, method,
+                      to_base_58(key), value)
 
     def __setitem__(self, key, value):
         """Updates the value at a given key.
@@ -486,11 +535,25 @@ class chord_socket(mesh_socket):
         Args:
             key:    The key that you wish to update. Must be a :py:class:`str` or
                         :py:class:`bytes`-like object
-            value:  The value you wish to put at this key. Must be a :py:class:`str`
-                        or :py:class:`bytes`-like object
+            value:  The value you wish to put at this key.
+
+        Raises:
+
+            TypeError: If your key is not :py:class:`bytes` -like OR if your
+                        value is not serializable. This means your value must
+                        be one of the following:
+
+                        - :py:class:`bool`
+                        - :py:class:`float`
+                        - :py:class:`int` (if ``2**64 > x > -2**63``)
+                        - :py:class:`str`
+                        - :py:class:`bytes`
+                        - :py:class:`unicode`
+                        - :py:class:`tuple`
+                        - :py:class:`list`
+                        - :py:class:`dict` (if all keys are :py:class:`unicode`)
         """
         key = sanitize_packet(key)
-        value = sanitize_packet(value)
         self._logger.debug('Setting value of {} to {}'.format(key, value))
         keys = get_hashes(key)
         for method, x in zip(hashes, keys):
@@ -510,7 +573,7 @@ class chord_socket(mesh_socket):
         key = sanitize_packet(key)
         if key not in self.__keys:
             raise KeyError(key)
-        self.set(key, '')
+        self.set(key, b'')
 
     def update(self, update_dict):
         """Equivalent to :py:meth:`dict.update`
@@ -619,7 +682,8 @@ class chord_socket(mesh_socket):
         # for handler in self.awaiting_ids:
         self._logger.debug('Joining the network data store')
         self.leeching = False
-        for handler in tuple(self.routing_table.values()) + tuple(self.awaiting_ids):
+        for handler in tuple(self.routing_table.values()) + tuple(
+                self.awaiting_ids):
             self._send_handshake(handler)
             self._send_peers(handler)
             self._send_meta(handler)
@@ -628,7 +692,8 @@ class chord_socket(mesh_socket):
         """Tells the node to stop seeding the chord table"""
         self._logger.debug('Unjoining the network data store')
         self.leeching = True
-        for handler in tuple(self.routing_table.values()) + tuple(self.awaiting_ids):
+        for handler in tuple(self.routing_table.values()) + tuple(
+                self.awaiting_ids):
             self._send_handshake(handler)
             self._send_peers(handler)
             self._send_meta(handler)
@@ -645,7 +710,8 @@ class chord_socket(mesh_socket):
     def connect(self, *args, **kwargs):
         if kwargs.get('conn_type'):
             return super(chord_socket, self).connect(*args, **kwargs)
-        return super(chord_socket, self).connect(*args, conn_type=chord_connection, **kwargs)
+        return super(chord_socket, self).connect(
+            *args, conn_type=chord_connection, **kwargs)
 
     def keys(self):
         """Returns an iterator of the underlying :py:class:`dict`'s keys"""

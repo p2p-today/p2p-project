@@ -9,16 +9,16 @@ import sys
 import traceback
 import warnings
 
-from .base import (
-    flags, compression, to_base_58, from_base_58, protocol, base_connection,
-    message, base_daemon, base_socket, pathfinding_message, json_compressions)
-from .utils import (
-    getUTC, get_socket, intersect, file_dict, awaiting_value, most_common)
+from .base import (flags, compression, to_base_58, from_base_58, protocol,
+                   base_connection, message, base_daemon, base_socket,
+                   pathfinding_message, json_compressions)
+from .utils import (getUTC, get_socket, intersect, file_dict, awaiting_value,
+                    most_common)
 
 default_protocol = protocol('chord', "Plaintext")  # SSL")
 hashes = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512']
 
-if sys.version_info >= (3,):
+if sys.version_info >= (3, ):
     xrange = range
 
 

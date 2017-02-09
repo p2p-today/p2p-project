@@ -38,13 +38,28 @@ else
 endif
 
 #End python setup section
+#Begin C section
 
+msgpack_module:
+	@git submodule update --init
+
+#End C section
 #Begin Javascript section
 
 jsver = $(shell node -p "require('./package.json').version")
 
 jsdeps: LICENSE
 	@yarn || npm install
+
+jsdocs:
+	@echo "Copying documentation comments..."
+	@node js_src/docs_test.js
+
+jstest: jsdeps
+	@node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha js_src/test/*
+
+js_codecov: jstest
+	@node node_modules/codecov/bin/codecov -f coverage/coverage.json --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
 
 browser: jsdeps
 	@mkdir -p build/browser
@@ -65,12 +80,19 @@ browser-min: browser
 	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-sync.js  -o ./build/browser-min/js2p-browser-$(jsver)-sync.min.js  --minified --no-comments --no-babelrc
 	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-chord.js -o ./build/browser-min/js2p-browser-$(jsver)-chord.min.js --minified --no-comments --no-babelrc
 
-browser-compat: jsdeps
+js-compat: jsdeps
 	@mkdir -p build/browser-compat build/babel
 	@echo "Transpiling..."
 	@node node_modules/babel-cli/bin/babel.js js_src -d build/babel
+
+js_compat_test: js-compat
 	@echo "Testing transpilation..."
-	@node node_modules/mocha/bin/mocha build/babel/test/*
+	@node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha build/babel/test/*
+
+js_compat_codecov: js_compat_test
+	@node node_modules/codecov/bin/codecov -f coverage/coverage.json --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
+
+browser-compat: js-compat
 	@echo "Building browser version..."
 	@cd build/babel;\
 	node ../../node_modules/browserify/bin/cmd.js -r ./base.js -o ../browser-compat/js2p-browser-$(jsver)-base.babel.js -u snappy -u nodejs-websocket -u node-forge;\
@@ -90,44 +112,34 @@ browser-compat-min: browser-compat
 
 browser-min-compat: browser-compat-min
 
-jsdocs:
-	@echo "Copying documentation comments..."
-	@node js_src/docs_test.js
-
-jstest: jsdeps
-	@node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha js_src/test/*
-
-js_codecov: jstest
-	@node node_modules/codecov/bin/codecov -f coverage/coverage.json --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
-
 #End Javascript section
 #Begin Python section
 
 python: LICENSE setup.py
 	@echo "Checking dependencies..."
-	@python $(py_deps)
-	@python $(pip) -r requirements.txt
+	@python $(py_deps) --upgrade
+	@python $(pip) -r requirements.txt --upgrade
 	@echo "Building python-only version..."
 	@python setup.py build --universal
 
 python3: LICENSE setup.py
 	@echo "Checking dependencies..."
-	@$(python3) $(py_deps)
-	@$(python3) $(pip) -r requirements.txt
+	@$(python3) $(py_deps) --upgrade
+	@$(python3) $(pip) -r requirements.txt --upgrade
 	@echo "Building python-only version..."
 	@$(python3) setup.py build --universal
 
 python2: LICENSE setup.py
 	@echo "Checking dependencies..."
-	@$(python2) $(py_deps)
-	@$(python2) $(pip) -r requirements.txt
+	@$(python2) $(py_deps) --upgrade
+	@$(python2) $(pip) -r requirements.txt --upgrade
 	@echo "Building python-only version..."
 	@$(python2) setup.py build --universal
 
 pypy: LICENSE setup.py
 	@echo "Checking dependencies..."
-	@pypy $(py_deps)
-	@pypy $(pip) -r requirements.txt
+	@pypy $(py_deps) --upgrade
+	@pypy $(pip) -r requirements.txt --upgrade
 	@echo "Building python-only version..."
 	@pypy setup.py build --universal
 
@@ -135,7 +147,7 @@ ifeq ($(pypy), True)
 cpython: python
 
 else
-cpython: python
+cpython: python msgpack_module
 	@echo "Building with C extensions..."
 ifeq ($(debug), true)
 	@python setup.py build --debug
@@ -144,7 +156,7 @@ else
 endif
 endif
 
-cpython3: python3
+cpython3: python3 msgpack_module
 	@echo "Building with C extensions..."
 ifeq ($(debug), true)
 	@$(python3) setup.py build --debug
@@ -152,7 +164,7 @@ else
 	@$(python3) setup.py build
 endif
 
-cpython2: python2
+cpython2: python2 msgpack_module
 	@echo "Building with C extensions..."
 ifeq ($(debug), true)
 	@$(python2) setup.py build --debug
@@ -162,15 +174,15 @@ endif
 
 pytestdeps:
 	@echo "Checking test dependencies..."
-	@python $(py_test_deps)
+	@python $(py_test_deps) --upgrade
 
 py2testdeps:
 	@echo "Checking test dependencies..."
-	@$(python2) $(py_test_deps)
+	@$(python2) $(py_test_deps) --upgrade
 
 py3testdeps:
 	@echo "Checking test dependencies..."
-	@$(python3) $(py_test_deps)
+	@$(python3) $(py_test_deps) --upgrade
 
 pytest: LICENSE setup.py setup.cfg python pytestdeps
 ifeq ($(cov), true)
@@ -220,6 +232,11 @@ else
 	@$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
 endif
 
+pyformat: clean
+	@python3 -m pip install yapf --user --upgrade
+	@python3 -m yapf py_src -ri
+	@$(MAKE) pytest
+
 html: jsdocs
 	@python $(docs_deps)
 	@cd docs; $(MAKE) clean html
@@ -228,7 +245,8 @@ html: jsdocs
 #Begin General section
 
 clean:
-	@rm -rf .benchmarks .cache build coverage dist docs/py2p node_modules py2p venv
+	@rm -rf .benchmarks .cache build coverage dist docs/py2p node_modules py2p venv py_src/__pycache__ \
+	py_src/test/__pycache__ py_src/*.pyc py_src/test/*.pyc py_src/*.so
 	@find docs/c          ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/cpp        ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/java       ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +

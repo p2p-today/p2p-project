@@ -6,6 +6,7 @@ Base Module
 	:members:
 	:exclude-members: flags, protocol
 	:special-members: __init__, __iter__
+	:private-members:
 	:undoc-members:
 
 	.. autoclass:: flags

@@ -8,6 +8,7 @@
 const base = require('./base.js');
 const mesh = require('./mesh.js');
 const Buffer = require('buffer').Buffer;
+const equal = require('equal');
 const SHA = require('jssha');
 const BigInt = require('big-integer');
 const util = require('util');
@@ -102,19 +103,10 @@ function most_common(tmp)   {
     for (let item of tmp)   {
         if (item === null || item === undefined)    {}
         else if (item.__is_awaiting_value)  {
-            if (Buffer.isBuffer(item.value))  {
-                lst.push(item.value);
-            }
-            else if (item.value !== null &&
-                     item.value !== undefined)  {
-                lst.push(new Buffer(item.value));
-            }
-        }
-        else if (Buffer.isBuffer(item)) {
-            lst.push(item);
+            lst.push(item.value);
         }
         else    {
-            lst.push(new Buffer(item));
+            lst.push(item);
         }
     }
 
@@ -124,7 +116,7 @@ function most_common(tmp)   {
 
     function comparator(o)  {
         return function(v)  {
-            return !Buffer.compare(v,o);
+            return equal(v,o);
         }
     }
 
@@ -153,7 +145,10 @@ m.chord_connection = class chord_connection extends mesh.mesh_connection    {
     }
 
     get id_10() {
-        if (!BigInt.isInstance(this.__id_10))   {
+        if (this.id === null)   {
+            return null;
+        }
+        else if (!BigInt.isInstance(this.__id_10))   {
             this.__id_10 = base.from_base_58(this.id);
         }
         return this.__id_10;
@@ -172,9 +167,27 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
+    *     .. js:function:: Event 'add'(conn, key)
+    *
+    *         This event is triggered when a key is added to the distributed
+    *         dictionary. Because value information is not transmitted in this
+    *         message, you must specifically request it.
+    *
+    *         :param js2p.chord.chord_socket conn: A reference to this abstract socket
+    *         :param Buffer key: The key which has a new value
+    *
+    *     .. js:function:: Event 'delete'(conn, key)
+    *
+    *         This event is triggered when a key is deleted from your distributed
+    *         dictionary.
+    *
+    *         :param js2p.chord.chord_socket conn: A reference to this abstract socket
+    *         :param Buffer key: The key which has a new value
+    *
     *     .. js:attribute:: js2p.chord.chord_socket.id_10
     *
     *         This socket's ID as a :js:class:`big-integer`
+    *
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
@@ -234,8 +247,8 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.peers)  {
-            var new_peers = JSON.parse(packets[1]);
+        if (packets[0] === base.flags.peers)  {
+            var new_peers = packets[1];
             var self = this;
 
             function is_prev(id)    {
@@ -271,7 +284,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     join()  {
         this.leeching = false;
-        for (let handler in this.awaiting_ids)  {
+        for (let handler of this.awaiting_ids)  {
             this._send_handshake(handler);
             this._send_peers(handler);
             this._send_meta(handler);
@@ -347,12 +360,15 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_meta(msg, conn)   {
         const packets = msg.packets;
-        if (packets[0].toString() === base.flags.handshake && packets.length === 2) {
+        if (packets[0] === base.flags.handshake && packets.length === 2) {
+            if (!conn.id)   {
+                conn.id = msg.sender;
+            }
             let new_meta = (packets[1].toString() === '1');
             if (new_meta !== conn.leeching)  {
                 this._send_meta(conn);
                 conn.leeching = new_meta;
-                if (!this.leeching && !conn.leeching)    {
+                if (!this.leeching && !conn.leeching)   {
                     this._send_peers(conn);
                     let update = this.dump_data(conn.id_10, this.id_10);
                     for (let method in update)  {
@@ -374,14 +390,16 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_key(msg, conn)   {
         let packets = msg.packets;
-        if (packets[0].toString() === base.flags.notify) {
+        if (packets[0] === base.flags.notify) {
             if (packets.length === 3)   {
-                if (this.__keys.has(key))   {
+                if (this.__keys.has(packets[1]))    {
                     this.__keys.remove(packets[1]);
+                    this.emit('delete', this, packets[1]);
                 }
             }
             else    {
                 this.__keys.add(packets[1]);
+                this.emit('add', this, packets[1]);
             }
             return true;
         }
@@ -389,7 +407,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_retrieved(msg, conn)   {
         const packets = msg.packets;
-        if (packets[0].toString() === base.flags.retrieved) {
+        if (packets[0] === base.flags.retrieved) {
             // self.__print__("Response received for request id %s" % packets[1],
             //                level=1)
             if (this.requests[[packets[1].toString(), packets[2]]]) {
@@ -405,7 +423,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_retrieve(msg, conn)   {
         const packets = msg.packets;
-        if (packets[0].toString() === base.flags.retrieve)  {
+        if (packets[0] === base.flags.retrieve)  {
             let val = this.__lookup(packets[1].toString(), base.from_base_58(packets[2]), conn);
             try {
                 conn.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], val.value]);
@@ -419,7 +437,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_store(msg, conn)   {
         let packets = msg.packets;
-        if (packets[0].toString() === base.flags.store)  {
+        if (packets[0] === base.flags.store)  {
             let method = packets[1].toString();
             let key = base.from_base_58(packets[2]);
             this.__store(method, key, packets[3]);
@@ -527,7 +545,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             let count = ctuple[1];
             let iters = 0
             let limit = Math.floor(timeout / 0.1) || 100;
-            let fails = new Set([undefined, null, '', -1]);
+            let fails = new Set([undefined, null, '']);
 
             function check()    {
                 if ((fails.has(common) || count <= 2) && iters < limit)   {
@@ -579,7 +597,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
         }
         if (Object.is(node, this))  {
-            if (value.toString() === '')    {
+            if (value === '')    {
                 delete this.data[method][key];
             }
             else    {
@@ -598,24 +616,23 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *         Sets the value at a given key
         *
         *         :param key:   The key you wish to look up (must be transformable into a :js:class:`Buffer` )
-        *         :param value: The key you wish to store (must be transformable into a :js:class:`Buffer` )
+        *         :param value: The value you wish to store
         *
-        *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
+        *         :raises TypeError:    If a key could not be transformed into a :js:class:`Buffer`
         *         :raises:              See :js:func:`~js2p.chord.chord_socket.__store`
         */
         key = new Buffer(key);
-        value = new Buffer(value);
         let keys = m.get_hashes(key);
         this.__store('sha1', keys[0], value);
         this.__store('sha224', keys[1], value);
         this.__store('sha256', keys[2], value);
         this.__store('sha384', keys[3], value);
         this.__store('sha512', keys[4], value);
-        if (!this.__keys.has(key) && value.toString() !== '')   {
+        if (!this.__keys.has(key) && value !== '')   {
             this.__keys.add(key);
             this.send([key], undefined, base.flags.notify);
         }
-        else if (this.__keys.has(key) && value.toString() === '')   {
+        else if (this.__keys.has(key) && value === '')   {
             this.__keys.add(key);
             this.send([key, 'del'], undefined, base.flags.notify);
         }

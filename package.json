@@ -1,7 +1,7 @@
 {
   "name": "js2p",
   "main": "js_src/js2p.js",
-  "version": "0.5.607",
+  "version": "0.6.676",
   "license": "LGPL-3.0",
   "repository": {
     "type": "git",
@@ -13,10 +13,13 @@
   "dependencies": {
     "big-integer": "^1.6.16",
     "buffer": "^4.9.1",
+    "equal": "^0.1.1",
     "ip": "^1.1.4",
-    "jssha": "^2.2.0"
+    "jssha": "^2.2.0",
+    "msgpack-lite": "^0.1.26"
   },
   "optionalDependencies": {
+    "babel-runtime": "^6.22.0",
     "node-forge": "^0.6.46",
     "nodejs-websocket": "^1.7.1",
     "snappy": "^5.0.5",
@@ -24,6 +27,7 @@
   },
   "devDependencies": {
     "babel-cli": "^6.18.0",
+    "babel-plugin-transform-object-rest-spread": "^6.22.0",
     "babel-plugin-transform-runtime": "^6.15.0",
     "babel-preset-es2015": "^6.16.0",
     "babel-preset-latest": "^6.16.0",

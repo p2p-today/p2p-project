@@ -67,6 +67,7 @@ environment:
     #   COV: "%RUN% -m coverage"
 
     - NODE: "4"
+      NODE_COMPAT: "test"
     - NODE: "5"
     - NODE: "6"
 

@@ -39,7 +39,6 @@ function execAll(re, string) {
 var folder_map = {
     js_src: "javascript",
     jv_src: "java",
-    go_src: "go",
     cp_src: "cpp",
     c_src: "c"
 };
@@ -91,7 +90,6 @@ function gen_walker(folder) {
 
 walk('js_src', gen_walker('js_src'));
 walk('jv_src', gen_walker('jv_src'));
-walk('go_src', gen_walker('go_src'));
 walk('cp_src', gen_walker('cp_src'));
 walk('c_src', gen_walker('c_src'));
 

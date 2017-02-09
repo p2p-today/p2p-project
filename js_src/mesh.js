@@ -128,8 +128,8 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         :returns: ``true`` or ``undefined``
         */
-        if (packets[0].toString() === base.flags.broadcast) {
-            if (base.from_base_58(packets[3]) < base.getUTC() - 60) {
+        if (packets[0] === base.flags.broadcast) {
+            if (msg.time < base.getUTC() - 60) {
                 // this.__print__("Waterfall expired", level=2);
                 return true;
             }
@@ -174,6 +174,32 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
+    *     .. js:function:: Event 'connect'(conn)
+    *
+    *         This event is called whenever you have a *new* connection to the
+    *         service network. In other words, whenever the length of your routing
+    *         table is increased from one to zero.
+    *
+    *         If you call ``on('connect')``, that will be executed on every
+    *         connection to the network. So if you are suddenly disconnected, and
+    *         manage to recover, that function will execute again.
+    *
+    *         To avoid this, call ``once('connect')``. That will usually be more correct.
+    *
+    *         :param js2p.mesh.mesh_socket conn: A reference to this abstract socket
+    *
+    *     .. js:function:: Event 'message'(conn)
+    *
+    *         This event is called whenever you receive a new message. A reference
+    *         to the message is *not* passed to you. This is to prevent potential
+    *         memory leaks.
+    *
+    *         If you want to register a "privileged" handler which *does* get a
+    *         reference to the message, see
+    *         :js:func:`~js2p.base.base_socket.register_handler`
+    *
+    *         :param js2p.mesh.mesh_socket conn: A reference to this abstract socket
+    *
     *     .. js:attribute:: js2p.mesh.mesh_socket.routing_table
     *
     *         An object which contains :js:class:`~js2p.mesh.mesh_connection` s keyed by their IDs
@@ -181,6 +207,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *     .. js:attribute:: js2p.mesh.mesh_socket.awaiting_ids
     *
     *         An array which contains :js:class:`~js2p.mesh.mesh_connection` s that are awaiting handshake information
+    *
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
@@ -264,7 +291,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :js:func:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
         *         inheritence from :js:class:`js2p.sync.sync_socket`
         */
-        handler.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
+        handler.send(base.flags.whisper, [base.flags.peers, this.__get_peer_list()]);
     }
 
     _send_handshake(handler)   {
@@ -277,7 +304,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         */
         let tmp_compress = handler.compression;
         handler.compression = [];
-        handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, `["${this.out_addr[0]}", ${this.out_addr[1]}]`, base.json_compressions]);
+        handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, this.out_addr, base.compression]);
         handler.compression = tmp_compress;
     }
 
@@ -321,7 +348,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                 (addr === this.addr[0] && port === this.addr[1]));
         var self = this;
         Object.keys(this.routing_table).some(function(key)   {
-            if (key.toString() === id.toString() || self.routing_table[key].addr[0] === addr ||
+            if (key === id || self.routing_table[key].addr[0] === addr ||
                 self.routing_table[key].addr[1] === port)   {
                 shouldBreak = true;
             }
@@ -364,7 +391,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             this.routing_table[id] = handler;
         }
         else    {
-            this.awaiting_ids = this.awaiting_ids.concat(handler);
+            this.awaiting_ids.push(handler);
         }
     }
 
@@ -388,8 +415,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     handle_msg(msg, conn)    {
         if (!super.handle_msg(msg, conn))   {
             var packs = msg.packets;
-            if (packs[0].toString() === base.flags.whisper || packs[0].toString() === base.flags.broadcast) {
-                this.queue = this.queue.concat(msg);
+            if (packs[0] === base.flags.whisper || packs[0] === base.flags.broadcast) {
+                this.queue.push(msg);
+                this.emit('message', this);
             }
             // else    {
             //     this.__print__("Ignoring message with invalid subflag", level=4);
@@ -409,7 +437,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
             if (self.routing_table[key].addr)   {
-                ret = ret.concat([[self.routing_table[key].addr, key]]);
+                ret.push([[self.routing_table[key].addr, key]]);
             }
         });
         return ret;
@@ -431,7 +459,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.handshake && packets.length === 5) {
+        if (packets[0] === base.flags.handshake && packets.length === 5) {
             if (packets[2].toString() !== msg.protocol.id) {
                 this.disconnect(conn);
                 return true;
@@ -440,9 +468,12 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             //     this.__resolve_connection_conflict(handler, packets[1]);
             // }
             conn.id = packets[1];
-            conn.addr = JSON.parse(packets[3]);
+            if (!conn.addr && Object.keys(this.awaiting_ids).length === 0)  {
+                this.emit('connect', this);
+            }
+            conn.addr = packets[3];
             //console.log(`changed compression methods to: ${packets[4]}`);
-            conn.compression = JSON.parse(packets[4]);
+            conn.compression = packets[4];
             // self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
             if (this.awaiting_ids.indexOf(conn) > -1)   {  // handler in this.awaiting_ids
                 this.awaiting_ids.splice(this.awaiting_ids.indexOf(conn), 1);
@@ -466,8 +497,8 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.peers)  {
-            var new_peers = JSON.parse(packets[1]);
+        if (packets[0] === base.flags.peers)  {
+            var new_peers = packets[1];
             var self = this;
             new_peers.forEach(function(peer_array)  {
                 if (self.outgoing.length < m.max_outgoing)  {
@@ -500,15 +531,15 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.response)  {
+        if (packets[0] === base.flags.response)  {
             // self.__print__("Response received for request id %s" % packets[1], level=1)
             if (this.requests[packets[1]])  {
-                var addr = JSON.parse(packets[2]);
+                var addr = packets[2];
                 if (addr)   {
                     var info = this.requests[packets[1]];
                     // console.log(msg);
                     this.connect(addr[0][0], addr[0][1], addr[1]);
-                    this.routing_table[addr[1]].send(info[1], [info[2]].concat(info[0]));
+                    this.routing_table[addr[1]].send(info[1], [...info[2], ...info[0]]);
                     delete this.requests[packets[1]];
                 }
             }
@@ -534,12 +565,12 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var packets = msg.packets;
         //console.log(packets[0].toString());
         //console.log(packets[1].toString());
-        if (packets[0].toString() === base.flags.request)  {
+        if (packets[0] === base.flags.request)  {
             if (packets[1].toString() === '*')  {
                 this._send_peers(conn);
             }
             else if (this.routing_table[packets[2]])    {
-                conn.send(base.flags.broadcast, [base.flags.response, packets[1], JSON.stringify([this.routing_table[packets[2]].addr, packets[2]])]);
+                conn.send(base.flags.broadcast, [base.flags.response, packets[1], [this.routing_table[packets[2]].addr, packets[2]]]);
             }
             return true;
         }
@@ -565,7 +596,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var main_flag = flag || base.flags.broadcast;
         var self = this;
         Object.keys(this.routing_table).forEach(function(key)   {
-            self.routing_table[key].send(main_flag, [send_type].concat(packets));
+            self.routing_table[key].send(main_flag, [send_type, ...packets]);
         });
     }
 

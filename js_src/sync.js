@@ -28,6 +28,9 @@ m.metatuple = class metatuple   {
     * .. js:class:: js2p.sync.metatuple(owner, timestamp)
     *
     *     This class is used to store metadata for a particular key
+    *
+    *     :param string owner: The owner of this change
+    *     :param Number timestamp: The time of this change
     */
     constructor(owner, timestamp)   {
         this.owner = owner;
@@ -53,6 +56,26 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
     *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
+    *
+    *     .. js:function:: Event 'update'(conn, key, new_data, metatuple)
+    *
+    *         This event is triggered when a key is updated in your synchronized
+    *         dictionary. ``new_meta`` will be an object containing metadata of this
+    *         change, including the time of change, and who initiated the change.
+    *
+    *         :param js2p.sync.sync_socket conn: A reference to this abstract socket
+    *         :param Buffer key: The key which has a new value
+    *         :param new_data: The new value at that key
+    *         :param js2p.sync.metatuple new_meta: Metadata on the key changer
+    *
+    *     .. js:function:: Event 'delete'(conn, key)
+    *
+    *         This event is triggered when a key is deleted from your synchronized
+    *         dictionary.
+    *
+    *         :param js2p.sync.sync_socket conn: A reference to this abstract socket
+    *         :param Buffer key: The key which has a new value
+    *
     */
     constructor(addr, port, leasing, protocol, out_addr, debug_level)   {
         if (!protocol)  {
@@ -93,10 +116,12 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
             if (new_data.toString() === '')    {
                 delete this.data[key];
                 delete this.metadata[key];
+                this.emit('delete', this, key);
             }
             else    {
                 this.metadata[key] = new_meta;
                 this.data[key] = new_data;
+                this.emit('update', this, key, new_data, new_meta);
             }
         }
         else if (error !== false) {
@@ -134,7 +159,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *            :returns: Either ``true`` or ``undefined``
         */
         const packets = msg.packets;
-        if (packets[0].toString() === base.flags.store) {
+        if (packets[0] === base.flags.store) {
             let meta = new m.metatuple(msg.sender, msg.time);
             if (packets.length === 5)   {
                 if (this.data[packets[1]])  {
@@ -171,16 +196,15 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         Sets the value at a given key
         *
         *         :param key:   The key you wish to look up (must be transformable into a :js:class:`Buffer` )
-        *         :param value: The key you wish to store (must be transformable into a :js:class:`Buffer` )
+        *         :param value: The value you wish to store
         *
-        *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
+        *         :raises TypeError:    If a key could not be transformed into a :js:class:`Buffer`
         *         :raises:              See :js:func:`~js2p.sync.sync_socket.__store`
         */
         let new_meta = new m.metatuple(this.id, base.getUTC());
         let s_key = new Buffer(key);
-        let s_data = (data) ? new Buffer(data) : new Buffer('')
-        this.__store(s_key, s_data, new_meta);
-        this.send([s_key, s_data], undefined, base.flags.store);
+        this.__store(s_key, data, new_meta);
+        this.send([s_key, data], undefined, base.flags.store);
     }
 
     update(update_dict) {

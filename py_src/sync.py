@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import absolute_import
+
 from .mesh import mesh_socket
 from .utils import (inherit_doc, getUTC, sanitize_packet, log_entry)
 from .base import (flags, to_base_58, from_base_58)
@@ -29,31 +32,55 @@ class sync_socket(mesh_socket):
     at that key for an hour.
 
     This may be turned off by adding ``leasing=False`` to the constructor.
+
+    Added Events:
+
+    .. py:function:: on('update', func)
+
+        This event is triggered when a key is updated in your synchronized
+        dictionary. ``new_meta`` will be an object containing metadata of this
+        change, including the time of change, and who initiated the change.
+
+        :param py2p.sync.sync_socket conn: A reference to this abstract socket
+        :param bytes key: The key which has a new value
+        :param new_data: The new value at that key
+        :param py2p.sync.metatuple new_meta: Metadata on the key changer
+
+    .. py:function:: on('delete', func)
+
+        This event is triggered when a key is deleted from your synchronized
+        dictionary.
+
+        :param py2p.sync.sync_socket conn: A reference to this abstract socket
+        :param bytes key: The key which has a new value
     """
-    __slots__ = mesh_socket.__slots__ + ('__leasing', 'data', 'metadata')
+    __slots__ = ('__leasing', 'data', 'metadata')
 
     @log_entry('py2p.sync.sync_socket.__init__', DEBUG)
     @inherit_doc(mesh_socket.__init__)
-    def __init__(self, addr, port, prot=default_protocol, out_addr=None,
-                 debug_level=0, leasing=True):
+    def __init__(self,
+                 addr,
+                 port,
+                 prot=default_protocol,
+                 out_addr=None,
+                 debug_level=0,
+                 leasing=True):
         """Initialize a chord socket"""
         protocol_used = protocol(prot[0] + str(int(leasing)), prot[1])
         self.__leasing = leasing
-        super(sync_socket, self).__init__(
-            addr, port, protocol_used, out_addr, debug_level)
+        super(sync_socket, self).__init__(addr, port, protocol_used, out_addr,
+                                          debug_level)
         self.data = {}
         self.metadata = {}
         self.register_handler(self.__handle_store)
 
     def __check_lease(self, key, new_data, new_meta):
         meta = self.metadata.get(key, None)
-        return ((meta is None) or
-                (meta.owner == new_meta.owner) or
+        return ((meta is None) or (meta.owner == new_meta.owner) or
                 (meta.timestamp < getUTC() - 3600) or
                 (meta.timestamp == new_meta.timestamp and
-                    meta.owner > new_meta.owner) or
-                (meta.timestamp < new_meta.timestamp and
-                    not self.__leasing))
+                 meta.owner > new_meta.owner) or
+                (meta.timestamp < new_meta.timestamp and not self.__leasing))
 
     def __store(self, key, new_data, new_meta, error=True):
         """Private API method for storing data. You have permission to store
@@ -79,9 +106,11 @@ class sync_socket(mesh_socket):
             if new_data == b'':
                 del self.data[key]
                 del self.metadata[key]
+                self.emit('delete', self, key)
             else:
                 self.metadata[key] = new_meta
                 self.data[key] = new_data
+                self.emit('delete', self, key, new_data, new_meta)
         elif error:
             raise KeyError("You don't have permission to change this yet")
 
@@ -123,16 +152,28 @@ class sync_socket(mesh_socket):
         Args:
             key:    The key that you wish to update. Must be a :py:class:`str`
                         or :py:class:`bytes`-like object
-            value:  The value you wish to put at this key. Must be a
-                        :py:class:`str` or :py:class:`bytes`-like object
+            value:  The value you wish to put at this key.
 
         Raises:
             KeyError: If you do not have the lease for this slot. Lease is
                           given automatically for one hour if the slot is open.
+
+            TypeError: If your key is not :py:class:`bytes` -like OR if your
+                        value is not serializable. This means your value must
+                        be one of the following:
+
+                        - :py:class:`bool`
+                        - :py:class:`float`
+                        - :py:class:`int` (if ``2**64 > x > -2**63``)
+                        - :py:class:`str`
+                        - :py:class:`bytes`
+                        - :py:class:`unicode`
+                        - :py:class:`tuple`
+                        - :py:class:`list`
+                        - :py:class:`dict` (if all keys are :py:class:`unicode`)
         """
         new_meta = metatuple(self.id, getUTC())
         key = sanitize_packet(key)
-        data = sanitize_packet(data)
         self.__store(key, data, new_meta)
         self.send(key, data, type=flags.store)
 
