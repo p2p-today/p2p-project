@@ -300,7 +300,7 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
 
     @property
     def id(self):
-        """TESTETSETESTSETThe SHA-256-based ID of the protocol"""
+        """The SHA-256-based ID of the protocol"""
         h = hashlib.sha256(''.join(str(x) for x in self).encode())
         h.update(protocol_version.encode())
         return to_base_58(int(h.hexdigest(), 16)).decode()
@@ -847,7 +847,11 @@ class base_daemon(object):
 
 
 class base_socket(EventEmitter, object):
-    """The base class for a peer-to-peer socket abstractor"""
+    """
+    The base class for a peer-to-peer socket abstractor
+
+    .. inheritance-diagram:: py2p.base.base_socket
+    """
     __slots__ = ('protocol', 'debug_level', 'routing_table', 'awaiting_ids',
                  'out_addr', 'id', '_logger', '__handlers', '__closed')
 

@@ -71,6 +71,8 @@ def get_hashes(key):
 class chord_connection(mesh_connection):
     """The class for chord connection abstraction. This inherits from
     :py:class:`py2p.mesh.mesh_connection`
+
+    .. inheritance-diagram:: py2p.chord.chord_connection
     """
     __slots__ = mesh_connection.__slots__ + ('leeching', '__id_10')
 
@@ -92,6 +94,8 @@ class chord_connection(mesh_connection):
 class chord_daemon(mesh_daemon):
     """The class for chord daemon.
     This inherits from :py:class:`py2p.mesh.mesh_daemon`
+
+    .. inheritance-diagram:: py2p.chord.chord_daemon
     """
 
     @log_entry('py2p.chord.chord_daemon.__init__', DEBUG)
@@ -111,9 +115,11 @@ class chord_socket(mesh_socket):
     """
     The class for chord socket abstraction. This inherits from :py:class:`py2p.mesh.mesh_socket`
 
+    .. inheritance-diagram:: py2p.chord.chord_socket
+
     Added Events:
 
-    .. py:function:: on('add', func)
+    .. py:function:: py2p.chord.chord_socket Event 'add'(conn, key)
 
         This event is triggered when a key is added to the distributed
         dictionary. Because value information is not transmitted in this

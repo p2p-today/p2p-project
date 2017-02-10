@@ -167,7 +167,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
-    *     .. js:function:: Event 'add'(conn, key)
+    *     .. js:function:: js2p.chord.chord_socket Event 'add'(conn, key)
     *
     *         This event is triggered when a key is added to the distributed
     *         dictionary. Because value information is not transmitted in this
@@ -176,7 +176,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     *         :param js2p.chord.chord_socket conn: A reference to this abstract socket
     *         :param Buffer key: The key which has a new value
     *
-    *     .. js:function:: Event 'delete'(conn, key)
+    *     .. js:function:: js2p.chord.chord_socket Event 'delete'(conn, key)
     *
     *         This event is triggered when a key is deleted from your distributed
     *         dictionary.

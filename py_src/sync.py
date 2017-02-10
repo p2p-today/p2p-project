@@ -25,6 +25,8 @@ class sync_socket(mesh_socket):
     """This class is used to sync dictionaries between programs. It extends
     :py:class:`py2p.mesh.mesh_socket`
 
+    .. inheritance-diagram:: py2p.sync.sync_socket
+
     Because of this inheritance, this can also be used as an alert network
 
     This also implements and optional leasing system by default. This leasing
