@@ -237,7 +237,7 @@ pyformat: clean
 	@python3 -m yapf py_src -ri
 	@$(MAKE) pytest
 
-html: jsdocs
+html: jsdocs msgpack_module
 	@python $(docs_deps)
 	@cd docs; $(MAKE) clean html
 

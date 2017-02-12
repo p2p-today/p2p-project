@@ -174,7 +174,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
-    *     .. js:function:: Event 'connect'(conn)
+    *     .. js:function:: js2p.mesh.mesh_socket Event 'connect'(conn)
     *
     *         This event is called whenever you have a *new* connection to the
     *         service network. In other words, whenever the length of your routing
@@ -188,7 +188,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *
     *         :param js2p.mesh.mesh_socket conn: A reference to this abstract socket
     *
-    *     .. js:function:: Event 'message'(conn)
+    *     .. js:function:: js2p.mesh.mesh_socket Event 'message'(conn)
     *
     *         This event is called whenever you receive a new message. A reference
     *         to the message is *not* passed to you. This is to prevent potential

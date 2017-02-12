@@ -57,7 +57,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
-    *     .. js:function:: Event 'update'(conn, key, new_data, metatuple)
+    *     .. js:function:: js2p.sync.sync_socket Event 'update'(conn, key, new_data, metatuple)
     *
     *         This event is triggered when a key is updated in your synchronized
     *         dictionary. ``new_meta`` will be an object containing metadata of this
@@ -68,7 +68,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
     *         :param new_data: The new value at that key
     *         :param js2p.sync.metatuple new_meta: Metadata on the key changer
     *
-    *     .. js:function:: Event 'delete'(conn, key)
+    *     .. js:function:: js2p.sync.sync_socket Event 'delete'(conn, key)
     *
     *         This event is triggered when a key is deleted from your synchronized
     *         dictionary.

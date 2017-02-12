@@ -37,6 +37,8 @@ default_protocol = protocol('mesh', "Plaintext")  # SSL")
 class mesh_connection(base_connection):
     """The class for mesh connection abstraction.
     This inherits from :py:class:`py2p.base.base_connection`
+
+    .. inheritance-diagram:: py2p.mesh.mesh_connection
     """
 
     @inherit_doc(base_connection.send)
@@ -103,6 +105,8 @@ class mesh_connection(base_connection):
 class mesh_daemon(base_daemon):
     """The class for mesh daemon.
     This inherits from :py:class:`py2p.base.base_daemon`
+
+    .. inheritance-diagram:: py2p.mesh.mesh_daemon
     """
 
     @log_entry('py2p.mesh.mesh_daemon', DEBUG)
@@ -167,6 +171,8 @@ class mesh_daemon(base_daemon):
 class mesh_socket(base_socket):
     """The class for mesh socket abstraction.
     This inherits from :py:class:`py2p.base.base_socket`
+
+    .. inheritance-diagram:: py2p.mesh.mesh_socket
 
     Added Events:
 

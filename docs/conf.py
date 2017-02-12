@@ -70,6 +70,8 @@ extensions = [
     'sphinx.ext.githubpages',
     'sphinx.ext.mathjax',
     'sphinx.ext.extlinks',
+    'sphinx.ext.graphviz',
+    'sphinx.ext.inheritance_diagram',
     'sphinxcontrib.napoleon',
 ]
 
