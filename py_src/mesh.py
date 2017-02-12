@@ -170,11 +170,11 @@ class mesh_socket(base_socket):
 
     Added Events:
 
-    .. py:function:: on('connect', func)
+    .. py:function:: Event 'connect'(conn)
 
         This event is called whenever you have a *new* connection to the
         service network. In other words, whenever the length of your routing
-        table is increased from one to zero.
+        table is increased from zero to one.
 
         If you call ``on('connect')``, that will be executed on every
         connection to the network. So if you are suddenly disconnected, and

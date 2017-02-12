@@ -178,7 +178,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *
     *         This event is called whenever you have a *new* connection to the
     *         service network. In other words, whenever the length of your routing
-    *         table is increased from one to zero.
+    *         table is increased from zero to one.
     *
     *         If you call ``on('connect')``, that will be executed on every
     *         connection to the network. So if you are suddenly disconnected, and
