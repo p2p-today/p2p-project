@@ -48,7 +48,7 @@ def inherit_doc(function):
 
 
 def sanitize_packet(packet):
-    #type: (Any) -> bytes
+    #type: (Union[bytes, bytearray, str]) -> bytes
     """Function to sanitize a packet for pathfinding_message serialization,
     or dict keying
     """

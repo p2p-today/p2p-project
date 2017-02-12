@@ -14,14 +14,22 @@ from logging import (getLogger, INFO, DEBUG)
 from sys import version_info
 from threading import Lock, Thread, current_thread
 from traceback import format_exc
-from typing import Any, Tuple, Union
 from uuid import uuid4
 
 from umsgpack import (packb, unpackb, UnsupportedTypeException)
 from pyee import EventEmitter
+from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union
 
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet,
                     inherit_doc, log_entry)
+
+_msg_packable = Union[None, bool, int, float, str, bytes]
+_msg_packable_list = List[_msg_packable]
+_msg_packable_tuple = Tuple[_msg_packable]
+_msg_packable_dict = Dict[str, _msg_packable]
+_msg_packable = Union[None, bool, int, float, str, bytes, _msg_packable_list, _msg_packable_tuple, _msg_packable_dict]
+msg_packable = Union[_msg_packable, List[_msg_packable], Tuple[_msg_packable], Dict[str, _msg_packable]]
+
 
 protocol_version = "0.6"
 node_policy_version = "676"
@@ -85,6 +93,7 @@ user_salt = str(uuid4()).encode()
 
 
 def compress(msg, method):
+    #type: (bytes, int) -> bytes
     """Shortcut method for compression
 
     Args:
@@ -110,7 +119,6 @@ def compress(msg, method):
         A :py:class:`ValueError` if there is an unknown compression method,
             or a method-specific error
     """
-    #type: (bytes, int) -> bytes
     if method in (flags.gzip, flags.zlib):
         wbits = 15 + (16 * (method == flags.gzip))
         compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
@@ -127,6 +135,7 @@ def compress(msg, method):
 
 
 def decompress(msg, method):
+    #type: (bytes, int) -> bytes
     """Shortcut method for decompression
 
     Args:
@@ -152,7 +161,6 @@ def decompress(msg, method):
         A :py:class:`ValueError` if there is an unknown compression method,
             or a method-specific error
     """
-    #type: (bytes, int) -> bytes
     if method in (flags.gzip, flags.zlib):
         return zlib.decompress(msg, zlib.MAX_WBITS | 32)
     elif method == flags.bz2:
@@ -205,6 +213,7 @@ except Exception:  # pragma: no cover
 
 
 def pack_value(l, i):
+    #type: (int, int) -> bytes
     """For value i, pack it into bytes of size length
 
     Args:
@@ -219,7 +228,6 @@ def pack_value(l, i):
         ValueError: If length is not large enough to contain the value
                         provided
     """
-    #type: (int, int) -> bytes
     ret = bytearray(l)
     for x in range(l - 1, -1, -1):  # Iterate over length backwards
         ret[x] = i & 0xFF
@@ -232,6 +240,7 @@ def pack_value(l, i):
 
 
 def unpack_value(string):
+    #type: (Union[bytes, bytearray, str]) -> int
     """For a string, return the packed value inside of it
 
     Args:
@@ -241,7 +250,6 @@ def unpack_value(string):
         An integral value interpreted from this, as if it were a
         big-endian, unsigned integral
     """
-    #type: (union[bytes, bytearray, str]) -> int
     val = 0
     for char in bytearray(sanitize_packet(string)):
         val = val << 8
@@ -253,6 +261,7 @@ base_58 = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
 
 def to_base_58(i):
+    #type: (int) -> bytes
     """Takes an integer and returns its corresponding base_58 string
 
     Args:
@@ -264,7 +273,6 @@ def to_base_58(i):
     Raises:
         TypeError: If you feed a non-integral value
     """
-    #type: (int) -> bytes
     string = b""
     while i:
         idx = i % 58
@@ -276,6 +284,7 @@ def to_base_58(i):
 
 
 def from_base_58(string):
+    #type: (Union[bytes, bytearray, str]) -> int
     """Takes a base_58 string and returns its corresponding integer
 
     Args:
@@ -285,10 +294,8 @@ def from_base_58(string):
     Returns:
         Returns integral value which corresponds to the fed string
     """
-    #type: (Union[bytes, bytearray, str) -> int
     decimal = 0
-    string = sanitize_packet(string)
-    for char in string:
+    for char in sanitize_packet(string):
         decimal = decimal * 58 + base_58.index(char)
     return decimal
 
@@ -306,8 +313,8 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
 
     @property
     def id(self):
+        #type: (protocol) -> str
         """The SHA-256-based ID of the protocol"""
-        #type: (property) -> str
         h = sha256(''.join(str(x) for x in self).encode())
         h.update(protocol_version.encode())
         return to_base_58(int(h.hexdigest(), 16)).decode()
@@ -323,6 +330,7 @@ class InternalMessage(object):
 
     @classmethod
     def __sanitize_string(cls, string, sizeless=False):
+        #type: (Any, Union[bytes, bytearray, str], bool) -> bytes
         """Removes the size header for further processing.
         Also checks if the header is valid.
 
@@ -350,6 +358,7 @@ class InternalMessage(object):
 
     @classmethod
     def __decompress_string(cls, string, compressions=None):
+        #type: (Any, bytes, Union[None, Iterable[int, ...]]) -> Tuple[bytes, bool]
         """Returns a tuple containing the decompressed bytes and a boolean
         as to whether decompression failed or not
 
@@ -381,6 +390,7 @@ class InternalMessage(object):
 
     @classmethod
     def feed_string(cls, string, sizeless=False, compressions=None):
+        #type: (Any, Union[bytes, bytearray, str], bool, Union[None, Iterable[int]]) -> InternalMessage
         """Constructs a InternalMessage from a string or bytes object.
 
         Args:
@@ -402,12 +412,12 @@ class InternalMessage(object):
                                unrecognized compression
         """
         # First section checks size header
-        string = cls.__sanitize_string(string, sizeless)
+        _string = cls.__sanitize_string(string, sizeless)
         # Then we attempt to decompress
-        string, compression_fail = cls.__decompress_string(string,
+        _string, compression_fail = cls.__decompress_string(_string,
                                                            compressions)
-        id_ = string[0:32]
-        serialized = string[32:]
+        id_ = _string[0:32]
+        serialized = _string[32:]
         checksum = sha256(serialized).digest()
         assert id_ == checksum, "Checksum failed: {} != {}".format(id_,
                                                                    checksum)
@@ -420,15 +430,16 @@ class InternalMessage(object):
         msg.compression_fail = compression_fail
         msg._InternalMessage__id = checksum
         msg._InternalMessage__string = serialized
-        # msg.__string = string
+        # msg.__string = _string
         return msg
 
-    def __init__(self,
-                 msg_type,
-                 sender,
-                 payload,
-                 compression=None,
-                 timestamp=None):
+    def __init__(self,  #type: InternalMessage
+                 msg_type,  #type: msg_packable
+                 sender,  #type: msg_packable
+                 payload,  #type: Iterable[msg_packable, ...]
+                 compression=None,  #type: Union[None, Iterable[int, ...]]
+                 timestamp=None  #type: Union[None, int]
+        ):  #type: (...) -> None
         """Initializes a InternalMessage instance
 
         Args:
@@ -460,12 +471,13 @@ class InternalMessage(object):
         self.compression_fail = False
 
         if compression:
-            self.__compression = tuple(compression)
+            self.__compression = tuple(compression)  #type: Tuple[int, ...]
         else:
             self.__compression = ()
 
     @property
     def payload(self):
+        #type: (InternalMessage) -> Tuple[msg_packable, ...]
         """Returns a :py:class:`tuple` containing the message payload encoded
         as :py:class:`bytes`
         """
@@ -473,40 +485,48 @@ class InternalMessage(object):
 
     @property
     def compression_used(self):
+        #type: (InternalMessage) -> Union[None, int]
         """Returns the compression method this message is using"""
         for method in intersect(compression, self.compression):
             return method
         return None
 
     def __clear_cache(self):
+        #type: (InternalMessage) -> None
         self.__full_string = None
         self.__string = None
         self.__id = None
 
     @property
     def msg_type(self):
+        #type: (InternalMessage) -> msg_packable
         return self.__msg_type
 
     @msg_type.setter
     def msg_type(self, val):
+        #type: (InternalMessage, msg_packable) -> None
         self.__clear_cache()
         self.__msg_type = val
 
     @property
     def sender(self):
+        #type: (InternalMessage) -> msg_packable
         return self.__sender
 
     @sender.setter
     def sender(self, val):
+        #type: (InternalMessage, msg_packable) -> None
         self.__clear_cache()
         self.__sender = val
 
     @property
     def compression(self):
+        #type: (InternalMessage) -> Tuple[int, ...]
         return self.__compression
 
     @compression.setter
     def compression(self, val):
+        #type: (InternalMessage, Iterable[int]) -> None
         new_comps = intersect(compression, val)
         old_comp = self.compression_used
         if (old_comp, ) != new_comps[0:1]:
@@ -515,20 +535,24 @@ class InternalMessage(object):
 
     @property
     def time(self):
+        #type: (InternalMessage) -> int
         return self.__time
 
     @time.setter
     def time(self, val):
+        #type: (InternalMessage, int) -> None
         self.__clear_cache()
         self.__time = val
 
     @property
     def time_58(self):
+        #type: (InternalMessage) -> bytes
         """Returns this message's timestamp in base_58"""
         return to_base_58(self.__time)
 
     @property
     def id(self):
+        #type: (InternalMessage) -> bytes
         """Returns the message id"""
         if not self.__id:
             payload_hash = sha256(self.__non_len_string)
@@ -537,6 +561,7 @@ class InternalMessage(object):
 
     @property
     def packets(self):
+        #type: (InternalMessage) -> Tuple[msg_packable]
         """Returns the full :py:class:`tuple` of packets in this message
         encoded as :py:class:`bytes`, excluding the header
         """
@@ -544,6 +569,7 @@ class InternalMessage(object):
 
     @property
     def __non_len_string(self):
+        #type: (InternalMessage) -> bytes
         """Returns a :py:class:`bytes` object containing the entire message,
         excepting the total length header
 
@@ -571,6 +597,7 @@ class InternalMessage(object):
 
     @property
     def string(self):
+        #type: (InternalMessage) -> bytes
         """Returns a :py:class:`bytes` representation of the message
 
         Raises:
@@ -586,6 +613,7 @@ class InternalMessage(object):
         return self.__full_string
 
     def __len__(self):
+        #type: (InternalMessage) -> int
         return len(self.string)
 
 
@@ -596,6 +624,7 @@ class base_connection(object):
 
     @log_entry('py2p.base.base_connection.__init__', DEBUG)
     def __init__(self, sock, server, outgoing=False):
+        #type: (base_connection, Any, base_socket, bool) -> None
         """Sets up a connection to another peer-to-peer socket
 
         Args:
@@ -610,12 +639,13 @@ class base_connection(object):
         self.id = None  #type: Union[None, str]
         self.time = getUTC()
         self.addr = None  #type: Union[None, Tuple[str, int]]
-        self.compression = []  #type: List[int]
-        self.last_sent = []  #type: List[Any]
+        self.compression = ()  #type: Tuple[int]
+        self.last_sent = ()  #type: Tuple[msg_packable]
         self.expected = 4
         self.active = False
 
     def send_InternalMessage(self, msg):
+        #type: (base_connection, InternalMessage) -> InternalMessage
         """Sends a preconstructed message
 
         Args:
@@ -640,6 +670,7 @@ class base_connection(object):
             self.server.disconnect(self)
 
     def send(self, msg_type, *args, **kargs):
+        #type: (base_connection, msg_packable, *msg_packable, **Union[bytes, int]) -> InternalMessage
         """Sends a message through its connection.
 
         Args:
@@ -667,10 +698,12 @@ class base_connection(object):
 
     @property
     def protocol(self):
+        #type: (base_connection) -> protocol
         """Returns server.protocol"""
         return self.server.protocol
 
     def collect_incoming_data(self, data):
+        #type: (base_connection, Union[bytes, bytearray]) -> bool
         """Collects incoming data
 
         Args:
@@ -696,10 +729,12 @@ class base_connection(object):
         return True
 
     def find_terminator(self):
+        #type: (base_connection) -> bool
         """Returns whether the defined return sequences is found"""
         return len(self.buffer) >= self.expected
 
     def found_terminator(self):
+        #type: (base_connection) -> InternalMessage
         """Processes received messages"""
         raw_msg, self.buffer = bytes(self.buffer[:self.expected]), \
                                self.buffer[self.expected:]
@@ -713,6 +748,7 @@ class base_connection(object):
         return msg
 
     def handle_renegotiate(self, packets):
+        #type: (base_connection, Sequence[msg_packable]) -> bool
         """The handler for connection renegotiations
 
         This is to deal with connection maintenance. For instance, it could
@@ -725,7 +761,7 @@ class base_connection(object):
                             in this message
 
         Returns:
-            ``True`` if an action was taken, ``None`` if not
+            ``True`` if an action was taken, ``False`` if not
         """
         if packets[0] == flags.renegotiate:
             if packets[4] == flags.compression:
@@ -743,14 +779,17 @@ class base_connection(object):
             elif packets[4] == flags.resend:
                 self.send(*self.last_sent)
                 return True
+        return False
 
     def fileno(self):
+        #type: (base_connection) -> int
         """Mirror for the fileno() method of the connection's
         underlying socket
         """
         return self.sock.fileno()
 
     def __print__(self, *args, **kargs):
+        #type: (base_connection, *Any, **int) -> None
         """Private method to print if level is <= self.server.debug_level
 
         Args:
@@ -1044,6 +1083,7 @@ class message(object):
     __slots__ = ('msg', 'server')
 
     def __init__(self, msg, server):
+        #type: (message, InternalMessage, base_socket) -> None
         """Initializes a message object
 
         Args:
@@ -1055,34 +1095,41 @@ class message(object):
 
     @property
     def time(self):
+        #type: (message) -> int
         """The time this message was sent at"""
         return self.msg.time
 
     @property
     @inherit_doc(InternalMessage.time_58)
     def time_58(self):
+        #type: (message) -> bytes
         return self.msg.time_58
 
     @property
     def sender(self):
+        #type: (message) -> msg_packable
         """The ID of this message's sender"""
         return self.msg.sender
 
     @property
     @inherit_doc(InternalMessage.id)
     def id(self):
+        #type: (message) -> bytes
         return self.msg.id
 
     @property
     @inherit_doc(InternalMessage.payload)
     def packets(self):
+        #type: (message) -> Tuple[msg_packable]
         return self.msg.payload
 
     @inherit_doc(InternalMessage.__len__)
     def __len__(self):
+        #type: (message) -> int
         return self.msg.__len__()
 
     def __repr__(self):
+        #type: (message) -> str
         packets = self.packets
         sender = self.sender
         # This should no longer happen, but just in case
@@ -1092,6 +1139,7 @@ class message(object):
             packets[0], packets[1:], sender)
 
     def reply(self, *args):
+        #type: (message, *msg_packable) -> None
         """Replies to the sender if you're directly connected. Tries to make
         a connection otherwise
 
