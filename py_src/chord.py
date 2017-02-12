@@ -256,12 +256,12 @@ class chord_socket(mesh_socket):
         packets = msg.packets
         if packets[0] == flags.notify:
             if len(packets) == 3:
-                if key in self.__keys:
+                if packets[1] in self.__keys:
                     self.__keys.remove(packets[1])
-                    self.emit('delete', self, key)
+                    self.emit('delete', self, packets[1])
             else:
                 self.__keys.add(packets[1])
-                self.emit('add', self, key)
+                self.emit('add', self, packets[1])
             return True
 
     def _handle_peers(self, msg, handler):

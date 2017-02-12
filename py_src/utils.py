@@ -5,12 +5,15 @@ from __future__ import unicode_literals
 from calendar import timegm
 from socket import socket, AF_INET, SOCK_DGRAM, SHUT_RDWR
 from time import gmtime
+from typing import Any, Callable, Iterable, Union
 
 from logging import (getLogger, INFO, DEBUG)
 
 
 def log_entry(name, level):
+    #type: (str, int) -> Callable
     def annotation(function):
+        #type: (Callable) -> Callable
         log = getLogger(name)
 
         def caller(*args, **kwargs):
@@ -31,6 +34,7 @@ def log_entry(name, level):
 def inherit_doc(function):
     """A decorator which allows you to inherit docstrings from a specified
     function."""
+    #type: (Callable) -> Callable
     logger = getLogger('py2p.utils.inherit_doc')
     logger.info('Parsing documentation inheritence for {}'.format(function))
     try:
@@ -46,6 +50,7 @@ def sanitize_packet(packet):
     """Function to sanitize a packet for pathfinding_message serialization,
     or dict keying
     """
+    #type: (Any) -> bytes
     if isinstance(packet, type(u'')):
         return packet.encode('utf-8')
     elif isinstance(packet, bytearray):
@@ -69,6 +74,7 @@ def intersect(*args):
         All items in your iterable must be hashable. In other words, they must
         fit in a :py:class:`set`
     """
+    #type: (*Iterable[Any]) -> Tuple[Any]
     if not all(args):
         return ()
     iterator = iter(args)
@@ -84,7 +90,8 @@ def get_lan_ip():
 
     Note: This will return '127.0.0.1' if it is not connected to a network
     """
-    s = socket(AF_INET, SOCK_DGRAM)
+    #type: () -> str
+    s = socket(AF_INET, SOCK_DGRAM)  #type: socket
     try:
         # doesn't even have to be reachable
         s.connect(('8.8.8.8', 23))
@@ -101,7 +108,9 @@ def getUTC():
 
     Note: This will always return an integral value
     """
-    return timegm(gmtime())
+    #type: () -> int
+    t = gmtime()  #type: Iterable[int]
+    return timegm(tuple(t))
 
 
 def get_socket(protocol, serverside=False):
@@ -118,6 +127,7 @@ def get_socket(protocol, serverside=False):
     Returns:
         A socket-like object
     """
+    #type: (py2p.base.protocol, bool) -> Any
     if protocol.encryption == "Plaintext":
         return socket()
     elif protocol.encryption == "SSL":
@@ -132,15 +142,18 @@ class awaiting_value(object):
     """Proxy object for an asynchronously retrieved item"""
 
     def __init__(self, value=-1):
-        self.value = value
-        self.callback = False
+        #type: (awaiting_value, Any) -> None
+        self.value = value  #type: Union[None, bool, int, dict, bytes, str, list, tuple]
+        self.callback = None  #type: Any
 
     def callback_method(self, method, key):
+        #type: (str, str) -> None
         from .base import flags
         self.callback.send(flags.whisper, flags.retrieved, method, key,
                            self.value)
 
     def __repr__(self):
+        #type: (awaiting_value) -> str
         return "<" + repr(self.value) + ">"
 
 
@@ -157,6 +170,7 @@ def most_common(tmp):
         If there are multiple elements which share the same count, it will
         return a random one.
     """
+    #type (Iterable[Any]) -> Tuple[Any, int]
     lst = []
     for item in tmp:
         if isinstance(item, awaiting_value):

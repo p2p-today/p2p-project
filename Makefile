@@ -118,28 +118,28 @@ browser-min-compat: browser-compat-min
 python: LICENSE setup.py
 	@echo "Checking dependencies..."
 	@python $(py_deps) --upgrade
-	@python $(pip) -r requirements.txt --upgrade
+	@python $(pip) -r requirements.txt --user --upgrade
 	@echo "Building python-only version..."
 	@python setup.py build --universal
 
 python3: LICENSE setup.py
 	@echo "Checking dependencies..."
 	@$(python3) $(py_deps) --upgrade
-	@$(python3) $(pip) -r requirements.txt --upgrade
+	@$(python3) $(pip) -r requirements.txt --user --upgrade
 	@echo "Building python-only version..."
 	@$(python3) setup.py build --universal
 
 python2: LICENSE setup.py
 	@echo "Checking dependencies..."
 	@$(python2) $(py_deps) --upgrade
-	@$(python2) $(pip) -r requirements.txt --upgrade
+	@$(python2) $(pip) -r requirements.txt --user --upgrade
 	@echo "Building python-only version..."
 	@$(python2) setup.py build --universal
 
 pypy: LICENSE setup.py
 	@echo "Checking dependencies..."
 	@pypy $(py_deps) --upgrade
-	@pypy $(pip) -r requirements.txt --upgrade
+	@pypy $(pip) -r requirements.txt --user --upgrade
 	@echo "Building python-only version..."
 	@pypy setup.py build --universal
 

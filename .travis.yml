@@ -53,6 +53,11 @@ matrix:
       node_js: "4"
       os: osx
       env: jsver=4
+    - python: '3.5'
+      os: linux
+      script: |
+        pip install mypy-lang
+        mypy py_src/ --check-untyped-defs --silent-imports
 
 script:
   - sh ./.scripts/travis_script.sh

@@ -4,18 +4,18 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import with_statement
 
-import hashlib
 import inspect
 import socket
-import struct
-import sys
-import threading
-import traceback
-import uuid
 
 from collections import namedtuple
+from hashlib import sha256, sha384
 from itertools import chain
 from logging import (getLogger, INFO, DEBUG)
+from sys import version_info
+from threading import Lock, Thread, current_thread
+from traceback import format_exc
+from typing import Any, Tuple, Union
+from uuid import uuid4
 
 from umsgpack import (packb, unpackb, UnsupportedTypeException)
 from pyee import EventEmitter
@@ -28,7 +28,7 @@ node_policy_version = "676"
 
 version = '.'.join((protocol_version, node_policy_version))
 
-plock = threading.Lock()
+plock = Lock()
 
 
 class flags():
@@ -81,7 +81,7 @@ class flags():
     simple = 0x1F
 
 
-user_salt = str(uuid.uuid4()).encode()
+user_salt = str(uuid4()).encode()
 
 
 def compress(msg, method):
@@ -110,6 +110,7 @@ def compress(msg, method):
         A :py:class:`ValueError` if there is an unknown compression method,
             or a method-specific error
     """
+    #type: (bytes, int) -> bytes
     if method in (flags.gzip, flags.zlib):
         wbits = 15 + (16 * (method == flags.gzip))
         compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION,
@@ -151,6 +152,7 @@ def decompress(msg, method):
         A :py:class:`ValueError` if there is an unknown compression method,
             or a method-specific error
     """
+    #type: (bytes, int) -> bytes
     if method in (flags.gzip, flags.zlib):
         return zlib.decompress(msg, zlib.MAX_WBITS | 32)
     elif method == flags.bz2:
@@ -217,6 +219,7 @@ def pack_value(l, i):
         ValueError: If length is not large enough to contain the value
                         provided
     """
+    #type: (int, int) -> bytes
     ret = bytearray(l)
     for x in range(l - 1, -1, -1):  # Iterate over length backwards
         ret[x] = i & 0xFF
@@ -238,6 +241,7 @@ def unpack_value(string):
         An integral value interpreted from this, as if it were a
         big-endian, unsigned integral
     """
+    #type: (union[bytes, bytearray, str]) -> int
     val = 0
     for char in bytearray(sanitize_packet(string)):
         val = val << 8
@@ -260,6 +264,7 @@ def to_base_58(i):
     Raises:
         TypeError: If you feed a non-integral value
     """
+    #type: (int) -> bytes
     string = b""
     while i:
         idx = i % 58
@@ -280,6 +285,7 @@ def from_base_58(string):
     Returns:
         Returns integral value which corresponds to the fed string
     """
+    #type: (Union[bytes, bytearray, str) -> int
     decimal = 0
     string = sanitize_packet(string)
     for char in string:
@@ -301,7 +307,8 @@ class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
     @property
     def id(self):
         """The SHA-256-based ID of the protocol"""
-        h = hashlib.sha256(''.join(str(x) for x in self).encode())
+        #type: (property) -> str
+        h = sha256(''.join(str(x) for x in self).encode())
         h.update(protocol_version.encode())
         return to_base_58(int(h.hexdigest(), 16)).decode()
 
@@ -401,7 +408,7 @@ class InternalMessage(object):
                                                            compressions)
         id_ = string[0:32]
         serialized = string[32:]
-        checksum = hashlib.sha256(serialized).digest()
+        checksum = sha256(serialized).digest()
         assert id_ == checksum, "Checksum failed: {} != {}".format(id_,
                                                                    checksum)
         packets = unpackb(serialized)
@@ -447,9 +454,9 @@ class InternalMessage(object):
         self.__sender = sender
         self.__payload = tuple(payload)
         self.__time = timestamp or getUTC()
-        self.__id = None
-        self.__string = None
-        self.__full_string = None
+        self.__id = None  #type: Union[None, bytes]
+        self.__string = None  #type: Union[None, bytes]
+        self.__full_string = None  #type: Union[None, bytes]
         self.compression_fail = False
 
         if compression:
@@ -524,7 +531,7 @@ class InternalMessage(object):
     def id(self):
         """Returns the message id"""
         if not self.__id:
-            payload_hash = hashlib.sha256(self.__non_len_string)
+            payload_hash = sha256(self.__non_len_string)
             self.__id = payload_hash.digest()
         return self.__id
 
@@ -600,11 +607,11 @@ class base_connection(object):
         self.server = server
         self.outgoing = outgoing
         self.buffer = bytearray()
-        self.id = None
+        self.id = None  #type: Union[None, str]
         self.time = getUTC()
-        self.addr = None
-        self.compression = []
-        self.last_sent = []
+        self.addr = None  #type: Union[None, Tuple[str, int]]
+        self.compression = []  #type: List[int]
+        self.last_sent = []  #type: List[Any]
         self.expected = 4
         self.active = False
 
@@ -629,7 +636,7 @@ class base_connection(object):
             self.sock.send(msg.string)
             return msg
         except (IOError, socket.error) as e:  # pragma: no cover
-            self.server.daemon.exceptions.append(traceback.format_exc())
+            self.server.daemon.exceptions.append(format_exc())
             self.server.disconnect(self)
 
     def send(self, msg_type, *args, **kargs):
@@ -779,13 +786,13 @@ class base_daemon(object):
         self.sock.bind((addr, port))
         self.sock.listen(5)
         self.sock.settimeout(0.1)
-        self.exceptions = []
+        self.exceptions = []  #type: List[str]
         self.alive = True
         self._logger = getLogger(
             '{}.{}.{}'.format(self.__class__.__module__,
                               self.__class__.__name__, self.server.id))
-        self.main_thread = threading.current_thread()
-        self.daemon = threading.Thread(target=self.mainloop)
+        self.main_thread = current_thread()
+        self.daemon = Thread(target=self.mainloop)
         self.daemon.start()
 
     @property
@@ -830,7 +837,7 @@ class base_daemon(object):
                     "this, please post a copy of your mesh_socket.status to "
                     "git.p2p.today/issues." % handler.id,
                     level=0)
-                self.exceptions.append(traceback.format_exc())
+                self.exceptions.append(format_exc())
             self.server.disconnect(handler)
             self.server.request_peers()
 
@@ -885,7 +892,8 @@ class base_socket(EventEmitter, object):
         self.protocol = prot
         self.debug_level = debug_level
         self.routing_table = {}  # In format {ID: handler}
-        self.awaiting_ids = []  # Connected, but not handshook yet
+        self.awaiting_ids = []  #type: List[base_connection]
+        # Connected, but not handshook yet
         if out_addr:  # Outward facing address, if you're port forwarding
             self.out_addr = out_addr
         elif addr == '0.0.0.0':
@@ -893,7 +901,7 @@ class base_socket(EventEmitter, object):
         else:
             self.out_addr = addr, port
         info = (str(self.out_addr).encode(), prot.id.encode(), user_salt)
-        h = hashlib.sha384(b''.join(info))
+        h = sha384(b''.join(info))
         self.id = to_base_58(int(h.hexdigest(), 16))
         self._logger = getLogger('{}.{}.{}'.format(
             self.__class__.__module__, self.__class__.__name__, self.id))
@@ -921,7 +929,7 @@ class base_socket(EventEmitter, object):
                 self.disconnect(conn)
             self.__closed = True
 
-    if sys.version_info >= (3, ):
+    if version_info >= (3, ):
 
         def register_handler(self, method):
             """Register a handler for incoming method.
@@ -1100,7 +1108,7 @@ class message(object):
         else:
             self.server._logger.debug('Requesting connection for direct reply'
                                       ' to message ID {}'.format(self.id))
-            request_hash = hashlib.sha384(self.sender + to_base_58(
+            request_hash = sha384(self.sender + to_base_58(
                 getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
