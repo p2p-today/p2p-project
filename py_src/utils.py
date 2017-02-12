@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from calendar import timegm
 from socket import socket, AF_INET, SOCK_DGRAM, SHUT_RDWR
 from time import gmtime
-from typing import Any, Callable, Iterable, Union
+from typing import cast, Any, Callable, Iterable, Tuple, Union
 
 from logging import (getLogger, INFO, DEBUG)
 
@@ -17,6 +17,7 @@ def log_entry(name, level):
         log = getLogger(name)
 
         def caller(*args, **kwargs):
+            #type: (*Any, **Any) -> Any
             log.log(level, "Entering function {}".format(name))
             ret = function(*args, **kwargs)
             log.log(level, "Exiting function {}".format(name))
@@ -32,9 +33,9 @@ def log_entry(name, level):
 
 
 def inherit_doc(function):
+    #type: (Callable) -> Callable
     """A decorator which allows you to inherit docstrings from a specified
     function."""
-    #type: (Callable) -> Callable
     logger = getLogger('py2p.utils.inherit_doc')
     logger.info('Parsing documentation inheritence for {}'.format(function))
     try:
@@ -47,10 +48,10 @@ def inherit_doc(function):
 
 
 def sanitize_packet(packet):
+    #type: (Any) -> bytes
     """Function to sanitize a packet for pathfinding_message serialization,
     or dict keying
     """
-    #type: (Any) -> bytes
     if isinstance(packet, type(u'')):
         return packet.encode('utf-8')
     elif isinstance(packet, bytearray):
@@ -61,6 +62,7 @@ def sanitize_packet(packet):
 
 
 def intersect(*args):
+    #type: (*Iterable[Any]) -> Tuple[Any, ...]
     """Finds the intersection of several iterables
 
     Args:
@@ -74,7 +76,6 @@ def intersect(*args):
         All items in your iterable must be hashable. In other words, they must
         fit in a :py:class:`set`
     """
-    #type: (*Iterable[Any]) -> Tuple[Any]
     if not all(args):
         return ()
     iterator = iter(args)
@@ -86,11 +87,11 @@ def intersect(*args):
 
 
 def get_lan_ip():
+    #type: () -> str
     """Retrieves the LAN ip. Expanded from http://stackoverflow.com/a/28950776
 
     Note: This will return '127.0.0.1' if it is not connected to a network
     """
-    #type: () -> str
     s = socket(AF_INET, SOCK_DGRAM)  #type: socket
     try:
         # doesn't even have to be reachable
@@ -104,16 +105,16 @@ def get_lan_ip():
 
 
 def getUTC():
+    #type: () -> int
     """Returns the current unix time in UTC
 
     Note: This will always return an integral value
     """
-    #type: () -> int
-    t = gmtime()  #type: Iterable[int]
-    return timegm(tuple(t))
+    return timegm(cast(Tuple, gmtime()))
 
 
 def get_socket(protocol, serverside=False):
+    #type: (py2p.base.protocol, bool) -> Any
     """Given a protocol object, return the appropriate socket
 
     Args:
@@ -127,13 +128,12 @@ def get_socket(protocol, serverside=False):
     Returns:
         A socket-like object
     """
-    #type: (py2p.base.protocol, bool) -> Any
     if protocol.encryption == "Plaintext":
         return socket()
     elif protocol.encryption == "SSL":
         # This is inline to prevent dependency issues
-        from . import ssl_wrapper
-        return ssl_wrapper.get_socket(serverside)
+        from .ssl_wrapper import get_socket
+        return get_socket(serverside)
     else:  # pragma: no cover
         raise ValueError("Unkown encryption method")
 
@@ -158,6 +158,7 @@ class awaiting_value(object):
 
 
 def most_common(tmp):
+    #type: (Iterable[Any]) -> Tuple[Any, int]
     """Returns the most common element in a list
 
     Args:
@@ -170,7 +171,6 @@ def most_common(tmp):
         If there are multiple elements which share the same count, it will
         return a random one.
     """
-    #type (Iterable[Any]) -> Tuple[Any, int]
     lst = []
     for item in tmp:
         if isinstance(item, awaiting_value):

@@ -6,7 +6,7 @@ from socket import socket
 from ssl import wrap_socket, SSLSocket
 from sys import version_info
 from tempfile import NamedTemporaryFile
-from typing import Tuple
+from typing import Any, Tuple
 from uuid import uuid4
 
 from cryptography import x509
@@ -21,9 +21,10 @@ if version_info < (3, ):
     from atexit import register
     cleanup_files = []  #type: List[str]
 
-    def cleanup():  # pragma: no cover
-        """Cleans SSL certificate and key files"""
+    def cleanup():
         #type: () -> None
+        #pragma: no cover
+        """Cleans SSL certificate and key files"""
         for f in cleanup_files:
             remove(f)
 
@@ -31,13 +32,13 @@ if version_info < (3, ):
 
 
 def generate_self_signed_cert(cert_file, key_file):
+    #type: (Any, Any) -> None
     """Given two file-like objects, generate an SSL key and certificate
 
     Args:
         cert_file:  The certificate file you wish to write to
         key_file:   The key file you wish to write to
     """
-    #type: (file, file) -> None
     one_day = timedelta(1, 0, 0)
     private_key = rsa.generate_private_key(
         public_exponent=65537, key_size=2048, backend=default_backend())
@@ -71,6 +72,7 @@ def generate_self_signed_cert(cert_file, key_file):
 
 
 def get_socket(server_side):
+    #type: (bool) -> SSLSocket
     """Returns a socket set up as server or client side
 
     Args:
@@ -79,7 +81,6 @@ def get_socket(server_side):
     Returns:
         An SSL socket object
     """
-    #type: (bool) -> SSLSocket
     if server_side:
         names = ('', '')  #type: Tuple[str, str]
         with NamedTemporaryFile(delete=False, suffix=".cert") as cert_file:

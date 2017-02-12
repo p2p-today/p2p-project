@@ -35,7 +35,7 @@ Submodules:
     * test:        Unit tests for this library
 """
 
-from typing import List, Tuple
+from typing import Any, Callable, List, Tuple
 
 from .base import protocol, version, protocol_version, node_policy_version
 from .mesh import mesh_socket
@@ -49,6 +49,7 @@ version_info = tuple(map(int, __version__.split(".")))  #type: Tuple[int, ...]
 
 
 def bootstrap(socket_type, proto, addr, port, *args, **kargs):
+    #type: (Callable, protocol, str, int, *Any, **Any) -> None
     raise NotImplementedError("See http://git.p2p.today/issues/130")
     # global seed
     # seed = dht_socket(addr, port, out_addr = kargs.get('out_addr'))
