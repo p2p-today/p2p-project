@@ -2,10 +2,9 @@ from __future__ import print_function
 from __future__ import with_statement
 from __future__ import unicode_literals
 
-import calendar
-import os
-import socket
-import time
+from calendar import timegm
+from socket import socket, AF_INET, SOCK_DGRAM, SHUT_RDWR
+from time import gmtime
 
 from logging import (getLogger, INFO, DEBUG)
 
@@ -85,8 +84,7 @@ def get_lan_ip():
 
     Note: This will return '127.0.0.1' if it is not connected to a network
     """
-    import socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s = socket(AF_INET, SOCK_DGRAM)
     try:
         # doesn't even have to be reachable
         s.connect(('8.8.8.8', 23))
@@ -94,7 +92,7 @@ def get_lan_ip():
     except:
         IP = '127.0.0.1'
     finally:
-        s.shutdown(socket.SHUT_RDWR)
+        s.shutdown(SHUT_RDWR)
         return IP
 
 
@@ -103,7 +101,7 @@ def getUTC():
 
     Note: This will always return an integral value
     """
-    return calendar.timegm(time.gmtime())
+    return timegm(gmtime())
 
 
 def get_socket(protocol, serverside=False):
@@ -121,7 +119,7 @@ def get_socket(protocol, serverside=False):
         A socket-like object
     """
     if protocol.encryption == "Plaintext":
-        return socket.socket()
+        return socket()
     elif protocol.encryption == "SSL":
         # This is inline to prevent dependency issues
         from . import ssl_wrapper
