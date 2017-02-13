@@ -53,12 +53,10 @@ def sanitize_packet(packet):
     or dict keying
     """
     if isinstance(packet, type(u'')):
-        return packet.encode('utf-8')
+        return cast(str, packet).encode('utf-8')
     elif isinstance(packet, bytearray):
         return bytes(packet)
-    elif not isinstance(packet, bytes):
-        return packet.encode('raw_unicode_escape')
-    return packet
+    return cast(bytes, packet)
 
 
 def intersect(*args):
@@ -114,7 +112,7 @@ def getUTC():
 
 
 def get_socket(protocol, serverside=False):
-    #type: (py2p.base.protocol, bool) -> Any
+    #type: (Any, bool) -> Any
     """Given a protocol object, return the appropriate socket
 
     Args:
@@ -132,8 +130,8 @@ def get_socket(protocol, serverside=False):
         return socket()
     elif protocol.encryption == "SSL":
         # This is inline to prevent dependency issues
-        from .ssl_wrapper import get_socket
-        return get_socket(serverside)
+        from .ssl_wrapper import get_socket as _get_socket
+        return _get_socket(serverside)
     else:  # pragma: no cover
         raise ValueError("Unkown encryption method")
 
