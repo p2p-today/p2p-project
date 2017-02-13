@@ -120,7 +120,11 @@ def InternalMessage_exceptions_validiation(array, impl):
 def test_protocol(benchmark, iters=200, impl=base):
     def test(sub, enc, id_):
         print("constructing")
-        test = impl.protocol(sub, enc)
+        if hasattr(impl, 'protocol'):
+            Protocol = impl.protocol
+        else:
+            Protocol = impl.Protocol
+        test = Protocol(sub, enc)
         print("testing subnet equality")
         assert test.subnet == test[0] == sub
         print("testing encryption equality")

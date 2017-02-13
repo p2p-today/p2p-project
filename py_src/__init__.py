@@ -21,7 +21,7 @@ In this module:
           -  port:        The port you'd like to bind to
           -  out_addr:    Your outward-facing address, if that is different
                               from (addr, port)
-          -  prot:        The py2p.base.protocol object you'd like to use
+          -  prot:        The py2p.base.Protocol object you'd like to use
           -  debug_level: The verbosity at which this and its associated
                               py2p.mesh.mesh_daemon prints debug information
 
@@ -35,9 +35,9 @@ Submodules:
     * test:        Unit tests for this library
 """
 
-from typing import Any, Callable, List, Tuple
+from typing import (Any, Callable, List, Tuple)
 
-from .base import protocol, version, protocol_version, node_policy_version
+from .base import (Protocol, version, protocol_version, node_policy_version)
 from .mesh import mesh_socket
 from .chord import chord_socket
 # from .kademlia import kademlia_socket
@@ -49,7 +49,7 @@ version_info = tuple(map(int, __version__.split(".")))  #type: Tuple[int, ...]
 
 
 def bootstrap(socket_type, proto, addr, port, *args, **kargs):
-    #type: (Callable, protocol, str, int, *Any, **Any) -> None
+    #type: (Callable, Protocol, str, int, *Any, **Any) -> None
     raise NotImplementedError("See http://git.p2p.today/issues/130")
     # global seed
     # seed = dht_socket(addr, port, out_addr = kargs.get('out_addr'))
@@ -66,7 +66,7 @@ __all__ = ["mesh", "chord", "kademlia", "base", "ssl_wrapper"]  #type: List[str]
 
 try:
     import cbase
-    protocol = cbase.protocol
+    Protocol = cbase.protocol
     __all__.append("cbase")
 except ImportError:
     pass

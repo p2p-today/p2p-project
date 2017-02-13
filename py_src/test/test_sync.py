@@ -24,7 +24,7 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
             sync.sync_socket(
                 'localhost',
                 start_port + i * num_nodes,
-                prot=sync.protocol('', encryption),
+                prot=sync.Protocol('', encryption),
                 debug_level=5,
                 leasing=leasing)
         ]
@@ -33,7 +33,7 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
             new_node = sync.sync_socket(
                 'localhost',
                 start_port + i * num_nodes + j,
-                prot=sync.protocol('', encryption),
+                prot=sync.Protocol('', encryption),
                 debug_level=5,
                 leasing=leasing)
             nodes[-1].connect('localhost', start_port + i * num_nodes + j)

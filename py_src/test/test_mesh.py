@@ -24,14 +24,14 @@ def propagation_validation(iters, start_port, num_nodes, encryption):
             mesh.mesh_socket(
                 'localhost',
                 start_port + i * num_nodes,
-                prot=mesh.protocol('', encryption),
+                prot=mesh.Protocol('', encryption),
                 debug_level=5)
         ]
         for j in xrange(1, num_nodes):
             new_node = mesh.mesh_socket(
                 'localhost',
                 start_port + i * num_nodes + j,
-                prot=mesh.protocol('', encryption),
+                prot=mesh.Protocol('', encryption),
                 debug_level=5)
             nodes[-1].connect('localhost', start_port + i * num_nodes + j)
             nodes.append(new_node)
@@ -64,12 +64,12 @@ def protocol_rejection_validation(iters, start_port, encryption):
         f = mesh.mesh_socket(
             'localhost',
             start_port + i * 2,
-            prot=mesh.protocol('test', encryption),
+            prot=mesh.Protocol('test', encryption),
             debug_level=5)
         g = mesh.mesh_socket(
             'localhost',
             start_port + i * 2 + 1,
-            prot=mesh.protocol('test2', encryption),
+            prot=mesh.Protocol('test2', encryption),
             debug_level=5)
         print("----------------------Test event----------------------")
         g.connect('localhost', start_port + i * 2)
@@ -108,12 +108,12 @@ def handler_registry_validation(iters, start_port, encryption, reg):
         f = mesh.mesh_socket(
             'localhost',
             start_port + i * 2,
-            prot=mesh.protocol('', encryption),
+            prot=mesh.Protocol('', encryption),
             debug_level=5)
         g = mesh.mesh_socket(
             'localhost',
             start_port + i * 2 + 1,
-            prot=mesh.protocol('', encryption),
+            prot=mesh.Protocol('', encryption),
             debug_level=5)
 
         f.register_handler(reg)
@@ -162,13 +162,13 @@ def test_reply_SSL(iters=3):
 #     for i in xrange(iters):
 #         print("----------------------Test start----------------------")
 #         f = mesh.mesh_socket('localhost', start_port + i*3,
-#                              prot=mesh.protocol('', encryption),
+#                              prot=mesh.Protocol('', encryption),
 #                              debug_level=2)
 #         g = mesh.mesh_socket('localhost', start_port + i*3 + 1,
-#                              prot=mesh.protocol('', encryption),
+#                              prot=mesh.Protocol('', encryption),
 #                              debug_level=2)
 #         h = mesh.mesh_socket('localhost', start_port + i*3 + 2,
-#                              prot=mesh.protocol('', encryption),
+#                              prot=mesh.Protocol('', encryption),
 #                              debug_level=2)
 #         f.connect('localhost', start_port + i*3 + 1)
 #         g.connect('localhost', start_port + i*3 + 2)

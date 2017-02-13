@@ -1170,7 +1170,8 @@ class message(object):
                 getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
-            self.server.requests[request_id] = (flags.whisper, flags.whisper, *args)
+            to_send = (flags.whisper, flags.whisper)  #type: Tuple[msg_packable]
+            self.server.requests[request_id] = to_send + args
             self.server._logger.critical(
                 "You aren't connected to the original sender. This reply is "
                 "not guarunteed, but we're trying to make a connection and "

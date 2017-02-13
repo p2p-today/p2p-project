@@ -14,8 +14,8 @@ from logging import (INFO, DEBUG)
 from random import shuffle
 from traceback import format_exc
 
-from typing import (cast, Any, MutableSequence, Sequence, Tuple, Union)
-from typing.collections import deque as DequeType
+from typing import (collections as _collections, cast, Any, MutableSequence, Sequence, Tuple, Union)
+from _collections import deque as DequeType
 
 try:
     from .cbase import protocol as Protocol

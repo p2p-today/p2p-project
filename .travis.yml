@@ -55,9 +55,7 @@ matrix:
       env: jsver=4
     - python: '3.5'
       os: linux
-      script: |
-        pip install mypy-lang
-        mypy . --check-untyped-defs --silent-imports --disallow-untyped-calls --disallow-untyped-defs
+      script: make mypy
 
 script:
   - sh ./.scripts/travis_script.sh
