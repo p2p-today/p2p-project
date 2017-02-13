@@ -16,7 +16,7 @@ from itertools import chain
 from logging import (DEBUG, INFO)
 
 from async_promises import Promise
-from typing import (Any, Callable, Dict, Tuple, Union)
+from typing import (Any, Callable, Dict, Iterable, Iterator, Set, Tuple, Union)
 
 try:
     from .cbase import protocol as Protocol
@@ -160,10 +160,10 @@ class chord_socket(mesh_socket):
                                            debug_level)
         if self.daemon == 'chord reserved':
             self.daemon = chord_daemon(addr, port, self)
-        self.id_10 = from_base_58(self.id)
-        self.data = dict(((method, {}) for method in hashes))
-        self.__keys = set()
-        self.leeching = True
+        self.id_10 = from_base_58(self.id)  #type: int
+        self.data = dict(((method, {}) for method in hashes))  #type: Dict[bytes, Dict[int, msg_packable]]
+        self.__keys = set()  #type: Set[bytes]
+        self.leeching = True  #type: bool
         # self.register_handler(self._handle_peers)
         self.register_handler(self.__handle_meta)
         self.register_handler(self.__handle_key)
@@ -196,16 +196,18 @@ class chord_socket(mesh_socket):
 
         @inherit_doc(chord_connection.id_10)
         def get_id(o):
+            #type: (chord_connection) -> int
             return o.id_10
 
         def smallest_gap(lst):
+            #type: (Iterable[chord_connection]) -> chord_connection
             coll = sorted(lst, key=get_id)
             coll_len = len(coll)
             circular_triplets = (
                 (coll[x], coll[(x + 1) % coll_len], coll[(x + 2) % coll_len])
                 for x in range(coll_len))
-            narrowest = None
-            gap = 2**384
+            narrowest = None  #type: Union[None, chord_connection]
+            gap = 2**384  #type: int
             for beg, mid, end in circular_triplets:
                 if distance(beg.id_10, end.id_10) < gap and mid.outgoing:
                     gap = distance(beg.id_10, end.id_10)
@@ -295,10 +297,12 @@ class chord_socket(mesh_socket):
             new_peers = packets[1]
 
             def is_prev(id):
+                #type: (int) -> bool
                 return distance(from_base_58(id), self.id_10) <= distance(
                     self.prev.id_10, self.id_10)
 
             def is_next(id):
+                #type: (int) -> bool
                 return distance(self.id_10, from_base_58(id)) <= distance(
                     self.id_10, self.next.id_10)
 
@@ -398,7 +402,7 @@ class chord_socket(mesh_socket):
         Returns:
             A nested :py:class:`dict` containing your data from start to end
         """
-        ret = dict(((method, {}) for method in hashes))
+        ret = dict(((method, {}) for method in hashes))  #type: Dict[bytes, Dict[int, msg_packable]]
         self.__print__("Entering dump_data", level=1)
         for method, table in self.data.items():
             for key, value in table.items():
@@ -408,7 +412,7 @@ class chord_socket(mesh_socket):
         return ret
 
     def __lookup(self, method, key, handler=None):
-        #type: (chord_socket, bytes, bytes, chord_connection) -> msg_packable
+        #type: (chord_socket, bytes, int, chord_connection) -> msg_packable
         """Looks up the value at a given hash function and key. This method
         deals with just *one* of the underlying hash tables.
 
@@ -422,7 +426,7 @@ class chord_socket(mesh_socket):
             The value at said key, or an :py:class:`py2p.utils.awaiting_value`
             object, which will eventually contain its result
         """
-        node = self
+        node = self  #type: Union[chord_socket, chord_connection]
         if self.routing_table:
             node = self.find(key)
         elif self.awaiting_ids:
@@ -525,7 +529,7 @@ class chord_socket(mesh_socket):
         """
 
         def resolver(resolve, reject):
-            #type: (Callable[msg_packable], Callable[Exception]) -> None
+            #type: (Callable, Callable) -> None
             resolve(self.getSync(key, ifError=ifError, timeout=timeout))
 
         self._logger.debug(
@@ -533,7 +537,7 @@ class chord_socket(mesh_socket):
         return Promise(resolver)
 
     def __store(self, method, key, value):
-        #type: (chord_socket, bytes, bytes, msg_packable) -> None
+        #type: (chord_socket, bytes, int, msg_packable) -> None
         """Updates the value at a given key. This method deals with just *one*
         of the underlying hash tables.
 
@@ -597,9 +601,9 @@ class chord_socket(mesh_socket):
             self.send(_key, b'del', type=flags.notify)
 
     @inherit_doc(__setitem__)
-        #type: (chord_socket, Union[bytes, bytearray, str], msg_packable) -> None
     def set(self, key, value):
-        return self.__setitem__(key, value)
+        #type: (chord_socket, Union[bytes, bytearray, str], msg_packable) -> None
+        self.__setitem__(key, value)
 
     def __delitem__(self, key):
         #type: (chord_socket, Union[bytes, bytearray, str]) -> None

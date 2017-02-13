@@ -3,7 +3,7 @@ from __future__ import absolute_import
 
 from .mesh import (mesh_socket, mesh_connection)
 from .utils import (inherit_doc, getUTC, sanitize_packet, log_entry)
-from .base import (message, flags, to_base_58, from_base_58, msg_packable)
+from .base import (message, flags, to_base_58, from_base_58, MsgPackable, base_connection)
 
 try:
     from .cbase import protocol as Protocol
@@ -12,7 +12,7 @@ except:
 
 from logging import (DEBUG, INFO)
 
-from typing import (Any, Dict, Iterator, NamedTuple, Tuple, Union)
+from typing import (cast, Any, Dict, Iterator, NamedTuple, Tuple, Union)
 
 default_protocol = Protocol('sync', "Plaintext")  # SSL")
 
@@ -74,12 +74,12 @@ class sync_socket(mesh_socket):
         self.__leasing = leasing  #type: bool
         super(sync_socket, self).__init__(addr, port, protocol_used, out_addr,
                                           debug_level)
-        self.data = {}  #type: Dict[bytes, msg_packable]
+        self.data = cast(Dict[bytes, MsgPackable], {})  #type: Dict[bytes, MsgPackable]
         self.metadata = {}  #type: Dict[bytes, metatuple]
         self.register_handler(self.__handle_store)
 
     def __check_lease(self, key, new_data, new_meta):
-        #type: (sync_socket, bytes, msg_packable, metatuple) -> bool
+        #type: (sync_socket, bytes, MsgPackable, metatuple) -> bool
         meta = self.metadata.get(key, None)
         return ((meta is None) or (meta.owner == new_meta.owner) or
                 (meta.timestamp < getUTC() - 3600) or
@@ -88,7 +88,7 @@ class sync_socket(mesh_socket):
                 (meta.timestamp < new_meta.timestamp and not self.__leasing))
 
     def __store(self, key, new_data, new_meta, error=True):
-        #type: (sync_socket, bytes, msg_packable, metatuple, bool) -> None
+        #type: (sync_socket, bytes, MsgPackable, metatuple, bool) -> None
         """Private API method for storing data. You have permission to store
         something if:
 
@@ -130,7 +130,7 @@ class sync_socket(mesh_socket):
                          meta.owner, to_base_58(meta.timestamp))
 
     def __handle_store(self, msg, handler):
-        #type: (sync_socket, message, mesh_connection) -> Union[bool, None]
+        #type: (sync_socket, message, base_connection) -> Union[bool, None]
         """This callback is used to deal with data storage signals. Its two
         primary jobs are:
 
@@ -155,7 +155,7 @@ class sync_socket(mesh_socket):
             return True
 
     def __setitem__(self, key, data):
-        #type: (sync_socket, bytes, msg_packable) -> None
+        #type: (sync_socket, bytes, MsgPackable) -> None
         """Updates the value at a given key.
 
         Args:
@@ -188,11 +188,11 @@ class sync_socket(mesh_socket):
 
     @inherit_doc(__setitem__)
     def set(self, key, data):
-        #type: (sync_socket, bytes, msg_packable) -> None
+        #type: (sync_socket, bytes, MsgPackable) -> None
         self.__setitem__(key, data)
 
     def update(self, update_dict):
-        #type: (sync_socket, Dict[bytes, msg_packable]) -> None
+        #type: (sync_socket, Dict[bytes, MsgPackable]) -> None
         """Equivalent to :py:meth:`dict.update`
 
         This calls :py:meth:`.sync_socket.__setitem__` for each key/value
@@ -211,7 +211,7 @@ class sync_socket(mesh_socket):
             self.__setitem__(key, value)
 
     def __getitem__(self, key):
-        #type: (sync_socket, bytes) -> msg_packable
+        #type: (sync_socket, bytes) -> MsgPackable
         """Looks up the value at a given key.
 
         Args:
@@ -228,7 +228,7 @@ class sync_socket(mesh_socket):
         return self.data[key]
 
     def get(self, key, ifError=None):
-        #type: (sync_socket, bytes, Any) -> msg_packable
+        #type: (sync_socket, bytes, Any) -> MsgPackable
         """Retrieves the value at a given key.
 
         Args:
@@ -263,17 +263,17 @@ class sync_socket(mesh_socket):
         return self.keys()
 
     def values(self):
-        #type: (sync_socket) -> Iterator[msg_packable]
+        #type: (sync_socket) -> Iterator[MsgPackable]
         """Returns an iterator of the underlying :py:class:`dict`s values"""
         return (self[key] for key in self.keys())
 
     def items(self):
-        #type: (sync_socket) -> Iterator[Tuple[bytes, msg_packable]]
+        #type: (sync_socket) -> Iterator[Tuple[bytes, MsgPackable]]
         """Returns an iterator of the underlying :py:class:`dict`s items"""
         return ((key, self[key]) for key in self.keys())
 
     def pop(self, key, *args):
-        #type: (sync_socket, bytes, *Any) -> msg_packable
+        #type: (sync_socket, bytes, *Any) -> MsgPackable
         """Returns a value, with the side effect of deleting that association
 
         Args:
@@ -298,7 +298,7 @@ class sync_socket(mesh_socket):
         return ret
 
     def popitem(self):
-        #type: (sync_socket) -> Tuple[bytes, msg_packable]
+        #type: (sync_socket) -> Tuple[bytes, MsgPackable]
         """Returns an association, with the side effect of deleting that
         association
 
@@ -309,6 +309,6 @@ class sync_socket(mesh_socket):
         return (key, self.pop(key))
 
     def copy(self):
-        #type: (sync_socket) -> Dict[bytes, msg_packable]
+        #type: (sync_socket) -> Dict[bytes, MsgPackable]
         """Returns a :py:class:`dict` copy of this synchronized hash table"""
         return self.data.copy()

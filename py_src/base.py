@@ -22,13 +22,9 @@ from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple, Seque
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet,
                     inherit_doc, log_entry)
 
-_msg_packable = Union[None, bool, int, float, str, bytes]
-_msg_packable_list = List[_msg_packable]
-_msg_packable_tuple = Tuple[_msg_packable]
-_msg_packable_dict = Dict[str, _msg_packable]
-_msg_packable = Union[None, bool, int, float, str, bytes, _msg_packable_list, _msg_packable_tuple, _msg_packable_dict]
-msg_packable = Union[_msg_packable, List[_msg_packable], Tuple[_msg_packable], Dict[str, _msg_packable]]
-
+_MsgPackable_ = Union[None, bool, int, float, str, bytes]
+_MsgPackable = Union[_MsgPackable_, List[_MsgPackable_], Tuple[_MsgPackable_, ...], Dict[str, _MsgPackable_]]
+MsgPackable = Union[_MsgPackable, List[_MsgPackable], Tuple[_MsgPackable, ...], Dict[str, _MsgPackable]]
 
 protocol_version = "0.6"
 node_policy_version = "676"
@@ -295,7 +291,7 @@ def from_base_58(string):
     """
     decimal = 0
     for char in sanitize_packet(string):
-        decimal = decimal * 58 + base_58.index(char)
+        decimal = decimal * 58 + base_58.index(cast(bytes, char))
     return decimal
 
 
@@ -433,9 +429,9 @@ class InternalMessage(object):
         return msg
 
     def __init__(self,  #type: InternalMessage
-                 msg_type,  #type: msg_packable
+                 msg_type,  #type: MsgPackable
                  sender,  #type: bytes
-                 payload,  #type: Iterable[msg_packable, ...]
+                 payload,  #type: Iterable[MsgPackable, ...]
                  compression=None,  #type: Union[None, Iterable[int, ...]]
                  timestamp=None  #type: Union[None, int]
         ):  #type: (...) -> None
@@ -476,7 +472,7 @@ class InternalMessage(object):
 
     @property
     def payload(self):
-        #type: (InternalMessage) -> Tuple[msg_packable, ...]
+        #type: (InternalMessage) -> Tuple[MsgPackable, ...]
         """Returns a :py:class:`tuple` containing the message payload encoded
         as :py:class:`bytes`
         """
@@ -498,12 +494,12 @@ class InternalMessage(object):
 
     @property
     def msg_type(self):
-        #type: (InternalMessage) -> msg_packable
+        #type: (InternalMessage) -> MsgPackable
         return self.__msg_type
 
     @msg_type.setter
     def msg_type(self, val):
-        #type: (InternalMessage, msg_packable) -> None
+        #type: (InternalMessage, MsgPackable) -> None
         self.__clear_cache()
         self.__msg_type = val
 
@@ -560,7 +556,7 @@ class InternalMessage(object):
 
     @property
     def packets(self):
-        #type: (InternalMessage) -> Tuple[msg_packable, ...]
+        #type: (InternalMessage) -> Tuple[MsgPackable, ...]
         """Returns the full :py:class:`tuple` of packets in this message
         encoded as :py:class:`bytes`, excluding the header
         """
@@ -638,8 +634,8 @@ class base_connection(object):
         self.id = None  #type: Union[None, bytes]
         self.time = getUTC()
         self.addr = None  #type: Union[None, Tuple[str, int]]
-        self.compression = ()  #type: Tuple[int, ...]
-        self.last_sent = ()  #type: Tuple[msg_packable, ...]
+        self.compression = []  #type: List[int]
+        self.last_sent = ()  #type: Tuple[MsgPackable, ...]
         self.expected = 4
         self.active = False
 
@@ -654,7 +650,7 @@ class base_connection(object):
             the :py:class:`~py2p.base.IntenalMessage` object you just sent, or
             ``None`` if the sending was unsuccessful
         """
-        msg.compression = self.compression
+        msg.compression = self.compression  #type: ignore
         if msg.msg_type in (flags.whisper, flags.broadcast):
             self.last_sent = msg.payload
         self.__print__("Sending %s to %s" % (msg.packets, self), level=4)
@@ -669,7 +665,7 @@ class base_connection(object):
             self.server.disconnect(self)
 
     def send(self, msg_type, *args, **kargs):
-        #type: (base_connection, msg_packable, *msg_packable, **Union[bytes, int]) -> InternalMessage
+        #type: (base_connection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
         """Sends a message through its connection.
 
         Args:
@@ -747,7 +743,7 @@ class base_connection(object):
         return msg
 
     def handle_renegotiate(self, packets):
-        #type: (base_connection, Sequence[msg_packable]) -> bool
+        #type: (base_connection, Sequence[MsgPackable]) -> bool
         """The handler for connection renegotiations
 
         This is to deal with connection maintenance. For instance, it could
@@ -766,14 +762,14 @@ class base_connection(object):
             if packets[4] == flags.compression:
                 encoded_methods = packets[5]
                 respond = (self.compression != encoded_methods)
-                self.compression = cast(Tuple[int, ...], encoded_methods)
+                self.compression = list(cast(Iterable[int], encoded_methods))
                 self.__print__(
                     "Compression methods changed to: %s" %
                     repr(self.compression),
                     level=2)
                 if respond:
                     self.send(flags.renegotiate, flags.compression,
-                              intersect(compression, self.compression))
+                              cast(Tuple[int, ...], intersect(compression, self.compression)))
                 return True
             elif packets[4] == flags.resend:
                 self.send(*self.last_sent)
@@ -1134,7 +1130,7 @@ class message(object):
     @property  #type: ignore
     @inherit_doc(InternalMessage.payload)
     def packets(self):
-        #type: (message) -> Tuple[msg_packable, ...]
+        #type: (message) -> Tuple[MsgPackable, ...]
         return self.msg.payload
 
     @inherit_doc(InternalMessage.__len__)
@@ -1149,7 +1145,7 @@ class message(object):
             packets[0], packets[1:], self.sender)
 
     def reply(self, *args):
-        #type: (message, *msg_packable) -> None
+        #type: (message, *MsgPackable) -> None
         """Replies to the sender if you're directly connected. Tries to make
         a connection otherwise
 
@@ -1170,7 +1166,7 @@ class message(object):
                 getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
-            to_send = (flags.whisper, flags.whisper)  #type: Tuple[msg_packable]
+            to_send = (flags.whisper, flags.whisper)  #type: Tuple[MsgPackable, ...]
             self.server.requests[request_id] = to_send + args
             self.server._logger.critical(
                 "You aren't connected to the original sender. This reply is "
