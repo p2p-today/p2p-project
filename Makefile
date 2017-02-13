@@ -238,8 +238,8 @@ pyformat: clean
 	@$(MAKE) pytest
 
 mypy:
-	@python3 -m pip install mypy-lang --user --upgrade
-	@python3 -m mypy . --check-untyped-defs --silent-imports --disallow-untyped-calls --disallow-untyped-defs
+	@$(python3) -m pip install mypy-lang --user --upgrade
+	@$(python3) -m mypy . --check-untyped-defs --silent-imports --disallow-untyped-calls --disallow-untyped-defs
 
 html: jsdocs msgpack_module
 	@python $(docs_deps)
