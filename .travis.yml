@@ -4,7 +4,6 @@ matrix:
     - env: Cov='true' pyver=pypy pydist=homebrew
     - env: Cov='true' pyver=pypy3 pydist=homebrew
     - env: Cov='true' pyver=3.3 pydist=macpython
-    - env: Cov='true' pyver=3.6 pydist=macpython
   include:
     # - language: generic
     #   python: 2.6
