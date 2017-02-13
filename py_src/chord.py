@@ -18,9 +18,9 @@ from logging import (DEBUG, INFO)
 from async_promises import Promise
 
 try:
-    from .cbase import protocol
+    from .cbase import protocol as Protocol
 except:
-    from .base import protocol
+    from .base import Protocol
 
 from .base import (flags, compression, to_base_58, from_base_58,
                    base_connection, message, base_daemon, base_socket,
@@ -30,7 +30,7 @@ from .utils import (inherit_doc, getUTC, get_socket, intersect, awaiting_value,
                     most_common, log_entry, sanitize_packet)
 
 max_outgoing = 4
-default_protocol = protocol('chord', "Plaintext")  # SSL")
+default_protocol = Protocol('chord', "Plaintext")  # SSL")
 hashes = [b'sha1', b'sha224', b'sha256', b'sha384', b'sha512']
 
 if sys.version_info >= (3, ):
@@ -210,6 +210,7 @@ class chord_socket(mesh_socket):
         return False
 
     def __handle_meta(self, msg, handler):
+        #type: (chord_socket, message, chord_connection) -> Union[bool, None]
         """This callback is used to deal with chord specific metadata.
         Its primary job is:
 
@@ -241,6 +242,7 @@ class chord_socket(mesh_socket):
             return True
 
     def __handle_key(self, msg, handler):
+        #type: (chord_socket, message, chord_connection) -> Union[bool, None]
         """This callback is used to deal with new key entries. Its primary
         job is:
 
@@ -265,6 +267,7 @@ class chord_socket(mesh_socket):
             return True
 
     def _handle_peers(self, msg, handler):
+        #type: (chord_socket, message, chord_connection) -> Union[bool, None]
         """This callback is used to deal with peer signals. Its primary jobs
         is to connect to the given peers, if this does not exceed
         :py:const:`py2p.chord.max_outgoing`
@@ -302,6 +305,7 @@ class chord_socket(mesh_socket):
             return True
 
     def __handle_retrieved(self, msg, handler):
+        #type: (chord_socket, message, chord_connection) -> Union[bool, None]
         """This callback is used to deal with response signals. Its two
         primary jobs are:
 
@@ -327,6 +331,7 @@ class chord_socket(mesh_socket):
             return True
 
     def __handle_retrieve(self, msg, handler):
+        #type: (chord_socket, message, chord_connection) -> Union[bool, None]
         """This callback is used to deal with data retrieval signals. Its two primary jobs are:
 
         - respond with data you possess
@@ -351,6 +356,7 @@ class chord_socket(mesh_socket):
                 return True
 
     def __handle_store(self, msg, handler):
+        #type: (chord_socket, message, chord_connection) -> Union[bool, None]
         """This callback is used to deal with data storage signals. Its two primary jobs are:
 
         - store data in keys you're responsible for

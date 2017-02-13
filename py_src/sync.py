@@ -6,14 +6,14 @@ from .utils import (inherit_doc, getUTC, sanitize_packet, log_entry)
 from .base import (flags, to_base_58, from_base_58)
 
 try:
-    from .cbase import protocol
+    from .cbase import protocol as Protocol
 except:
-    from .base import protocol
+    from .base import Protocol
 
 from collections import namedtuple
 from logging import (DEBUG, INFO)
 
-default_protocol = protocol('sync', "Plaintext")  # SSL")
+default_protocol = Protocol('sync', "Plaintext")  # SSL")
 
 
 class metatuple(namedtuple('meta', ('owner', 'timestamp'))):
@@ -68,7 +68,7 @@ class sync_socket(mesh_socket):
                  debug_level=0,
                  leasing=True):
         """Initialize a chord socket"""
-        protocol_used = protocol(prot[0] + str(int(leasing)), prot[1])
+        protocol_used = Protocol(prot[0] + str(int(leasing)), prot[1])
         self.__leasing = leasing
         super(sync_socket, self).__init__(addr, port, protocol_used, out_addr,
                                           debug_level)
@@ -125,6 +125,7 @@ class sync_socket(mesh_socket):
                          meta.owner, to_base_58(meta.timestamp))
 
     def __handle_store(self, msg, handler):
+        #type: (sync_socket, message, sync_connection) -> Union[bool, None]
         """This callback is used to deal with data storage signals. Its two
         primary jobs are:
 
