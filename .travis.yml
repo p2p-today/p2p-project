@@ -57,7 +57,7 @@ matrix:
       os: linux
       script: |
         pip install mypy-lang
-        mypy py_src/ --check-untyped-defs --silent-imports --disallow-untyped-calls --disallow-untyped-defs
+        mypy . --check-untyped-defs --silent-imports --disallow-untyped-calls --disallow-untyped-defs
 
 script:
   - sh ./.scripts/travis_script.sh

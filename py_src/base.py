@@ -7,18 +7,17 @@ from __future__ import with_statement
 import inspect
 import socket
 
-from collections import namedtuple
-from hashlib import sha256, sha384
+from hashlib import (sha256, sha384)
 from itertools import chain
 from logging import (getLogger, INFO, DEBUG)
 from sys import version_info
-from threading import Lock, Thread, current_thread
+from threading import (Lock, Thread, current_thread)
 from traceback import format_exc
 from uuid import uuid4
 
 from umsgpack import (packb, unpackb, UnsupportedTypeException)
 from pyee import EventEmitter
-from typing import Any, Dict, Iterable, List, Sequence, Tuple, Union
+from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple, Sequence, Tuple, Union)
 
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet,
                     inherit_doc, log_entry)
@@ -300,27 +299,27 @@ def from_base_58(string):
     return decimal
 
 
-class protocol(namedtuple("protocol", ['subnet', 'encryption'])):
+class Protocol(NamedTuple("_Protocol", [('subnet', str), ('encryption', str)])):
     """Defines service variables so that you can reject connections looking
     for a different service
 
     Attributes:
-        subnet:     The subnet flag this protocol uses
-        encryption: The encryption method this protocol uses
-        id:         The SHA-256 based ID of this protocol
+        subnet:     The subnet flag this Protocol uses
+        encryption: The encryption method this Protocol uses
+        id:         The SHA-256 based ID of this Protocol
     """
     __slots__ = ()
 
     @property
     def id(self):
-        #type: (protocol) -> str
-        """The SHA-256-based ID of the protocol"""
+        #type: (Protocol) -> str
+        """The SHA-256-based ID of the Protocol"""
         h = sha256(''.join(str(x) for x in self).encode())
         h.update(protocol_version.encode())
         return to_base_58(int(h.hexdigest(), 16)).decode()
 
 
-default_protocol = protocol('', "Plaintext")  # SSL")
+default_protocol = Protocol('', "Plaintext")  # SSL")
 
 
 class InternalMessage(object):
@@ -346,19 +345,19 @@ class InternalMessage(object):
            AttributeError: Fed a non-string, non-bytes argument
            AssertionError: Initial size header is incorrect
         """
-        string = sanitize_packet(string)
+        _string = sanitize_packet(string)
         if not sizeless:
-            if unpack_value(string[:4]) != len(string[4:]):
+            if unpack_value(_string[:4]) != len(_string[4:]):
                 raise AssertionError(
                     "Real message size {} != expected size {}. "
                     "Buffer given: {}".format(
-                        len(string), unpack_value(string[:4]) + 4, string))
-            string = string[4:]
-        return string
+                        len(_string), unpack_value(_string[:4]) + 4, _string))
+            _string = _string[4:]
+        return _string
 
     @classmethod
     def __decompress_string(cls, string, compressions=None):
-        #type: (Any, bytes, Union[None, Iterable[int, ...]]) -> Tuple[bytes, bool]
+        #type: (Any, bytes, Union[None, Iterable[int]]) -> Tuple[bytes, bool]
         """Returns a tuple containing the decompressed bytes and a boolean
         as to whether decompression failed or not
 
@@ -435,7 +434,7 @@ class InternalMessage(object):
 
     def __init__(self,  #type: InternalMessage
                  msg_type,  #type: msg_packable
-                 sender,  #type: msg_packable
+                 sender,  #type: bytes
                  payload,  #type: Iterable[msg_packable, ...]
                  compression=None,  #type: Union[None, Iterable[int, ...]]
                  timestamp=None  #type: Union[None, int]
@@ -510,12 +509,12 @@ class InternalMessage(object):
 
     @property
     def sender(self):
-        #type: (InternalMessage) -> msg_packable
+        #type: (InternalMessage) -> bytes
         return self.__sender
 
     @sender.setter
     def sender(self, val):
-        #type: (InternalMessage, msg_packable) -> None
+        #type: (InternalMessage, bytes) -> None
         self.__clear_cache()
         self.__sender = val
 
@@ -561,7 +560,7 @@ class InternalMessage(object):
 
     @property
     def packets(self):
-        #type: (InternalMessage) -> Tuple[msg_packable]
+        #type: (InternalMessage) -> Tuple[msg_packable, ...]
         """Returns the full :py:class:`tuple` of packets in this message
         encoded as :py:class:`bytes`, excluding the header
         """
@@ -636,11 +635,11 @@ class base_connection(object):
         self.server = server
         self.outgoing = outgoing
         self.buffer = bytearray()
-        self.id = None  #type: Union[None, str]
+        self.id = None  #type: Union[None, bytes]
         self.time = getUTC()
         self.addr = None  #type: Union[None, Tuple[str, int]]
-        self.compression = ()  #type: Tuple[int]
-        self.last_sent = ()  #type: Tuple[msg_packable]
+        self.compression = ()  #type: Tuple[int, ...]
+        self.last_sent = ()  #type: Tuple[msg_packable, ...]
         self.expected = 4
         self.active = False
 
@@ -698,7 +697,7 @@ class base_connection(object):
 
     @property
     def protocol(self):
-        #type: (base_connection) -> protocol
+        #type: (base_connection) -> Protocol
         """Returns server.protocol"""
         return self.server.protocol
 
@@ -767,7 +766,7 @@ class base_connection(object):
             if packets[4] == flags.compression:
                 encoded_methods = packets[5]
                 respond = (self.compression != encoded_methods)
-                self.compression = encoded_methods
+                self.compression = cast(Tuple[int, ...], encoded_methods)
                 self.__print__(
                     "Compression methods changed to: %s" %
                     repr(self.compression),
@@ -808,6 +807,7 @@ class base_daemon(object):
 
     @log_entry('py2p.base.base_daemon.__init__', DEBUG)
     def __init__(self, addr, port, server):
+        #type: (Any, str, int, base_socket) -> None
         """Sets up a daemon process for your peer-to-peer socket
 
         Args:
@@ -836,15 +836,18 @@ class base_daemon(object):
 
     @property
     def protocol(self):
+        #type: (base_daemon) -> Protocol
         """Returns server.protocol"""
         return self.server.protocol
 
     def kill_old_nodes(self, handler):
+        #type: (base_daemon, base_connection) -> None
         """Cleans out connections which never finish a message"""
         if handler.active and handler.time < getUTC() - 60:
             self.server.disconnect(handler)
 
     def process_data(self, handler):
+        #type: (base_daemon, base_connection) -> None
         """Collects incoming data from nodes"""
         try:
             while not handler.find_terminator():
@@ -862,9 +865,7 @@ class base_daemon(object):
         except Exception as e:
             if (isinstance(e, socket.error) and
                     e.args[0] in (9, 104, 10053, 10054, 10058)):
-                node_id = handler.id
-                if not node_id:
-                    node_id = repr(handler)
+                node_id = repr(handler.id or handler)
                 self.__print__(
                     "Node %s has disconnected from the network" % node_id,
                     level=1)
@@ -881,6 +882,7 @@ class base_daemon(object):
             self.server.request_peers()
 
     def __del__(self):
+        #type: (base_daemon) -> None
         self.alive = False
         try:
             self.sock.shutdown(socket.SHUT_RDWR)
@@ -889,6 +891,7 @@ class base_daemon(object):
 
     @inherit_doc(base_connection.__print__)
     def __print__(self, *args, **kargs):
+        #type: (base_daemon, *Any, **int) -> None
         self.server.__print__(*args, **kargs)
 
 
@@ -902,19 +905,20 @@ class base_socket(EventEmitter, object):
                  'out_addr', 'id', '_logger', '__handlers', '__closed')
 
     @log_entry('py2p.base.base_socket.__init__', DEBUG)
-    def __init__(self,
-                 addr,
-                 port,
-                 prot=default_protocol,
-                 out_addr=None,
-                 debug_level=0):
+    def __init__(self,  #type: Any
+                 addr,  #type: str
+                 port,  #type: int
+                 prot=default_protocol,  #type: Protocol
+                 out_addr=None,  #type: Union[None, Tuple[str, int]]
+                 debug_level=0  #type: int
+        ):  #type: (...) -> None
         """Initializes a peer to peer socket
 
         Args:
             addr:        The address you wish to bind to (ie: "192.168.1.1")
             port:        The port you wish to bind to (ie: 44565)
             prot:        The protocol you wish to operate over, defined by a
-                             :py:class:`py2p.base.protocol` object
+                             :py:class:`py2p.base.Protocol` object
             out_addr:    Your outward facing address. Only needed if you're
                              connecting over the internet. If you use '0.0.0.0'
                              for the addr argument, this will automatically be
@@ -930,7 +934,8 @@ class base_socket(EventEmitter, object):
         EventEmitter.__init__(self)
         self.protocol = prot
         self.debug_level = debug_level
-        self.routing_table = {}  # In format {ID: handler}
+        self.routing_table = {}  #type: Dict[bytes, base_connection]
+        # In format {ID: handler}
         self.awaiting_ids = []  #type: List[base_connection]
         # Connected, but not handshook yet
         if out_addr:  # Outward facing address, if you're port forwarding
@@ -941,13 +946,14 @@ class base_socket(EventEmitter, object):
             self.out_addr = addr, port
         info = (str(self.out_addr).encode(), prot.id.encode(), user_salt)
         h = sha384(b''.join(info))
-        self.id = to_base_58(int(h.hexdigest(), 16))
+        self.id = to_base_58(int(h.hexdigest(), 16))  #type: bytes
         self._logger = getLogger('{}.{}.{}'.format(
             self.__class__.__module__, self.__class__.__name__, self.id))
-        self.__handlers = []
+        self.__handlers = []  #type: List[Callable[[message, base_connection], Union[bool, None]]]
         self.__closed = False
 
     def close(self):
+        #type: (base_socket) -> None
         """If the socket is not closed, close the socket
 
         Raises:
@@ -971,6 +977,7 @@ class base_socket(EventEmitter, object):
     if version_info >= (3, ):
 
         def register_handler(self, method):
+            #type: (base_socket, Callable[[message, base_connection], Union[bool, None]]) -> None
             """Register a handler for incoming method.
 
             Args:
@@ -996,6 +1003,7 @@ class base_socket(EventEmitter, object):
     else:
 
         def register_handler(self, method):
+            #type: (base_socket, Callable[[message, base_connection], Union[bool, None]]) -> None
             """Register a handler for incoming method.
 
             Args:
@@ -1019,6 +1027,7 @@ class base_socket(EventEmitter, object):
             self.__handlers.append(method)
 
     def handle_msg(self, msg, conn):
+        #type: (base_socket, message, base_connection) -> Union[bool, None]
         """Decides how to handle various message types, allowing some to be
         handled automatically
 
@@ -1038,6 +1047,7 @@ class base_socket(EventEmitter, object):
 
     @property
     def status(self):
+        #type: (base_socket) -> Union[str, List[str]]
         """The status of the socket.
 
         Returns:
@@ -1048,17 +1058,20 @@ class base_socket(EventEmitter, object):
 
     @property
     def outgoing(self):
+        #type: (base_socket) -> Iterable[bytes]
         """IDs of outgoing connections"""
         return (handler.id for handler in self.routing_table.values()
                 if handler.outgoing)
 
     @property
     def incoming(self):
+        #type: (base_socket) -> Iterable[bytes]
         """IDs of incoming connections"""
         return (handler.id for handler in self.routing_table.values()
                 if not handler.outgoing)
 
     def __print__(self, *args, **kargs):
+        #type: (base_socket, *Any, **int) -> None
         """Private method to print if level is <= self.debug_level
 
         Args:
@@ -1072,6 +1085,7 @@ class base_socket(EventEmitter, object):
                 print(self.out_addr[1], *args)
 
     def __del__(self):
+        #type: (base_socket) -> None
         if not self.__closed:
             self.close()
 
@@ -1099,7 +1113,7 @@ class message(object):
         """The time this message was sent at"""
         return self.msg.time
 
-    @property
+    @property  #type: ignore
     @inherit_doc(InternalMessage.time_58)
     def time_58(self):
         #type: (message) -> bytes
@@ -1107,20 +1121,20 @@ class message(object):
 
     @property
     def sender(self):
-        #type: (message) -> msg_packable
+        #type: (message) -> bytes
         """The ID of this message's sender"""
         return self.msg.sender
 
-    @property
+    @property  #type: ignore
     @inherit_doc(InternalMessage.id)
     def id(self):
         #type: (message) -> bytes
         return self.msg.id
 
-    @property
+    @property  #type: ignore
     @inherit_doc(InternalMessage.payload)
     def packets(self):
-        #type: (message) -> Tuple[msg_packable]
+        #type: (message) -> Tuple[msg_packable, ...]
         return self.msg.payload
 
     @inherit_doc(InternalMessage.__len__)
@@ -1131,12 +1145,8 @@ class message(object):
     def __repr__(self):
         #type: (message) -> str
         packets = self.packets
-        sender = self.sender
-        # This should no longer happen, but just in case
-        if isinstance(self.sender, base_connection):
-            sender = sender.addr
         return "message(type={}, packets={}, sender={})".format(
-            packets[0], packets[1:], sender)
+            packets[0], packets[1:], self.sender)
 
     def reply(self, *args):
         #type: (message, *msg_packable) -> None
@@ -1160,8 +1170,7 @@ class message(object):
                 getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
-            self.server.requests[request_id] = (flags.whisper, flags.whisper
-                                                ) + tuple(args)
+            self.server.requests[request_id] = (flags.whisper, flags.whisper, *args)
             self.server._logger.critical(
                 "You aren't connected to the original sender. This reply is "
                 "not guarunteed, but we're trying to make a connection and "
