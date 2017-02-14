@@ -139,7 +139,7 @@ def get_socket(protocol, serverside=False):
 class awaiting_value(object):
     """Proxy object for an asynchronously retrieved item"""
 
-    def __init__(self, value=-1):
+    def __init__(self, value=b''):
         #type: (awaiting_value, Any) -> None
         self.value = value  #type: Union[None, bool, int, dict, bytes, str, list, tuple]
         self.callback = None  #type: Any

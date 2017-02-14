@@ -22,7 +22,8 @@ from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple, Seque
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet,
                     inherit_doc, log_entry)
 
-_MsgPackable_ = Union[None, bool, int, float, str, bytes]
+_MsgPackable__ = Union[None, int, float, str, bytes]
+_MsgPackable_ = Union[_MsgPackable__, List[_MsgPackable__], Tuple[_MsgPackable__, ...], Dict[str, _MsgPackable__]]
 _MsgPackable = Union[_MsgPackable_, List[_MsgPackable_], Tuple[_MsgPackable_, ...], Dict[str, _MsgPackable_]]
 MsgPackable = Union[_MsgPackable, List[_MsgPackable], Tuple[_MsgPackable, ...], Dict[str, _MsgPackable]]
 

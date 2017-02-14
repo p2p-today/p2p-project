@@ -9,6 +9,9 @@ ifeq ($(shell python -c 'import sys; print(int(hasattr(sys, "real_prefix")))'), 
 	py_deps += --user
 	py_test_deps += --user
 	docs_deps += --user
+	user_postfix = --user
+else
+	user_postfix =
 endif
 
 ifeq ($(shell python -c 'import sys; print((sys.version_info[0]))'), 3)
@@ -118,28 +121,28 @@ browser-min-compat: browser-compat-min
 python: LICENSE setup.py
 	@echo "Checking dependencies..."
 	@python $(py_deps) --upgrade
-	@python $(pip) -r requirements.txt --user --upgrade
+	@python $(pip) -r requirements.txt --upgrade $(user_postfix)
 	@echo "Building python-only version..."
 	@python setup.py build --universal
 
 python3: LICENSE setup.py
 	@echo "Checking dependencies..."
 	@$(python3) $(py_deps) --upgrade
-	@$(python3) $(pip) -r requirements.txt --user --upgrade
+	@$(python3) $(pip) -r requirements.txt --upgrade $(user_postfix)
 	@echo "Building python-only version..."
 	@$(python3) setup.py build --universal
 
 python2: LICENSE setup.py
 	@echo "Checking dependencies..."
 	@$(python2) $(py_deps) --upgrade
-	@$(python2) $(pip) -r requirements.txt --user --upgrade
+	@$(python2) $(pip) -r requirements.txt --upgrade $(user_postfix)
 	@echo "Building python-only version..."
 	@$(python2) setup.py build --universal
 
 pypy: LICENSE setup.py
 	@echo "Checking dependencies..."
 	@pypy $(py_deps) --upgrade
-	@pypy $(pip) -r requirements.txt --user --upgrade
+	@pypy $(pip) -r requirements.txt --upgrade $(user_postfix)
 	@echo "Building python-only version..."
 	@pypy setup.py build --universal
 
@@ -233,13 +236,13 @@ else
 endif
 
 pyformat: clean
-	@python3 -m pip install yapf --user --upgrade
+	@python3 -m pip install yapf --upgrade $(user_postfix)
 	@python3 -m yapf py_src -ri
 	@$(MAKE) pytest
 
 mypy:
-	@$(python3) -m pip install mypy-lang --user --upgrade
-	@$(python3) -m mypy . --check-untyped-defs --silent-imports --disallow-untyped-calls --disallow-untyped-defs
+	@$(python3) -m pip install mypy --upgrade $(user_postfix)
+	@$(python3) -m mypy . --check-untyped-defs --ignore-missing-imports --disallow-untyped-calls --disallow-untyped-defs
 
 html: jsdocs msgpack_module
 	@python $(docs_deps)

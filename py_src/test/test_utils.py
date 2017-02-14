@@ -8,6 +8,8 @@ import subprocess
 import sys
 import time
 
+from typing import (Any, Tuple)
+
 from .. import utils
 
 if sys.version_info >= (3, ):
@@ -15,9 +17,11 @@ if sys.version_info >= (3, ):
 
 
 def test_intersect(benchmark, iters=200):
+    #type: (Any, int) -> None
     max_val = 2**12 - 1
 
     def test(pair1, pair2, cross1, cross2):
+        #type: (Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> None
         if max(cross1) < min(cross2):
             assert (utils.intersect(range(*pair1), range(*pair2)) == tuple(
                 range(max(cross1), min(cross2))))
@@ -25,6 +29,7 @@ def test_intersect(benchmark, iters=200):
             assert utils.intersect(range(*pair1), range(*pair2)) == ()
 
     def setup():
+        #type: () -> Tuple[Tuple, Dict]
         pair1 = sorted(
             (random.randint(0, max_val), random.randint(0, max_val)))
         pair2 = sorted(
@@ -37,6 +42,7 @@ def test_intersect(benchmark, iters=200):
 
 
 def test_getUTC(iters=20):
+    #type: (int) -> None
     while iters:
         nowa, nowb = (datetime.datetime.utcnow() - datetime.datetime(
             1970, 1, 1)), utils.getUTC()
@@ -47,6 +53,7 @@ def test_getUTC(iters=20):
 
 
 def test_lan_ip():
+    #type: () -> None
     if sys.platform[:5] in ('linux', 'darwi'):
         lan_ip_validation_linux()
     elif sys.platform[:3] in ('win', 'cyg'):
@@ -57,6 +64,7 @@ def test_lan_ip():
 
 
 def lan_ip_validation_linux():
+    #type: () -> None
     # command pulled from http://stackoverflow.com/a/13322549
     command = ("ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | "
                "grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'")
@@ -66,6 +74,7 @@ def lan_ip_validation_linux():
 
 
 def lan_ip_validation_windows():
+    #type: () -> None
     # command pulled from http://stackoverflow.com/a/17634009
     command = """for /f "delims=[] tokens=2" %%a in ('ping %computername% -4 -n 1 ^| findstr "["') do (echo %%a)"""
     test_file = open('test.bat', 'w')

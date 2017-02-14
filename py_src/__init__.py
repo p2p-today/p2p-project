@@ -66,7 +66,7 @@ __all__ = ["mesh", "chord", "kademlia", "base", "ssl_wrapper"]  #type: List[str]
 
 try:
     import cbase
-    Protocol = cbase.protocol
+    Protocol = cbase.protocol  #type: ignore
     __all__.append("cbase")
 except ImportError:
     pass

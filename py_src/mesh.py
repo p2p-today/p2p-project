@@ -32,7 +32,7 @@ from .base import (
     base_daemon,
     base_socket,
     InternalMessage, )
-from .utils import (getUTC, get_socket, intersect, inherit_doc, log_entry)
+from .utils import (getUTC, get_socket, intersect, inherit_doc, log_entry, awaiting_value)
 
 max_outgoing = 4
 default_protocol = Protocol('mesh', "Plaintext")  # SSL")
@@ -242,7 +242,7 @@ class mesh_socket(base_socket):
         super(mesh_socket, self).__init__(addr, port, prot, out_addr,
                                           debug_level)
         # Metadata about msg replies where you aren't connected to the sender
-        self.requests = cast(Dict[bytes, Tuple[MsgPackable, ...]], {})  #type: Dict[bytes, Tuple[MsgPackable, ...]]
+        self.requests = {}  #type: Dict[Union[bytes, Tuple[bytes, bytes]], Union[Tuple[MsgPackable, ...], awaiting_value]]
         # Metadata of messages to waterfall
         self.waterfalls = set()  #type: Set[Tuple[bytes, int]]
         # Queue of received messages. Access through recv()
@@ -422,7 +422,7 @@ class mesh_socket(base_socket):
             if self.requests.get(packets[1]):
                 addr = packets[2]
                 if addr:
-                    _msg = self.requests.get(packets[1])
+                    _msg = cast(Tuple[MsgPackable, ...], self.requests.get(packets[1]))
                     self.requests.pop(packets[1])
                     self.connect(addr[0][0], addr[0][1], addr[1])
                     self.routing_table[addr[1]].send(*_msg)

@@ -122,7 +122,7 @@ class sync_socket(mesh_socket):
 
     @inherit_doc(mesh_socket._send_peers)
     def _send_peers(self, handler):
-        #type: (sync_socket, mesh_connection) -> None
+        #type: (sync_socket, base_connection) -> None
         super(sync_socket, self)._send_peers(handler)
         for key in self:
             meta = self.metadata[key]

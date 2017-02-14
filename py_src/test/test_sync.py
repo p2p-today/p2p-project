@@ -18,6 +18,7 @@ if sys.version_info >= (3, ):
 
 
 def storage_validation(iters, start_port, num_nodes, encryption, leasing):
+    #type: (int, int, int, str, bool) -> None
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         nodes = [
@@ -64,16 +65,20 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
 
 
 def test_storage_leasing_Plaintext(iters=2):
+    #type: (int) -> None
     storage_validation(iters, 7100, 3, 'Plaintext', True)
 
 
 def test_storage_leasing_SSL(iters=2):
+    #type: (int) -> None
     storage_validation(iters, 7200, 3, 'SSL', True)
 
 
 def test_storage_Plaintext(iters=2):
+    #type: (int) -> None
     storage_validation(iters, 7300, 3, 'Plaintext', True)
 
 
 def test_storage_SSL(iters=2):
+    #type: (int) -> None
     storage_validation(iters, 7400, 3, 'SSL', True)
