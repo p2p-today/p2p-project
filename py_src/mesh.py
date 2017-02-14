@@ -284,7 +284,7 @@ class mesh_socket(base_socket):
             handler: A :py:class:`~py2p.mesh.mesh_connection`
         """
         tmp_compress = handler.compression
-        handler.compression.clear()
+        handler.compression = []
         handler.send(flags.whisper, flags.handshake, self.id, self.protocol.id,
                      self.out_addr, compression)
         handler.compression = tmp_compress
