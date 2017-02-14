@@ -57,6 +57,9 @@ matrix:
       node_js: "4"
       os: osx
       env: jsver=4
+    - python: '3.5'
+      os: linux
+      script: make mypy
 
 script:
   - sh ./.scripts/travis_script.sh

@@ -49,6 +49,7 @@ classifiers.extend((('Programming Language :: Python :: %s' % x)
 
 
 def has_environment_marker_support():
+    #type: () -> bool
     """
     Tests that setuptools has support for PEP-426 environment marker support.
     The first known release to support it is 0.7 (and the earliest on PyPI seems to be 0.7.2
@@ -67,6 +68,7 @@ def has_environment_marker_support():
 
 
 def main():
+    #type: () -> None
     ext_modules = []
     install_requires = open(os.path.join(loc, 'requirements.txt'),
                             'r').read().split()

@@ -18,13 +18,14 @@ if sys.version_info >= (3, ):
 
 
 def storage_validation(iters, start_port, num_nodes, encryption, leasing):
+    #type: (int, int, int, str, bool) -> None
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         nodes = [
             sync.sync_socket(
                 'localhost',
                 start_port + i * num_nodes,
-                prot=sync.protocol('', encryption),
+                prot=sync.Protocol('', encryption),
                 debug_level=5,
                 leasing=leasing)
         ]
@@ -33,7 +34,7 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
             new_node = sync.sync_socket(
                 'localhost',
                 start_port + i * num_nodes + j,
-                prot=sync.protocol('', encryption),
+                prot=sync.Protocol('', encryption),
                 debug_level=5,
                 leasing=leasing)
             nodes[-1].connect('localhost', start_port + i * num_nodes + j)
@@ -64,16 +65,20 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
 
 
 def test_storage_leasing_Plaintext(iters=2):
+    #type: (int) -> None
     storage_validation(iters, 7100, 3, 'Plaintext', True)
 
 
 def test_storage_leasing_SSL(iters=2):
+    #type: (int) -> None
     storage_validation(iters, 7200, 3, 'SSL', True)
 
 
 def test_storage_Plaintext(iters=2):
+    #type: (int) -> None
     storage_validation(iters, 7300, 3, 'Plaintext', True)
 
 
 def test_storage_SSL(iters=2):
+    #type: (int) -> None
     storage_validation(iters, 7400, 3, 'SSL', True)

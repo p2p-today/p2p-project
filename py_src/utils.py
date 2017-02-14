@@ -2,19 +2,22 @@ from __future__ import print_function
 from __future__ import with_statement
 from __future__ import unicode_literals
 
-import calendar
-import os
-import socket
-import time
+from calendar import timegm
+from socket import socket, AF_INET, SOCK_DGRAM, SHUT_RDWR
+from time import gmtime
+from typing import cast, Any, Callable, Iterable, Tuple, Union
 
 from logging import (getLogger, INFO, DEBUG)
 
 
 def log_entry(name, level):
+    #type: (str, int) -> Callable
     def annotation(function):
+        #type: (Callable) -> Callable
         log = getLogger(name)
 
         def caller(*args, **kwargs):
+            #type: (*Any, **Any) -> Any
             log.log(level, "Entering function {}".format(name))
             ret = function(*args, **kwargs)
             log.log(level, "Exiting function {}".format(name))
@@ -30,6 +33,7 @@ def log_entry(name, level):
 
 
 def inherit_doc(function):
+    #type: (Callable) -> Callable
     """A decorator which allows you to inherit docstrings from a specified
     function."""
     logger = getLogger('py2p.utils.inherit_doc')
@@ -44,19 +48,19 @@ def inherit_doc(function):
 
 
 def sanitize_packet(packet):
+    #type: (Union[bytes, bytearray, str]) -> bytes
     """Function to sanitize a packet for pathfinding_message serialization,
     or dict keying
     """
     if isinstance(packet, type(u'')):
-        return packet.encode('utf-8')
+        return cast(str, packet).encode('utf-8')
     elif isinstance(packet, bytearray):
         return bytes(packet)
-    elif not isinstance(packet, bytes):
-        return packet.encode('raw_unicode_escape')
-    return packet
+    return cast(bytes, packet)
 
 
 def intersect(*args):
+    #type: (*Iterable[Any]) -> Tuple[Any, ...]
     """Finds the intersection of several iterables
 
     Args:
@@ -81,12 +85,12 @@ def intersect(*args):
 
 
 def get_lan_ip():
+    #type: () -> str
     """Retrieves the LAN ip. Expanded from http://stackoverflow.com/a/28950776
 
     Note: This will return '127.0.0.1' if it is not connected to a network
     """
-    import socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s = socket(AF_INET, SOCK_DGRAM)  #type: socket
     try:
         # doesn't even have to be reachable
         s.connect(('8.8.8.8', 23))
@@ -94,19 +98,21 @@ def get_lan_ip():
     except:
         IP = '127.0.0.1'
     finally:
-        s.shutdown(socket.SHUT_RDWR)
+        s.shutdown(SHUT_RDWR)
         return IP
 
 
 def getUTC():
+    #type: () -> int
     """Returns the current unix time in UTC
 
     Note: This will always return an integral value
     """
-    return calendar.timegm(time.gmtime())
+    return timegm(cast(Tuple, gmtime()))
 
 
 def get_socket(protocol, serverside=False):
+    #type: (Any, bool) -> Any
     """Given a protocol object, return the appropriate socket
 
     Args:
@@ -121,11 +127,11 @@ def get_socket(protocol, serverside=False):
         A socket-like object
     """
     if protocol.encryption == "Plaintext":
-        return socket.socket()
+        return socket()
     elif protocol.encryption == "SSL":
         # This is inline to prevent dependency issues
-        from . import ssl_wrapper
-        return ssl_wrapper.get_socket(serverside)
+        from .ssl_wrapper import get_socket as _get_socket
+        return _get_socket(serverside)
     else:  # pragma: no cover
         raise ValueError("Unkown encryption method")
 
@@ -133,20 +139,24 @@ def get_socket(protocol, serverside=False):
 class awaiting_value(object):
     """Proxy object for an asynchronously retrieved item"""
 
-    def __init__(self, value=-1):
-        self.value = value
-        self.callback = False
+    def __init__(self, value=b''):
+        #type: (awaiting_value, Any) -> None
+        self.value = value  #type: Union[None, bool, int, dict, bytes, str, list, tuple]
+        self.callback = None  #type: Any
 
     def callback_method(self, method, key):
+        #type: (str, str) -> None
         from .base import flags
         self.callback.send(flags.whisper, flags.retrieved, method, key,
                            self.value)
 
     def __repr__(self):
+        #type: (awaiting_value) -> str
         return "<" + repr(self.value) + ">"
 
 
 def most_common(tmp):
+    #type: (Iterable[Any]) -> Tuple[Any, int]
     """Returns the most common element in a list
 
     Args:

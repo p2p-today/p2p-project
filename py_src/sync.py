@@ -1,22 +1,23 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from .mesh import mesh_socket
+from .mesh import (mesh_socket, mesh_connection)
 from .utils import (inherit_doc, getUTC, sanitize_packet, log_entry)
-from .base import (flags, to_base_58, from_base_58)
+from .base import (message, flags, to_base_58, from_base_58, MsgPackable, base_connection)
 
 try:
-    from .cbase import protocol
+    from .cbase import protocol as Protocol
 except:
-    from .base import protocol
+    from .base import Protocol
 
-from collections import namedtuple
 from logging import (DEBUG, INFO)
 
-default_protocol = protocol('sync', "Plaintext")  # SSL")
+from typing import (cast, Any, Dict, Iterator, NamedTuple, Tuple, Union)
+
+default_protocol = Protocol('sync', "Plaintext")  # SSL")
 
 
-class metatuple(namedtuple('meta', ('owner', 'timestamp'))):
+class metatuple(NamedTuple('meta', [('owner', bytes), ('timestamp', int)])):
     """This class is used to store metadata for a particular key"""
     __slots__ = ()
 
@@ -60,23 +61,25 @@ class sync_socket(mesh_socket):
 
     @log_entry('py2p.sync.sync_socket.__init__', DEBUG)
     @inherit_doc(mesh_socket.__init__)
-    def __init__(self,
-                 addr,
-                 port,
-                 prot=default_protocol,
-                 out_addr=None,
-                 debug_level=0,
-                 leasing=True):
+    def __init__(self,  #type: Any
+                 addr,  #type: str
+                 port,  #type: int
+                 prot=default_protocol,  #type: Protocol
+                 out_addr=None,  #type: Union[None, Tuple[str, int]]
+                 debug_level=0,  #type: int
+                 leasing=True  #type: bool
+        ):  #type: (...) -> None
         """Initialize a chord socket"""
-        protocol_used = protocol(prot[0] + str(int(leasing)), prot[1])
-        self.__leasing = leasing
+        protocol_used = Protocol(prot[0] + str(int(leasing)), prot[1])
+        self.__leasing = leasing  #type: bool
         super(sync_socket, self).__init__(addr, port, protocol_used, out_addr,
                                           debug_level)
-        self.data = {}
-        self.metadata = {}
+        self.data = cast(Dict[bytes, MsgPackable], {})  #type: Dict[bytes, MsgPackable]
+        self.metadata = {}  #type: Dict[bytes, metatuple]
         self.register_handler(self.__handle_store)
 
     def __check_lease(self, key, new_data, new_meta):
+        #type: (sync_socket, bytes, MsgPackable, metatuple) -> bool
         meta = self.metadata.get(key, None)
         return ((meta is None) or (meta.owner == new_meta.owner) or
                 (meta.timestamp < getUTC() - 3600) or
@@ -85,6 +88,7 @@ class sync_socket(mesh_socket):
                 (meta.timestamp < new_meta.timestamp and not self.__leasing))
 
     def __store(self, key, new_data, new_meta, error=True):
+        #type: (sync_socket, bytes, MsgPackable, metatuple, bool) -> None
         """Private API method for storing data. You have permission to store
         something if:
 
@@ -118,6 +122,7 @@ class sync_socket(mesh_socket):
 
     @inherit_doc(mesh_socket._send_peers)
     def _send_peers(self, handler):
+        #type: (sync_socket, base_connection) -> None
         super(sync_socket, self)._send_peers(handler)
         for key in self:
             meta = self.metadata[key]
@@ -125,6 +130,7 @@ class sync_socket(mesh_socket):
                          meta.owner, to_base_58(meta.timestamp))
 
     def __handle_store(self, msg, handler):
+        #type: (sync_socket, message, base_connection) -> Union[bool, None]
         """This callback is used to deal with data storage signals. Its two
         primary jobs are:
 
@@ -143,12 +149,13 @@ class sync_socket(mesh_socket):
             meta = metatuple(msg.sender, msg.time)
             if len(packets) == 5:
                 if self.data.get(packets[1]):
-                    return
+                    return None
                 meta = metatuple(packets[3], from_base_58(packets[4]))
             self.__store(packets[1], packets[2], meta, error=False)
             return True
 
     def __setitem__(self, key, data):
+        #type: (sync_socket, bytes, MsgPackable) -> None
         """Updates the value at a given key.
 
         Args:
@@ -181,9 +188,11 @@ class sync_socket(mesh_socket):
 
     @inherit_doc(__setitem__)
     def set(self, key, data):
+        #type: (sync_socket, bytes, MsgPackable) -> None
         self.__setitem__(key, data)
 
     def update(self, update_dict):
+        #type: (sync_socket, Dict[bytes, MsgPackable]) -> None
         """Equivalent to :py:meth:`dict.update`
 
         This calls :py:meth:`.sync_socket.__setitem__` for each key/value
@@ -202,6 +211,7 @@ class sync_socket(mesh_socket):
             self.__setitem__(key, value)
 
     def __getitem__(self, key):
+        #type: (sync_socket, bytes) -> MsgPackable
         """Looks up the value at a given key.
 
         Args:
@@ -218,6 +228,7 @@ class sync_socket(mesh_socket):
         return self.data[key]
 
     def get(self, key, ifError=None):
+        #type: (sync_socket, bytes, Any) -> MsgPackable
         """Retrieves the value at a given key.
 
         Args:
@@ -234,28 +245,35 @@ class sync_socket(mesh_socket):
         return self.data.get(key, ifError)
 
     def __len__(self):
+        #type: (sync_socket) -> int
         return len(self.data)
 
     def __delitem__(self, key):
+        #type: (sync_socket, bytes) -> None
         self[key] = b''
 
     def keys(self):
+        #type: (sync_socket) -> Iterator[bytes]
         """Returns an iterator of the underlying :py:class:`dict`s keys"""
         return iter(self.data)
 
     @inherit_doc(keys)
     def __iter__(self):
+        #type: (sync_socket) -> Iterator[bytes]
         return self.keys()
 
     def values(self):
+        #type: (sync_socket) -> Iterator[MsgPackable]
         """Returns an iterator of the underlying :py:class:`dict`s values"""
         return (self[key] for key in self.keys())
 
     def items(self):
+        #type: (sync_socket) -> Iterator[Tuple[bytes, MsgPackable]]
         """Returns an iterator of the underlying :py:class:`dict`s items"""
         return ((key, self[key]) for key in self.keys())
 
     def pop(self, key, *args):
+        #type: (sync_socket, bytes, *Any) -> MsgPackable
         """Returns a value, with the side effect of deleting that association
 
         Args:
@@ -280,6 +298,7 @@ class sync_socket(mesh_socket):
         return ret
 
     def popitem(self):
+        #type: (sync_socket) -> Tuple[bytes, MsgPackable]
         """Returns an association, with the side effect of deleting that
         association
 
@@ -290,5 +309,6 @@ class sync_socket(mesh_socket):
         return (key, self.pop(key))
 
     def copy(self):
+        #type: (sync_socket) -> Dict[bytes, MsgPackable]
         """Returns a :py:class:`dict` copy of this synchronized hash table"""
         return self.data.copy()

@@ -55,9 +55,9 @@ Receiving is a bit simpler. When the :py:meth:`~py2p.mesh.mesh_socket.recv` meth
     >>> sock.send('Did you get this?')  # A peer then replies
     >>> msg = sock.recv()
     >>> print(msg)
-    message(type=b'whisper', packets=[b'yes', b'I did'], sender=b'6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V')
+    message(type=2, packets=[b'yes', b'I did'], sender=b'6VnYj9LjoVLTvU3uPhy4nxm6yv2wEvhaRtGHeV9wwFngWGGqKAzuZ8jK6gFuvq737V')
     >>> print(msg.packets)
-    [b'whisper', b'yes', b'I did']
+    [2, b'yes', b'I did']
     >>> for msg in sock.recv(10):
     ...     msg.reply("Replying to a list")
 
@@ -87,5 +87,20 @@ When writing your handler, keep in mind that you are only passed a :py:class:`~p
     >>> sock.register_handler(register_1)  # The handler is now registered
 
 If this does not take two arguments, :py:meth:`~py2p.base.base_socket.register_handler` will raise a :py:exc:`ValueError`.
+
+This library also supports the :py:class:`~pyee.EventEmitter` API. This enables you to have methods like:
+
+.. code-block:: python
+
+    >>> from py2p import mesh
+    >>> sock = mesh.mesh_socket('0.0.0.0', 4444)
+    >>> @sock.on('connect')
+    ... def on_connect(conn):
+    ...     print("Hey! You got connected!")
+    ...
+    >>> sock.connect('example.com', 12345)
+    Hey! You got connected!
+
+The mesh socket supports :py:meth:`~py2p.mesh.mesh_socket.on('connect'`
 
 To help debug these services, you can specify a :py:attr:`~py2p.base.base_socket.debug_level` in the constructor. Using a value of 5, you can see when it enters into each handler, as well as every message which goes in or out.

@@ -19,10 +19,10 @@ if sys.version_info >= (3, ):
 #     for i in xrange(iters):
 #         print("----------------------Test start----------------------")
 #         f = chord.chord_socket('localhost', start_port + i*2, k=4,
-#                                prot=chord.protocol('test', encryption),
+#                                prot=chord.Protocol('test', encryption),
 #                                debug_level=5)
 #         g = chord.chord_socket('localhost', start_port + i*2 + 1, k=k,
-#                                prot=chord.protocol(name, encryption),
+#                                prot=chord.Protocol(name, encryption),
 #                                debug_level=5)
 #         print("----------------------Test event----------------------")
 #         g.connect('localhost', start_port + i*2)

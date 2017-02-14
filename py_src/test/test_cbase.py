@@ -10,6 +10,8 @@ try:
     import uuid
 
     from functools import partial
+    from typing import Any
+
     from .. import base, cbase
 
     from . import test_base
@@ -18,6 +20,7 @@ try:
         xrange = range
 
     def test_flags():
+        #type: () -> None
         bf = base.flags
         cf = cbase.flags
         assert bf.reserved == cf.reserved
@@ -40,9 +43,11 @@ try:
         assert (bf.zlib, bf.gzip, bf.snappy) == (cf.zlib, cf.gzip, cf.snappy)
 
     def test_protocol(benchmark):
+        #type: (Any) -> None
         test_base.test_protocol(benchmark, impl=cbase)
 
     def test_InternalMessage(benchmark):
+        #type: (Any) -> None
         test_base.test_InternalMessage(benchmark, impl=cbase)
 
 except ImportError:
