@@ -7,7 +7,7 @@ help:
 	@awk '/^[a-zA-Z\-\_0-9]+:/ { \
 		helpMessage = match(lastLine, /^## (.*)/); \
 		if (helpMessage) { \
-			helpCommand = substr($$1, 0, index($$1, ":")-1); \
+			helpCommand = substr($$1, 0, index($$1, ":")); \
 			helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
 			printf "%-20s %s\n", helpCommand, helpMessage; \
 		} \
@@ -315,4 +315,4 @@ py_all: LICENSE setup.py setup.cfg python2 python3 html cpython2 cpython3 pypy
 js_all: LICENSE ES5 html browser browser-min browser-compat browser-compat-min
 
 ## Run all test-related recipes
-test_all: LICENSE clean jstest ES5test mypy pytest cpy2test cpy3test
+test_all: LICENSE clean jstest js_compat_test mypy pytest cpy2test cpy3test
