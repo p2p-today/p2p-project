@@ -1,4 +1,3 @@
-osx_image: beta-xcode6.2
 matrix:
   allow_failures:
     - env: Cov='true' pyver=pypy pydist=homebrew
@@ -57,7 +56,8 @@ matrix:
       node_js: "4"
       os: osx
       env: jsver=4
-    - python: '3.5'
+    - language: python
+      python: '3.5'
       os: linux
       script: make mypy
 
