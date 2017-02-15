@@ -25,11 +25,11 @@ else {
 
 m.max_outgoing = 4;
 
-m.default_protocol = new base.protocol('mesh', "Plaintext");
+m.default_protocol = new base.Protocol('mesh', "Plaintext");
 /**
 * .. js:data:: js2p.mesh.default_protocol
 *
-*     A :js:class:`~js2p.base.protocol` object which is used by default in the mesh module
+*     A :js:class:`~js2p.base.Protocol` object which is used by default in the mesh module
 */
 
 m.mesh_connection = class mesh_connection extends base.base_connection  {
@@ -168,7 +168,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
-    *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
+    *     :param js2p.base.Protocol protocol:   The subnet you're looking to connect to
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *

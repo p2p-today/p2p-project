@@ -21,7 +21,7 @@ else {
     m = root;
 }
 
-m.default_protocol = new base.protocol('sync', 'Plaintext');
+m.default_protocol = new base.Protocol('sync', 'Plaintext');
 
 m.metatuple = class metatuple   {
     /**
@@ -53,7 +53,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
     *     :param boolean leasing:               Whether this class's leasing system should be enabled (default: ``true``)
-    *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
+    *     :param js2p.base.Protocol protocol:   The subnet you're looking to connect to
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
@@ -82,7 +82,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
             protocol = m.default_protocol;
         }
         let lease_descriptor = (leasing !== false) ? '1' : '0';
-        let protocol_used = new base.protocol(protocol.subnet + lease_descriptor, protocol.encryption);
+        let protocol_used = new base.Protocol(protocol.subnet + lease_descriptor, protocol.encryption);
         super(addr, port, protocol_used, out_addr, debug_level);
         this.__leasing = leasing;
         this.data = {};

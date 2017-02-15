@@ -18,8 +18,8 @@ describe('sync', function() {
         for (let text in transports)    {
 
             function test_storage(leasing, done)    {
-                var node1 = new sync.sync_socket('localhost', start_port++, leasing, new base.protocol('sync', transports[text]));
-                var node2 = new sync.sync_socket('localhost', start_port++, leasing, new base.protocol('sync', transports[text]));
+                var node1 = new sync.sync_socket('localhost', start_port++, leasing, new base.Protocol('sync', transports[text]));
+                var node2 = new sync.sync_socket('localhost', start_port++, leasing, new base.Protocol('sync', transports[text]));
 
                 node1.connect(node2.addr[0], node2.addr[1]);
 

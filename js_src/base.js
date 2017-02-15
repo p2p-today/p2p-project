@@ -371,12 +371,12 @@ base.SHA256 = function SHA256(text) {
 };
 
 
-base.protocol = class protocol {
+base.Protocol = class Protocol {
     /**
-    * .. js:class:: js2p.base.protocol(subnet, encryption)
+    * .. js:class:: js2p.base.Protocol(subnet, encryption)
     *
     *     This class is used as a subnet object. Its role is to reject undesired connections.
-    *     If you connect to someone who has a different protocol object than you, this descrepency is detected,
+    *     If you connect to someone who has a different Protocol object than you, this descrepency is detected,
     *     and you are silently disconnected.
     *
     *     :param string subnet:     The subnet ID you wish to connect to. Ex: ``'mesh'``
@@ -389,7 +389,7 @@ base.protocol = class protocol {
 
     get id() {
         /**
-        *     .. js:attribute:: js2p.base.protocol.id
+        *     .. js:attribute:: js2p.base.Protocol.id
         *
         *         The ID of your desired network
         */
@@ -398,7 +398,7 @@ base.protocol = class protocol {
     }
 };
 
-base.default_protocol = new base.protocol('', 'Plaintext');
+base.default_protocol = new base.Protocol('', 'Plaintext');
 
 function getCertKeyPair()   {
     const pki = require('node-forge').pki;
@@ -819,7 +819,7 @@ base.message = class message {
         /**
         *     .. js:attribute:: js2p.base.message.protocol
         *
-        *         Returns the :js:class:`~js2p.base.protocol` associated with this message
+        *         Returns the :js:class:`~js2p.base.Protocol` associated with this message
         */
         return this.server.protocol
     }
@@ -1104,7 +1104,7 @@ base.base_socket = class base_socket extends EventEmitter   {
     *
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
-    *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
+    *     :param js2p.base.Protocol protocol:   The subnet you're looking to connect to
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *

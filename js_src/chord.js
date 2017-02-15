@@ -26,7 +26,7 @@ else {
     m = root;
 }
 
-m.default_protocol = new base.protocol('chord', 'Plaintext');
+m.default_protocol = new base.Protocol('chord', 'Plaintext');
 
 m.limit = BigInt('g0000000000000000000000000000000000000000000000000000000000000000000000000000', 32);  // 2 ** 384
 
@@ -163,7 +163,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     *
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
-    *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
+    *     :param js2p.base.Protocol protocol:   The subnet you're looking to connect to
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *

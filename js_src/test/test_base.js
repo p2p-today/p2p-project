@@ -89,7 +89,7 @@ describe('base', function() {
         });
     });
 
-    describe('protocol', function() {
+    describe('Protocol', function() {
         it('should have information assigned to the correct getters', function()    {
             for (var i = 0; i < 250; i++)   {
                 var sub = get_random_buffer(4);
@@ -99,7 +99,7 @@ describe('base', function() {
                     sub[j] = sub[j] % 128;
                     enc[j] = enc[j] % 128;
                 }
-                var test = new base.protocol(sub, enc);
+                var test = new base.Protocol(sub, enc);
                 assert.equal(test.subnet, sub);
                 assert.equal(test.encryption, enc);
                 var p_hash_info = [sub, enc, base.protocol_version].join('');
