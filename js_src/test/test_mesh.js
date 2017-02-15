@@ -58,8 +58,8 @@ describe('mesh', function() {
 
                 node1.connect(node2.addr[0], node2.addr[1]);
                 setTimeout(function()   {
-                    assert.deepEqual(node1.routing_table, {});
-                    assert.deepEqual(node2.routing_table, {});
+                    assert.ok(!node1.routing_table.size);
+                    assert.ok(!node2.routing_table.size);
                     done();
                 }, 500);
             });

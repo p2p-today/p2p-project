@@ -839,8 +839,8 @@ base.message = class message {
         *
         *         :param packs: A list of packets you want the other user to receive
         */
-        if (this.server.routing_table[this.sender]) {
-            this.server.routing_table[this.sender].send(base.flags.whisper, [base.flags.whisper, ...packs]);
+        if (this.server.routing_table.get(this.sender)) {
+            this.server.routing_table.get(this.sender).send(base.flags.whisper, [base.flags.whisper, ...packs]);
         }
         else    {
             var request_hash = base.SHA384(this.sender + base.to_base_58(base.getUTC()));
@@ -1110,7 +1110,7 @@ base.base_socket = class base_socket extends EventEmitter   {
     *
     *     .. js:attribute:: js2p.base.base_socket.routing_table
     *
-    *         An object which contains :js:class:`~js2p.base.base_connection` s keyed by their IDs
+    *         A :js:class:`Map` which contains :js:class:`~js2p.base.base_connection` s keyed by their IDs
     *
     *     .. js:attribute:: js2p.base.base_socket.awaiting_ids
     *
@@ -1135,7 +1135,7 @@ base.base_socket = class base_socket extends EventEmitter   {
         this.debug_level = debug_level || 0;
 
         this.awaiting_ids = [];
-        this.routing_table = {};
+        this.routing_table = new Map();
         this.id = base.to_base_58(BigInt(base.SHA384(`(${addr}, ${port})${this.protocol.id}${base.user_salt}`), 16));
         this.__handlers = [];
         this.exceptions = [];
@@ -1163,8 +1163,8 @@ base.base_socket = class base_socket extends EventEmitter   {
         *         whether the "socket" should automatically initiate connections
         */
         var outs = [];
-        for (let key in this.routing_table) {
-            let node = this.routing_table[key];
+        for (let key of this.routing_table.keys()) {
+            let node = this.routing_table.get(key);
             if (node.outgoing)  {
                 outs.push(node);
             }

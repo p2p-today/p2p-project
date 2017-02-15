@@ -147,9 +147,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *
         *         This function is run when a connection is closed
         */
-        if (this.server.routing_table[this.id]) {
-            delete this.server.routing_table[this.id];
-        }
+        this.server.routing_table.delete(this.id);
     }
 
     onEnd()   {
@@ -202,7 +200,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     *
     *     .. js:attribute:: js2p.mesh.mesh_socket.routing_table
     *
-    *         An object which contains :js:class:`~js2p.mesh.mesh_connection` s keyed by their IDs
+    *         A :js:class:`Map` which contains :js:class:`~js2p.mesh.mesh_connection` s keyed by their IDs
     *
     *     .. js:attribute:: js2p.mesh.mesh_socket.awaiting_ids
     *
@@ -347,15 +345,15 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                 (addr === this.out_addr[0] && port === this.out_addr[1]) ||
                 (addr === this.addr[0] && port === this.addr[1]));
         var self = this;
-        Object.keys(this.routing_table).some(function(key)   {
-            if (key === id || self.routing_table[key].addr[0] === addr ||
-                self.routing_table[key].addr[1] === port)   {
+        for (let key of this.routing_table.keys())  {
+            if (key === id || self.routing_table.get(key).addr[0] === addr ||
+                self.routing_table.get(key).addr[1] === port)   {
                 shouldBreak = true;
             }
             if (shouldBreak)    {
                 return true;
             }
-        });
+        };
         if (shouldBreak)    {
             return false;
         }
@@ -388,7 +386,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             this._send_handshake(handler);
         }
         if (id) {
-            this.routing_table[id] = handler;
+            this.routing_table.set(id, handler);
         }
         else    {
             this.awaiting_ids.push(handler);
@@ -435,11 +433,11 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         */
         var ret = [];
         var self = this;
-        Object.keys(this.routing_table).forEach(function(key)   {
-            if (self.routing_table[key].addr)   {
-                ret.push([[self.routing_table[key].addr, key]]);
+        for (let key of this.routing_table.keys())  {
+            if (self.routing_table.get(key).addr)   {
+                ret.push([[self.routing_table.get(key).addr, key]]);
             }
-        });
+        };
         return ret;
     }
 
@@ -479,7 +477,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                 this.awaiting_ids.splice(this.awaiting_ids.indexOf(conn), 1);
                 this._send_handshake(conn);
             }
-            this.routing_table[packets[1]] = conn;
+            this.routing_table.set(packets[1], conn);
             this._send_peers(conn);
             return true;
         }
@@ -539,7 +537,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                     var info = this.requests[packets[1]];
                     // console.log(msg);
                     this.connect(addr[0][0], addr[0][1], addr[1]);
-                    this.routing_table[addr[1]].send(info[1], [...info[2], ...info[0]]);
+                    this.routing_table.get(addr[1]).send(info[1], [...info[2], ...info[0]]);
                     delete this.requests[packets[1]];
                 }
             }
@@ -569,8 +567,8 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             if (packets[1].toString() === '*')  {
                 this._send_peers(conn);
             }
-            else if (this.routing_table[packets[2]])    {
-                conn.send(base.flags.broadcast, [base.flags.response, packets[1], [this.routing_table[packets[2]].addr, packets[2]]]);
+            else if (this.routing_table.get(packets[2]))    {
+                conn.send(base.flags.broadcast, [base.flags.response, packets[1], [this.routing_table.get(packets[2]).addr, packets[2]]]);
             }
             return true;
         }
@@ -595,9 +593,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var send_type = type || base.flags.broadcast;
         var main_flag = flag || base.flags.broadcast;
         var self = this;
-        Object.keys(this.routing_table).forEach(function(key)   {
-            self.routing_table[key].send(main_flag, [send_type, ...packets]);
-        });
+        for (let key of this.routing_table.keys())  {
+            self.routing_table.get(key).send(main_flag, [send_type, ...packets]);
+        };
     }
 
     _in_waterfalls(id, time)    {
@@ -650,12 +648,12 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         if (!this._in_waterfalls(id, msg.time)) {
             this.waterfalls.unshift([id, msg.time]);
             var self = this;
-            Object.keys(this.routing_table).forEach(function(key)   {
-                var handler = self.routing_table[key];
+            for (let key of this.routing_table.keys())  {
+                let handler = self.routing_table.get(key);
                 if (handler.id.toString() !== msg.sender.toString())   {
                     handler.send_InternalMessage(msg.msg);
                 }
-            });
+            };
             this.__clean_waterfalls()
             return true
         }

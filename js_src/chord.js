@@ -225,8 +225,8 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     get data_storing()  {
         const self = this;
         function* _data_storing()   {
-            for (let key in self.routing_table) {
-                let node = self.routing_table[key];
+            for (let key of self.routing_table.keys()) {
+                let node = self.routing_table.get(key);
                 if (!node.leeching) {
                     yield node;
                 }
@@ -289,8 +289,8 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             this._send_peers(handler);
             this._send_meta(handler);
         }
-        for (let key of Object.keys(this.routing_table))    {
-            let handler = this.routing_table[key];
+        for (let key of this.routing_table.keys())    {
+            let handler = this.routing_table.get(key);
             if (handler)    {
                 this._send_handshake(handler);
                 this._send_peers(handler);
@@ -306,8 +306,8 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
             this._send_peers(handler);
             this._send_meta(handler);
         }
-        for (let key of Object.keys(this.routing_table))    {
-            let handler = this.routing_table[key];
+        for (let key of this.routing_table.keys())    {
+            let handler = this.routing_table.get(key);
             if (handler)    {
                 this._send_handshake(handler);
                 this._send_peers(handler);
@@ -508,7 +508,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __lookup(method, key, handler)  {
         let node = this;
-        if (Object.keys(this.routing_table).length) {
+        if (this.routing_table.size) {
             node = this.find(key);
         }
         else if (this.awaiting_ids.length)  {
