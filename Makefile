@@ -236,9 +236,9 @@ else
 endif
 
 pyformat: clean
-	@python3 -m pip install yapf --upgrade $(user_postfix)
-	@python3 -m yapf py_src -ri
-	@$(MAKE) pytest
+	@$(python3) -m pip install yapf --upgrade $(user_postfix)
+	@$(python3) -m yapf py_src -ri
+	@$(MAKE) mypy pytest
 
 mypy:
 	@$(python3) -m pip install mypy --upgrade $(user_postfix)
@@ -265,4 +265,4 @@ py_all: LICENSE setup.py setup.cfg python2 python3 html cpython2 cpython3 pypy
 
 js_all: LICENSE ES5 html browser browser-min browser-compat browser-compat-min
 
-test_all: LICENSE clean jstest ES5test pytest cpy2test cpy3test
+test_all: LICENSE clean jstest ES5test mypy pytest cpy2test cpy3test

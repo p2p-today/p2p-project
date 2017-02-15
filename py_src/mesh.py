@@ -32,7 +32,8 @@ from .base import (
     base_daemon,
     base_socket,
     InternalMessage, )
-from .utils import (getUTC, get_socket, intersect, inherit_doc, log_entry, awaiting_value)
+from .utils import (getUTC, get_socket, intersect, inherit_doc, log_entry,
+                    awaiting_value)
 
 max_outgoing = 4
 default_protocol = Protocol('mesh', "Plaintext")  # SSL")
@@ -127,7 +128,8 @@ class mesh_daemon(base_daemon):
             while self.main_thread.is_alive() and self.alive:
                 conns = chain(self.server.routing_table.values(),
                               self.server.awaiting_ids, (self.sock, ))
-                for handler in select.select(cast(Sequence, conns), [], [], 0.01)[0]:
+                for handler in select.select(
+                        cast(Sequence, conns), [], [], 0.01)[0]:
                     if handler == self.sock:
                         self.handle_accept()
                     else:
@@ -212,13 +214,14 @@ class mesh_socket(base_socket):
     __slots__ = ('requests', 'waterfalls', 'queue', 'daemon')
 
     @log_entry('py2p.mesh.mesh_socket', DEBUG)
-    def __init__(self,  #type: Any
-                 addr,  #type: str
-                 port,  #type: int
-                 prot=default_protocol,  #type: Protocol
-                 out_addr=None,  #type: Union[None, Tuple[str, int]]
-                 debug_level=0  #type: int
-        ):  #type: (...) -> None
+    def __init__(
+            self,  #type: Any
+            addr,  #type: str
+            port,  #type: int
+            prot=default_protocol,  #type: Protocol
+            out_addr=None,  #type: Union[None, Tuple[str, int]]
+            debug_level=0  #type: int
+    ):  #type: (...) -> None
         """Initializes a mesh socket
 
         Args:
@@ -242,7 +245,8 @@ class mesh_socket(base_socket):
         super(mesh_socket, self).__init__(addr, port, prot, out_addr,
                                           debug_level)
         # Metadata about msg replies where you aren't connected to the sender
-        self.requests = {}  #type: Dict[Union[bytes, Tuple[bytes, bytes]], Union[Tuple[MsgPackable, ...], awaiting_value]]
+        self.requests = {
+        }  #type: Dict[Union[bytes, Tuple[bytes, bytes]], Union[Tuple[MsgPackable, ...], awaiting_value]]
         # Metadata of messages to waterfall
         self.waterfalls = set()  #type: Set[Tuple[bytes, int]]
         # Queue of received messages. Access through recv()
@@ -327,7 +331,8 @@ class mesh_socket(base_socket):
         extracted from :py:meth:`.__handle_handshake` in order to allow
         cleaner inheritence from :py:class:`py2p.sync.sync_socket`
         """
-        handler.send(flags.whisper, flags.peers, cast(MsgPackable, self._get_peer_list()))
+        handler.send(flags.whisper, flags.peers,
+                     cast(MsgPackable, self._get_peer_list()))
 
     def __handle_handshake(self, msg, handler):
         #type: (mesh_socket, message, base_connection) -> Union[bool, None]
@@ -422,7 +427,8 @@ class mesh_socket(base_socket):
             if self.requests.get(packets[1]):
                 addr = packets[2]
                 if addr:
-                    _msg = cast(Tuple[MsgPackable, ...], self.requests.get(packets[1]))
+                    _msg = cast(Tuple[MsgPackable, ...],
+                                self.requests.get(packets[1]))
                     self.requests.pop(packets[1])
                     self.connect(addr[0][0], addr[0][1], addr[1])
                     self.routing_table[addr[1]].send(*_msg)
@@ -447,7 +453,8 @@ class mesh_socket(base_socket):
         packets = msg.packets
         if packets[0] == flags.request:
             if packets[1] == b'*':
-                handler.send(flags.whisper, flags.peers, cast(MsgPackable, self._get_peer_list()))
+                handler.send(flags.whisper, flags.peers,
+                             cast(MsgPackable, self._get_peer_list()))
             elif self.routing_table.get(packets[2]):
                 handler.send(
                     flags.broadcast, flags.response, packets[1],

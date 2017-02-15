@@ -16,7 +16,8 @@ from itertools import chain
 from logging import (DEBUG, INFO)
 
 from async_promises import Promise
-from typing import (cast, Any, Callable, Dict, Iterable, Iterator, Set, Tuple, Union)
+from typing import (cast, Any, Callable, Dict, Iterable, Iterator, Set, Tuple,
+                    Union)
 
 try:
     from .cbase import protocol as Protocol
@@ -146,13 +147,14 @@ class chord_socket(mesh_socket):
 
     @log_entry('py2p.chord.chord_socket.__init__', DEBUG)
     @inherit_doc(mesh_socket.__init__)
-    def __init__(self,  #type: Any
-                 addr,  #type: str
-                 port,  #type: int
-                 prot=default_protocol,  #type: Protocol
-                 out_addr=None,  #type: Union[None, Tuple[str, int]]
-                 debug_level=0  #type: int
-        ):  #type: (...) -> None
+    def __init__(
+            self,  #type: Any
+            addr,  #type: str
+            port,  #type: int
+            prot=default_protocol,  #type: Protocol
+            out_addr=None,  #type: Union[None, Tuple[str, int]]
+            debug_level=0  #type: int
+    ):  #type: (...) -> None
         """Initialize a chord socket"""
         if not hasattr(self, 'daemon'):
             self.daemon = 'chord reserved'
@@ -161,7 +163,9 @@ class chord_socket(mesh_socket):
         if self.daemon == 'chord reserved':
             self.daemon = chord_daemon(addr, port, self)
         self.id_10 = from_base_58(self.id)  #type: int
-        self.data = dict(((method, {}) for method in hashes))  #type: Dict[bytes, Dict[int, MsgPackable]]
+        self.data = dict((
+            (method, {})
+            for method in hashes))  #type: Dict[bytes, Dict[int, MsgPackable]]
         self.__keys = set()  #type: Set[bytes]
         self.leeching = True  #type: bool
         # self.register_handler(self._handle_peers)
@@ -247,7 +251,7 @@ class chord_socket(mesh_socket):
                 conn.leeching = new_meta
                 if not self.leeching and not conn.leeching:
                     conn.send(flags.whisper, flags.peers,
-                                 self._get_peer_list())
+                              self._get_peer_list())
                     update = self.dump_data(conn.id_10, self.id_10)
                     for method, table in update.items():
                         for key, value in table.items():
@@ -342,7 +346,8 @@ class chord_socket(mesh_socket):
             self.__print__(
                 "Response received for request id %s" % packets[1], level=1)
             if self.requests.get((packets[1], packets[2])):
-                value = cast(awaiting_value, self.requests.get((packets[1], packets[2])))
+                value = cast(awaiting_value,
+                             self.requests.get((packets[1], packets[2])))
                 value.value = packets[3]
                 if value.callback:
                     value.callback_method(packets[1], packets[2])
@@ -406,7 +411,9 @@ class chord_socket(mesh_socket):
         Returns:
             A nested :py:class:`dict` containing your data from start to end
         """
-        ret = dict(((method, {}) for method in hashes))  #type: Dict[bytes, Dict[int, MsgPackable]]
+        ret = dict((
+            (method, {})
+            for method in hashes))  #type: Dict[bytes, Dict[int, MsgPackable]]
         self.__print__("Entering dump_data", level=1)
         for method, table in self.data.items():
             for key, value in table.items():

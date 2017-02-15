@@ -53,8 +53,7 @@ def generate_self_signed_cert(cert_file, key_file):
             x509.NameAttribute(NameOID.COMMON_NAME, u'cryptography.io'),
         ]))
     builder = builder.not_valid_before(datetime.today() - one_day)
-    builder = builder.not_valid_after(datetime.today() +
-                                      timedelta(365 * 10))
+    builder = builder.not_valid_after(datetime.today() + timedelta(365 * 10))
     builder = builder.serial_number(uuid4().int)
     builder = builder.public_key(public_key)
     builder = builder.add_extension(

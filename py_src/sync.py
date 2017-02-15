@@ -3,7 +3,8 @@ from __future__ import absolute_import
 
 from .mesh import (mesh_socket, mesh_connection)
 from .utils import (inherit_doc, getUTC, sanitize_packet, log_entry)
-from .base import (message, flags, to_base_58, from_base_58, MsgPackable, base_connection)
+from .base import (message, flags, to_base_58, from_base_58, MsgPackable,
+                   base_connection)
 
 try:
     from .cbase import protocol as Protocol
@@ -61,20 +62,22 @@ class sync_socket(mesh_socket):
 
     @log_entry('py2p.sync.sync_socket.__init__', DEBUG)
     @inherit_doc(mesh_socket.__init__)
-    def __init__(self,  #type: Any
-                 addr,  #type: str
-                 port,  #type: int
-                 prot=default_protocol,  #type: Protocol
-                 out_addr=None,  #type: Union[None, Tuple[str, int]]
-                 debug_level=0,  #type: int
-                 leasing=True  #type: bool
-        ):  #type: (...) -> None
+    def __init__(
+            self,  #type: Any
+            addr,  #type: str
+            port,  #type: int
+            prot=default_protocol,  #type: Protocol
+            out_addr=None,  #type: Union[None, Tuple[str, int]]
+            debug_level=0,  #type: int
+            leasing=True  #type: bool
+    ):  #type: (...) -> None
         """Initialize a chord socket"""
         protocol_used = Protocol(prot[0] + str(int(leasing)), prot[1])
         self.__leasing = leasing  #type: bool
         super(sync_socket, self).__init__(addr, port, protocol_used, out_addr,
                                           debug_level)
-        self.data = cast(Dict[bytes, MsgPackable], {})  #type: Dict[bytes, MsgPackable]
+        self.data = cast(Dict[bytes, MsgPackable],
+                         {})  #type: Dict[bytes, MsgPackable]
         self.metadata = {}  #type: Dict[bytes, metatuple]
         self.register_handler(self.__handle_store)
 

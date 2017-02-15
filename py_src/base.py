@@ -17,15 +17,19 @@ from uuid import uuid4
 
 from umsgpack import (packb, unpackb, UnsupportedTypeException)
 from pyee import EventEmitter
-from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple, Sequence, Tuple, Union)
+from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple,
+                    Sequence, Tuple, Union)
 
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet,
                     inherit_doc, log_entry)
 
 _MsgPackable__ = Union[None, int, float, str, bytes]
-_MsgPackable_ = Union[_MsgPackable__, List[_MsgPackable__], Tuple[_MsgPackable__, ...], Dict[str, _MsgPackable__]]
-_MsgPackable = Union[_MsgPackable_, List[_MsgPackable_], Tuple[_MsgPackable_, ...], Dict[str, _MsgPackable_]]
-MsgPackable = Union[_MsgPackable, List[_MsgPackable], Tuple[_MsgPackable, ...], Dict[str, _MsgPackable]]
+_MsgPackable_ = Union[_MsgPackable__, List[_MsgPackable__], Tuple[
+    _MsgPackable__, ...], Dict[str, _MsgPackable__]]
+_MsgPackable = Union[_MsgPackable_, List[_MsgPackable_], Tuple[
+    _MsgPackable_, ...], Dict[str, _MsgPackable_]]
+MsgPackable = Union[_MsgPackable, List[_MsgPackable], Tuple[_MsgPackable, ...],
+                    Dict[str, _MsgPackable]]
 
 protocol_version = "0.6"
 node_policy_version = "676"
@@ -296,7 +300,8 @@ def from_base_58(string):
     return decimal
 
 
-class Protocol(NamedTuple("_Protocol", [('subnet', str), ('encryption', str)])):
+class Protocol(
+        NamedTuple("_Protocol", [('subnet', str), ('encryption', str)])):
     """Defines service variables so that you can reject connections looking
     for a different service
 
@@ -411,7 +416,7 @@ class InternalMessage(object):
         _string = cls.__sanitize_string(string, sizeless)
         # Then we attempt to decompress
         _string, compression_fail = cls.__decompress_string(_string,
-                                                           compressions)
+                                                            compressions)
         id_ = _string[0:32]
         serialized = _string[32:]
         checksum = sha256(serialized).digest()
@@ -429,13 +434,14 @@ class InternalMessage(object):
         # msg.__string = _string
         return msg
 
-    def __init__(self,  #type: InternalMessage
-                 msg_type,  #type: MsgPackable
-                 sender,  #type: bytes
-                 payload,  #type: Iterable[MsgPackable, ...]
-                 compression=None,  #type: Union[None, Iterable[int, ...]]
-                 timestamp=None  #type: Union[None, int]
-        ):  #type: (...) -> None
+    def __init__(
+            self,  #type: InternalMessage
+            msg_type,  #type: MsgPackable
+            sender,  #type: bytes
+            payload,  #type: Iterable[MsgPackable, ...]
+            compression=None,  #type: Union[None, Iterable[int, ...]]
+            timestamp=None  #type: Union[None, int]
+    ):  #type: (...) -> None
         """Initializes a InternalMessage instance
 
         Args:
@@ -770,7 +776,8 @@ class base_connection(object):
                     level=2)
                 if respond:
                     self.send(flags.renegotiate, flags.compression,
-                              cast(Tuple[int, ...], intersect(compression, self.compression)))
+                              cast(Tuple[int, ...],
+                                   intersect(compression, self.compression)))
                 return True
             elif packets[4] == flags.resend:
                 self.send(*self.last_sent)
@@ -902,13 +909,14 @@ class base_socket(EventEmitter, object):
                  'out_addr', 'id', '_logger', '__handlers', '__closed')
 
     @log_entry('py2p.base.base_socket.__init__', DEBUG)
-    def __init__(self,  #type: Any
-                 addr,  #type: str
-                 port,  #type: int
-                 prot=default_protocol,  #type: Protocol
-                 out_addr=None,  #type: Union[None, Tuple[str, int]]
-                 debug_level=0  #type: int
-        ):  #type: (...) -> None
+    def __init__(
+            self,  #type: Any
+            addr,  #type: str
+            port,  #type: int
+            prot=default_protocol,  #type: Protocol
+            out_addr=None,  #type: Union[None, Tuple[str, int]]
+            debug_level=0  #type: int
+    ):  #type: (...) -> None
         """Initializes a peer to peer socket
 
         Args:
@@ -946,7 +954,8 @@ class base_socket(EventEmitter, object):
         self.id = to_base_58(int(h.hexdigest(), 16))  #type: bytes
         self._logger = getLogger('{}.{}.{}'.format(
             self.__class__.__module__, self.__class__.__name__, self.id))
-        self.__handlers = []  #type: List[Callable[[message, base_connection], Union[bool, None]]]
+        self.__handlers = [
+        ]  #type: List[Callable[[message, base_connection], Union[bool, None]]]
         self.__closed = False
 
     def close(self):
@@ -1167,7 +1176,8 @@ class message(object):
                 getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
-            to_send = (flags.whisper, flags.whisper)  #type: Tuple[MsgPackable, ...]
+            to_send = (flags.whisper, flags.whisper
+                       )  #type: Tuple[MsgPackable, ...]
             self.server.requests[request_id] = to_send + args
             self.server._logger.critical(
                 "You aren't connected to the original sender. This reply is "
