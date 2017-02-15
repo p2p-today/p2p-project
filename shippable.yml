@@ -6,8 +6,6 @@ env: pyver=3.5
 
 matrix:
   include:
-    # - python: 2.6
-    #   env: pyver=2.6
     - python: 2.7
       env: pyver=2.7
     - python: 3.3
@@ -16,6 +14,8 @@ matrix:
       env: pyver=3.4
     # - python: 3.5
     #   env: pyver=3.5
+    - python: 3.6
+      env: pyver=3.6
     - python: pypy
       env: pyver=pypy
     # - python: pypy3
@@ -32,6 +32,7 @@ matrix:
   allow_failures:
     - python: pypy
     - python: pypy3
+    - python: 3.6
     - node_js: "4"
 
 build:

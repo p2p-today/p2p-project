@@ -45,7 +45,7 @@ classifiers = [
 ]
 
 classifiers.extend((('Programming Language :: Python :: %s' % x)
-                    for x in '2 3 2.7 3.3 3.4 3.5'.split()))
+                    for x in '2 3 2.7 3.3 3.4 3.5 3.6'.split()))
 
 
 def has_environment_marker_support():

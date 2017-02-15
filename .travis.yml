@@ -30,6 +30,10 @@ matrix:
       python: 3.5
       os: osx
       env: Cov='true' pyver=3.5 pydist=macpython
+    - language: generic
+      python: 3.6
+      os: osx
+      env: Cov='true' pyver=3.6 pydist=macpython
 #          pydist=macports
 #          pydist=homebrew
     # - language: generic
