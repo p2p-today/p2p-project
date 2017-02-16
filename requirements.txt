@@ -1,5 +1,5 @@
-custom_inherit==2.1.0
-async_promises==1.1.1
-u-msgpack-python==2.3.0
-pyee==3.0.3
-typing>=3.5.3
+custom_inherit~=2.1.1
+async_promises~=1.1.1
+u-msgpack-python~=2.3.0
+pyee~=3.0.3
+typing~=3.5.3
