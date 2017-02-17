@@ -66,9 +66,9 @@ Receiving is a bit simpler. When you call the :js:func:`~js2p.mesh.mesh_socket.r
 Events
 ------
 
-In addition to the above, the :js:class:`js2p.mesh.mesh_socket` object has two :js:class:`Event` s.
+In addition to the above, the :js:class:`~js2p.mesh.mesh_socket` object has two :js:class:`Event` s.
 
-First there's :js:func:`js2p.mesh.mesh_socket Event 'connect'`. This is called whenever you finalize a connection to your distributed service. It is *also* called if you reconnect to the service after some failure.
+First there's :js:func:`~js2p.mesh.mesh_socket Event 'connect'`. This is called whenever you finalize a connection to your distributed service. It is *also* called if you reconnect to the service after some failure.
 
 .. code-block:: javascript
 
@@ -82,7 +82,7 @@ First there's :js:func:`js2p.mesh.mesh_socket Event 'connect'`. This is called w
     ... // the .on() indicates that this event should be called *every* time
     ... });
 
-This class has one other event: :js:func:`js2p.mesh.mesh_socket Event 'message'`. This one is a little bit trickier to use, and it's recommended that you only have one callback in place at any given time. The event is called any time you receive a message that *is not* handled by one of the "priveledged" callbacks. Such callbacks include the ones for dealing with new peers on the network.
+This class has one other event: :js:func:`~js2p.mesh.mesh_socket Event 'message'`. This one is a little bit trickier to use, and it's recommended that you only have one callback in place at any given time. The event is called any time you receive a message that *is not* handled by one of the "priveledged" callbacks. Such callbacks include the ones for dealing with new peers on the network.
 
 .. code-block:: javascript
 

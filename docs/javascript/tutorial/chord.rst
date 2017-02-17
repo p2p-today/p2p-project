@@ -82,9 +82,9 @@ These methods are also analagous to the ones in Python's :py:class:`dict`. The m
 Events
 ------
 
-In addition to the above, and those of :js:class:`js2p.mesh.mesh_socket`, the :js:class:`js2p.chord.chord_socket` object has two :js:class:`Event` s.
+In addition to the above, and those of :js:class:`~js2p.mesh.mesh_socket`, the :js:class:`~js2p.chord.chord_socket` object has two :js:class:`Event` s.
 
-First there's :js:func:`js2p.chord.chord_socket Event 'add'`. This is called whenever an association is added. Because the value is not necessarily stored by you, it is not given as an argument to this event.
+First there's :js:func:`~js2p.chord.chord_socket Event 'add'`. This is called whenever an association is added. Because the value is not necessarily stored by you, it is not given as an argument to this event.
 
 .. code-block:: javascript
 
@@ -93,7 +93,7 @@ First there's :js:func:`js2p.chord.chord_socket Event 'add'`. This is called whe
     ... console.log(`${key} was added`);
     ... });
 
-This class has one other event: :js:func:`js2p.chord.chord_socket Event 'delete'`. This is called every time an association is removed.
+This class has one other event: :js:func:`~js2p.chord.chord_socket Event 'delete'`. This is called every time an association is removed.
 
 .. code-block:: javascript
 
