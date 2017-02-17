@@ -18,13 +18,6 @@ What We Have
 
 There are several projects in the work right now. Several of these could be considered stable, but we're going to operate under the "beta" label for some time now.
 
-Message Serializer
-==================
-
-Serialization is the most important part for working with other languages. While there are several such schemes which work in most places, we made the decision to avoid these in general. We wanted something very lightweight, which could handle binary data, and operated as quickly as possible. This meant that "universal" serializers like JSON were out the window.
-
-You can see more information about our serialization scheme in the [protocol documentation](./docs/protocol/serialization.rst). We currently have a working parser in Python, Java, Javascript, C++, and Golang.
-
 Base Network Structures
 =======================
 
@@ -64,7 +57,7 @@ This is a type of [distributed hash table](https://en.wikipedia.org/wiki/Distrib
 
 The idea is that you can use this as a dictionary-like object. The only caveat is that all keys and values *must* be strings. It uses five separate hash tables for hash collision avoidance and data backup in case a node unexpectedly exits.
 
-Currently there is only an implementation in Python and it is highly experimental. This section will be updated when it's ready for more general use.
+Currently there is an implementation in [Python](https://dev-docs.p2p.today/python/chord) and [Javascript](https://dev-docs.p2p.today/javascript/chord). More tractable documentation can be found in their tutorial sections. Protocol specifications are in progress.
 
 Contributing, Credits, and Licenses
 ===================================

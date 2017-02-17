@@ -18,13 +18,6 @@ What We Have
 
 There are several projects in the work right now. Several of these could be considered stable, but we're going to operate under the "beta" label for some time now.
 
-Message Serializer
-~~~~~~~~~~~~~~~~~~
-
-Serialization is the most important part for working with other languages. While there are several such schemes which work in most places, we made the decision to avoid these in general. We wanted something very lightweight, which could handle binary data, and operated as quickly as possible. This meant that "universal" serializers like JSON were out the window.
-
-You can see more information about our serialization scheme in the :doc:`protocol documentation <./protocol/serialization>` . We currently have a working parser in Python, Java, Javascript, C++, and Golang.
-
 Base Network Structures
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -82,6 +75,7 @@ Previous Versions
 ~~~~~~~~~~~~~~~~~
 
 - `0.4 <https://v0-4.p2p.today/>`_
+- `0.5 <https://v0-5.p2p.today/>`_
 - `develop <https://dev-docs.p2p.today/>`_
 - `master <https://p2p.today/>`_
 
