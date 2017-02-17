@@ -46,7 +46,7 @@ Sync Table
 
 This is an extension of the above network. It inherits all of the message sending properties, while also syncronizing a local dictionary-like object.
 
-The only limitation is that it can only have string-like keys and values. There is also an optional "leasing" system, which is enabled by default. This means that a user can own a particular key for a period of time.
+The only limitation is that it can only have string-like keys. There is also an optional "leasing" system, which is enabled by default. This means that a user can own a particular key for a period of time.
 
 Currently there is an implementation in :doc:`Python <./python/sync>` and :doc:`Javascript <./javascript/sync>`. More tractable documentation can be found in their tutorial sections. Protocol specifications are in progress.
 
@@ -55,7 +55,7 @@ Chord Table
 
 This is a type of `distributed hash table <https://en.wikipedia.org/wiki/Distributed_hash_table>`_ based on an `MIT paper <https://pdos.csail.mit.edu/papers/chord:sigcomm01/chord_sigcomm.pdf>`_ which defined it.
 
-The idea is that you can use this as a dictionary-like object. The only limitation is that it can only have string-like keys and values. It uses five separate hash tables for hash collision avoidance and data backup in case a node unexpectedly exits.
+The idea is that you can use this as a dictionary-like object. The only limitation is that it can only have string-like keys. It uses five separate hash tables for hash collision avoidance and data backup in case a node unexpectedly exits.
 
 Currently there is an implementation in :doc:`Python <./python/chord>` and :doc:`Javascript <./javascript/chord>`. More tractable documentation can be found in their tutorial sections. Protocol specifications are in progress.
 
