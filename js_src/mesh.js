@@ -432,10 +432,10 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         :returns: An array in the above format
         */
         var ret = [];
-        var self = this;
         for (let key of this.routing_table.keys())  {
-            if (self.routing_table.get(key).addr)   {
-                ret.push([[self.routing_table.get(key).addr, key]]);
+            let addr = this.routing_table.get(key).addr;
+            if (addr && addr[0] !== null && addr[1] !== null)   {
+                ret.push([addr, key]);
             }
         };
         return ret;
@@ -466,7 +466,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             //     this.__resolve_connection_conflict(handler, packets[1]);
             // }
             conn.id = packets[1];
-            if (!conn.addr && Object.keys(this.awaiting_ids).length === 0)  {
+            if (!conn.addr && this.routing_table.size === 0)  {
                 this.emit('connect', this);
             }
             conn.addr = packets[3];
@@ -604,7 +604,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             if (!BigInt.isInstance(entry[1])) {
                 entry[1] = new BigInt(entry[1]);
             }
-            if (entry[0] === id && entry[1].equals(time))   {
+            if (!Buffer.compare(entry[0], id) && entry[1].equals(time))   {
                 contained = true;
                 return true;
             }
