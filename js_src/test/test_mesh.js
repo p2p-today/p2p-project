@@ -20,35 +20,35 @@ describe('mesh', function() {
 
             it(`should propagate messages to everyone in the network (over ${text})`, function(done)   {
                 this.timeout(6000 * (3 && text === 'SSL/TLS' + 1));
-                var count = 3;
+                let count = 3;
 
-                var nodes = [new mesh.mesh_socket('localhost', start_port++, new base.Protocol('mesh', transports[text]))];
-                for (var j = 1; j < count; j++) {
-                    var node = new mesh.mesh_socket('localhost', start_port++, new base.Protocol('mesh', transports[text]));
-                    var addr = nodes[nodes.length - 1].addr;
+                let nodes = [new mesh.mesh_socket('localhost', start_port++, new base.Protocol('mesh', transports[text]))];
+                for (let j = 1; j < count; j++) {
+                    let node = new mesh.mesh_socket('localhost', start_port++, new base.Protocol('mesh', transports[text]));
+                    let addr = nodes[nodes.length - 1].addr;
                     node.connect(addr[0], addr[1]);
                     nodes.push(node);
                 }
-                setTimeout(function()   {
-                    let errs = [];
-                    for (let h = 1; h < count; h++) {
-                        nodes[h].on('message', ()=>{
-                            try {
-                                assert.ok(nodes[h].recv());
-                            }
-                            catch (e)   {
-                                errs.push(e);
-                            }
-                            if (--count == 0)   {
-                                if (errs.length)
-                                    done(new Error(util.inspect(errs)));
-                                else
-                                    done();
-                            }
-                        });
-                    }
+                let errs = [];
+                for (let h = 1; h < count; h++) {
+                    nodes[h].on('message', ()=>{
+                        try {
+                            assert.ok(nodes[h].recv());
+                        }
+                        catch (e)   {
+                            errs.push(e);
+                        }
+                        if (--count == 1)   {
+                            if (errs.length)
+                                done(new Error(util.inspect(errs)));
+                            else
+                                done();
+                        }
+                    });
+                }
+                setTimeout(()=>{
                     nodes[0].send(['hello']);
-                }, count * 250);
+                }, 250*count);
             });
 
             it(`should reject connections with a different Protocol object (over ${text})`, function(done)    {
