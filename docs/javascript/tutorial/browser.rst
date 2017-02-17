@@ -22,7 +22,7 @@ Caveats
 
 1. Browsers cannot receive incoming connections. This means that at some point you **must** connect to a server node. To avoid confusion, a good practice is to provide your ``addr`` and ``port`` as ``null``.
 
-#. Browser nodes may **only** be used with the WebSocket transport layer. This means that you **must** specify a custom :js:class:`js2p.base.protocol`, where the second argument is ``'ws'``.
+#. Browser nodes may **only** be used with the WebSocket transport layer. This means that you **must** specify a custom :js:class:`js2p.base.Protocol`, where the second argument is ``'ws'``.
 
 #. Scripts **must** be included in the correct load order. This means that dependencies come first. As of this document's last update, the preferred order is:
 
@@ -48,7 +48,7 @@ This example shows the simple construction of a :js:class:`js2p.sync.sync_socket
         </head>
         <body>
             <script type="text/javascript">
-                const socket = new js2p.sync.sync_socket(null, null, true, new js2p.base.protocol('chat', 'ws'));
+                const socket = new js2p.sync.sync_socket(null, null, true, new js2p.base.Protocol('chat', 'ws'));
                 socket.on('connect', (conn)=>{
                     // whatever actions to perform on connection
                 });

@@ -18,15 +18,15 @@ Using ``'0.0.0.0'`` will automatically grab your LAN address. If you want to use
     > const mesh = require('js2p').mesh;
     > sock = new mesh.mesh_socket('0.0.0.0', 4444, null, ['35.24.77.21', 44565]);
 
-If `nodejs-websocket <https://www.npmjs.com/package/nodejs-websocket>`_ is installed, then you can use websockets as a transport layer (for instance, to allow communication with a browser). If `node-forge <https://www.npmjs.com/package/node-forge>`_ is installed, then you can use SSL/TLS as a transport layer. You can do this by providing a :js:class:`~js2p.base.protocol` object, like so:
+If `nodejs-websocket <https://www.npmjs.com/package/nodejs-websocket>`_ is installed, then you can use websockets as a transport layer (for instance, to allow communication with a browser). If `node-forge <https://www.npmjs.com/package/node-forge>`_ is installed, then you can use SSL/TLS as a transport layer. You can do this by providing a :js:class:`~js2p.base.Protocol` object, like so:
 
 .. code-block:: javascript
 
     > const mesh = require('js2p').mesh;
     > const base = require('js2p').base;
     > var app_description = 'A string which describes your application';
-    > var SSL = new mesh.mesh_socket('0.0.0.0', 4444, new base.protocol(app_description, 'SSL'));
-    > var WS = new mesh.mesh_socket('0.0.0.0', 5555, new base.protocol(app_description, 'ws'));
+    > var SSL = new mesh.mesh_socket('0.0.0.0', 4444, new base.Protocol(app_description, 'SSL'));
+    > var WS = new mesh.mesh_socket('0.0.0.0', 5555, new base.Protocol(app_description, 'ws'));
 
 Specifying a different protocol object will ensure that you *only* can connect to people who share your object structure. So if someone has the description ``'mesh2'`` instead of ``'mesh'``, you will fail to connect.
 

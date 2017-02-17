@@ -20,12 +20,12 @@ Using ``'0.0.0.0'`` will automatically grab your LAN address. Using an outbound 
     >>> from py2p import mesh
     >>> sock = mesh.mesh_socket('0.0.0.0', 4444, out_addr=('35.24.77.21', 44565))
 
-In addition, SSL encryption can be enabled if `cryptography <https://cryptography.io/en/latest/installation/>`_ is installed. This works by specifying a custom :py:class:`~py2p.base.protocol` object, like so:
+In addition, SSL encryption can be enabled if `cryptography <https://cryptography.io/en/latest/installation/>`_ is installed. This works by specifying a custom :py:class:`~py2p.base.Protocol` object, like so:
 
 .. code-block:: python
 
     >>> from py2p import mesh, base
-    >>> sock = mesh.mesh_socket('0.0.0.0', 4444, prot=base.protocol('mesh', 'SSL'))
+    >>> sock = mesh.mesh_socket('0.0.0.0', 4444, prot=base.Protocol('mesh', 'SSL'))
 
 Eventually that will be the default, but while things are being tested it will default to plaintext. If `cryptography <https://cryptography.io/en/latest/installation/>`_ is not installed, this will generate an :py:exc:`ImportError`
 

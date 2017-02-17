@@ -23,7 +23,7 @@ You can override the last restriction by constructing with ``leasing`` set to ``
     > const sync = require('js2p').sync;
     > let sock = new sync.sync_socket('0.0.0.0', 4444, false);
 
-Note that the ``leasing`` parameter is supplied *before* a :js:class:`~js2p.base.protocol`.
+Note that the ``leasing`` parameter is supplied *before* a :js:class:`~js2p.base.Protocol`.
 
 The only other API differences between this and :js:class:`~js2p.mesh.mesh_socket` are for access to this dictionary. They are as follows:
 
