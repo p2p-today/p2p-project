@@ -305,7 +305,6 @@ clean:
 	@find docs/cpp        ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/java       ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/javascript ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
-	@find docs/go         ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@cd docs; $(MAKE) clean
 
 ## Run all python-related build recipes
