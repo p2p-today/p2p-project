@@ -43,48 +43,76 @@ Receiving is a bit simpler. When you call the :js:func:`~js2p.mesh.mesh_socket.r
 .. code-block:: javascript
 
     > sock.send(['Did you get this?']);
+    > // a peer replies
     > var msg = sock.recv();
     > console.log(msg);
     message {
-     type: <Buffer 02>
-     packets: [ <Buffer 79 65 73>, <Buffer 49 20 64 69 64> ]
+     type: 2
+     packets: [ 'Yes', 'I did' ]
      sender: '8vu4oLsvVBsnnH6N83z6y6RZqrMKRrVHr44xRwXCFaU9qcyYsjJDzVfKwmdGp51K4d' }
     > msg.packets.forEach((packet) => {
     ... var str = packet.toString()
     ... console.log(util.inspect(str));
     ... });
-    '\u0002'
+    '2'
     'yes'
     'I did'
     > console.log(msg.packets);
-    [ <Buffer 00>, <Buffer 79 65 73>, <Buffer 49 20 64 69 64> ]
+    [ 2, 'yes', 'I did' ]
     > sock.recv(10).forEach((msg) => {
-    ... msg.reply(["Replying to a list"]);
+    ... msg.reply(["Replying to a list", {'here': 10, 'have some': 'data'}]);
+    ... });
+
+Events
+------
+
+In addition to the above, the :js:class:`js2p.mesh.mesh_socket` object has two :js:class:`Event` s.
+
+First there's :js:func:`js2p.mesh.mesh_socket Event 'connect'`. This is called whenever you finalize a connection to your distributed service. It is *also* called if you reconnect to the service after some failure.
+
+.. code-block:: javascript
+
+    > sock.once('connect', (conn)=>{
+    ... // conn is a reference to the socket, in case you're in a new scope
+    ... // the .once() indicates that this event should only be called once
+    ... });
+    >
+    > sock.on('connect', (conn)=>{
+    ... // conn is still a reference to the socket
+    ... // the .on() indicates that this event should be called *every* time
+    ... });
+
+This class has one other event: :js:func:`js2p.mesh.mesh_socket Event 'message'`. This one is a little bit trickier to use, and it's recommended that you only have one callback in place at any given time. The event is called any time you receive a message that *is not* handled by one of the "priveledged" callbacks. Such callbacks include the ones for dealing with new peers on the network.
+
+.. code-block:: javascript
+
+    > sock.on('message', (conn)=>{
+    ... // note that you are not passed a reference to the message.
+    ... // This means that you must explicitly recv().
+    ... let msg = conn.recv();
+    ... if (msg !== undefined)  {
+    ..... // note the guard clause for if someone else registered a callback
+    ..... msg.reply(['this is an example'])
+    ..... }
     ... });
 
 Advanced Usage
 --------------
 
-In addition to this, you can register a custom handler for incoming messages. This is appended to the end of the included ones. When writing your handler, you must keep in mind that you are only passed a :js:class:`~js2p.base.message` object and a :js:class:`~js2p.mesh.mesh_connection`. Fortunately you can get access to everything you need from these objects. This example is in Python, but the Javascript syntax is identical.
+In addition to this, you can register a custom handler for incoming messages. This is appended to the end of the included ones. When writing your handler, you must keep in mind that you are only passed a :js:class:`~js2p.base.message` object and a :js:class:`~js2p.mesh.mesh_connection`. Fortunately you can get access to everything you need from these objects.
 
 .. code-block:: python
 
-    >>> def relay_tx(msg, handler):
-    ...     """Relays bitcoin transactions to various services"""
-    ...     packets = msg.packets  # Gives a list of the non-metadata packets
-    ...     server = msg.server    # Returns your mesh_socket object
-    ...     if packets[0] == b'tx_relay':  # It's important that this flag is bytes
-    ...         from pycoin import tx, services
-    ...         relay = tx.Tx.from_bin(packets[1])
-    ...         services.blockchain_info.send_tx(relay)
-    ...         services.insight.InsightProvider().send_tx(relay)
-    ...         return True        # This tells the daemon to stop calling handlers
-    ...
-    >>> import py2p
-    >>> sock = py2p.mesh_socket('0.0.0.0', 4444)
-    >>> sock.register_handler(relay_tx)
-
-To help debug these services, you can specify a :js:attr:`~js2p.base.base_socket.debug_level` in the constructor. Using a value of 5, you can see when it enters into each handler, as well as every message which goes in or out.
+    > funciton example(msg, handler)   {
+    ... const packets = msg.packets;
+    ... if (packets[0] === some_flag)   {
+    ..... some_action(msg, handler);
+    ..... return true; // This tells the socket that the message has been processed
+    ..... }
+    ... };
+    > const js2p = require('js2p');
+    > let sock = js2p.mesh.mesh_socket('0.0.0.0', 4444);
+    > sock.register_handler(example);
 
 Use In A Browser
 ----------------

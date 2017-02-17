@@ -850,13 +850,16 @@ class chord_socket(mesh_socket):
     def pop(self, key, *args):
         #type: (chord_socket, bytes, *Any) -> MsgPackable
         """Returns a value, with the side effect of deleting that association
+
         Args:
             Key:        The key you wish to look up. Must be a :py:class:`str`
                             or :py:class:`bytes`-like object
-            ifError:    The value you wish to return on Exception
-                            (default: raise an Exception)
+            ifError:    The value you wish to return on :py:class:`Exception`
+                            (default: raise an :py:class:`Exception` )
+
         Returns:
             The value of the supplied key, or ``ifError``
+
         Raises:
             KeyError:       If the key does not have a majority-recognized
                                 value
@@ -876,8 +879,10 @@ class chord_socket(mesh_socket):
         #type: (chord_socket) -> Tuple[bytes, MsgPackable]
         """Returns an association, with the side effect of deleting that
         association
+
         Returns:
             An arbitrary association
+
         Raises:
             KeyError:       If the key does not have a majority-recognized
                                 value
@@ -890,7 +895,9 @@ class chord_socket(mesh_socket):
     def copy(self):
         #type: (chord_socket) -> Dict[bytes, MsgPackable]
         """Returns a :py:class:`dict` copy of this DHT
+
         .. warning::
+
             This is a *very* slow operation. It's a far better idea to use
             :py:meth:`~py2p.chord.chord_socket.items`, as this produces an
             iterator. That should even out lag times

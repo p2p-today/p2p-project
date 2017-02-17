@@ -242,7 +242,7 @@ class sync_socket(mesh_socket):
 
         Returns:
             The value at said key, or the value at ifError if there's an
-            :py:clas:`Exception`
+            :py:class:`Exception`
         """
         key = sanitize_packet(key)
         return self.data.get(key, ifError)
@@ -257,7 +257,10 @@ class sync_socket(mesh_socket):
 
     def keys(self):
         #type: (sync_socket) -> Iterator[bytes]
-        """Returns an iterator of the underlying :py:class:`dict`s keys"""
+        """
+        Returns:
+            an iterator of the underlying :py:class:`dict` s keys
+        """
         return iter(self.data)
 
     @inherit_doc(keys)
@@ -267,12 +270,18 @@ class sync_socket(mesh_socket):
 
     def values(self):
         #type: (sync_socket) -> Iterator[MsgPackable]
-        """Returns an iterator of the underlying :py:class:`dict`s values"""
+        """
+        Returns:
+            an iterator of the underlying :py:class:`dict` s values
+        """
         return (self[key] for key in self.keys())
 
     def items(self):
         #type: (sync_socket) -> Iterator[Tuple[bytes, MsgPackable]]
-        """Returns an iterator of the underlying :py:class:`dict`s items"""
+        """
+        Returns:
+            an iterator of the underlying :py:class:`dict` s items
+        """
         return ((key, self[key]) for key in self.keys())
 
     def pop(self, key, *args):

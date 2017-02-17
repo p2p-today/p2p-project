@@ -99,12 +99,13 @@ def compress(msg, method):
     Args:
         msg:    The message you wish to compress, the type required is
                     defined by the requested method
-        method: The compression method you wish to use.
-                    Supported (assuming installed):
-                        :py:class:`~base.flags.gzip`,
-                        :py:class:`~base.flags.zlib`,
-                        :py:class:`~base.flags.bz2`,
-                        :py:class:`~base.flags.lzma`
+        method: The compression method you wish to use. Supported
+                    (assuming installed):
+
+                    - :py:class:`~base.flags.gzip`
+                    - :py:class:`~base.flags.zlib`
+                    - :py:class:`~base.flags.bz2`
+                    - :py:class:`~base.flags.lzma`
 
     Returns:
         Defined by the compression method, but typically the bytes of the
@@ -141,12 +142,13 @@ def decompress(msg, method):
     Args:
         msg:    The message you wish to decompress, the type required is
                     defined by the requested method
-        method: The decompression method you wish to use.
-                    Supported (assuming installed):
-                        :py:class:`~base.flags.gzip`,
-                        :py:class:`~base.flags.zlib`,
-                        :py:class:`~base.flags.bz2`,
-                        :py:class:`~base.flags.lzma`
+        method: The decompression method you wish to use. Supported
+                    (assuming installed):
+
+                    - :py:class:`~base.flags.gzip`
+                    - :py:class:`~base.flags.zlib`
+                    - :py:class:`~base.flags.bz2`
+                    - :py:class:`~base.flags.lzma`
 
     Returns:
         Defined by the decompression method, but typically the bytes of the

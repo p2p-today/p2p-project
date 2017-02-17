@@ -8,9 +8,9 @@ Your page will look something like:
 .. code-block:: html
 
     <head>
-        <script type="text/javascript" src="./build/browser-min/js2p-browser-base.min.js"></script>
+        <script type="text/javascript" src="./build/browser-min/js2p-browser-0.6.676-base.min.js"></script>
         <!-- Other js2p loaders here -->
-        <script type="text/javascript" src="./build/browser-min/js2p-browser.min.js"></script>
+        <script type="text/javascript" src="./build/browser-min/js2p-browser-0.6.676.min.js"></script>
     </head>
 
 The two scripts shown are the only required. The library will automatically load any other provided components.
@@ -41,14 +41,17 @@ This example shows the simple construction of a :js:class:`js2p.sync.sync_socket
     <!doctype html>
     <html>
         <head>
-            <script type="text/javascript" src="./build/browser-min/js2p-browser-base.min.js"></script>
-            <script type="text/javascript" src="./build/browser-min/js2p-browser-mesh.min.js"></script>
-            <script type="text/javascript" src="./build/browser-min/js2p-browser-sync.min.js"></script>
-            <script type="text/javascript" src="./build/browser-min/js2p-browser.min.js"></script>
+            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.676-base.js"></script>
+            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.676-mesh.js"></script>
+            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.676-sync.js"></script>
+            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.676.js"></script>
         </head>
         <body>
             <script type="text/javascript">
                 const socket = new js2p.sync.sync_socket(null, null, true, new js2p.base.protocol('chat', 'ws'));
+                socket.on('connect', (conn)=>{
+                    // whatever actions to perform on connection
+                });
                 socket.connect('example.com', 5555);
                 // The rest of your script
             </script>

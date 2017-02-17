@@ -85,6 +85,29 @@ These methods are analagous to the ones in Python's :py:class:`dict`. The main d
 
 These methods are also analagous to the ones in Python's :py:class:`dict`. The main difference is that if the leasing system is active, calling this method may throw an error if you don't "own" whatever key is popped.
 
+Events
+------
+
+In addition to the above, and those of :js:class:`js2p.mesh.mesh_socket`, the :js:class:`js2p.sync.sync_socket` object has two :js:class:`Event` s.
+
+First there's :js:func:`js2p.sync.sync_socket Event 'update'`. This is called whenever an association is updated.
+
+.. code-block:: javascript
+
+    > sock.on('update', (conn, key, new_data, meta)=>{
+    ... // conn is a reference to the socket
+    ... console.log(`${key} was updated to have value ${new_data}`);
+    ... console.log(`This change was made by ${meta.owner} at unix time ${meta.timestamp}`);
+    ... });
+
+This class has one other event: :js:func:`js2p.sync.sync_socket Event 'delete'`. This is called every time an association is removed.
+
+.. code-block:: javascript
+
+    > sock.on('delete', (conn, key)=>{
+    ... console.log(`The association with key ${key} was deleted`);
+    ... });
+
 Advanced Usage
 --------------
 
