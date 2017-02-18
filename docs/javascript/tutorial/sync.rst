@@ -12,8 +12,8 @@ Basic Usage
 
 There are three limitations compared to a normal :js:class:`Object`.
 
-1. Keys and values must be translatable to a :js:class:`Buffer`
-2. Keys and values are automatically translated to a :js:class:`Buffer`
+1. Keys must be translatable to a :js:class:`Buffer`
+2. Keys are automatically translated to a :js:class:`Buffer`
 3. By default, this implements a leasing system which prevents you from changing values set by others for a certain time
 
 You can override the last restriction by constructing with ``leasing`` set to ``false``, like so:

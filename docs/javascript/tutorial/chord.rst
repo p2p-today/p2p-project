@@ -12,8 +12,8 @@ Basic Usage
 
 There are three limitations compared to a normal :js:class:`Object`.
 
-1. Keys and values must be translatable to a :js:class:`Buffer`
-2. Keys and values are automatically translated to a :js:class:`Buffer`
+1. Keys must be translatable to a :js:class:`Buffer`
+2. Keys are automatically translated to a :js:class:`Buffer`
 3. Fetching values is significantly slower than for a :js:class:`Object`
 
 The only API differences between this and :js:class:`~js2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.

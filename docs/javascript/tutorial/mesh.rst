@@ -82,7 +82,7 @@ First there's :js:func:`~js2p.mesh.mesh_socket Event 'connect'`. This is called 
     ... // the .on() indicates that this event should be called *every* time
     ... });
 
-This class has one other event: :js:func:`~js2p.mesh.mesh_socket Event 'message'`. This one is a little bit trickier to use, and it's recommended that you only have one callback in place at any given time. The event is called any time you receive a message that *is not* handled by one of the "priveledged" callbacks. Such callbacks include the ones for dealing with new peers on the network.
+This class has one other event: :js:func:`~js2p.mesh.mesh_socket Event 'message'`. This one is a little bit trickier to use, and it's recommended that you only have one callback in place at any given time. The event is called any time you receive a message that *is not* handled by one of the "privileged" callbacks. Such callbacks include the ones for dealing with new peers on the network.
 
 .. code-block:: javascript
 

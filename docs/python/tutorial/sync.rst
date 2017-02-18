@@ -12,8 +12,8 @@ Basic Usage
 
 There are three limitations compared to a normal :py:class:`dict`.
 
-1. Keys and values can only be :py:class:`bytes`-like objects
-2. Keys and values are automatically translated to :py:class:`bytes`
+1. Keys can only be :py:class:`bytes`-like objects
+2. Keys are automatically translated to :py:class:`bytes`
 3. By default, this implements a leasing system which prevents you from changing values set by others for a certain time
 
 You can override the last restriction by constructing with ``leasing=False``, like so:
@@ -83,6 +83,32 @@ These methods are analagous to the ones in Python's :py:class:`dict`. The main d
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods are also analagous to the ones in Python's :py:class:`dict`. The main difference is that if the leasing system is active, calling this method may throw an error if you don't "own" whatever key is popped.
+
+Events
+------
+
+In addition to the above, and those of :py:class:`~py2p.mesh.mesh_socket`, the :py:class:`~py2p.sync.sync_socket` object has two Events.
+
+First there's :py:func:`~py2p.sync.sync_socket Event 'update'`. This is called whenever an association is updated.
+
+.. code-block:: python
+
+    >>> def handle_key_update(conn, key, new_data, meta):
+    ...     # conn is a reference to the socket
+    ...     print("An association was updated: {} -> {}".format(key, new_data))
+    ...     print("This change was made by {} at unix time {}".format(meta.owner, meta.timestamp))
+    ...
+    >>> sock.on('update', handle_key_update)
+
+This class has one other event: :py:func:`~py2p.sync.sync_socket Event 'delete'`. This is called every time an association is removed.
+
+.. code-block:: python
+
+    >>> def handle_deleted_key(conn, key):
+    ...     # conn is a reference to the socket
+    ...     print("A key was deleted: {}".format(key))
+    ...
+    >>> sock.on('delete', handle_deleted_key)
 
 Advanced Usage
 --------------

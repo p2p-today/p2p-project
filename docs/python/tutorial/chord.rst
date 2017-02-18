@@ -12,8 +12,8 @@ Basic Usage
 
 There are three limitations compared to a normal :py:class:`dict`.
 
-1. Keys and values can only be :py:class:`bytes`-like objects
-2. Keys and values are automatically translated to :py:class:`bytes`
+1. Keys can only be :py:class:`bytes`-like objects
+2. Keys are automatically translated to :py:class:`bytes`
 3. Fetching values is significantly slower than for a :py:class:`dict`
 
 The only API differences between this and :py:class:`~py2p.mesh.mesh_socket` are for access to this dictionary. They are as follows.
@@ -74,6 +74,31 @@ In addition, you should always surround :py:meth:`~py2p.chord.chord_socket.value
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods are also analagous to the ones in Python's :py:class:`dict`. The main difference is that, like the above, you should always surround these in a try-catch for :py:class:`KeyError` and :py:class:`socket.error`.
+
+Events
+------
+
+In addition to the above, and those of :py:class:`~py2p.mesh.mesh_socket`, the :py:class:`~py2p.chord.chord_socket` object has two Events.
+
+First there's :py:func:`~py2p.chord.chord_socket Event 'add'`. This is called whenever an association is added. Because the value is not necessarily stored by you, it is not given as an argument to this event.
+
+.. code-block:: python
+
+    >>> def handle_new_key(conn, key):
+    ...     # conn is a reference to the socket
+    ...     print("A new key was added: {}".format(key))
+    ...
+    >>> sock.on('add', handle_new_key)
+
+This class has one other event: :py:func:`~py2p.chord.chord_socket Event 'delete'`. This is called every time an association is removed.
+
+.. code-block:: python
+
+    >>> def handle_deleted_key(conn, key):
+    ...     # conn is a reference to the socket
+    ...     print("A key was deleted: {}".format(key))
+    ...
+    >>> sock.on('delete', handle_deleted_key)
 
 Advanced Usage
 --------------

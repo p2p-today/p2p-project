@@ -61,6 +61,43 @@ Receiving is a bit simpler. When the :py:meth:`~py2p.mesh.mesh_socket.recv` meth
     >>> for msg in sock.recv(10):
     ...     msg.reply("Replying to a list")
 
+Events
+------
+
+In addition to the above, the :py:class:`~py2p.mesh.mesh_socket` object has two Events (as supplied by :py:class:`pyee.EventEmitter` .
+
+First there's :py:func:`~py2p.mesh.mesh_socket Event 'connect'`. This is called whenever you finalize a connection to your distributed service. It is *also* called if you reconnect to the service after some failure.
+
+.. code-block:: python
+
+    >>> def call_once(conn):
+    ...     # conn is a reference to the socket, in case you're in a new scope
+    ...     # the .once() indicates that this event should only be called once
+    ...     pass
+    ...
+    >>> sock.once('connect', call_once)
+    >>>
+    >>> def call_always(conn):
+    ...     # conn is still a reference to the socket
+    ...     # the .on() indicates that this event should be called *every* time
+    ...     pass
+    ...
+    >>> sock.on('connect', call_always)
+
+This class has one other event: :py:func:`~py2p.mesh.mesh_socket Event 'message'`. This one is a little bit trickier to use, and it's recommended that you only have one callback in place at any given time. The event is called any time you receive a message that *is not* handled by one of the "privileged" callbacks. Such callbacks include the ones for dealing with new peers on the network.
+
+.. code-block:: python
+
+    >>> def handle_msg(conn):
+    ...     # note that you are not passed a reference to the message.
+    ...     # This means that you must explicitly recv().
+    ...     msg = conn.recv()
+    ...     if msg is not None:
+    ...         # note the guard clause for if someone else registered a callback
+    ...         msg.reply('this is an example')
+    ...
+    >>> sock.on('message', handle_msg)
+
 Advanced Usage
 --------------
 
