@@ -127,7 +127,11 @@ class chord_socket(mesh_socket):
 
     Added Events:
 
-    .. py:function:: py2p.chord.chord_socket Event 'add'(conn, key)
+    .. raw:: html
+
+        <div id="chord_socket.Event 'add'"></div>
+
+    .. py:function::Event 'add'(conn, key)
 
         This event is triggered when a key is added to the distributed
         dictionary. Because value information is not transmitted in this
@@ -136,7 +140,11 @@ class chord_socket(mesh_socket):
         :param py2p.chord.chord_socket conn: A reference to this abstract socket
         :param bytes key: The key which has a new value
 
-    .. py:function:: on('delete', func)
+    .. raw:: html
+
+        <div id="chord_socket.Event 'delete'"></div>
+
+    .. py:function:: Event 'delete'(conn, key)
 
         This event is triggered when a key is deleted from your distributed
         dictionary.

@@ -185,6 +185,10 @@ class mesh_socket(base_socket):
 
     Added Events:
 
+    .. raw:: html
+
+        <div id="mesh_socket.Event 'connect'"></div>
+
     .. py:function:: Event 'connect'(conn)
 
         This event is called whenever you have a *new* connection to the
@@ -199,7 +203,11 @@ class mesh_socket(base_socket):
 
         :param py2p.mesh.mesh_socket conn: A reference to this abstract socket
 
-    .. py:function:: on('message', func)
+    .. raw:: html
+
+        <div id="mesh_socket.Event 'message'"></div>
+
+    .. py:function:: Event 'message'(conn)
 
         This event is called whenever you receive a new message. A reference
         to the message is *not* passed to you. This is to prevent potential

@@ -66,28 +66,31 @@ Events
 
 In addition to the above, the :py:class:`~py2p.mesh.mesh_socket` object has two Events (as supplied by :py:class:`pyee.EventEmitter` .
 
-First there's :py:func:`~py2p.mesh.mesh_socket Event 'connect'`. This is called whenever you finalize a connection to your distributed service. It is *also* called if you reconnect to the service after some failure.
+First there's |mesh_socket_onconnect|_. This is called whenever you finalize a connection to your distributed service. It is *also* called if you reconnect to the service after some failure.
 
 .. code-block:: python
 
+    >>> @sock.once('connect')
     >>> def call_once(conn):
     ...     # conn is a reference to the socket, in case you're in a new scope
     ...     # the .once() indicates that this event should only be called once
     ...     pass
     ...
-    >>> sock.once('connect', call_once)
+    >>> # sock.once('connect', call_once)
+    >>> # This syntax also works
     >>>
+    >>> @sock.on('connect')
     >>> def call_always(conn):
     ...     # conn is still a reference to the socket
     ...     # the .on() indicates that this event should be called *every* time
     ...     pass
     ...
-    >>> sock.on('connect', call_always)
 
-This class has one other event: :py:func:`~py2p.mesh.mesh_socket Event 'message'`. This one is a little bit trickier to use, and it's recommended that you only have one callback in place at any given time. The event is called any time you receive a message that *is not* handled by one of the "privileged" callbacks. Such callbacks include the ones for dealing with new peers on the network.
+This class has one other event: |mesh_socket_onmessage|_. This one is a little bit trickier to use, and it's recommended that you only have one callback in place at any given time. The event is called any time you receive a message that *is not* handled by one of the "privileged" callbacks. Such callbacks include the ones for dealing with new peers on the network.
 
 .. code-block:: python
 
+    >>> @sock.on('message')
     >>> def handle_msg(conn):
     ...     # note that you are not passed a reference to the message.
     ...     # This means that you must explicitly recv().
@@ -96,7 +99,6 @@ This class has one other event: :py:func:`~py2p.mesh.mesh_socket Event 'message'
     ...         # note the guard clause for if someone else registered a callback
     ...         msg.reply('this is an example')
     ...
-    >>> sock.on('message', handle_msg)
 
 Advanced Usage
 --------------
@@ -138,6 +140,12 @@ This library also supports the :py:class:`~pyee.EventEmitter` API. This enables 
     >>> sock.connect('example.com', 12345)
     Hey! You got connected!
 
-The mesh socket supports :py:meth:`~py2p.mesh.mesh_socket.on('connect'`
+The mesh socket supports |mesh_socket_onconnect|_
 
 To help debug these services, you can specify a :py:attr:`~py2p.base.base_socket.debug_level` in the constructor. Using a value of 5, you can see when it enters into each handler, as well as every message which goes in or out.
+
+.. |mesh_socket_onconnect| replace:: :py:func:`~py2p.mesh.mesh_socket.Event 'connect'`
+.. _mesh_socket_onconnect: ../mesh.html#mesh_socket.Event%20'connect'
+
+.. |mesh_socket_onmessage| replace:: :py:func:`~py2p.mesh.mesh_socket.Event 'message'`
+.. _mesh_socket_onmessage: ../mesh.html#mesh_socket.Event%20'message'

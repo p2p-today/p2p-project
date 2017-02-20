@@ -80,27 +80,39 @@ Events
 
 In addition to the above, and those of :py:class:`~py2p.mesh.mesh_socket`, the :py:class:`~py2p.chord.chord_socket` object has two Events.
 
-First there's :py:func:`~py2p.chord.chord_socket Event 'add'`. This is called whenever an association is added. Because the value is not necessarily stored by you, it is not given as an argument to this event.
+First there's |chord_socket_onadd|_. This is called whenever an association is added. Because the value is not necessarily stored by you, it is not given as an argument to this event.
 
 .. code-block:: python
 
+    >>> @sock.on('add')
     >>> def handle_new_key(conn, key):
     ...     # conn is a reference to the socket
     ...     print("A new key was added: {}".format(key))
     ...
-    >>> sock.on('add', handle_new_key)
 
-This class has one other event: :py:func:`~py2p.chord.chord_socket Event 'delete'`. This is called every time an association is removed.
+This class has one other event: |chord_socket_ondelete|_. This is called every time an association is removed.
 
 .. code-block:: python
 
+    >>> sock.on('delete')
     >>> def handle_deleted_key(conn, key):
     ...     # conn is a reference to the socket
     ...     print("A key was deleted: {}".format(key))
     ...
-    >>> sock.on('delete', handle_deleted_key)
 
 Advanced Usage
 --------------
 
 Refer to :doc:`the mesh socket tutorial <./mesh>`
+
+.. |mesh_socket_onconnect| replace:: :py:func:`~py2p.mesh.mesh_socket.Event 'connect'`
+.. _mesh_socket_onconnect: ../mesh.html#mesh_socket.Event%20'connect'
+
+.. |mesh_socket_onmessage| replace:: :py:func:`~py2p.mesh.mesh_socket.Event 'message'`
+.. _mesh_socket_onmessage: ../mesh.html#mesh_socket.Event%20'message'
+
+.. |chord_socket_onadd| replace:: :py:func:`~py2p.chord.chord_socket.Event 'add'`
+.. _chord_socket_onadd: ../chord.html#chord_socket.Event%20'add'
+
+.. |chord_socket_ondelete| replace:: :py:func:`~py2p.chord.chord_socket.Event 'delete'`
+.. _chord_socket_ondelete: ../chord.html#chord_socket.Event%20'delete'

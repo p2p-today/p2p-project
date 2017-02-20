@@ -39,7 +39,11 @@ class sync_socket(mesh_socket):
 
     Added Events:
 
-    .. py:function:: on('update', func)
+    .. raw:: html
+
+        <div id="sync_socket.Event 'update'"></div>
+
+    .. py:function:: Event 'update'(conn, key, data, new_meta)
 
         This event is triggered when a key is updated in your synchronized
         dictionary. ``new_meta`` will be an object containing metadata of this
@@ -50,7 +54,11 @@ class sync_socket(mesh_socket):
         :param new_data: The new value at that key
         :param py2p.sync.metatuple new_meta: Metadata on the key changer
 
-    .. py:function:: on('delete', func)
+    .. raw:: html
+
+        <div id="sync_socket.Event 'delete'"></div>
+
+    .. py:function:: Event 'delete'(conn, key)
 
         This event is triggered when a key is deleted from your synchronized
         dictionary.

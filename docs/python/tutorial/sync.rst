@@ -89,28 +89,40 @@ Events
 
 In addition to the above, and those of :py:class:`~py2p.mesh.mesh_socket`, the :py:class:`~py2p.sync.sync_socket` object has two Events.
 
-First there's :py:func:`~py2p.sync.sync_socket Event 'update'`. This is called whenever an association is updated.
+First there's |sync_socket_onupdate|_. This is called whenever an association is updated.
 
 .. code-block:: python
 
+    >>> @sock.on('update')
     >>> def handle_key_update(conn, key, new_data, meta):
     ...     # conn is a reference to the socket
     ...     print("An association was updated: {} -> {}".format(key, new_data))
     ...     print("This change was made by {} at unix time {}".format(meta.owner, meta.timestamp))
     ...
-    >>> sock.on('update', handle_key_update)
 
-This class has one other event: :py:func:`~py2p.sync.sync_socket Event 'delete'`. This is called every time an association is removed.
+This class has one other event: |sync_socket_ondelete|_. This is called every time an association is removed.
 
 .. code-block:: python
 
+    >>> @sock.on('delete')
     >>> def handle_deleted_key(conn, key):
     ...     # conn is a reference to the socket
     ...     print("A key was deleted: {}".format(key))
     ...
-    >>> sock.on('delete', handle_deleted_key)
 
 Advanced Usage
 --------------
 
 Refer to :doc:`the mesh socket tutorial <./mesh>`
+
+.. |mesh_socket_onconnect| replace:: :py:func:`~py2p.mesh.mesh_socket.Event 'connect'`
+.. _mesh_socket_onconnect: ../mesh.html#mesh_socket.Event%20'connect'
+
+.. |mesh_socket_onmessage| replace:: :py:func:`~py2p.mesh.mesh_socket.Event 'message'`
+.. _mesh_socket_onmessage: ../mesh.html#mesh_socket.Event%20'message'
+
+.. |sync_socket_onupdate| replace:: :py:func:`~py2p.sync.sync_socket.Event 'update'`
+.. _sync_socket_onupdate: ../sync.html#sync_socket.Event%20'update'
+
+.. |sync_socket_ondelete| replace:: :py:func:`~py2p.sync.sync_socket.Event 'delete'`
+.. _sync_socket_ondelete: ../sync.html#sync_socket.Event%20'delete'
