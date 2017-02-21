@@ -18,10 +18,10 @@ if sys.version_info >= (3, ):
 #                                   name='test'):
 #     for i in xrange(iters):
 #         print("----------------------Test start----------------------")
-#         f = chord.chord_socket('localhost', start_port + i*2, k=4,
+#         f = chord.ChordSocket('localhost', start_port + i*2, k=4,
 #                                prot=chord.Protocol('test', encryption),
 #                                debug_level=5)
-#         g = chord.chord_socket('localhost', start_port + i*2 + 1, k=k,
+#         g = chord.ChordSocket('localhost', start_port + i*2 + 1, k=k,
 #                                prot=chord.Protocol(name, encryption),
 #                                debug_level=5)
 #         print("----------------------Test event----------------------")
@@ -49,7 +49,7 @@ if sys.version_info >= (3, ):
 
 # def gen_connected_list(start_port, encryption, k=2):
 #     nodes = [
-#         chord.chord_socket('localhost', start_port + x, k=k, debug_level=0)
+#         chord.ChordSocket('localhost', start_port + x, k=k, debug_level=0)
 #         for x in xrange(2**k)]
 #
 #     for index, node in enumerate(nodes):

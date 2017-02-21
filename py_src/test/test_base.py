@@ -163,7 +163,7 @@ def test_protocol(benchmark, iters=200, impl=base):
     benchmark.pedantic(test, setup=setup, rounds=iters)
 
 
-def test_message_sans_network(benchmark, iters=1000):
+def test_Message_sans_network(benchmark, iters=1000):
     #type: (Any, int) -> None
     def setup():
         #type: () -> Tuple[Tuple, Dict]
@@ -174,7 +174,7 @@ def test_message_sans_network(benchmark, iters=1000):
 
     def test(sen, pac, base_msg):
         #type: (base.MsgPackable, base.MsgPackable, base.InternalMessage) -> None
-        item = base.message(base_msg, None)
+        item = base.Message(base_msg, None)
         assert item.packets == pac
         assert item.msg == base_msg
         assert item.sender == sen

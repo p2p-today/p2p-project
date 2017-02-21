@@ -8,7 +8,7 @@ var start_port = 44765;
 
 describe('chord', function() {
 
-    describe('chord_socket', function() {
+    describe('ChordSocket', function() {
 
         let transports = {
             'plaintext': 'Plaintext',
@@ -20,8 +20,8 @@ describe('chord', function() {
 
             it(`should store values correctly (over ${text})`, function(done) {
                 this.timeout(2500 * (3 && text === 'SSL/TLS' + 1));
-                var node1 = new chord.chord_socket('localhost', start_port++, new base.Protocol('chord', transports[text]));
-                var node2 = new chord.chord_socket('localhost', start_port++, new base.Protocol('chord', transports[text]));
+                var node1 = new chord.ChordSocket('localhost', start_port++, new base.Protocol('chord', transports[text]));
+                var node2 = new chord.ChordSocket('localhost', start_port++, new base.Protocol('chord', transports[text]));
 
                 node1.join();
                 node2.join();

@@ -1,7 +1,7 @@
 Use In a Browser
 ~~~~~~~~~~~~~~~~
 
-In each release, a set of browser scripts (regular and minified) are included. To use the library, two scripts must be included in your page. All others are optional (excepting internal dependencies, such as :js:class:`js2p.sync.sync_socket` relying on :js:class:`js2p.mesh.mesh_socket`).
+In each release, a set of browser scripts (regular and minified) are included. To use the library, two scripts must be included in your page. All others are optional (excepting internal dependencies, such as :js:class:`js2p.sync.SyncSocket` relying on :js:class:`js2p.mesh.MeshSocket`).
 
 Your page will look something like:
 
@@ -34,7 +34,7 @@ Caveats
 Example
 =======
 
-This example shows the simple construction of a :js:class:`js2p.sync.sync_socket`. Note the order of script inclusion.
+This example shows the simple construction of a :js:class:`js2p.sync.SyncSocket`. Note the order of script inclusion.
 
 .. code-block:: html
 
@@ -48,7 +48,7 @@ This example shows the simple construction of a :js:class:`js2p.sync.sync_socket
         </head>
         <body>
             <script type="text/javascript">
-                const socket = new js2p.sync.sync_socket(null, null, true, new js2p.base.Protocol('chat', 'ws'));
+                const socket = new js2p.sync.SyncSocket(null, null, true, new js2p.base.Protocol('chat', 'ws'));
                 socket.on('connect', (conn)=>{
                     // whatever actions to perform on connection
                 });

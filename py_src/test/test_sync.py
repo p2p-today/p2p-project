@@ -22,7 +22,7 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         nodes = [
-            sync.sync_socket(
+            sync.SyncSocket(
                 'localhost',
                 start_port + i * num_nodes,
                 prot=sync.Protocol('', encryption),
@@ -31,7 +31,7 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
         ]
         nodes[0].set('store', b"store")
         for j in xrange(1, num_nodes):
-            new_node = sync.sync_socket(
+            new_node = sync.SyncSocket(
                 'localhost',
                 start_port + i * num_nodes + j,
                 prot=sync.Protocol('', encryption),

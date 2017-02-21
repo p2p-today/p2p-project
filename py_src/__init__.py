@@ -15,7 +15,7 @@ In this module:
 
     Classes
 
-      * mesh_socket(addr, port, out_addr=None, debug_level=0,
+      * MeshSocket(addr, port, out_addr=None, debug_level=0,
                     prot=py2p.mesh.default_protocol):
           -  addr:        The address you'd like to bind to
           -  port:        The port you'd like to bind to
@@ -23,7 +23,7 @@ In this module:
                               from (addr, port)
           -  prot:        The py2p.base.Protocol object you'd like to use
           -  debug_level: The verbosity at which this and its associated
-                              py2p.mesh.mesh_daemon prints debug information
+                              py2p.mesh.MeshDaemon prints debug information
 
 Submodules:
 
@@ -38,11 +38,12 @@ Submodules:
 from typing import (Any, Callable, List, Tuple)
 
 from .base import (Protocol, version, protocol_version, node_policy_version)
-from .mesh import mesh_socket
-from .chord import chord_socket
+from .mesh import MeshSocket
+from .sync import SyncSocket
+from .chord import ChordSocket
 # from .kademlia import kademlia_socket
 
-dht_socket = chord_socket
+dht_socket = ChordSocket
 
 __version__ = version  #type: str
 version_info = tuple(map(int, __version__.split(".")))  #type: Tuple[int, ...]

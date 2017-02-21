@@ -621,14 +621,14 @@ class InternalMessage(object):
         return len(self.string)
 
 
-class base_connection(object):
+class BaseConnection(object):
     """The base class for a connection"""
     __slots__ = ('sock', 'server', 'outgoing', 'buffer', 'id', 'time', 'addr',
                  'compression', 'last_sent', 'expected', 'active')
 
-    @log_entry('py2p.base.base_connection.__init__', DEBUG)
+    @log_entry('py2p.base.BaseConnection.__init__', DEBUG)
     def __init__(self, sock, server, outgoing=False):
-        #type: (base_connection, Any, base_socket, bool) -> None
+        #type: (BaseConnection, Any, BaseSocket, bool) -> None
         """Sets up a connection to another peer-to-peer socket
 
         Args:
@@ -649,7 +649,7 @@ class base_connection(object):
         self.active = False
 
     def send_InternalMessage(self, msg):
-        #type: (base_connection, InternalMessage) -> InternalMessage
+        #type: (BaseConnection, InternalMessage) -> InternalMessage
         """Sends a preconstructed message
 
         Args:
@@ -674,7 +674,7 @@ class base_connection(object):
             self.server.disconnect(self)
 
     def send(self, msg_type, *args, **kargs):
-        #type: (base_connection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
+        #type: (BaseConnection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
         """Sends a message through its connection.
 
         Args:
@@ -702,12 +702,12 @@ class base_connection(object):
 
     @property
     def protocol(self):
-        #type: (base_connection) -> Protocol
+        #type: (BaseConnection) -> Protocol
         """Returns server.protocol"""
         return self.server.protocol
 
     def collect_incoming_data(self, data):
-        #type: (base_connection, Union[bytes, bytearray]) -> bool
+        #type: (BaseConnection, Union[bytes, bytearray]) -> bool
         """Collects incoming data
 
         Args:
@@ -733,12 +733,12 @@ class base_connection(object):
         return True
 
     def find_terminator(self):
-        #type: (base_connection) -> bool
+        #type: (BaseConnection) -> bool
         """Returns whether the defined return sequences is found"""
         return len(self.buffer) >= self.expected
 
     def found_terminator(self):
-        #type: (base_connection) -> InternalMessage
+        #type: (BaseConnection) -> InternalMessage
         """Processes received messages"""
         raw_msg, self.buffer = bytes(self.buffer[:self.expected]), \
                                self.buffer[self.expected:]
@@ -752,7 +752,7 @@ class base_connection(object):
         return msg
 
     def handle_renegotiate(self, packets):
-        #type: (base_connection, Sequence[MsgPackable]) -> bool
+        #type: (BaseConnection, Sequence[MsgPackable]) -> bool
         """The handler for connection renegotiations
 
         This is to deal with connection maintenance. For instance, it could
@@ -787,14 +787,14 @@ class base_connection(object):
         return False
 
     def fileno(self):
-        #type: (base_connection) -> int
+        #type: (BaseConnection) -> int
         """Mirror for the fileno() method of the connection's
         underlying socket
         """
         return self.sock.fileno()
 
     def __print__(self, *args, **kargs):
-        #type: (base_connection, *Any, **int) -> None
+        #type: (BaseConnection, *Any, **int) -> None
         """Private method to print if level is <= self.server.debug_level
 
         Args:
@@ -806,14 +806,14 @@ class base_connection(object):
         self.server.__print__(*args, **kargs)
 
 
-class base_daemon(object):
+class BaseDaemon(object):
     """The base class for a daemon"""
     __slots__ = ('server', 'sock', 'exceptions', 'alive', '_logger',
                  'main_thread', 'daemon', 'conn_type')
 
-    @log_entry('py2p.base.base_daemon.__init__', DEBUG)
+    @log_entry('py2p.base.BaseDaemon.__init__', DEBUG)
     def __init__(self, addr, port, server):
-        #type: (Any, str, int, base_socket) -> None
+        #type: (Any, str, int, BaseSocket) -> None
         """Sets up a daemon process for your peer-to-peer socket
 
         Args:
@@ -842,18 +842,18 @@ class base_daemon(object):
 
     @property
     def protocol(self):
-        #type: (base_daemon) -> Protocol
+        #type: (BaseDaemon) -> Protocol
         """Returns server.protocol"""
         return self.server.protocol
 
     def kill_old_nodes(self, handler):
-        #type: (base_daemon, base_connection) -> None
+        #type: (BaseDaemon, BaseConnection) -> None
         """Cleans out connections which never finish a message"""
         if handler.active and handler.time < getUTC() - 60:
             self.server.disconnect(handler)
 
     def process_data(self, handler):
-        #type: (base_daemon, base_connection) -> None
+        #type: (BaseDaemon, BaseConnection) -> None
         """Collects incoming data from nodes"""
         try:
             while not handler.find_terminator():
@@ -880,7 +880,7 @@ class base_daemon(object):
                     "There was an unhandled exception with peer id %s. This "
                     "peer is being disconnected, and the relevant exception "
                     "is added to the debug queue. If you'd like to report "
-                    "this, please post a copy of your mesh_socket.status to "
+                    "this, please post a copy of your MeshSocket.status to "
                     "git.p2p.today/issues." % handler.id,
                     level=0)
                 self.exceptions.append(format_exc())
@@ -888,29 +888,29 @@ class base_daemon(object):
             self.server.request_peers()
 
     def __del__(self):
-        #type: (base_daemon) -> None
+        #type: (BaseDaemon) -> None
         self.alive = False
         try:
             self.sock.shutdown(socket.SHUT_RDWR)
         except:  # pragma: no cover
             pass
 
-    @inherit_doc(base_connection.__print__)
+    @inherit_doc(BaseConnection.__print__)
     def __print__(self, *args, **kargs):
-        #type: (base_daemon, *Any, **int) -> None
+        #type: (BaseDaemon, *Any, **int) -> None
         self.server.__print__(*args, **kargs)
 
 
-class base_socket(EventEmitter, object):
+class BaseSocket(EventEmitter, object):
     """
     The base class for a peer-to-peer socket abstractor
 
-    .. inheritance-diagram:: py2p.base.base_socket
+    .. inheritance-diagram:: py2p.base.BaseSocket
     """
     __slots__ = ('protocol', 'debug_level', 'routing_table', 'awaiting_ids',
                  'out_addr', 'id', '_logger', '__handlers', '__closed')
 
-    @log_entry('py2p.base.base_socket.__init__', DEBUG)
+    @log_entry('py2p.base.BaseSocket.__init__', DEBUG)
     def __init__(
             self,  #type: Any
             addr,  #type: str
@@ -941,9 +941,9 @@ class base_socket(EventEmitter, object):
         EventEmitter.__init__(self)
         self.protocol = prot
         self.debug_level = debug_level
-        self.routing_table = {}  #type: Dict[bytes, base_connection]
+        self.routing_table = {}  #type: Dict[bytes, BaseConnection]
         # In format {ID: handler}
-        self.awaiting_ids = []  #type: List[base_connection]
+        self.awaiting_ids = []  #type: List[BaseConnection]
         # Connected, but not handshook yet
         if out_addr:  # Outward facing address, if you're port forwarding
             self.out_addr = out_addr
@@ -957,11 +957,11 @@ class base_socket(EventEmitter, object):
         self._logger = getLogger('{}.{}.{}'.format(
             self.__class__.__module__, self.__class__.__name__, self.id))
         self.__handlers = [
-        ]  #type: List[Callable[[message, base_connection], Union[bool, None]]]
+        ]  #type: List[Callable[[Message, BaseConnection], Union[bool, None]]]
         self.__closed = False
 
     def close(self):
-        #type: (base_socket) -> None
+        #type: (BaseSocket) -> None
         """If the socket is not closed, close the socket
 
         Raises:
@@ -985,15 +985,15 @@ class base_socket(EventEmitter, object):
     if version_info >= (3, ):
 
         def register_handler(self, method):
-            #type: (base_socket, Callable[[message, base_connection], Union[bool, None]]) -> None
+            #type: (BaseSocket, Callable[[Message, BaseConnection], Union[bool, None]]) -> None
             """Register a handler for incoming method.
 
             Args:
                 method: A function with two given arguments. Its signature
                             should be of the form ``handler(msg, handler)``,
-                            where msg is a :py:class:`py2p.base.message`
+                            where msg is a :py:class:`py2p.base.Message`
                             object, and handler is a
-                            :py:class:`py2p.base.base_connection` object. It
+                            :py:class:`py2p.base.BaseConnection` object. It
                             should return ``True`` if it performed an action,
                             to reduce the number of handlers checked.
 
@@ -1011,15 +1011,15 @@ class base_socket(EventEmitter, object):
     else:
 
         def register_handler(self, method):
-            #type: (base_socket, Callable[[message, base_connection], Union[bool, None]]) -> None
+            #type: (BaseSocket, Callable[[Message, BaseConnection], Union[bool, None]]) -> None
             """Register a handler for incoming method.
 
             Args:
                 method: A function with two given arguments. Its signature
                             should be of the form ``handler(msg, handler)``,
-                            where msg is a :py:class:`py2p.base.message`
+                            where msg is a :py:class:`py2p.base.Message`
                             object, and handler is a
-                            :py:class:`py2p.base.base_connection` object. It
+                            :py:class:`py2p.base.BaseConnection` object. It
                             should return ``True`` if it performed an action,
                             to reduce the number of handlers checked.
 
@@ -1035,13 +1035,13 @@ class base_socket(EventEmitter, object):
             self.__handlers.append(method)
 
     def handle_msg(self, msg, conn):
-        #type: (base_socket, message, base_connection) -> Union[bool, None]
+        #type: (BaseSocket, Message, BaseConnection) -> Union[bool, None]
         """Decides how to handle various message types, allowing some to be
         handled automatically
 
         Args:
-            msg:    A :py:class:`py2p.base.message` object
-            conn:   A :py:class:`py2p.base.base_connection` object
+            msg:    A :py:class:`py2p.base.Message` object
+            conn:   A :py:class:`py2p.base.BaseConnection` object
 
         Returns:
             True if an action was taken, None if not.
@@ -1055,7 +1055,7 @@ class base_socket(EventEmitter, object):
 
     @property
     def status(self):
-        #type: (base_socket) -> Union[str, List[str]]
+        #type: (BaseSocket) -> Union[str, List[str]]
         """The status of the socket.
 
         Returns:
@@ -1066,20 +1066,20 @@ class base_socket(EventEmitter, object):
 
     @property
     def outgoing(self):
-        #type: (base_socket) -> Iterable[bytes]
+        #type: (BaseSocket) -> Iterable[bytes]
         """IDs of outgoing connections"""
         return (handler.id for handler in self.routing_table.values()
                 if handler.outgoing)
 
     @property
     def incoming(self):
-        #type: (base_socket) -> Iterable[bytes]
+        #type: (BaseSocket) -> Iterable[bytes]
         """IDs of incoming connections"""
         return (handler.id for handler in self.routing_table.values()
                 if not handler.outgoing)
 
     def __print__(self, *args, **kargs):
-        #type: (base_socket, *Any, **int) -> None
+        #type: (BaseSocket, *Any, **int) -> None
         """Private method to print if level is <= self.debug_level
 
         Args:
@@ -1093,71 +1093,71 @@ class base_socket(EventEmitter, object):
                 print(self.out_addr[1], *args)
 
     def __del__(self):
-        #type: (base_socket) -> None
+        #type: (BaseSocket) -> None
         if not self.__closed:
             self.close()
 
 
-class message(object):
+class Message(object):
     """An object which gets returned to a user, containing all necessary
     information to parse and reply to a message
     """
     __slots__ = ('msg', 'server')
 
     def __init__(self, msg, server):
-        #type: (message, InternalMessage, base_socket) -> None
-        """Initializes a message object
+        #type: (Message, InternalMessage, BaseSocket) -> None
+        """Initializes a Message object
 
         Args:
             msg:    A :py:class:`py2p.base.InternalMessage` object
-            server: A :py:class:`py2p.base.base_socket` object
+            server: A :py:class:`py2p.base.BaseSocket` object
         """
         self.msg = msg
         self.server = server
 
     @property
     def time(self):
-        #type: (message) -> int
-        """The time this message was sent at"""
+        #type: (Message) -> int
+        """The time this Message was sent at"""
         return self.msg.time
 
     @property  #type: ignore
     @inherit_doc(InternalMessage.time_58)
     def time_58(self):
-        #type: (message) -> bytes
+        #type: (Message) -> bytes
         return self.msg.time_58
 
     @property
     def sender(self):
-        #type: (message) -> bytes
-        """The ID of this message's sender"""
+        #type: (Message) -> bytes
+        """The ID of this Message's sender"""
         return self.msg.sender
 
     @property  #type: ignore
     @inherit_doc(InternalMessage.id)
     def id(self):
-        #type: (message) -> bytes
+        #type: (Message) -> bytes
         return self.msg.id
 
     @property  #type: ignore
     @inherit_doc(InternalMessage.payload)
     def packets(self):
-        #type: (message) -> Tuple[MsgPackable, ...]
+        #type: (Message) -> Tuple[MsgPackable, ...]
         return self.msg.payload
 
     @inherit_doc(InternalMessage.__len__)
     def __len__(self):
-        #type: (message) -> int
+        #type: (Message) -> int
         return self.msg.__len__()
 
     def __repr__(self):
-        #type: (message) -> str
+        #type: (Message) -> str
         packets = self.packets
-        return "message(type={}, packets={}, sender={})".format(
+        return "Message(type={}, packets={}, sender={})".format(
             packets[0], packets[1:], self.sender)
 
     def reply(self, *args):
-        #type: (message, *MsgPackable) -> None
+        #type: (Message, *MsgPackable) -> None
         """Replies to the sender if you're directly connected. Tries to make
         a connection otherwise
 
@@ -1167,13 +1167,13 @@ class message(object):
                        receive ``[base.flags.whisper, *args]``
         """
         self.server._logger.debug(
-            'Initiating a direct reply to message ID {}'.format(self.id))
+            'Initiating a direct reply to Message ID {}'.format(self.id))
         if self.server.routing_table.get(self.sender):
             self.server.routing_table.get(self.sender).send(
                 flags.whisper, flags.whisper, *args)
         else:
             self.server._logger.debug('Requesting connection for direct reply'
-                                      ' to message ID {}'.format(self.id))
+                                      ' to Message ID {}'.format(self.id))
             request_hash = sha384(self.sender + to_base_58(
                 getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))

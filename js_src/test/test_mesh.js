@@ -8,7 +8,7 @@ var start_port = 44565;
 
 describe('mesh', function() {
 
-    describe('mesh_socket', function()  {
+    describe('MeshSocket', function()  {
 
         let transports = {
             'plaintext': 'Plaintext',
@@ -22,9 +22,9 @@ describe('mesh', function() {
                 this.timeout(6000 * (3 && text === 'SSL/TLS' + 1));
                 let count = 3;
 
-                let nodes = [new mesh.mesh_socket('localhost', start_port++, new base.Protocol('mesh', transports[text]))];
+                let nodes = [new mesh.MeshSocket('localhost', start_port++, new base.Protocol('mesh', transports[text]))];
                 for (let j = 1; j < count; j++) {
-                    let node = new mesh.mesh_socket('localhost', start_port++, new base.Protocol('mesh', transports[text]));
+                    let node = new mesh.MeshSocket('localhost', start_port++, new base.Protocol('mesh', transports[text]));
                     let addr = nodes[nodes.length - 1].addr;
                     node.connect(addr[0], addr[1]);
                     nodes.push(node);
@@ -53,8 +53,8 @@ describe('mesh', function() {
 
             it(`should reject connections with a different Protocol object (over ${text})`, function(done)    {
                 this.timeout(2000 * (3 && text === 'SSL/TLS' + 1));
-                var node1 = new mesh.mesh_socket('localhost', start_port++, new base.Protocol('mesh1', transports[text]));
-                var node2 = new mesh.mesh_socket('localhost', start_port++, new base.Protocol('mesh2', transports[text]));
+                var node1 = new mesh.MeshSocket('localhost', start_port++, new base.Protocol('mesh1', transports[text]));
+                var node2 = new mesh.MeshSocket('localhost', start_port++, new base.Protocol('mesh2', transports[text]));
 
                 node1.connect(node2.addr[0], node2.addr[1]);
                 setTimeout(function()   {
@@ -81,8 +81,8 @@ describe('mesh', function() {
             }
 
             function test_callback(callback, register, done)    {
-                var node1 = new mesh.mesh_socket('localhost', start_port++, new base.Protocol('mesh', transports[text]));
-                var node2 = new mesh.mesh_socket('localhost', start_port++, new base.Protocol('mesh', transports[text]));
+                var node1 = new mesh.MeshSocket('localhost', start_port++, new base.Protocol('mesh', transports[text]));
+                var node2 = new mesh.MeshSocket('localhost', start_port++, new base.Protocol('mesh', transports[text]));
 
                 if (register)   {
                     node2.register_handler(callback);

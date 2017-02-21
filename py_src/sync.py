@@ -1,10 +1,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from .mesh import (mesh_socket, mesh_connection)
+from .mesh import (MeshSocket, MeshConnection)
 from .utils import (inherit_doc, getUTC, sanitize_packet, log_entry)
-from .base import (message, flags, to_base_58, from_base_58, MsgPackable,
-                   base_connection)
+from .base import (Message, flags, to_base_58, from_base_58, MsgPackable,
+                   BaseConnection)
 
 try:
     from .cbase import protocol as Protocol
@@ -23,11 +23,11 @@ class metatuple(NamedTuple('meta', [('owner', bytes), ('timestamp', int)])):
     __slots__ = ()
 
 
-class sync_socket(mesh_socket):
+class SyncSocket(MeshSocket):
     """This class is used to sync dictionaries between programs. It extends
-    :py:class:`py2p.mesh.mesh_socket`
+    :py:class:`py2p.mesh.MeshSocket`
 
-    .. inheritance-diagram:: py2p.sync.sync_socket
+    .. inheritance-diagram:: py2p.sync.SyncSocket
 
     Because of this inheritance, this can also be used as an alert network
 
@@ -41,7 +41,7 @@ class sync_socket(mesh_socket):
 
     .. raw:: html
 
-        <div id="sync_socket.Event 'update'"></div>
+        <div id="SyncSocket.Event 'update'"></div>
 
     .. py:function:: Event 'update'(conn, key, data, new_meta)
 
@@ -49,27 +49,27 @@ class sync_socket(mesh_socket):
         dictionary. ``new_meta`` will be an object containing metadata of this
         change, including the time of change, and who initiated the change.
 
-        :param py2p.sync.sync_socket conn: A reference to this abstract socket
+        :param py2p.sync.SyncSocket conn: A reference to this abstract socket
         :param bytes key: The key which has a new value
         :param new_data: The new value at that key
         :param py2p.sync.metatuple new_meta: Metadata on the key changer
 
     .. raw:: html
 
-        <div id="sync_socket.Event 'delete'"></div>
+        <div id="SyncSocket.Event 'delete'"></div>
 
     .. py:function:: Event 'delete'(conn, key)
 
         This event is triggered when a key is deleted from your synchronized
         dictionary.
 
-        :param py2p.sync.sync_socket conn: A reference to this abstract socket
+        :param py2p.sync.SyncSocket conn: A reference to this abstract socket
         :param bytes key: The key which has a new value
     """
     __slots__ = ('__leasing', 'data', 'metadata')
 
-    @log_entry('py2p.sync.sync_socket.__init__', DEBUG)
-    @inherit_doc(mesh_socket.__init__)
+    @log_entry('py2p.sync.SyncSocket.__init__', DEBUG)
+    @inherit_doc(MeshSocket.__init__)
     def __init__(
             self,  #type: Any
             addr,  #type: str
@@ -82,7 +82,7 @@ class sync_socket(mesh_socket):
         """Initialize a chord socket"""
         protocol_used = Protocol(prot[0] + str(int(leasing)), prot[1])
         self.__leasing = leasing  #type: bool
-        super(sync_socket, self).__init__(addr, port, protocol_used, out_addr,
+        super(SyncSocket, self).__init__(addr, port, protocol_used, out_addr,
                                           debug_level)
         self.data = cast(Dict[bytes, MsgPackable],
                          {})  #type: Dict[bytes, MsgPackable]
@@ -90,7 +90,7 @@ class sync_socket(mesh_socket):
         self.register_handler(self.__handle_store)
 
     def __check_lease(self, key, new_data, new_meta):
-        #type: (sync_socket, bytes, MsgPackable, metatuple) -> bool
+        #type: (SyncSocket, bytes, MsgPackable, metatuple) -> bool
         meta = self.metadata.get(key, None)
         return ((meta is None) or (meta.owner == new_meta.owner) or
                 (meta.timestamp < getUTC() - 3600) or
@@ -99,7 +99,7 @@ class sync_socket(mesh_socket):
                 (meta.timestamp < new_meta.timestamp and not self.__leasing))
 
     def __store(self, key, new_data, new_meta, error=True):
-        #type: (sync_socket, bytes, MsgPackable, metatuple, bool) -> None
+        #type: (SyncSocket, bytes, MsgPackable, metatuple, bool) -> None
         """Private API method for storing data. You have permission to store
         something if:
 
@@ -131,17 +131,17 @@ class sync_socket(mesh_socket):
         elif error:
             raise KeyError("You don't have permission to change this yet")
 
-    @inherit_doc(mesh_socket._send_peers)
+    @inherit_doc(MeshSocket._send_peers)
     def _send_peers(self, handler):
-        #type: (sync_socket, base_connection) -> None
-        super(sync_socket, self)._send_peers(handler)
+        #type: (SyncSocket, BaseConnection) -> None
+        super(SyncSocket, self)._send_peers(handler)
         for key in self:
             meta = self.metadata[key]
             handler.send(flags.whisper, flags.store, key, self[key],
                          meta.owner, to_base_58(meta.timestamp))
 
     def __handle_store(self, msg, handler):
-        #type: (sync_socket, message, base_connection) -> Union[bool, None]
+        #type: (SyncSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with data storage signals. Its two
         primary jobs are:
 
@@ -149,8 +149,8 @@ class sync_socket(mesh_socket):
              - delete data in a given key
 
              Args:
-                msg:        A :py:class:`~py2p.base.message`
-                handler:    A :py:class:`~py2p.mesh.mesh_connection`
+                msg:        A :py:class:`~py2p.base.Message`
+                handler:    A :py:class:`~py2p.mesh.MeshConnection`
 
              Returns:
                 Either ``True`` or ``None``
@@ -166,7 +166,7 @@ class sync_socket(mesh_socket):
             return True
 
     def __setitem__(self, key, data):
-        #type: (sync_socket, bytes, MsgPackable) -> None
+        #type: (SyncSocket, bytes, MsgPackable) -> None
         """Updates the value at a given key.
 
         Args:
@@ -199,14 +199,14 @@ class sync_socket(mesh_socket):
 
     @inherit_doc(__setitem__)
     def set(self, key, data):
-        #type: (sync_socket, bytes, MsgPackable) -> None
+        #type: (SyncSocket, bytes, MsgPackable) -> None
         self.__setitem__(key, data)
 
     def update(self, update_dict):
-        #type: (sync_socket, Dict[bytes, MsgPackable]) -> None
+        #type: (SyncSocket, Dict[bytes, MsgPackable]) -> None
         """Equivalent to :py:meth:`dict.update`
 
-        This calls :py:meth:`.sync_socket.__setitem__` for each key/value
+        This calls :py:meth:`.SyncSocket.__setitem__` for each key/value
         pair in the given dictionary.
 
         Args:
@@ -222,7 +222,7 @@ class sync_socket(mesh_socket):
             self.__setitem__(key, value)
 
     def __getitem__(self, key):
-        #type: (sync_socket, bytes) -> MsgPackable
+        #type: (SyncSocket, bytes) -> MsgPackable
         """Looks up the value at a given key.
 
         Args:
@@ -239,7 +239,7 @@ class sync_socket(mesh_socket):
         return self.data[key]
 
     def get(self, key, ifError=None):
-        #type: (sync_socket, bytes, Any) -> MsgPackable
+        #type: (SyncSocket, bytes, Any) -> MsgPackable
         """Retrieves the value at a given key.
 
         Args:
@@ -256,15 +256,15 @@ class sync_socket(mesh_socket):
         return self.data.get(key, ifError)
 
     def __len__(self):
-        #type: (sync_socket) -> int
+        #type: (SyncSocket) -> int
         return len(self.data)
 
     def __delitem__(self, key):
-        #type: (sync_socket, bytes) -> None
+        #type: (SyncSocket, bytes) -> None
         self[key] = b''
 
     def keys(self):
-        #type: (sync_socket) -> Iterator[bytes]
+        #type: (SyncSocket) -> Iterator[bytes]
         """
         Returns:
             an iterator of the underlying :py:class:`dict` s keys
@@ -273,11 +273,11 @@ class sync_socket(mesh_socket):
 
     @inherit_doc(keys)
     def __iter__(self):
-        #type: (sync_socket) -> Iterator[bytes]
+        #type: (SyncSocket) -> Iterator[bytes]
         return self.keys()
 
     def values(self):
-        #type: (sync_socket) -> Iterator[MsgPackable]
+        #type: (SyncSocket) -> Iterator[MsgPackable]
         """
         Returns:
             an iterator of the underlying :py:class:`dict` s values
@@ -285,7 +285,7 @@ class sync_socket(mesh_socket):
         return (self[key] for key in self.keys())
 
     def items(self):
-        #type: (sync_socket) -> Iterator[Tuple[bytes, MsgPackable]]
+        #type: (SyncSocket) -> Iterator[Tuple[bytes, MsgPackable]]
         """
         Returns:
             an iterator of the underlying :py:class:`dict` s items
@@ -293,7 +293,7 @@ class sync_socket(mesh_socket):
         return ((key, self[key]) for key in self.keys())
 
     def pop(self, key, *args):
-        #type: (sync_socket, bytes, *Any) -> MsgPackable
+        #type: (SyncSocket, bytes, *Any) -> MsgPackable
         """Returns a value, with the side effect of deleting that association
 
         Args:
@@ -318,7 +318,7 @@ class sync_socket(mesh_socket):
         return ret
 
     def popitem(self):
-        #type: (sync_socket) -> Tuple[bytes, MsgPackable]
+        #type: (SyncSocket) -> Tuple[bytes, MsgPackable]
         """Returns an association, with the side effect of deleting that
         association
 
@@ -329,6 +329,6 @@ class sync_socket(mesh_socket):
         return (key, self.pop(key))
 
     def copy(self):
-        #type: (sync_socket) -> Dict[bytes, MsgPackable]
+        #type: (SyncSocket) -> Dict[bytes, MsgPackable]
         """Returns a :py:class:`dict` copy of this synchronized hash table"""
         return self.data.copy()

@@ -25,9 +25,9 @@ except:
     from .base import Protocol
 
 from .base import (flags, compression, to_base_58, from_base_58,
-                   base_connection, message, base_daemon, base_socket,
+                   BaseConnection, Message, BaseDaemon, BaseSocket,
                    InternalMessage, compression, MsgPackable)
-from .mesh import (mesh_connection, mesh_daemon, mesh_socket)
+from .mesh import (MeshConnection, MeshDaemon, MeshSocket)
 from .utils import (inherit_doc, getUTC, get_socket, intersect, awaiting_value,
                     most_common, log_entry, sanitize_packet)
 
@@ -72,64 +72,64 @@ def get_hashes(key):
         int(hashlib.sha512(key).hexdigest(), 16))
 
 
-class chord_connection(mesh_connection):
+class ChordConnection(MeshConnection):
     """The class for chord connection abstraction. This inherits from
-    :py:class:`py2p.mesh.mesh_connection`
+    :py:class:`py2p.mesh.MeshConnection`
 
-    .. inheritance-diagram:: py2p.chord.chord_connection
+    .. inheritance-diagram:: py2p.chord.ChordConnection
     """
-    __slots__ = mesh_connection.__slots__ + ('leeching', '__id_10')
+    __slots__ = MeshConnection.__slots__ + ('leeching', '__id_10')
 
-    @log_entry('py2p.chord.chord_connection.__init__', DEBUG)
-    @inherit_doc(mesh_connection.__init__)
+    @log_entry('py2p.chord.ChordConnection.__init__', DEBUG)
+    @inherit_doc(MeshConnection.__init__)
     def __init__(self, *args, **kwargs):
         #type: (Any, *Any, **Any) -> None
-        super(chord_connection, self).__init__(*args, **kwargs)
+        super(ChordConnection, self).__init__(*args, **kwargs)
         self.leeching = True
         self.__id_10 = -1
 
     @property
     def id_10(self):
-        #type: (chord_connection) -> int
+        #type: (ChordConnection) -> int
         """Returns the nodes ID as an integer"""
         if self.__id_10 == -1:
             self.__id_10 = from_base_58(self.id)
         return self.__id_10
 
 
-class chord_daemon(mesh_daemon):
+class ChordDaemon(MeshDaemon):
     """The class for chord daemon.
-    This inherits from :py:class:`py2p.mesh.mesh_daemon`
+    This inherits from :py:class:`py2p.mesh.MeshDaemon`
 
-    .. inheritance-diagram:: py2p.chord.chord_daemon
+    .. inheritance-diagram:: py2p.chord.ChordDaemon
     """
 
-    @log_entry('py2p.chord.chord_daemon.__init__', DEBUG)
-    @inherit_doc(mesh_daemon.__init__)
+    @log_entry('py2p.chord.ChordDaemon.__init__', DEBUG)
+    @inherit_doc(MeshDaemon.__init__)
     def __init__(self, *args, **kwargs):
         #type: (Any, *Any, **Any) -> None
-        super(chord_daemon, self).__init__(*args, **kwargs)
-        self.conn_type = chord_connection
+        super(ChordDaemon, self).__init__(*args, **kwargs)
+        self.conn_type = ChordConnection
 
-    @inherit_doc(mesh_daemon.handle_accept)
+    @inherit_doc(MeshDaemon.handle_accept)
     def handle_accept(self):
-        #type: (chord_daemon) -> chord_connection
-        handler = super(chord_daemon, self).handle_accept()
+        #type: (ChordDaemon) -> ChordConnection
+        handler = super(ChordDaemon, self).handle_accept()
         self.server._send_meta(handler)
-        return cast(chord_connection, handler)
+        return cast(ChordConnection, handler)
 
 
-class chord_socket(mesh_socket):
+class ChordSocket(MeshSocket):
     """
-    The class for chord socket abstraction. This inherits from :py:class:`py2p.mesh.mesh_socket`
+    The class for chord socket abstraction. This inherits from :py:class:`py2p.mesh.MeshSocket`
 
-    .. inheritance-diagram:: py2p.chord.chord_socket
+    .. inheritance-diagram:: py2p.chord.ChordSocket
 
     Added Events:
 
     .. raw:: html
 
-        <div id="chord_socket.Event 'add'"></div>
+        <div id="ChordSocket.Event 'add'"></div>
 
     .. py:function::Event 'add'(conn, key)
 
@@ -137,24 +137,24 @@ class chord_socket(mesh_socket):
         dictionary. Because value information is not transmitted in this
         message, you must specifically request it.
 
-        :param py2p.chord.chord_socket conn: A reference to this abstract socket
+        :param py2p.chord.ChordSocket conn: A reference to this abstract socket
         :param bytes key: The key which has a new value
 
     .. raw:: html
 
-        <div id="chord_socket.Event 'delete'"></div>
+        <div id="ChordSocket.Event 'delete'"></div>
 
     .. py:function:: Event 'delete'(conn, key)
 
         This event is triggered when a key is deleted from your distributed
         dictionary.
 
-        :param py2p.chord.chord_socket conn: A reference to this abstract socket
+        :param py2p.chord.ChordSocket conn: A reference to this abstract socket
         :param bytes key: The key which has a new value"""
-    __slots__ = mesh_socket.__slots__ + ('id_10', 'data', '__keys', 'leeching')
+    __slots__ = MeshSocket.__slots__ + ('id_10', 'data', '__keys', 'leeching')
 
-    @log_entry('py2p.chord.chord_socket.__init__', DEBUG)
-    @inherit_doc(mesh_socket.__init__)
+    @log_entry('py2p.chord.ChordSocket.__init__', DEBUG)
+    @inherit_doc(MeshSocket.__init__)
     def __init__(
             self,  #type: Any
             addr,  #type: str
@@ -166,10 +166,10 @@ class chord_socket(mesh_socket):
         """Initialize a chord socket"""
         if not hasattr(self, 'daemon'):
             self.daemon = 'chord reserved'
-        super(chord_socket, self).__init__(addr, port, prot, out_addr,
+        super(ChordSocket, self).__init__(addr, port, prot, out_addr,
                                            debug_level)
         if self.daemon == 'chord reserved':
-            self.daemon = chord_daemon(addr, port, self)
+            self.daemon = ChordDaemon(addr, port, self)
         self.id_10 = from_base_58(self.id)  #type: int
         self.data = dict((
             (method, {})
@@ -185,20 +185,20 @@ class chord_socket(mesh_socket):
 
     @property
     def addr(self):
-        #type: (chord_socket) -> Tuple[str, int]
+        #type: (ChordSocket) -> Tuple[str, int]
         """An alternate binding for ``self.out_addr``, in order to better handle self-references in pathfinding"""
         return self.out_addr
 
     @property
     def data_storing(self):
-        #type: (chord_socket) -> Iterator[chord_connection]
+        #type: (ChordSocket) -> Iterator[ChordConnection]
         for _node in self.routing_table.values():
-            node = cast(chord_connection, _node)
+            node = cast(ChordConnection, _node)
             if not node.leeching:
                 yield node
 
     def disconnect_least_efficient(self):
-        #type: (chord_socket) -> bool
+        #type: (ChordSocket) -> bool
         """Disconnects the node which provides the least value.
 
         This is determined by finding the node which is the closest to
@@ -208,19 +208,19 @@ class chord_socket(mesh_socket):
             A :py:class:`bool` that describes whether a node was disconnected
         """
 
-        @inherit_doc(chord_connection.id_10)
+        @inherit_doc(ChordConnection.id_10)
         def get_id(o):
-            #type: (chord_connection) -> int
+            #type: (ChordConnection) -> int
             return o.id_10
 
         def smallest_gap(lst):
-            #type: (Iterable[chord_connection]) -> chord_connection
+            #type: (Iterable[ChordConnection]) -> ChordConnection
             coll = sorted(lst, key=get_id)
             coll_len = len(coll)
             circular_triplets = (
                 (coll[x], coll[(x + 1) % coll_len], coll[(x + 2) % coll_len])
                 for x in range(coll_len))
-            narrowest = None  #type: Union[None, chord_connection]
+            narrowest = None  #type: Union[None, ChordConnection]
             gap = 2**384  #type: int
             for beg, mid, end in circular_triplets:
                 if distance(beg.id_10, end.id_10) < gap and mid.outgoing:
@@ -237,15 +237,15 @@ class chord_socket(mesh_socket):
         return False
 
     def __handle_meta(self, msg, handler):
-        #type: (chord_socket, message, base_connection) -> Union[bool, None]
+        #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with chord specific metadata.
         Its primary job is:
 
         - set connection state
 
         Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.chord.chord_connection`
+            msg:        A :py:class:`~py2p.base.Message`
+            handler:    A :py:class:`~py2p.chord.ChordConnection`
 
         Returns:
             Either ``True`` or ``None``
@@ -253,7 +253,7 @@ class chord_socket(mesh_socket):
         packets = msg.packets
         if packets[0] == flags.handshake and len(packets) == 2:
             new_meta = bool(int(packets[1]))
-            conn = cast(chord_connection, handler)
+            conn = cast(ChordConnection, handler)
             if new_meta != conn.leeching:
                 self._send_meta(conn)
                 conn.leeching = new_meta
@@ -270,15 +270,15 @@ class chord_socket(mesh_socket):
             return True
 
     def __handle_key(self, msg, handler):
-        #type: (chord_socket, message, base_connection) -> Union[bool, None]
+        #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with new key entries. Its primary
         job is:
 
         - Ensure keylist syncronization
 
         Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.chord.chord_connection`
+            msg:        A :py:class:`~py2p.base.Message`
+            handler:    A :py:class:`~py2p.chord.ChordConnection`
 
         Returns:
             Either ``True`` or ``None``
@@ -295,14 +295,14 @@ class chord_socket(mesh_socket):
             return True
 
     def _handle_peers(self, msg, handler):
-        #type: (chord_socket, message, base_connection) -> Union[bool, None]
+        #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with peer signals. Its primary jobs
         is to connect to the given peers, if this does not exceed
         :py:const:`py2p.chord.max_outgoing`
 
         Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.chord.chord_connection`
+            msg:        A :py:class:`~py2p.base.Message`
+            handler:    A :py:class:`~py2p.chord.ChordConnection`
 
         Returns:
             Either ``True`` or ``None``
@@ -335,7 +335,7 @@ class chord_socket(mesh_socket):
             return True
 
     def __handle_retrieved(self, msg, handler):
-        #type: (chord_socket, message, base_connection) -> Union[bool, None]
+        #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with response signals. Its two
         primary jobs are:
 
@@ -343,8 +343,8 @@ class chord_socket(mesh_socket):
         - if it was someone else's request, relay the information
 
         Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.chord.chord_connection`
+            msg:        A :py:class:`~py2p.base.Message`
+            handler:    A :py:class:`~py2p.chord.ChordConnection`
 
         Returns:
             Either ``True`` or ``None``
@@ -362,15 +362,15 @@ class chord_socket(mesh_socket):
             return True
 
     def __handle_retrieve(self, msg, handler):
-        #type: (chord_socket, message, base_connection) -> Union[bool, None]
+        #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with data retrieval signals. Its two primary jobs are:
 
         - respond with data you possess
         - if you don't possess it, make a request with your closest peer to that key
 
         Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.chord.chord_connection`
+            msg:        A :py:class:`~py2p.base.Message`
+            handler:    A :py:class:`~py2p.chord.ChordConnection`
 
         Returns:
             Either ``True`` or ``None``
@@ -380,7 +380,7 @@ class chord_socket(mesh_socket):
             if packets[1] in hashes:
                 val = self.__lookup(packets[1],
                                     from_base_58(packets[2]),
-                                    cast(chord_connection, handler))
+                                    cast(ChordConnection, handler))
                 if val.value not in {None, b''}:
                     self.__print__(val.value, level=1)
                     handler.send(flags.whisper, flags.retrieved, packets[1],
@@ -388,15 +388,15 @@ class chord_socket(mesh_socket):
                 return True
 
     def __handle_store(self, msg, handler):
-        #type: (chord_socket, message, base_connection) -> Union[bool, None]
+        #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with data storage signals. Its two primary jobs are:
 
         - store data in keys you're responsible for
         - if you aren't responsible, make a request with your closest peer to that key
 
         Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.chord.chord_connection`
+            msg:        A :py:class:`~py2p.base.Message`
+            handler:    A :py:class:`~py2p.chord.ChordConnection`
 
         Returns:
             Either ``True`` or ``None``
@@ -409,7 +409,7 @@ class chord_socket(mesh_socket):
             return True
 
     def dump_data(self, start, end):
-        #type: (chord_socket, int, int) -> Dict[bytes, Dict[int, MsgPackable]]
+        #type: (ChordSocket, int, int) -> Dict[bytes, Dict[int, MsgPackable]]
         """Args:
             start:  An :py:class:`int` which indicates the start of the desired key range.
                         ``0`` will get all data.
@@ -431,7 +431,7 @@ class chord_socket(mesh_socket):
         return ret
 
     def __lookup(self, method, key, handler=None):
-        #type: (chord_socket, bytes, int, chord_connection) -> awaiting_value
+        #type: (ChordSocket, bytes, int, ChordConnection) -> awaiting_value
         """Looks up the value at a given hash function and key. This method
         deals with just *one* of the underlying hash tables.
 
@@ -445,7 +445,7 @@ class chord_socket(mesh_socket):
             The value at said key in an :py:class:`py2p.utils.awaiting_value`
             object, which either contains or will eventually contain its result
         """
-        node = self  #type: Union[chord_socket, base_connection]
+        node = self  #type: Union[ChordSocket, BaseConnection]
         if self.routing_table:
             node = self.find(key)
         elif self.awaiting_ids:
@@ -461,7 +461,7 @@ class chord_socket(mesh_socket):
             return ret
 
     def __getitem(self, key, timeout=10):
-        #type: (chord_socket, bytes, int) -> MsgPackable
+        #type: (ChordSocket, bytes, int) -> MsgPackable
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -479,7 +479,7 @@ class chord_socket(mesh_socket):
             KeyError:       If the request is made for a key with no agreed-upon value
 
         Note:
-            It's probably much better to use :py:func:`~py2p.chord.chord_socket.get`
+            It's probably much better to use :py:func:`~py2p.chord.ChordSocket.get`
         """
         key = sanitize_packet(key)
         self._logger.debug('Getting value of {}'.format(key))
@@ -503,7 +503,7 @@ class chord_socket(mesh_socket):
                 vals, count, len(hashes) // 2 + 1, common))
 
     def __getitem__(self, key):
-        #type: (chord_socket, bytes) -> MsgPackable
+        #type: (ChordSocket, bytes) -> MsgPackable
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -520,12 +520,12 @@ class chord_socket(mesh_socket):
             KeyError:       If the request is made for a key with no agreed-upon value
 
         Note:
-            It's probably much better to use :py:func:`~py2p.chord.chord_socket.get`
+            It's probably much better to use :py:func:`~py2p.chord.ChordSocket.get`
         """
         return self.__getitem(key)
 
     def getSync(self, key, ifError=None, timeout=10):
-        #type: (chord_socket, bytes, MsgPackable, int) -> MsgPackable
+        #type: (ChordSocket, bytes, MsgPackable, int) -> MsgPackable
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -542,7 +542,7 @@ class chord_socket(mesh_socket):
             :py:class:`Exception`
 
         Note:
-            It's probably much better to use :py:func:`~py2p.chord.chord_socket.get`
+            It's probably much better to use :py:func:`~py2p.chord.ChordSocket.get`
         """
         try:
             self._logger.debug(
@@ -552,7 +552,7 @@ class chord_socket(mesh_socket):
             return ifError
 
     def get(self, key, ifError=None, timeout=10):
-        #type: (chord_socket, bytes, MsgPackable, int) -> Promise
+        #type: (ChordSocket, bytes, MsgPackable, int) -> Promise
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -578,7 +578,7 @@ class chord_socket(mesh_socket):
         return Promise(resolver)
 
     def __store(self, method, key, value):
-        #type: (chord_socket, bytes, int, MsgPackable) -> None
+        #type: (ChordSocket, bytes, int, MsgPackable) -> None
         """Updates the value at a given key. This method deals with just *one*
         of the underlying hash tables.
 
@@ -590,7 +590,7 @@ class chord_socket(mesh_socket):
             value:  The value you wish to put at this key. Must be a :py:class:`str`
                         or :py:class:`bytes`-like object
         """
-        node = self.find(key)  #type: Union[chord_socket, base_connection]
+        node = self.find(key)  #type: Union[ChordSocket, BaseConnection]
         if self.leeching and node is self and len(self.awaiting_ids):
             node = random.choice(self.awaiting_ids)
         if node in (self, None):
@@ -603,7 +603,7 @@ class chord_socket(mesh_socket):
                       to_base_58(key), value)
 
     def __setitem__(self, key, value):
-        #type: (chord_socket,  Union[bytes, bytearray, str], MsgPackable) -> None
+        #type: (ChordSocket,  Union[bytes, bytearray, str], MsgPackable) -> None
         """Updates the value at a given key.
         Under the covers, this actually uses five different hash tables, and
         updates the value in all of them.
@@ -643,21 +643,21 @@ class chord_socket(mesh_socket):
 
     @inherit_doc(__setitem__)
     def set(self, key, value):
-        #type: (chord_socket, Union[bytes, bytearray, str], MsgPackable) -> None
+        #type: (ChordSocket, Union[bytes, bytearray, str], MsgPackable) -> None
         self.__setitem__(key, value)
 
     def __delitem__(self, key):
-        #type: (chord_socket, Union[bytes, bytearray, str]) -> None
+        #type: (ChordSocket, Union[bytes, bytearray, str]) -> None
         _key = sanitize_packet(key)
         if _key not in self.__keys:
             raise KeyError(_key)
         self.set(_key, b'')
 
     def update(self, update_dict):
-        #type: (chord_socket, Dict[Union[bytes, bytearray, str], MsgPackable]) -> None
+        #type: (ChordSocket, Dict[Union[bytes, bytearray, str], MsgPackable]) -> None
         """Equivalent to :py:meth:`dict.update`
 
-        This calls :py:meth:`.chord_socket.store` for each key/value pair in the
+        This calls :py:meth:`.ChordSocket.store` for each key/value pair in the
         given dictionary.
 
 
@@ -670,7 +670,7 @@ class chord_socket(mesh_socket):
             self.__setitem__(key, value)
 
     def find(self, key):
-        #type: (chord_socket, int) -> Union[chord_socket, chord_connection]
+        #type: (ChordSocket, int) -> Union[ChordSocket, ChordConnection]
         """Finds the node which is responsible for a certain value. This does
         not necessarily mean that they are supposed to store that value, just
         that they are along your path to said node.
@@ -679,10 +679,10 @@ class chord_socket(mesh_socket):
             key:    The key that you wish to check. Must be a :py:class:`int` or
                         :py:class:`long`
 
-        Returns: A :py:class:`~py2p.chord.chord_connection` or this socket
+        Returns: A :py:class:`~py2p.chord.ChordConnection` or this socket
         """
         if not self.leeching:
-            ret = self  #type: Union[chord_socket, chord_connection]
+            ret = self  #type: Union[ChordSocket, ChordConnection]
             gap = distance(self.id_10, key)
         else:
             ret = None
@@ -695,7 +695,7 @@ class chord_socket(mesh_socket):
         return ret
 
     def find_prev(self, key):
-        #type: (chord_socket, int) -> Union[chord_socket, chord_connection]
+        #type: (ChordSocket, int) -> Union[ChordSocket, ChordConnection]
         """Finds the node which is farthest from a certain value. This is used
         to find a node's "predecessor"; the node it is supposed to delegate to
         in the event of a disconnections.
@@ -704,10 +704,10 @@ class chord_socket(mesh_socket):
             key:    The key that you wish to check. Must be a :py:class:`int` or
                         :py:class:`long`
 
-        Returns: A :py:class:`~py2p.chord.chord_connection` or this socket
+        Returns: A :py:class:`~py2p.chord.ChordConnection` or this socket
         """
         if not self.leeching:
-            ret = self  #type: Union[chord_socket, chord_connection]
+            ret = self  #type: Union[ChordSocket, ChordConnection]
             gap = distance(key, self.id_10)
         else:
             ret = None
@@ -721,7 +721,7 @@ class chord_socket(mesh_socket):
 
     @property
     def next(self):
-        #type: (chord_socket) -> Union[chord_socket, chord_connection]
+        #type: (ChordSocket) -> Union[ChordSocket, ChordConnection]
         """The connection that is your nearest neighbor *ahead* on the
         hash table ring
         """
@@ -729,25 +729,25 @@ class chord_socket(mesh_socket):
 
     @property
     def prev(self):
-        #type: (chord_socket) -> Union[chord_socket, chord_connection]
+        #type: (ChordSocket) -> Union[ChordSocket, ChordConnection]
         """The connection that is your nearest neighbor *behind* on the
         hash table ring
         """
         return self.find_prev(self.id_10 + 1)
 
     def _send_meta(self, handler):
-        #type: (chord_socket, chord_connection) -> None
+        #type: (ChordSocket, ChordConnection) -> None
         """Shortcut method for sending a chord-specific data to a given handler
 
         Args:
-            handler: A :py:class:`~py2p.chord.chord_connection`
+            handler: A :py:class:`~py2p.chord.ChordConnection`
         """
         handler.send(flags.whisper, flags.handshake, str(int(self.leeching)))
         for key in self.__keys.copy():
             handler.send(flags.whisper, flags.notify, key)
 
     def __connect(self, addr, port, id=None):
-        #type: (chord_socket, str, int, bytes) -> None
+        #type: (ChordSocket, str, int, bytes) -> None
         """Private API method for connecting and handshaking
 
         Args:
@@ -763,58 +763,58 @@ class chord_socket(mesh_socket):
             pass
 
     def join(self):
-        #type: (chord_socket) -> None
+        #type: (ChordSocket) -> None
         """Tells the node to start seeding the chord table"""
         # for handler in self.awaiting_ids:
         self._logger.debug('Joining the network data store')
         self.leeching = False
         for handler in tuple(self.routing_table.values()) + tuple(
                 self.awaiting_ids):
-            self._send_handshake(cast(mesh_connection, handler))
+            self._send_handshake(cast(MeshConnection, handler))
             self._send_peers(handler)
-            self._send_meta(cast(chord_connection, handler))
+            self._send_meta(cast(ChordConnection, handler))
 
     def unjoin(self):
-        #type: (chord_socket) -> None
+        #type: (ChordSocket) -> None
         """Tells the node to stop seeding the chord table"""
         self._logger.debug('Unjoining the network data store')
         self.leeching = True
         for handler in tuple(self.routing_table.values()) + tuple(
                 self.awaiting_ids):
-            self._send_handshake(cast(mesh_connection, handler))
+            self._send_handshake(cast(MeshConnection, handler))
             self._send_peers(handler)
-            self._send_meta(cast(chord_connection, handler))
+            self._send_meta(cast(ChordConnection, handler))
         for method in self.data.keys():
             for key, value in self.data[method].items():
                 self.__store(method, key, value)
             self.data[method].clear()
 
     def __del__(self):
-        #type: (chord_socket) -> None
+        #type: (ChordSocket) -> None
         self.unjoin()
-        super(chord_socket, self).__del__()
+        super(ChordSocket, self).__del__()
 
-    @inherit_doc(mesh_socket.connect)
+    @inherit_doc(MeshSocket.connect)
     def connect(self, *args, **kwargs):
-        #type: (chord_socket, *Any, **Any) -> Union[bool, None]
+        #type: (ChordSocket, *Any, **Any) -> Union[bool, None]
         if kwargs.get('conn_type'):
-            return super(chord_socket, self).connect(*args, **kwargs)
-        kwargs['conn_type'] = chord_connection
-        return super(chord_socket, self).connect(*args, **kwargs)
+            return super(ChordSocket, self).connect(*args, **kwargs)
+        kwargs['conn_type'] = ChordConnection
+        return super(ChordSocket, self).connect(*args, **kwargs)
 
     def keys(self):
-        #type: (chord_socket) -> Iterator[bytes]
+        #type: (ChordSocket) -> Iterator[bytes]
         """Returns an iterator of the underlying :py:class:`dict`'s keys"""
         self._logger.debug('Retrieving all keys')
         return (key for key in self.__keys if key in self.__keys)
 
     @inherit_doc(keys)
     def __iter__(self):
-        #type: (chord_socket) -> Iterator[bytes]
+        #type: (ChordSocket) -> Iterator[bytes]
         return self.keys()
 
     def values(self):
-        #type: (chord_socket) -> Iterator[MsgPackable]
+        #type: (ChordSocket) -> Iterator[MsgPackable]
         """Returns:
             an iterator of the underlying :py:class:`dict`'s values
         Raises:
@@ -834,7 +834,7 @@ class chord_socket(mesh_socket):
             yield nxt.get()
 
     def items(self):
-        #type: (chord_socket) -> Iterator[Tuple[bytes, MsgPackable]]
+        #type: (ChordSocket) -> Iterator[Tuple[bytes, MsgPackable]]
         """Returns:
             an iterator of the underlying :py:class:`dict`'s items
         Raises:
@@ -856,7 +856,7 @@ class chord_socket(mesh_socket):
             yield (p_key, nxt.get())
 
     def pop(self, key, *args):
-        #type: (chord_socket, bytes, *Any) -> MsgPackable
+        #type: (ChordSocket, bytes, *Any) -> MsgPackable
         """Returns a value, with the side effect of deleting that association
 
         Args:
@@ -884,7 +884,7 @@ class chord_socket(mesh_socket):
         return ret
 
     def popitem(self):
-        #type: (chord_socket) -> Tuple[bytes, MsgPackable]
+        #type: (ChordSocket) -> Tuple[bytes, MsgPackable]
         """Returns an association, with the side effect of deleting that
         association
 
@@ -901,13 +901,13 @@ class chord_socket(mesh_socket):
         return (key, self.pop(key))
 
     def copy(self):
-        #type: (chord_socket) -> Dict[bytes, MsgPackable]
+        #type: (ChordSocket) -> Dict[bytes, MsgPackable]
         """Returns a :py:class:`dict` copy of this DHT
 
         .. warning::
 
             This is a *very* slow operation. It's a far better idea to use
-            :py:meth:`~py2p.chord.chord_socket.items`, as this produces an
+            :py:meth:`~py2p.chord.ChordSocket.items`, as this produces an
             iterator. That should even out lag times
         """
         self._logger.debug('Producing a dictionary copy')

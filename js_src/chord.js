@@ -128,14 +128,14 @@ function most_common(tmp)   {
 }
 
 
-m.chord_connection = class chord_connection extends mesh.mesh_connection    {
+m.ChordConnection = class ChordConnection extends mesh.MeshConnection    {
     /**
-    * .. js:class:: js2p.chord.chord_connection(sock, server, outgoing)
+    * .. js:class:: js2p.chord.ChordConnection(sock, server, outgoing)
     *
-    *     This is the class for chord connection abstractraction. It inherits from :js:class:`js2p.mesh.mesh_connection`
+    *     This is the class for chord connection abstractraction. It inherits from :js:class:`js2p.mesh.MeshConnection`
     *
     *     :param sock:                              This is the raw socket object
-    *     :param js2p.chord.chord_socket server:    This is a link to the :js:class:`~js2p.chord.chord_socket` parent
+    *     :param js2p.chord.ChordSocket server:    This is a link to the :js:class:`~js2p.chord.ChordSocket` parent
     *     :param outgoing:                          This bool describes whether ``server`` initiated the connection
     */
     constructor(sock, server, outgoing) {
@@ -155,11 +155,11 @@ m.chord_connection = class chord_connection extends mesh.mesh_connection    {
     }
 };
 
-m.chord_socket = class chord_socket extends mesh.mesh_socket    {
+m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
     /**
-    * .. js:class:: js2p.chord.chord_socket(addr, port [, protocol [, out_addr [, debug_level]]])
+    * .. js:class:: js2p.chord.ChordSocket(addr, port [, protocol [, out_addr [, debug_level]]])
     *
-    *     This is the class for chord network socket abstraction. It inherits from :js:class:`js2p.mesh.mesh_socket`
+    *     This is the class for chord network socket abstraction. It inherits from :js:class:`js2p.mesh.MeshSocket`
     *
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
@@ -167,24 +167,24 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
-    *     .. js:function:: js2p.chord.chord_socket Event 'add'(conn, key)
+    *     .. js:function:: js2p.chord.ChordSocket Event 'add'(conn, key)
     *
     *         This event is triggered when a key is added to the distributed
     *         dictionary. Because value information is not transmitted in this
     *         message, you must specifically request it.
     *
-    *         :param js2p.chord.chord_socket conn: A reference to this abstract socket
+    *         :param js2p.chord.ChordSocket conn: A reference to this abstract socket
     *         :param Buffer key: The key which has a new value
     *
-    *     .. js:function:: js2p.chord.chord_socket Event 'delete'(conn, key)
+    *     .. js:function:: js2p.chord.ChordSocket Event 'delete'(conn, key)
     *
     *         This event is triggered when a key is deleted from your distributed
     *         dictionary.
     *
-    *         :param js2p.chord.chord_socket conn: A reference to this abstract socket
+    *         :param js2p.chord.ChordSocket conn: A reference to this abstract socket
     *         :param Buffer key: The key which has a new value
     *
-    *     .. js:attribute:: js2p.chord.chord_socket.id_10
+    *     .. js:attribute:: js2p.chord.ChordSocket.id_10
     *
     *         This socket's ID as a :js:class:`big-integer`
     *
@@ -192,7 +192,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
     constructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
         const self = this;
-        this.conn_type = m.chord_connection;
+        this.conn_type = m.ChordConnection;
         this.leeching = true;
         this.id_10 = base.from_base_58(this.id);
         this.data = {
@@ -237,12 +237,12 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     __handle_peers(msg, conn)   {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.__handle_peers(msg, conn)
+        *     .. js:function:: js2p.chord.ChordSocket.__handle_peers(msg, conn)
         *
         *         This callback is used to deal with peer signals. Its primary jobs is to connect to the given peers, if this does not exceed :js:data:`js2p.chord.max_outgoing`
         *
-        *         :param js2p.base.message msg:
-        *         :param js2p.mesh.mesh_connection conn:
+        *         :param js2p.base.Message msg:
+        *         :param js2p.mesh.MeshConnection conn:
         *
         *         :returns: Either ``true`` or ``undefined``
         */
@@ -571,7 +571,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     get(key, fallback, timeout) {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.get(key [, fallback [, timeout]])
+        *     .. js:function:: js2p.chord.ChordSocket.get(key [, fallback [, timeout]])
         *
         *         Retrieves the value at a given key
         *
@@ -611,7 +611,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     set(key, value) {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.set(key, value)
+        *     .. js:function:: js2p.chord.ChordSocket.set(key, value)
         *
         *         Sets the value at a given key
         *
@@ -619,7 +619,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *         :param value: The value you wish to store
         *
         *         :raises TypeError:    If a key could not be transformed into a :js:class:`Buffer`
-        *         :raises:              See :js:func:`~js2p.chord.chord_socket.__store`
+        *         :raises:              See :js:func:`~js2p.chord.ChordSocket.__store`
         */
         key = new Buffer(key);
         let keys = m.get_hashes(key);
@@ -640,13 +640,13 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     update(update_dict) {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.update(update_dict)
+        *     .. js:function:: js2p.chord.ChordSocket.update(update_dict)
         *
-        *         For each key/value pair in the given object, calls :js:func:`~js2p.chord.chord_socket.set`
+        *         For each key/value pair in the given object, calls :js:func:`~js2p.chord.ChordSocket.set`
         *
         *         :param Object update_dict: An object with keys and values which can be transformed into a :js:class:`Buffer`
         *
-        *         :raises: See :js:func:`~js2p.chord.chord_socket.set`
+        *         :raises: See :js:func:`~js2p.chord.ChordSocket.set`
         */
         for (let key in update_dict)    {
             this.set(key, update_dict[key]);
@@ -655,21 +655,21 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     del(key)    {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.del(key)
+        *     .. js:function:: js2p.chord.ChordSocket.del(key)
         *
         *         Clears the value at a given key
         *
         *         :param key:   The key you wish to look up (must be transformable into a :js:class:`Buffer` )
         *
         *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
-        *         :raises:              See :js:func:`~js2p.chord.chord_socket.set`
+        *         :raises:              See :js:func:`~js2p.chord.ChordSocket.set`
         */
         this.set(key);
     }
 
     *keys()  {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.keys()
+        *     .. js:function:: js2p.chord.ChordSocket.keys()
         *
         *         Returns a generator for all keys presently in the dictionary
         *
@@ -687,7 +687,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     *values()    {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.values()
+        *     .. js:function:: js2p.chord.ChordSocket.values()
         *
         *         Returns a generator for all values presently in the
         *         dictionary
@@ -709,7 +709,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     *items() {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.items()
+        *     .. js:function:: js2p.chord.ChordSocket.items()
         *
         *         Returns a generator for all associations presently in the
         *         dictionary
@@ -732,13 +732,13 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     pop(key, fallback)  {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.pop(key [, fallback])
+        *     .. js:function:: js2p.chord.ChordSocket.pop(key [, fallback])
         *
         *         Returns the value at a given key. As a side effect, it
         *         it deletes that association.
         *
         *         :returns: A :js:class:`Promise` , similar to the
-        *                   :js:func:`js2p.chord.chord_socket.get` method.
+        *                   :js:func:`js2p.chord.ChordSocket.get` method.
         */
         let val = this.get(key, fallback);
         if (val !== fallback)    {
@@ -749,14 +749,14 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     popitem()   {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.popitem()
+        *     .. js:function:: js2p.chord.ChordSocket.popitem()
         *
         *         Returns the association at a key. As a side effect, it
         *         it deletes that association.
         *
         *         :returns: A pair of :js:class:`Buffer` and
         *                   :js:class:`Promise` , similar to an item in
-        *                   :js:func:`js2p.chord.chord_socket.items`
+        *                   :js:func:`js2p.chord.ChordSocket.items`
         */
         for (let key of this.keys())  {
             return [key, this.pop(key)];
@@ -765,7 +765,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
 
     copy()  {
         /**
-        *     .. js:function:: js2p.chord.chord_socket.copy()
+        *     .. js:function:: js2p.chord.ChordSocket.copy()
         *
         *         Returns the :js:class:`Promise` of an :js:class:`Object` ,
         *         with the same associations as this DHT.
@@ -774,7 +774,7 @@ m.chord_socket = class chord_socket extends mesh.mesh_socket    {
         *
         *             This is potentially a very slow operation. It is probably
         *             significantly faster, and likely to be more accurate, if
-        *             you iterate over :js:func:`js2p.chord.chord_socket.items`
+        *             you iterate over :js:func:`js2p.chord.ChordSocket.items`
         *
         *         :returns: The :js:class:`Promise` of an :js:class:`Object` ,
         *                   with the same associations as this DHT.

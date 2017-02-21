@@ -49,7 +49,7 @@ def inherit_doc(function):
 
 def sanitize_packet(packet):
     #type: (Union[bytes, bytearray, str]) -> bytes
-    """Function to sanitize a packet for pathfinding_message serialization,
+    """Function to sanitize a packet for InternalMessage serialization,
     or dict keying
     """
     if isinstance(packet, type(u'')):

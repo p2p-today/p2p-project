@@ -8,14 +8,14 @@ import time
 from typing import (Callable, Iterable, Union)
 
 from .. import mesh
-from ..base import (flags, base_connection, message)
+from ..base import (flags, BaseConnection, Message)
 
 if sys.version_info >= (3, ):
     xrange = range
 
 
 def close_all_nodes(nodes):
-    #type: (Iterable[mesh.mesh_socket]) -> None
+    #type: (Iterable[mesh.MeshSocket]) -> None
     for node in nodes:
         node.close()
 
@@ -25,14 +25,14 @@ def propagation_validation(iters, start_port, num_nodes, encryption):
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         nodes = [
-            mesh.mesh_socket(
+            mesh.MeshSocket(
                 'localhost',
                 start_port + i * num_nodes,
                 prot=mesh.Protocol('', encryption),
                 debug_level=5)
         ]
         for j in xrange(1, num_nodes):
-            new_node = mesh.mesh_socket(
+            new_node = mesh.MeshSocket(
                 'localhost',
                 start_port + i * num_nodes + j,
                 prot=mesh.Protocol('', encryption),
@@ -68,12 +68,12 @@ def protocol_rejection_validation(iters, start_port, encryption):
     #type: (int, int, str) -> None
     for i in xrange(iters):
         print("----------------------Test start----------------------")
-        f = mesh.mesh_socket(
+        f = mesh.MeshSocket(
             'localhost',
             start_port + i * 2,
             prot=mesh.Protocol('test', encryption),
             debug_level=5)
-        g = mesh.mesh_socket(
+        g = mesh.MeshSocket(
             'localhost',
             start_port + i * 2 + 1,
             prot=mesh.Protocol('test2', encryption),
@@ -98,7 +98,7 @@ def test_protocol_rejection_SSL(iters=3):
 
 
 def register_1(msg, handler):
-    #type: (message, base_connection) -> Union[None, bool]
+    #type: (Message, BaseConnection) -> Union[None, bool]
     packets = msg.packets
     if packets[1] == b'test':
         handler.send(flags.whisper, flags.whisper, b"success")
@@ -106,7 +106,7 @@ def register_1(msg, handler):
 
 
 def register_2(msg, handler):
-    #type: (message, base_connection) -> Union[None, bool]
+    #type: (Message, BaseConnection) -> Union[None, bool]
     packets = msg.packets
     if packets[1] == b'test':
         msg.reply(b"success")
@@ -117,12 +117,12 @@ def handler_registry_validation(iters, start_port, encryption, reg):
     #type: (int, int, str, Callable) -> None
     for i in xrange(iters):
         print("----------------------Test start----------------------")
-        f = mesh.mesh_socket(
+        f = mesh.MeshSocket(
             'localhost',
             start_port + i * 2,
             prot=mesh.Protocol('', encryption),
             debug_level=5)
-        g = mesh.mesh_socket(
+        g = mesh.MeshSocket(
             'localhost',
             start_port + i * 2 + 1,
             prot=mesh.Protocol('', encryption),
@@ -177,13 +177,13 @@ def test_reply_SSL(iters=3):
 # def connection_recovery_validation(iters, start_port, encryption, method):
 #     for i in xrange(iters):
 #         print("----------------------Test start----------------------")
-#         f = mesh.mesh_socket('localhost', start_port + i*3,
+#         f = mesh.MeshSocket('localhost', start_port + i*3,
 #                              prot=mesh.Protocol('', encryption),
 #                              debug_level=2)
-#         g = mesh.mesh_socket('localhost', start_port + i*3 + 1,
+#         g = mesh.MeshSocket('localhost', start_port + i*3 + 1,
 #                              prot=mesh.Protocol('', encryption),
 #                              debug_level=2)
-#         h = mesh.mesh_socket('localhost', start_port + i*3 + 2,
+#         h = mesh.MeshSocket('localhost', start_port + i*3 + 2,
 #                              prot=mesh.Protocol('', encryption),
 #                              debug_level=2)
 #         f.connect('localhost', start_port + i*3 + 1)

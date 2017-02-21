@@ -144,7 +144,7 @@ describe('base', function() {
         });
     });
 
-    describe('message', function()  {
+    describe('Message', function()  {
         it('should have information assigned to the correct getters', function()    {
             for (var i = 0; i < 150; i++)   {
                 var sen = get_random_buffer(4);
@@ -153,7 +153,7 @@ describe('base', function() {
                 }
                 var pac = get_random_array(36);
                 var base_msg = new base.InternalMessage(base.flags.broadcast, sen, pac);
-                var test = new base.message(base_msg, null);
+                var test = new base.Message(base_msg, null);
                 assert.equal(util.inspect(test.packets), util.inspect(pac));
                 assert.equal(test.msg, base_msg);
                 assert.equal(test.sender.toString(), sen);

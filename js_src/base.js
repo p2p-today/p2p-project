@@ -736,14 +736,14 @@ base.InternalMessage = class InternalMessage {
     }
 };
 
-base.message = class message {
+base.Message = class Message {
     /**
-    * .. js:class:: js2p.base.message(msg, server)
+    * .. js:class:: js2p.base.Message(msg, server)
     *
-    *     This is the message class we present to the user.
+    *     This is the Message class we present to the user.
     *
     *     :param js2p.base.InternalMessage msg: This is the serialization object you received
-    *     :param js2p.base.base_socket sender:      This is the "socket" object that received it
+    *     :param js2p.base.BaseSocket sender:      This is the "socket" object that received it
     */
     constructor(msg, server) {
         this.msg = msg
@@ -754,7 +754,7 @@ base.message = class message {
         var packets = this.packets;
         var type = packets[0];
         var payload = packets.slice(1);
-        var text = "message {\n";
+        var text = "Message {\n";
         text += ` type: ${util.inspect(type)}\n`;
         text += ` packets: ${util.inspect(payload)}\n`;
         text += ` sender: ${util.inspect(this.sender.toString())} }`;
@@ -763,43 +763,43 @@ base.message = class message {
 
     get time() {
         /**
-        *     .. js:attribute:: js2p.base.message.time
+        *     .. js:attribute:: js2p.base.Message.time
         *
-        *         Returns the time (in seconds UTC) this message was sent at
+        *         Returns the time (in seconds UTC) this Message was sent at
         */
         return this.msg.time
     }
 
     get time_58() {
         /**
-        *     .. js:attribute:: js2p.base.message.time_58
+        *     .. js:attribute:: js2p.base.Message.time_58
         *
-        *         Returns the time (in seconds UTC) this message was sent at, encoded in base_58
+        *         Returns the time (in seconds UTC) this Message was sent at, encoded in base_58
         */
         return this.msg.time_58
     }
 
     get sender() {
         /**
-        *     .. js:attribute:: js2p.base.message.sender
+        *     .. js:attribute:: js2p.base.Message.sender
         *
-        *         Returns the ID of this message's sender
+        *         Returns the ID of this Message's sender
         */
         return this.msg.sender
     }
 
     get id() {
         /**
-        *     .. js:attribute:: js2p.base.message.id
+        *     .. js:attribute:: js2p.base.Message.id
         *
-        *         Returns the ID/checksum associated with this message
+        *         Returns the ID/checksum associated with this Message
         */
         return this.msg.id
     }
 
     get packets() {
         /**
-        *     .. js:attribute:: js2p.base.message.packets
+        *     .. js:attribute:: js2p.base.Message.packets
         *
         *         Returns the packets the sender wished you to have, sans metadata
         */
@@ -808,27 +808,27 @@ base.message = class message {
 
     get length() {
         /**
-        *     .. js:attribute:: js2p.base.message.length
+        *     .. js:attribute:: js2p.base.Message.length
         *
-        *         Returns the serialized length of this message
+        *         Returns the serialized length of this Message
         */
         return this.msg.length
     }
 
     get protocol()  {
         /**
-        *     .. js:attribute:: js2p.base.message.protocol
+        *     .. js:attribute:: js2p.base.Message.protocol
         *
-        *         Returns the :js:class:`~js2p.base.Protocol` associated with this message
+        *         Returns the :js:class:`~js2p.base.Protocol` associated with this Message
         */
         return this.server.protocol
     }
 
     reply(packs) {
         /**
-        *     .. js:function:: js2p.base.message.reply(packs)
+        *     .. js:function:: js2p.base.Message.reply(packs)
         *
-        *         Replies privately to this message.
+        *         Replies privately to this Message.
         *
         *         .. warning::
         *
@@ -852,14 +852,14 @@ base.message = class message {
     }
 };
 
-base.base_connection = class base_connection    {
+base.BaseConnection = class BaseConnection    {
     /**
-    * .. js:class:: js2p.base.base_connection(sock, server, outgoing)
+    * .. js:class:: js2p.base.BaseConnection(sock, server, outgoing)
     *
     *     This is the template class for connection abstracters.
     *
     *     :param sock:                          This is the raw socket object
-    *     :param js2p.base.base_socket server:  This is a link to the :js:class:`~js2p.base.base_socket` parent
+    *     :param js2p.base.BaseSocket server:  This is a link to the :js:class:`~js2p.base.BaseSocket` parent
     *     :param outgoing:                      This bool describes whether ``server`` initiated the connection
     */
     constructor(sock, server, outgoing)   {
@@ -924,7 +924,7 @@ base.base_connection = class base_connection    {
 
     onEnd() {
         /**
-        *     .. js:function:: js2p.base.base_connection.onEnd()
+        *     .. js:function:: js2p.base.BaseConnection.onEnd()
         *
         *         This function is run when a connection is ended
         */
@@ -933,7 +933,7 @@ base.base_connection = class base_connection    {
 
     onError(err)    {
         /**
-        *     .. js:function:: js2p.base.base_connection.onError()
+        *     .. js:function:: js2p.base.BaseConnection.onError()
         *
         *         This function is run when a connection experiences an error
         */
@@ -948,7 +948,7 @@ base.base_connection = class base_connection    {
 
     onClose()   {
         /**
-        *     .. js:function:: js2p.base.base_connection.onClose()
+        *     .. js:function:: js2p.base.BaseConnection.onClose()
         *
         *         This function is run when a connection is closed
         */
@@ -957,7 +957,7 @@ base.base_connection = class base_connection    {
 
     send_InternalMessage(msg)   {
         /**
-        *     .. js:function:: js2p.base.base_connection.send_InternalMessage(msg)
+        *     .. js:function:: js2p.base.BaseConnection.send_InternalMessage(msg)
         *
         *         Sends a message through its connection.
         *
@@ -993,7 +993,7 @@ base.base_connection = class base_connection    {
 
     send(msg_type, packs, id, time)  {
         /**
-        *     .. js:function:: js2p.base.base_connection.send(msg_type, packs, id, time)
+        *     .. js:function:: js2p.base.BaseConnection.send(msg_type, packs, id, time)
         *
         *         Sends a message through its connection.
         *
@@ -1020,7 +1020,7 @@ base.base_connection = class base_connection    {
 
     collect_incoming_data(self, data) {
         /**
-        *     .. js:function:: js2p.base.base_connection.collect_incoming_data(self, data)
+        *     .. js:function:: js2p.base.BaseConnection.collect_incoming_data(self, data)
         *
         *         Collects and processes data which just came in on the socket
         *
@@ -1046,7 +1046,7 @@ base.base_connection = class base_connection    {
 
     found_terminator()  {
         /**
-        *     .. js:function:: js2p.base.base_connection.found_terminator()
+        *     .. js:function:: js2p.base.BaseConnection.found_terminator()
         *
         *         This method is called when the expected amount of data is received
         *
@@ -1062,7 +1062,7 @@ base.base_connection = class base_connection    {
 
     handle_renegotiate(packets) {
         /**
-        *     .. js:function:: js2p.base.base_connection.handle_renegotiate(packets)
+        *     .. js:function:: js2p.base.BaseConnection.handle_renegotiate(packets)
         *
         *         This function handles connection renegotiations. This is used when compression methods
         *         fail, or when a node needs a message resent.
@@ -1096,9 +1096,9 @@ base.base_connection = class base_connection    {
     }
 };
 
-base.base_socket = class base_socket extends EventEmitter   {
+base.BaseSocket = class BaseSocket extends EventEmitter   {
     /**
-    * .. js:class:: js2p.base.base_socket(addr, port [, protocol [, out_addr [, debug_level]]])
+    * .. js:class:: js2p.base.BaseSocket(addr, port [, protocol [, out_addr [, debug_level]]])
     *
     *     This is the template class for socket abstracters. This class extends :js:class:`EventEmitter`.
     *
@@ -1108,13 +1108,13 @@ base.base_socket = class base_socket extends EventEmitter   {
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
-    *     .. js:attribute:: js2p.base.base_socket.routing_table
+    *     .. js:attribute:: js2p.base.BaseSocket.routing_table
     *
-    *         A :js:class:`Map` which contains :js:class:`~js2p.base.base_connection` s keyed by their IDs
+    *         A :js:class:`Map` which contains :js:class:`~js2p.base.BaseConnection` s keyed by their IDs
     *
-    *     .. js:attribute:: js2p.base.base_socket.awaiting_ids
+    *     .. js:attribute:: js2p.base.BaseSocket.awaiting_ids
     *
-    *         An array which contains :js:class:`~js2p.base.base_connection` s that are awaiting handshake information
+    *         An array which contains :js:class:`~js2p.base.BaseConnection` s that are awaiting handshake information
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         super();
@@ -1143,7 +1143,7 @@ base.base_socket = class base_socket extends EventEmitter   {
 
     get status()    {
         /**
-        *     .. js:attribute:: js2p.base.base_socket.status
+        *     .. js:attribute:: js2p.base.BaseSocket.status
         *
         *         This attribute describes whether the socket is operating as expected.
         *
@@ -1157,7 +1157,7 @@ base.base_socket = class base_socket extends EventEmitter   {
 
     get outgoing()  {
         /**
-        *     .. js:attribute:: js2p.mesh.mesh_socket.outgoing
+        *     .. js:attribute:: js2p.mesh.MeshSocket.outgoing
         *
         *         This is an array of all outgoing connections. The length of this array is used to determine
         *         whether the "socket" should automatically initiate connections
@@ -1190,7 +1190,7 @@ base.base_socket = class base_socket extends EventEmitter   {
 
     register_handler(callback)  {
         /**
-        *     .. js:function:: js2p.base.base_socket.register_handler(callback)
+        *     .. js:function:: js2p.base.BaseSocket.register_handler(callback)
         *
         *         This registers a message callback. Each is run through until one returns ``true``,
         *         rather like :js:func:`Array.some()`. The callback is expected to be of the form:

@@ -26,11 +26,11 @@ from .base import (
     compression,
     to_base_58,
     from_base_58,
-    base_connection,
-    message,
+    BaseConnection,
+    Message,
     MsgPackable,
-    base_daemon,
-    base_socket,
+    BaseDaemon,
+    BaseSocket,
     InternalMessage, )
 from .utils import (getUTC, get_socket, intersect, inherit_doc, log_entry,
                     awaiting_value)
@@ -39,33 +39,33 @@ max_outgoing = 4
 default_protocol = Protocol('mesh', "Plaintext")  # SSL")
 
 
-class mesh_connection(base_connection):
+class MeshConnection(BaseConnection):
     """The class for mesh connection abstraction.
-    This inherits from :py:class:`py2p.base.base_connection`
+    This inherits from :py:class:`py2p.base.BaseConnection`
 
-    .. inheritance-diagram:: py2p.mesh.mesh_connection
+    .. inheritance-diagram:: py2p.mesh.MeshConnection
     """
 
-    @inherit_doc(base_connection.send)
+    @inherit_doc(BaseConnection.send)
     def send(self, msg_type, *args, **kargs):
-        #type: (mesh_connection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
-        msg = super(mesh_connection, self).send(msg_type, *args, **kargs)
+        #type: (MeshConnection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
+        msg = super(MeshConnection, self).send(msg_type, *args, **kargs)
         if msg and (msg.id, msg.time) not in self.server.waterfalls:
             self.server.waterfalls.add((msg.id, msg.time))
         return msg
 
-    @inherit_doc(base_connection.found_terminator)
+    @inherit_doc(BaseConnection.found_terminator)
     def found_terminator(self):
-        #type: (mesh_connection) -> InternalMessage
+        #type: (MeshConnection) -> InternalMessage
         try:
-            msg = super(mesh_connection, self).found_terminator()
+            msg = super(MeshConnection, self).found_terminator()
             packets = msg.packets
             self.__print__("Message received: {}".format(packets), level=1)
             if self.handle_waterfall(msg, packets):
                 return msg
             elif self.handle_renegotiate(packets):
                 return msg
-            self.server.handle_msg(message(msg, self.server), self)
+            self.server.handle_msg(Message(msg, self.server), self)
             return msg
         except (IndexError, struct.error):
             self.__print__(
@@ -76,7 +76,7 @@ class mesh_connection(base_connection):
             self.send(flags.renegotiate, flags.resend)
 
     def handle_waterfall(self, msg, packets):
-        #type: (mesh_connection, InternalMessage, Tuple[MsgPackable, ...]) -> bool
+        #type: (MeshConnection, InternalMessage, Tuple[MsgPackable, ...]) -> bool
         """This method determines whether this message has been previously
         received or not.
 
@@ -98,7 +98,7 @@ class mesh_connection(base_connection):
             if msg.time < getUTC() - 60:
                 self.__print__("Waterfall expired", level=2)
                 return True
-            elif not self.server.waterfall(message(msg, self.server)):
+            elif not self.server.waterfall(Message(msg, self.server)):
                 self.__print__("Waterfall already captured", level=2)
                 return True
             self.__print__(
@@ -106,24 +106,24 @@ class mesh_connection(base_connection):
         return False
 
 
-class mesh_daemon(base_daemon):
+class MeshDaemon(BaseDaemon):
     """The class for mesh daemon.
-    This inherits from :py:class:`py2p.base.base_daemon`
+    This inherits from :py:class:`py2p.base.BaseDaemon`
 
-    .. inheritance-diagram:: py2p.mesh.mesh_daemon
+    .. inheritance-diagram:: py2p.mesh.MeshDaemon
     """
 
-    @log_entry('py2p.mesh.mesh_daemon', DEBUG)
-    @inherit_doc(base_daemon.__init__)
+    @log_entry('py2p.mesh.MeshDaemon', DEBUG)
+    @inherit_doc(BaseDaemon.__init__)
     def __init__(self, *args, **kwargs):
         #type: (Any, *Any, **Any) -> None
-        super(mesh_daemon, self).__init__(*args, **kwargs)
-        self.conn_type = mesh_connection
+        super(MeshDaemon, self).__init__(*args, **kwargs)
+        self.conn_type = MeshConnection
 
     if system() != 'Java':
 
         def mainloop(self):
-            #type: (mesh_daemon) -> None
+            #type: (MeshDaemon) -> None
             """Daemon thread which handles all incoming data and connections"""
             while self.main_thread.is_alive() and self.alive:
                 conns = chain(self.server.routing_table.values(),
@@ -142,7 +142,7 @@ class mesh_daemon(base_daemon):
     else:
 
         def mainloop(self):
-            #type: (mesh_daemon) -> None
+            #type: (MeshDaemon) -> None
             """Daemon thread which handles all incoming data and connections"""
             while self.main_thread.is_alive() and self.alive:
                 conns = tuple(
@@ -159,7 +159,7 @@ class mesh_daemon(base_daemon):
                     self.kill_old_nodes(handler)
 
     def handle_accept(self):
-        #type: (mesh_daemon) -> Union[None, mesh_connection]
+        #type: (MeshDaemon) -> Union[None, MeshConnection]
         """Handle an incoming connection"""
         if sys.version_info >= (3, 3):
             exceptions = (socket.error, ConnectionError)
@@ -177,17 +177,17 @@ class mesh_daemon(base_daemon):
             pass
 
 
-class mesh_socket(base_socket):
+class MeshSocket(BaseSocket):
     """The class for mesh socket abstraction.
-    This inherits from :py:class:`py2p.base.base_socket`
+    This inherits from :py:class:`py2p.base.BaseSocket`
 
-    .. inheritance-diagram:: py2p.mesh.mesh_socket
+    .. inheritance-diagram:: py2p.mesh.MeshSocket
 
     Added Events:
 
     .. raw:: html
 
-        <div id="mesh_socket.Event 'connect'"></div>
+        <div id="MeshSocket.Event 'connect'"></div>
 
     .. py:function:: Event 'connect'(conn)
 
@@ -201,11 +201,11 @@ class mesh_socket(base_socket):
 
         To avoid this, call ``once('connect')``. That will usually be more correct.
 
-        :param py2p.mesh.mesh_socket conn: A reference to this abstract socket
+        :param py2p.mesh.MeshSocket conn: A reference to this abstract socket
 
     .. raw:: html
 
-        <div id="mesh_socket.Event 'message'"></div>
+        <div id="MeshSocket.Event 'message'"></div>
 
     .. py:function:: Event 'message'(conn)
 
@@ -215,13 +215,13 @@ class mesh_socket(base_socket):
 
         If you want to register a "privileged" handler which *does* get a
         reference to the message, see
-        :py:func:`~py2p.mesh.mesh_socket.register_handler`
+        :py:func:`~py2p.mesh.MeshSocket.register_handler`
 
-        :param py2p.mesh.mesh_socket conn: A reference to this abstract socket
+        :param py2p.mesh.MeshSocket conn: A reference to this abstract socket
     """
     __slots__ = ('requests', 'waterfalls', 'queue', 'daemon')
 
-    @log_entry('py2p.mesh.mesh_socket', DEBUG)
+    @log_entry('py2p.mesh.MeshSocket', DEBUG)
     def __init__(
             self,  #type: Any
             addr,  #type: str
@@ -250,7 +250,7 @@ class mesh_socket(base_socket):
         """
         if not hasattr(self, 'daemon'):
             self.daemon = 'mesh reserved'
-        super(mesh_socket, self).__init__(addr, port, prot, out_addr,
+        super(MeshSocket, self).__init__(addr, port, prot, out_addr,
                                           debug_level)
         # Metadata about msg replies where you aren't connected to the sender
         self.requests = {
@@ -260,16 +260,16 @@ class mesh_socket(base_socket):
         # Queue of received messages. Access through recv()
         self.queue = deque()  #type: deque
         if self.daemon == 'mesh reserved':
-            self.daemon = mesh_daemon(addr, port, self)
+            self.daemon = MeshDaemon(addr, port, self)
         self.register_handler(self.__handle_handshake)
         self.register_handler(self._handle_peers)
         self.register_handler(self.__handle_response)
         self.register_handler(self.__handle_request)
 
-    @inherit_doc(base_socket.handle_msg)
+    @inherit_doc(BaseSocket.handle_msg)
     def handle_msg(self, msg, conn):
-        #type: (mesh_socket, message, base_connection) -> Union[bool, None]
-        if not super(mesh_socket, self).handle_msg(msg, conn):
+        #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
+        if not super(MeshSocket, self).handle_msg(msg, conn):
             if msg.packets[0] in (flags.whisper, flags.broadcast):
                 self.queue.appendleft(msg)
                 self.emit('message', self)
@@ -279,7 +279,7 @@ class mesh_socket(base_socket):
             return True
 
     def _get_peer_list(self):
-        #type: (mesh_socket) -> List[Tuple[Tuple[str, int], bytes]]
+        #type: (MeshSocket) -> List[Tuple[Tuple[str, int], bytes]]
         """This function is used to generate a list-formatted group of your
         peers. It goes in format ``[ ((addr, port), ID), ...]``
         """
@@ -289,11 +289,11 @@ class mesh_socket(base_socket):
         return peer_list
 
     def _send_handshake(self, handler):
-        #type: (mesh_socket, mesh_connection) -> None
+        #type: (MeshSocket, MeshConnection) -> None
         """Shortcut method for sending a handshake to a given handler
 
         Args:
-            handler: A :py:class:`~py2p.mesh.mesh_connection`
+            handler: A :py:class:`~py2p.mesh.MeshConnection`
         """
         tmp_compress = handler.compression
         handler.compression = []
@@ -302,7 +302,7 @@ class mesh_socket(base_socket):
         handler.compression = tmp_compress
 
     def __resolve_connection_conflict(self, handler, h_id):
-        #type: (mesh_socket, base_connection, bytes) -> None
+        #type: (MeshSocket, BaseConnection, bytes) -> None
         """Sometimes in trying to recover a network a race condition is
         created. This function applies a heuristic to try and organize the
         fallout from that race condition. While it isn't perfect, it seems to
@@ -320,7 +320,7 @@ class mesh_socket(base_socket):
         """
         self.__print__(
             "Resolving peer conflict on id %s" % repr(h_id), level=1)
-        to_keep, to_kill = None, None  #type: Union[None, base_connection], Union[None, base_connection]
+        to_keep, to_kill = None, None  #type: Union[None, BaseConnection], Union[None, BaseConnection]
         if (bool(from_base_58(self.id) > from_base_58(h_id)) ^
                 bool(handler.outgoing)):  # logical xor
             self.__print__("Closing outgoing connection", level=1)
@@ -330,20 +330,20 @@ class mesh_socket(base_socket):
             self.__print__("Closing incoming connection", level=1)
             to_keep, to_kill = handler, self.routing_table[h_id]
             self.__print__(not to_keep.outgoing, level=1)
-        self.disconnect(cast(mesh_connection, to_kill))
+        self.disconnect(cast(MeshConnection, to_kill))
         self.routing_table.update({h_id: to_keep})
 
     def _send_peers(self, handler):
-        #type: (mesh_socket, base_connection) -> None
+        #type: (MeshSocket, BaseConnection) -> None
         """Shortcut method to send a handshake response. This method is
         extracted from :py:meth:`.__handle_handshake` in order to allow
-        cleaner inheritence from :py:class:`py2p.sync.sync_socket`
+        cleaner inheritence from :py:class:`py2p.sync.SyncSocket`
         """
         handler.send(flags.whisper, flags.peers,
                      cast(MsgPackable, self._get_peer_list()))
 
     def __handle_handshake(self, msg, handler):
-        #type: (mesh_socket, message, base_connection) -> Union[bool, None]
+        #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with handshake signals. Its three
         primary jobs are:
 
@@ -352,8 +352,8 @@ class mesh_socket(base_socket):
         - deal with connection conflicts
 
         Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.mesh.mesh_connection`
+            msg:        A :py:class:`~py2p.base.Message`
+            handler:    A :py:class:`~py2p.mesh.MeshConnection`
 
         Returns:
             Either ``True`` or ``None``
@@ -364,7 +364,7 @@ class mesh_socket(base_socket):
                 self.__print__(
                     "Connected to peer on wrong subnet. ID: %s" % packets[2],
                     level=2)
-                self.disconnect(cast(mesh_connection, handler))
+                self.disconnect(cast(MeshConnection, handler))
                 return True
             elif not handler.addr and len(self.routing_table) == 0:
                 self.emit('connect', self)
@@ -386,14 +386,14 @@ class mesh_socket(base_socket):
             return True
 
     def _handle_peers(self, msg, handler):
-        #type: (mesh_socket, message, base_connection) -> Union[bool, None]
+        #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with peer signals. Its primary jobs
         is to connect to the given peers, if this does not exceed
         :py:const:`py2p.mesh.max_outgoing`
 
         Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.mesh.mesh_connection`
+            msg:        A :py:class:`~py2p.base.Message`
+            handler:    A :py:class:`~py2p.mesh.MeshConnection`
 
         Returns:
             Either ``True`` or ``None``
@@ -414,7 +414,7 @@ class mesh_socket(base_socket):
             return True
 
     def __handle_response(self, msg, handler):
-        #type: (mesh_socket, message, base_connection) -> Union[bool, None]
+        #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with response signals. Its two
         primary jobs are:
 
@@ -422,8 +422,8 @@ class mesh_socket(base_socket):
         - if it was someone else's request, relay the information
 
         Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.mesh.mesh_connection`
+            msg:        A :py:class:`~py2p.base.Message`
+            handler:    A :py:class:`~py2p.mesh.MeshConnection`
 
         Returns:
             Either ``True`` or ``None``
@@ -443,7 +443,7 @@ class mesh_socket(base_socket):
             return True
 
     def __handle_request(self, msg, handler):
-        #type: (mesh_socket, message, base_connection) -> Union[bool, None]
+        #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with request signals. Its three
         primary jobs are:
 
@@ -452,8 +452,8 @@ class mesh_socket(base_socket):
         - if you don't, make a request with your peers
 
         Args:
-            msg:        A :py:class:`~py2p.base.message`
-            handler:    A :py:class:`~py2p.mesh.mesh_connection`
+            msg:        A :py:class:`~py2p.base.Message`
+            handler:    A :py:class:`~py2p.mesh.MeshConnection`
 
         Returns:
             Either ``True`` or ``None``
@@ -470,7 +470,7 @@ class mesh_socket(base_socket):
             return True
 
     def send(self, *args, **kargs):
-        #type: (mesh_socket, *MsgPackable, **MsgPackable) -> None
+        #type: (MeshSocket, *MsgPackable, **MsgPackable) -> None
         """This sends a message to all of your peers. If you use default
         values it will send it to everyone on the network
 
@@ -516,7 +516,7 @@ class mesh_socket(base_socket):
             handler.send(main_flag, send_type, *args)
 
     def __clean_waterfalls(self):
-        #type: (mesh_socket) -> None
+        #type: (MeshSocket) -> None
         """This function cleans the :py:class:`set` of recently relayed
         messages based on the following heuristics:
 
@@ -525,12 +525,12 @@ class mesh_socket(base_socket):
         self.waterfalls = {i for i in self.waterfalls if i[1] > getUTC() - 60}
 
     def waterfall(self, msg):
-        #type: (mesh_socket, message) -> bool
+        #type: (MeshSocket, Message) -> bool
         """This function handles message relays. Its return value is based on
         whether it took an action or not.
 
         Args:
-            msg: The :py:class:`~py2p.base.message` in question
+            msg: The :py:class:`~py2p.base.Message` in question
 
         Returns:
             ``True`` if the message was then forwarded. ``False`` if not.
@@ -546,8 +546,8 @@ class mesh_socket(base_socket):
             self.__print__("Not rebroadcasting", level=3)
             return False
 
-    def connect(self, addr, port, id=None, conn_type=mesh_connection):
-        #type: (mesh_socket, str, int, bytes, Any) -> Union[None, bool]
+    def connect(self, addr, port, id=None, conn_type=MeshConnection):
+        #type: (MeshSocket, str, int, bytes, Any) -> Union[None, bool]
         """This function connects you to a specific node in the overall
         network. Connecting to one node *should* connect you to the rest of
         the network, however if you connect to the wrong subnet, the handshake
@@ -556,7 +556,7 @@ class mesh_socket(base_socket):
 
         .. code:: python
 
-           >>> conn = mesh.mesh_socket('localhost', 4444)
+           >>> conn = mesh.MeshSocket('localhost', 4444)
            >>> conn.connect('localhost', 5555)
            >>> # do some other setup for your program
            >>> if not conn.routing_table:
@@ -588,7 +588,7 @@ class mesh_socket(base_socket):
             self.awaiting_ids.append(handler)
 
     def disconnect(self, handler):
-        #type: (mesh_socket, mesh_connection) -> None
+        #type: (MeshSocket, MeshConnection) -> None
         """Closes a given connection, and removes it from your routing tables
 
         Args:
@@ -609,28 +609,28 @@ class mesh_socket(base_socket):
             pass
 
     def request_peers(self):
-        #type: (mesh_socket) -> None
+        #type: (MeshSocket) -> None
         """Requests your peers' routing tables"""
         self.send('*', type=flags.request, flag=flags.whisper)
 
     def recv(self, quantity=1):
-        #type: (mesh_socket, int) -> Union[None, message, List[message]]
+        #type: (MeshSocket, int) -> Union[None, Message, List[Message]]
         """This function has two behaviors depending on whether quantity is
         left as default.
 
         If quantity is given, it will return a list of
-        :py:class:`~py2p.base.message` objects up to length quantity.
+        :py:class:`~py2p.base.Message` objects up to length quantity.
 
         If quantity is left alone, it will return either a single
-        :py:class:`~py2p.base.message` object, or ``None``
+        :py:class:`~py2p.base.Message` object, or ``None``
 
         Args:
-            quantity:   The maximum number of :py:class:`~py2p.base.message` s
+            quantity:   The maximum number of :py:class:`~py2p.base.Message` s
                             you would like to pull (default: 1)
 
         Returns:
-            A list of :py:class:`~py2p.base.message` s, an empty list, a
-            single :py:class:`~py2p.base.message` , or ``None``
+            A list of :py:class:`~py2p.base.Message` s, an empty list, a
+            single :py:class:`~py2p.base.Message` , or ``None``
         """
         if quantity != 1:
             ret_list = []

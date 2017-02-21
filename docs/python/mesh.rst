@@ -2,19 +2,19 @@ Mesh Module
 ===========
 
 
-.. autoclass:: py2p.mesh.mesh_connection
+.. autoclass:: py2p.mesh.MeshConnection
     :members:
     :special-members: __init__, __iter__
     :undoc-members:
     :inherited-members:
 
-.. autoclass:: py2p.mesh.mesh_daemon
+.. autoclass:: py2p.mesh.MeshDaemon
     :members:
     :special-members: __init__, __iter__
     :undoc-members:
     :inherited-members:
 
-.. autoclass:: py2p.mesh.mesh_socket
+.. autoclass:: py2p.mesh.MeshSocket
     :members:
     :special-members: __init__, __iter__
     :private-members:
@@ -23,6 +23,6 @@ Mesh Module
 
 .. automodule:: py2p.mesh
     :members:
-    :exclude-members: flags, mesh_connection, mesh_daemon, mesh_socket
+    :exclude-members: flags, MeshConnection, MeshDaemon, MeshSocket
     :special-members: __init__, __iter__
     :undoc-members:
