@@ -32,7 +32,7 @@ MsgPackable = Union[_MsgPackable, List[_MsgPackable], Tuple[_MsgPackable, ...],
                     Dict[str, _MsgPackable]]
 
 protocol_version = "0.6"
-node_policy_version = "676"
+node_policy_version = "757"
 
 version = '.'.join((protocol_version, node_policy_version))
 
