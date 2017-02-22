@@ -1,7 +1,7 @@
 Sync Socket
 ~~~~~~~~~~~
 
-This is an extension of the :doc:`mesh_socket <./mesh>` which syncronizes a common :js:class:`Object`. It works by providing an extra handler to store data. This does not expose the entire :js:class:`Object` API, but it exposes a substantial subset, and we're working to expose more.
+This is an extension of the :doc:`MeshSocket <./mesh>` which syncronizes a common :js:class:`Object`. It works by providing an extra handler to store data. This exposes the entire :py:class:`dict` API.
 
 .. note::
 
@@ -12,8 +12,8 @@ Basic Usage
 
 There are three limitations compared to a normal :js:class:`Object`.
 
-1. Keys and values must be translatable to a :js:class:`Buffer`
-2. Keys and values are automatically translated to a :js:class:`Buffer`
+1. Keys must be translatable to a :js:class:`Buffer`
+2. Keys are automatically translated to a :js:class:`Buffer`
 3. By default, this implements a leasing system which prevents you from changing values set by others for a certain time
 
 You can override the last restriction by constructing with ``leasing`` set to ``false``, like so:
@@ -21,16 +21,16 @@ You can override the last restriction by constructing with ``leasing`` set to ``
 .. code-block:: javascript
 
     > const sync = require('js2p').sync;
-    > let sock = new sync.sync_socket('0.0.0.0', 4444, false);
+    > let sock = new sync.SyncSocket('0.0.0.0', 4444, false);
 
-Note that the ``leasing`` parameter is supplied *before* a :js:class:`~js2p.base.protocol`.
+Note that the ``leasing`` parameter is supplied *before* a :js:class:`~js2p.base.Protocol`.
 
-The only other API differences between this and :js:class:`~js2p.mesh.mesh_socket` are for access to this dictionary. They are as follows:
+The only other API differences between this and :js:class:`~js2p.mesh.MeshSocket` are for access to this dictionary. They are as follows:
 
-:js:func:`~js2p.sync.sync_socket.get`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:js:func:`~js2p.sync.SyncSocket.get`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A value can be retrieved by using the :js:func:`~js2p.sync.sync_socket.get` method. This is reading from a local :js:class:`Object`, so speed shouldn't be a factor.
+A value can be retrieved by using the :js:func:`~js2p.sync.SyncSocket.get` method. This is reading from a local :js:class:`Object`, so speed shouldn't be a factor.
 
 .. code-block:: javascript
 
@@ -39,10 +39,10 @@ A value can be retrieved by using the :js:func:`~js2p.sync.sync_socket.get` meth
 
 It is important to note that keys are all translated to a :js:class:`Buffer` before being used.
 
-:js:func:`~js2p.sync.sync_socket.set`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:js:func:`~js2p.sync.SyncSocket.set`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A value can be stored by using the :js:func:`~js2p.sync.sync_socket.set` method. These calls are worst case ``O(n)``, as it has to change values on other nodes. More accurately, the delay between your node knowing of the change and the last node knowing of the change is between ``O(log(n))`` and ``O(n)``.
+A value can be stored by using the :js:func:`~js2p.sync.SyncSocket.set` method. These calls are worst case ``O(n)``, as it has to change values on other nodes. More accurately, the delay between your node knowing of the change and the last node knowing of the change is between ``O(log(n))`` and ``O(n)``.
 
 .. code-block:: javascript
 
@@ -55,8 +55,8 @@ This will raise an :js:class:`Error` if another node has set this value already.
 
 Any node which sets a value can change this value as well. Changing the value renews the lease on it.
 
-:js:func:`~js2p.sync.sync_socket.del`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:js:func:`~js2p.sync.SyncSocket.del`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Any node which owns a key, can clear its value. Doing this will relinquish your lease on that value. Like the above, this call is worst case ``O(n)``.
 
@@ -64,8 +64,8 @@ Any node which owns a key, can clear its value. Doing this will relinquish your 
 
     > sock.del('test');
 
-:js:func:`~js2p.sync.sync_socket.update`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:js:func:`~js2p.sync.SyncSocket.update`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The update method is simply a wrapper which updates based on a fed :js:class:`Object`. Essentially it runs the following:
 
@@ -75,15 +75,38 @@ The update method is simply a wrapper which updates based on a fed :js:class:`Ob
     ... sock.set(key, update_dict[key]);
     ... }
 
-:js:func:`~py2p.sync.sync_socket.keys` / :js:func:`~py2p.sync.sync_socket.values` / :js:func:`~py2p.sync.sync_socket.items`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:js:func:`~js2p.sync.SyncSocket.keys` / :js:func:`~js2p.sync.SyncSocket.values` / :js:func:`~js2p.sync.SyncSocket.items`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods are analagous to the ones in Python's :py:class:`dict`. The main difference is that they emulate the Python 3 behavior. So, they will still return an generator, rather than a list.
 
-:js:func:`~py2p.sync.sync_socket.pop` / :js:func:`~py2p.sync.sync_socket.popitem`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:js:func:`~js2p.sync.SyncSocket.pop` / :js:func:`~js2p.sync.SyncSocket.popitem`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These methods are also analagous to the ones in Python's :py:class:`dict`. The main difference is that if the leasing system is active, calling this method may throw an error if you don't "own" whatever key is popped.
+
+Events
+------
+
+In addition to the above, and those of :js:class:`~js2p.mesh.MeshSocket`, the :js:class:`~js2p.sync.SyncSocket` object has two :js:class:`Event` s.
+
+First there's :js:func:`~js2p.sync.SyncSocket Event 'update'`. This is called whenever an association is updated.
+
+.. code-block:: javascript
+
+    > sock.on('update', (conn, key, new_data, meta)=>{
+    ... // conn is a reference to the socket
+    ... console.log(`${key} was updated to have value ${new_data}`);
+    ... console.log(`This change was made by ${meta.owner} at unix time ${meta.timestamp}`);
+    ... });
+
+This class has one other event: :js:func:`~js2p.sync.SyncSocket Event 'delete'`. This is called every time an association is removed.
+
+.. code-block:: javascript
+
+    > sock.on('delete', (conn, key)=>{
+    ... console.log(`The association with key ${key} was deleted`);
+    ... });
 
 Advanced Usage
 --------------

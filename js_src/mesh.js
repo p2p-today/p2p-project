@@ -25,21 +25,21 @@ else {
 
 m.max_outgoing = 4;
 
-m.default_protocol = new base.protocol('mesh', "Plaintext");
+m.default_protocol = new base.Protocol('mesh', "Plaintext");
 /**
 * .. js:data:: js2p.mesh.default_protocol
 *
-*     A :js:class:`~js2p.base.protocol` object which is used by default in the mesh module
+*     A :js:class:`~js2p.base.Protocol` object which is used by default in the mesh module
 */
 
-m.mesh_connection = class mesh_connection extends base.base_connection  {
+m.MeshConnection = class MeshConnection extends base.BaseConnection  {
     /**
-    * .. js:class:: js2p.mesh.mesh_connection(sock, server, outgoing)
+    * .. js:class:: js2p.mesh.MeshConnection(sock, server, outgoing)
     *
-    *     This is the class for mesh connection abstractraction. It inherits from :js:class:`js2p.base.base_connection`
+    *     This is the class for mesh connection abstractraction. It inherits from :js:class:`js2p.base.BaseConnection`
     *
     *     :param sock:                          This is the raw socket object
-    *     :param js2p.mesh.mesh_socket server:  This is a link to the :js:class:`~js2p.mesh.mesh_socket` parent
+    *     :param js2p.mesh.MeshSocket server:  This is a link to the :js:class:`~js2p.mesh.MeshSocket` parent
     *     :param outgoing:                      This bool describes whether ``server`` initiated the connection
     */
     constructor(sock, server, outgoing) {
@@ -48,7 +48,7 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
 
     send(msg_type, packs, id, time)  {
         /**
-        *     .. js:function:: js2p.mesh.mesh_connection.send(msg_type, packs, id, time)
+        *     .. js:function:: js2p.mesh.MeshConnection.send(msg_type, packs, id, time)
         *
         *         Sends a message through its connection.
         *
@@ -64,33 +64,27 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         try {
             var msg = super.send(msg_type, packs, id, time);
             //add msg to waterfall
-            var contained = false;
             const mid = msg.id;
-            this.server.waterfalls.some(function(entry)    {
-                if (!BigInt.isInstance(entry[1])) {
-                    entry[1] = new BigInt(entry[1]);
-                }
-                if (entry[0] === mid && entry[1].equals(msg.time))   {
-                    contained = true;
-                    return true;
-                }
-            });
-            if (!contained) {
+            if (!this.server._in_waterfalls(mid, msg.time))    {
                 this.server.waterfalls.unshift([mid, msg.time]);
             }
         }
         catch(err)  {
-            console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to http://git.p2p.today/issues`);
+            console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your MeshSocket.status to http://git.p2p.today/issues`);
             this.server.exceptions.push(err);
             if (this.sock.emit) {
                 this.sock.emit('error');
+            }
+            else    {
+                // This means it must be browser websockets
+                this.onError(err);
             }
         }
     }
 
     found_terminator()  {
         /**
-        *     .. js:function:: js2p.mesh.mesh_connection.found_terminator()
+        *     .. js:function:: js2p.mesh.MeshConnection.found_terminator()
         *
         *         This method is called when the expected amount of data is received
         *
@@ -105,20 +99,24 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
             else if (this.handle_renegotiate(msg.packets))  {
                 return true;
             }
-            this.server.handle_msg(new base.message(msg, this.server), this);
+            this.server.handle_msg(new base.Message(msg, this.server), this);
         }
         catch(err)  {
-            console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your mesh_socket.status to http://git.p2p.today/issues`);
+            console.log(`There was an unhandled exception with peer id ${this.id}. This peer is being disconnected, and the relevant exception is added to the debug queue. If you'd like to report this, please post a copy of your MeshSocket.status to http://git.p2p.today/issues`);
             this.server.exceptions.push(err);
             if (this.sock.emit) {
                 this.sock.emit('error');
+            }
+            else    {
+                // This means it must be browser websockets
+                this.onError(err);
             }
         }
     }
 
     handle_waterfall(msg, packets)  {
         /**
-        *     .. js:function:: js2p.mesh.mesh_connection.handle_waterfall(msg, packets)
+        *     .. js:function:: js2p.mesh.MeshConnection.handle_waterfall(msg, packets)
         *
         *         This method determines whether this message has been previously received or not.
         *         If it has been previously received, this method returns ``true``.
@@ -126,16 +124,16 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
         *         Otherwise this method returns ``undefined``, and forwards the message appropriately.
         *
         *         :param js2p.base.InternalMessage msg: The message in question
-        *         :param packets:                           The message's packets
+        *         :param packets:                       The message's packets
         *
         *         :returns: ``true`` or ``undefined``
         */
-        if (packets[0].toString() === base.flags.broadcast) {
-            if (base.from_base_58(packets[3]) < base.getUTC() - 60) {
+        if (packets[0] === base.flags.broadcast) {
+            if (msg.time < base.getUTC() - 60) {
                 // this.__print__("Waterfall expired", level=2);
                 return true;
             }
-            else if (!this.server.waterfall(new base.message(msg, this.server)))  {
+            else if (!this.server.waterfall(new base.Message(msg, this.server)))  {
                 // this.__print__("Waterfall already captured", level=2);
                 return true;
             }
@@ -145,55 +143,74 @@ m.mesh_connection = class mesh_connection extends base.base_connection  {
 
     onClose()   {
         /**
-        *     .. js:function:: js2p.mesh.mesh_connection.onClose()
+        *     .. js:function:: js2p.mesh.MeshConnection.onClose()
         *
         *         This function is run when a connection is closed
         */
-        if (this.server.routing_table[this.id]) {
-            delete this.server.routing_table[this.id];
-        }
+        this.server.routing_table.delete(this.id);
     }
 
     onEnd()   {
         /**
-        *     .. js:function:: js2p.mesh.mesh_connection.onEnd()
+        *     .. js:function:: js2p.mesh.MeshConnection.onEnd()
         *
         *         This function is run when a connection is ended
         */
-        if (this.sock.end)  {
-            this.sock.end();
-            this.sock.destroy(); //These implicitly remove from routing table
-        }
-        else    {
-            this.sock.close();
-        }
+        this.onError();
     }
 }
 
-m.mesh_socket = class mesh_socket extends base.base_socket  {
+m.MeshSocket = class MeshSocket extends base.BaseSocket  {
     /**
-    * .. js:class:: js2p.mesh.mesh_socket(addr, port [, protocol [, out_addr [, debug_level]]])
+    * .. js:class:: js2p.mesh.MeshSocket(addr, port [, protocol [, out_addr [, debug_level]]])
     *
-    *     This is the class for mesh network socket abstraction. It inherits from :js:class:`js2p.base.base_socket`
+    *     This is the class for mesh network socket abstraction. It inherits from :js:class:`js2p.base.BaseSocket`
     *
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
-    *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
+    *     :param js2p.base.Protocol protocol:   The subnet you're looking to connect to
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
-    *     .. js:attribute:: js2p.mesh.mesh_socket.routing_table
+    *     .. js:function:: js2p.mesh.MeshSocket Event 'connect'(conn)
     *
-    *         An object which contains :js:class:`~js2p.mesh.mesh_connection` s keyed by their IDs
+    *         This event is called whenever you have a *new* connection to the
+    *         service network. In other words, whenever the length of your routing
+    *         table is increased from zero to one.
     *
-    *     .. js:attribute:: js2p.mesh.mesh_socket.awaiting_ids
+    *         If you call ``on('connect')``, that will be executed on every
+    *         connection to the network. So if you are suddenly disconnected, and
+    *         manage to recover, that function will execute again.
     *
-    *         An array which contains :js:class:`~js2p.mesh.mesh_connection` s that are awaiting handshake information
+    *         To avoid this, call ``once('connect')``. That will usually be more correct.
+    *
+    *         :param js2p.mesh.MeshSocket conn: A reference to this abstract socket
+    *
+    *     .. js:function:: js2p.mesh.MeshSocket Event 'message'(conn)
+    *
+    *         This event is called whenever you receive a new message. A reference
+    *         to the message is *not* passed to you. This is to prevent potential
+    *         memory leaks.
+    *
+    *         If you want to register a "privileged" handler which *does* get a
+    *         reference to the message, see
+    *         :js:func:`~js2p.base.BaseSocket.register_handler`
+    *
+    *         :param js2p.mesh.MeshSocket conn: A reference to this abstract socket
+    *
+    *     .. js:attribute:: js2p.mesh.MeshSocket.routing_table
+    *
+    *         A :js:class:`Map` which contains :js:class:`~js2p.mesh.MeshConnection` s keyed by their IDs
+    *
+    *     .. js:attribute:: js2p.mesh.MeshSocket.awaiting_ids
+    *
+    *         An array which contains :js:class:`~js2p.mesh.MeshConnection` s that are awaiting handshake information
+    *
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
         super(addr, port, protocol || m.default_protocol, out_addr, debug_level);
         var self = this;
-        this.conn_type = m.mesh_connection;
+        this.conn_type = m.MeshConnection;
         this.waterfalls = [];
         this.requests = {};
         this.queue = [];
@@ -208,14 +225,14 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                     self.__on_TCP_Connection(sock);
                 });
             }
-            else if (self.protocol.encryption === 'Plaintext')  {
-                this.incoming.on('connection', (sock)=>{
-                    self.__on_TCP_Connection(sock);
-                });
-            }
             else    {
                 this.incoming.on('connection', (sock)=>{
-                    self.__on_WS_Connection(sock);
+                    if (self.protocol.encryption === 'Plaintext')   {
+                        self.__on_TCP_Connection(sock);
+                    }
+                    else    {
+                        self.__on_WS_Connection(sock);
+                    }
                 });
             }
         }
@@ -223,34 +240,34 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     __on_TCP_Connection(sock)  {
         var conn = new this.conn_type(sock, this, false);
-        this._send_peers(conn);
+        this._send_handshake(conn);
         this.awaiting_ids.push(conn);
         return conn;
     }
 
     __on_WS_Connection(sock)  {
-        var conn = new this.conn_type(sock, this, false);
+        let conn = new this.conn_type(sock, this, false);
+        this.awaiting_ids.push(conn);
         const self = this;
         sock.on("connect", ()=>{
-            self._send_peers(conn);
+            self._send_handshake(conn);
         });
-        this.awaiting_ids.push(conn);
         return conn;
     }
 
     recv(num)   {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.recv([num])
+        *     .. js:function:: js2p.mesh.MeshSocket.recv([num])
         *
         *         This function has two behaviors depending on whether num is truthy.
         *
-        *         If num is truthy, it will return a list of :js:class:`~js2p.base.message` objects up to length len.
+        *         If num is truthy, it will return a list of :js:class:`~js2p.base.Message` objects up to length len.
         *
-        *         If num is not truthy, it will return either a single :js:class:`~js2p.base.message` object, or ``undefined``
+        *         If num is not truthy, it will return either a single :js:class:`~js2p.base.Message` object, or ``undefined``
         *
-        *         :param number num: The maximum number of :js:class:`~js2p.base.message` s you would like to pull
+        *         :param number num: The maximum number of :js:class:`~js2p.base.Message` s you would like to pull
         *
-        *         :returns: A list of :js:class:`~js2p.base.message` s, an empty list, a single :js:class:`~js2p.base.message` , or ``undefined``
+        *         :returns: A list of :js:class:`~js2p.base.Message` s, an empty list, a single :js:class:`~js2p.base.Message` , or ``undefined``
         */
         var ret;
         if (num)    {
@@ -266,18 +283,32 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     _send_peers(handler)   {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket._send_peers(handler)
+        *     .. js:function:: js2p.mesh.MeshSocket._send_peers(handler)
         *
-        *         Shortcut method to send a handshake response. This method is extracted from
-        *         :js:meth:`~js2p.mesh.mesh_socket.__handle_handshake` in order to allow cleaner
+        *         Shortcut method to send a peerlist message. This method is extracted from
+        *         :js:func:`~js2p.mesh.MeshSocket.__handle_handshake` in order to allow cleaner
         *         inheritence from :js:class:`js2p.sync.sync_socket`
         */
-        handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, `["${this.out_addr[0]}", ${this.out_addr[1]}]`, base.json_compressions]);
+        handler.send(base.flags.whisper, [base.flags.peers, this.__get_peer_list()]);
+    }
+
+    _send_handshake(handler)   {
+        /**
+        *     .. js:function:: js2p.mesh.MeshSocket._send_handshake(handler)
+        *
+        *         Shortcut method to send a handshake response. This method is extracted from
+        *         :js:func:`~js2p.mesh.MeshSocket.__handle_handshake` in order to allow cleaner
+        *         inheritence from :js:class:`js2p.sync.sync_socket`
+        */
+        let tmp_compress = handler.compression;
+        handler.compression = [];
+        handler.send(base.flags.whisper, [base.flags.handshake, this.id, this.protocol.id, this.out_addr, base.compression]);
+        handler.compression = tmp_compress;
     }
 
     connect(addr, port, id) {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.connect(addr, port [, id])
+        *     .. js:function:: js2p.mesh.MeshSocket.connect(addr, port [, id])
         *
         *         This function connects you to a specific node in the overall network.
         *         Connecting to one node *should* connect you to the rest of the network,
@@ -287,7 +318,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *
         *         .. code-block:: javascript
         *
-        *             > var conn = new mesh.mesh_socket('localhost', 4444);
+        *             > var conn = new mesh.MeshSocket('localhost', 4444);
         *             > conn.connect('localhost', 5555);
         *             > //do some other setup for your program
         *             > if (!conn.routing_table)    {
@@ -314,15 +345,15 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
                 (addr === this.out_addr[0] && port === this.out_addr[1]) ||
                 (addr === this.addr[0] && port === this.addr[1]));
         var self = this;
-        Object.keys(this.routing_table).some(function(key)   {
-            if (key.toString() === id.toString() || self.routing_table[key].addr[0] === addr ||
-                self.routing_table[key].addr[1] === port)   {
+        for (let key of this.routing_table.keys())  {
+            if (key === id || self.routing_table.get(key).addr[0] === addr ||
+                self.routing_table.get(key).addr[1] === port)   {
                 shouldBreak = true;
             }
             if (shouldBreak)    {
                 return true;
             }
-        });
+        };
         if (shouldBreak)    {
             return false;
         }
@@ -330,15 +361,14 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var handler = new this.conn_type(conn, this, true);
         handler.id = id;
         if (this.protocol.encryption === 'ws' || this.protocol.encryption === 'wss')    {
-            var self = this;
             if (conn.on)    {
                 conn.on('connect', ()=>{
-                    self._send_peers(handler);
+                    self._send_handshake(handler);
                 })
             }
             else    {
                 var onopen = ()=>{
-                    this._send_peers(handler);
+                    this._send_handshake(handler);
                 }
                 if (conn.readyState === 1)  {
                     onopen();
@@ -349,27 +379,27 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         else if (this.protocol.encryption === 'SSL')    {
             const self = this;
             conn.on('secureConnect', ()=>{
-                self._send_peers(handler);
+                self._send_handshake(handler);
             })
         }
         else    {
-            this._send_peers(handler);
+            this._send_handshake(handler);
         }
         if (id) {
-            this.routing_table[id] = handler;
+            this.routing_table.set(id, handler);
         }
         else    {
-            this.awaiting_ids = this.awaiting_ids.concat(handler);
+            this.awaiting_ids.push(handler);
         }
     }
 
     disconnect(handler) {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.disconnect(handler)
+        *     .. js:function:: js2p.mesh.MeshSocket.disconnect(handler)
         *
         *         Closes a given connection, and removes it from your routing tables
         *
-        *         :param js2p.mesh.mesh_connection handler: The connection you wish to close
+        *         :param js2p.mesh.MeshConnection handler: The connection you wish to close
         */
         if (handler.sock.end)   {
             handler.sock.end();
@@ -383,8 +413,9 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
     handle_msg(msg, conn)    {
         if (!super.handle_msg(msg, conn))   {
             var packs = msg.packets;
-            if (packs[0].toString() === base.flags.whisper || packs[0].toString() === base.flags.broadcast) {
-                this.queue = this.queue.concat(msg);
+            if (packs[0] === base.flags.whisper || packs[0] === base.flags.broadcast) {
+                this.queue.push(msg);
+                this.emit('message', this);
             }
             // else    {
             //     this.__print__("Ignoring message with invalid subflag", level=4);
@@ -394,25 +425,25 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     __get_peer_list()   {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.__get_peer_list()
+        *     .. js:function:: js2p.mesh.MeshSocket.__get_peer_list()
         *
         *         This function is used to generate a list-formatted group of your peers. It goes in format ``[ [[addr, port], ID], ...]``
         *
         *         :returns: An array in the above format
         */
         var ret = [];
-        var self = this;
-        Object.keys(this.routing_table).forEach(function(key)   {
-            if (self.routing_table[key].addr)   {
-                ret = ret.concat([[self.routing_table[key].addr, key]]);
+        for (let key of this.routing_table.keys())  {
+            let addr = this.routing_table.get(key).addr;
+            if (addr && addr[0] !== null && addr[1] !== null)   {
+                ret.push([addr, key]);
             }
-        });
+        };
         return ret;
     }
 
     __handle_handshake(msg, conn)    {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.__handle_handshake(msg, conn)
+        *     .. js:function:: js2p.mesh.MeshSocket.__handle_handshake(msg, conn)
         *
         *         This callback is used to deal with handshake signals. Its three primary jobs are:
         *
@@ -420,13 +451,13 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         - set connection state
         *         - deal with connection conflicts
         *
-        *         :param js2p.base.message msg:
-        *         :param js2p.mesh.mesh_connection conn:
+        *         :param js2p.base.Message msg:
+        *         :param js2p.mesh.MeshConnection conn:
         *
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.handshake && packets.length === 5) {
+        if (packets[0] === base.flags.handshake && packets.length === 5) {
             if (packets[2].toString() !== msg.protocol.id) {
                 this.disconnect(conn);
                 return true;
@@ -435,33 +466,37 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
             //     this.__resolve_connection_conflict(handler, packets[1]);
             // }
             conn.id = packets[1];
-            conn.addr = JSON.parse(packets[3]);
+            if (!conn.addr && this.routing_table.size === 0)  {
+                this.emit('connect', this);
+            }
+            conn.addr = packets[3];
             //console.log(`changed compression methods to: ${packets[4]}`);
-            conn.compression = JSON.parse(packets[4]);
+            conn.compression = packets[4];
             // self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
             if (this.awaiting_ids.indexOf(conn) > -1)   {  // handler in this.awaiting_ids
                 this.awaiting_ids.splice(this.awaiting_ids.indexOf(conn), 1);
+                this._send_handshake(conn);
             }
-            this.routing_table[packets[1]] = conn;
-            conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
+            this.routing_table.set(packets[1], conn);
+            this._send_peers(conn);
             return true;
         }
     }
 
     __handle_peers(msg, conn)   {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.__handle_peers(msg, conn)
+        *     .. js:function:: js2p.mesh.MeshSocket.__handle_peers(msg, conn)
         *
         *         This callback is used to deal with peer signals. Its primary jobs is to connect to the given peers, if this does not exceed :js:data:`js2p.mesh.max_outgoing`
         *
-        *         :param js2p.base.message msg:
-        *         :param js2p.mesh.mesh_connection conn:
+        *         :param js2p.base.Message msg:
+        *         :param js2p.mesh.MeshConnection conn:
         *
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.peers)  {
-            var new_peers = JSON.parse(packets[1]);
+        if (packets[0] === base.flags.peers)  {
+            var new_peers = packets[1];
             var self = this;
             new_peers.forEach(function(peer_array)  {
                 if (self.outgoing.length < m.max_outgoing)  {
@@ -481,28 +516,28 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     __handle_response(msg, conn)    {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.__handle_response(msg, conn)
+        *     .. js:function:: js2p.mesh.MeshSocket.__handle_response(msg, conn)
         *
         *         This callback is used to deal with response signals. Its two primary jobs are:
         *
         *         - if it was your request, send the deferred message
         *         - if it was someone else's request, relay the information
         *
-        *         :param js2p.base.message msg:
-        *         :param js2p.mesh.mesh_connection conn:
+        *         :param js2p.base.Message msg:
+        *         :param js2p.mesh.MeshConnection conn:
         *
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
-        if (packets[0].toString() === base.flags.response)  {
+        if (packets[0] === base.flags.response)  {
             // self.__print__("Response received for request id %s" % packets[1], level=1)
             if (this.requests[packets[1]])  {
-                var addr = JSON.parse(packets[2]);
+                var addr = packets[2];
                 if (addr)   {
                     var info = this.requests[packets[1]];
                     // console.log(msg);
                     this.connect(addr[0][0], addr[0][1], addr[1]);
-                    this.routing_table[addr[1]].send(info[1], [info[2]].concat(info[0]));
+                    this.routing_table.get(addr[1]).send(info[1], [...info[2], ...info[0]]);
                     delete this.requests[packets[1]];
                 }
             }
@@ -512,7 +547,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     __handle_request(msg, conn) {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.__handle_request(msg, conn)
+        *     .. js:function:: js2p.mesh.MeshSocket.__handle_request(msg, conn)
         *
         *         This callback is used to deal with request signals. Its three primary jobs are:
         *
@@ -520,20 +555,20 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         *         - if you know the ID requested, respond to it
         *         - if you don't, make a request with your peers
         *
-        *         :param js2p.base.message msg:
-        *         :param js2p.mesh.mesh_connection conn:
+        *         :param js2p.base.Message msg:
+        *         :param js2p.mesh.MeshConnection conn:
         *
         *         :returns: Either ``true`` or ``undefined``
         */
         var packets = msg.packets;
         //console.log(packets[0].toString());
         //console.log(packets[1].toString());
-        if (packets[0].toString() === base.flags.request)  {
+        if (packets[0] === base.flags.request)  {
             if (packets[1].toString() === '*')  {
-                conn.send(base.flags.whisper, [base.flags.peers, JSON.stringify(this.__get_peer_list())]);
+                this._send_peers(conn);
             }
-            else if (this.routing_table[packets[2]])    {
-                conn.send(base.flags.broadcast, [base.flags.response, packets[1], JSON.stringify([this.routing_table[packets[2]].addr, packets[2]])]);
+            else if (this.routing_table.get(packets[2]))    {
+                conn.send(base.flags.broadcast, [base.flags.response, packets[1], [this.routing_table.get(packets[2]).addr, packets[2]]]);
             }
             return true;
         }
@@ -541,7 +576,7 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     send(packets, flag, type)  {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.send(packets [, flag [, type]])
+        *     .. js:function:: js2p.mesh.MeshSocket.send(packets [, flag [, type]])
         *
         *         This sends a message to all of your peers. If you use default values it will send it to everyone on the network
         *
@@ -558,14 +593,28 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
         var send_type = type || base.flags.broadcast;
         var main_flag = flag || base.flags.broadcast;
         var self = this;
-        Object.keys(this.routing_table).forEach(function(key)   {
-            self.routing_table[key].send(main_flag, [send_type].concat(packets));
+        for (let key of this.routing_table.keys())  {
+            self.routing_table.get(key).send(main_flag, [send_type, ...packets]);
+        };
+    }
+
+    _in_waterfalls(id, time)    {
+        let contained = false;
+        this.waterfalls.some(function(entry)    {
+            if (!BigInt.isInstance(entry[1])) {
+                entry[1] = new BigInt(entry[1]);
+            }
+            if (!Buffer.compare(entry[0], id) && entry[1].equals(time))   {
+                contained = true;
+                return true;
+            }
         });
+        return contained;
     }
 
     __clean_waterfalls()    {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.__clean_waterfalls()
+        *     .. js:function:: js2p.mesh.MeshSocket.__clean_waterfalls()
         *
         *         This function cleans the list of recently relayed messages based on
         *         the following heurisitics:
@@ -586,32 +635,25 @@ m.mesh_socket = class mesh_socket extends base.base_socket  {
 
     waterfall(msg)  {
         /**
-        *     .. js:function:: js2p.mesh.mesh_socket.waterfall(msg)
+        *     .. js:function:: js2p.mesh.MeshSocket.waterfall(msg)
         *
         *         This function handles message relays. Its return value is based on
         *         whether it took an action or not.
         *
-        *         :param js2p.base.message msg: The message in question
+        *         :param js2p.base.Message msg: The message in question
         *
         *         :returns: ``true`` if the message was then forwarded. ``false`` if not.
         */
-        var contained = false;
         const id = msg.id;
-        this.waterfalls.some(function(entry)    {
-            if (entry[0] === id && entry[1].equals(msg.time))   {
-                contained = true;
-                return true;
-            }
-        });
-        if (!contained)  {
+        if (!this._in_waterfalls(id, msg.time)) {
             this.waterfalls.unshift([id, msg.time]);
             var self = this;
-            Object.keys(this.routing_table).forEach(function(key)   {
-                var handler = self.routing_table[key];
+            for (let key of this.routing_table.keys())  {
+                let handler = self.routing_table.get(key);
                 if (handler.id.toString() !== msg.sender.toString())   {
                     handler.send_InternalMessage(msg.msg);
                 }
-            });
+            };
             this.__clean_waterfalls()
             return true
         }

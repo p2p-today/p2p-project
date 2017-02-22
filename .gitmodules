@@ -1,3 +1,6 @@
 [submodule "cp_src/zlib"]
 	path = c_src/zlib
 	url = https://github.com/madler/zlib
+[submodule "c_src/msgpack-c"]
+	path = c_src/msgpack-c
+	url = https://github.com/msgpack/msgpack-c

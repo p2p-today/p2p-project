@@ -1,7 +1,7 @@
 Javascript Implementation
 =========================
 
-This section contains information specific to the Javascript implementation of p2p.today. Most users will only need to pay attention to the tutorial and last few sections (mesh, sync, chord, kademlia). The rest is for developers who are interested in helping out.
+This section contains information specific to the Javascript implementation of p2p.today. Most users will only need to pay attention to the tutorial and last few sections (mesh, sync, chord). The rest is for developers who are interested in helping out.
 
 Contents:
 
@@ -14,7 +14,6 @@ Contents:
     javascript/mesh
     javascript/sync
     javascript/chord
-    javascript/kademlia
 
 
 Supported Transport Methods
@@ -23,11 +22,11 @@ Supported Transport Methods
 +------------+----------------------------------------------+
 |  Protocol  |               Protocol  Object               |
 +============+==============================================+
-| TCP        | ``new js2p.base.protocol(app, 'Plaintext')`` |
+| TCP        | ``new js2p.base.Protocol(app, 'Plaintext')`` |
 +------------+----------------------------------------------+
-| SSL        | ``new js2p.base.protocol(app, 'SSL')``       |
+| SSL        | ``new js2p.base.Protocol(app, 'SSL')``       |
 +------------+----------------------------------------------+
-| Websocket  | ``new js2p.base.protocol(app, 'ws')``        |
+| Websocket  | ``new js2p.base.Protocol(app, 'ws')``        |
 +------------+----------------------------------------------+
-| WSS (soon) | ``new js2p.base.protocol(app, 'wss')``       |
+| WSS (soon) | ``new js2p.base.Protocol(app, 'wss')``       |
 +------------+----------------------------------------------+

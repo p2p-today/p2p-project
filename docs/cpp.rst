@@ -11,12 +11,6 @@ Contents:
     cpp/tutorial
     cpp/base
     cpp/BaseConverter
-    cpp/base_wrapper
-    cpp/flags_wrapper
-    cpp/protocol_wraper
-    cpp/pathfinding_message_wrapper
-    cpp/py_utils
-    cpp/utils
     cpp/mesh
     cpp/chord
     cpp/kademlia

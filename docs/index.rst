@@ -18,13 +18,6 @@ What We Have
 
 There are several projects in the work right now. Several of these could be considered stable, but we're going to operate under the "beta" label for some time now.
 
-Message Serializer
-~~~~~~~~~~~~~~~~~~
-
-Serialization is the most important part for working with other languages. While there are several such schemes which work in most places, we made the decision to avoid these in general. We wanted something very lightweight, which could handle binary data, and operated as quickly as possible. This meant that "universal" serializers like JSON were out the window.
-
-You can see more information about our serialization scheme in the :doc:`protocol documentation <./protocol/serialization>` . We currently have a working parser in Python, Java, Javascript, C++, and Golang.
-
 Base Network Structures
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -53,7 +46,7 @@ Sync Table
 
 This is an extension of the above network. It inherits all of the message sending properties, while also syncronizing a local dictionary-like object.
 
-The only limitation is that it can only have string-like keys and values. There is also an optional "leasing" system, which is enabled by default. This means that a user can own a particular key for a period of time.
+The only limitation is that it can only have string-like keys. There is also an optional "leasing" system, which is enabled by default. This means that a user can own a particular key for a period of time.
 
 Currently there is an implementation in :doc:`Python <./python/sync>` and :doc:`Javascript <./javascript/sync>`. More tractable documentation can be found in their tutorial sections. Protocol specifications are in progress.
 
@@ -62,9 +55,9 @@ Chord Table
 
 This is a type of `distributed hash table <https://en.wikipedia.org/wiki/Distributed_hash_table>`_ based on an `MIT paper <https://pdos.csail.mit.edu/papers/chord:sigcomm01/chord_sigcomm.pdf>`_ which defined it.
 
-The idea is that you can use this as a dictionary-like object. The only caveat is that all keys and values *must* be strings. It uses five separate hash tables for hash collision avoidance and data backup in case a node unexpectedly exits.
+The idea is that you can use this as a dictionary-like object. The only limitation is that it can only have string-like keys. It uses five separate hash tables for hash collision avoidance and data backup in case a node unexpectedly exits.
 
-Currently there is only an implementation in Python and it is highly experimental. This section will be updated when it's ready for more general use.
+Currently there is an implementation in :doc:`Python <./python/chord>` and :doc:`Javascript <./javascript/chord>`. More tractable documentation can be found in their tutorial sections. Protocol specifications are in progress.
 
 Contributing, Credits, and Licenses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,6 +75,7 @@ Previous Versions
 ~~~~~~~~~~~~~~~~~
 
 - `0.4 <https://v0-4.p2p.today/>`_
+- `0.5 <https://v0-5.p2p.today/>`_
 - `develop <https://dev-docs.p2p.today/>`_
 - `master <https://p2p.today/>`_
 

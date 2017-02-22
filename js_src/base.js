@@ -7,11 +7,13 @@
 
 "use strict";
 
-var buffer = require('buffer');  // These ensure parser compatability with browserify
-var Buffer = buffer.Buffer;
-var BigInt = require('big-integer');
-var SHA = require('jssha');
-var util = require('util');
+const buffer = require('buffer');  // These ensure parser compatability with browserify
+const Buffer = buffer.Buffer;
+const BigInt = require('big-integer');
+const EventEmitter = require('events');
+const SHA = require('jssha');
+const util = require('util');
+const msgpack = require('msgpack-lite');
 
 /**
 * .. note::
@@ -21,7 +23,7 @@ var util = require('util');
 *     This shouldn't be a problem for most applications, but you can discuss it in :issue:`83`.
 */
 if (buffer.kMaxLength < 4294967299) {
-    console.log(`WARNING: This implementation of javascript does not support the maximum protocol length. The largest message you may receive is 4294967299 bytes, but you can only allocate ${buffer.kMaxLength}, or ${(buffer.kMaxLength / 4294967299 * 100).toFixed(2)}% of that.`);
+    console.warn(`This implementation of javascript does not support the maximum protocol length. The largest message you may receive is 4294967299 bytes, but you can only allocate ${buffer.kMaxLength}, or ${(buffer.kMaxLength / 4294967299 * 100).toFixed(2)}% of that.`);
 }
 
 var base;
@@ -61,7 +63,7 @@ else {
 *     This is :js:data:`~js2p.base.version_info` joined in the format ``'a.b.c'``
 */
 
-base.version_info = [0, 5, 607];
+base.version_info = [0, 6, 676];
 base.node_policy_version = base.version_info[2].toString();
 base.protocol_version = base.version_info.slice(0, 2).join(".");
 base.version = base.version_info.join('.');
@@ -72,78 +74,76 @@ base.flags = {
     *
     *     A "namespace" which defines protocol reserved flags
     */
-    reserved: ['\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
-               '\x08', '\x09', '\x0A', '\x0B', '\x0C', '\x0D', '\x0E', '\x0F',
-               '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17',
-               '\x18', '\x19', '\x1A', '\x1B', '\x1C', '\x1D', '\x1E', '\x1F',
-               '\x20', '\x21', '\x22', '\x23', '\x24', '\x25', '\x26', '\x27',
-               '\x28', '\x29', '\x2A', '\x2B', '\x2C', '\x2D', '\x2E', '\x2F'],
+    reserved: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+               0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+               0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+               0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
+               0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+               0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F],
 
     //main flags
-    broadcast:   '\x00',
-    renegotiate: '\x01',
-    whisper:     '\x02',
-    ping:        '\x03',
-    pong:        '\x04',
+    broadcast:   0x00,
+    renegotiate: 0x01,
+    whisper:     0x02,
+    ping:        0x03,
+    pong:        0x04,
 
     //sub-flags
-    //broadcast: '\x00',
-    compression: '\x01',
-    //whisper:   '\x02',
-    //ping:      '\x03',
-    //pong:      '\x04',
-    handshake:   '\x05',
-    notify:      '\x06',
-    peers:       '\x07',
-    request:     '\x08',
-    resend:      '\x09',
-    response:    '\x0A',
-    store:       '\x0B',
-    retrieve:    '\x0C',
-    retrieve:    '\x0D',
+    //broadcast: 0x00,
+    compression: 0x01,
+    //whisper:   0x02,
+    //ping:      0x03,
+    //pong:      0x04,
+    handshake:   0x05,
+    notify:      0x06,
+    peers:       0x07,
+    request:     0x08,
+    resend:      0x09,
+    response:    0x0A,
+    store:       0x0B,
+    retrieve:    0x0C,
+    retrieved:   0x0D,
 
     //implemented compression methods
-    gzip:     '\x11',
-    zlib:     '\x13',
-    snappy:   '\x20',
+    gzip:     0x11,
+    zlib:     0x13,
+    snappy:   0x20,
 
     //compression methods
-    bz2:      '\x10',
-    lzma:     '\x12',
-    bwtc:     '\x14',
-    context1: '\x15',
-    defsum:   '\x16',
-    dmc:      '\x17',
-    fenwick:  '\x18',
-    huffman:  '\x19',
-    lzjb:     '\x1A',
-    lzjbr:    '\x1B',
-    lzp3:     '\x1C',
-    mtf:      '\x1D',
-    ppmd:     '\x1E',
-    simple:   '\x1F'
+    bz2:      0x10,
+    lzma:     0x12,
+    bwtc:     0x14,
+    context1: 0x15,
+    defsum:   0x16,
+    dmc:      0x17,
+    fenwick:  0x18,
+    huffman:  0x19,
+    lzjb:     0x1A,
+    lzjbr:    0x1B,
+    lzp3:     0x1C,
+    mtf:      0x1D,
+    ppmd:     0x1E,
+    simple:   0x1F
 };
 
 base.compression = []; //base.flags.snappy, base.flags.zlib, base.flags.gzip];
 
 try {
     base.snappy = require('snappy');
-    base.compression = base.compression.concat(base.flags.snappy);
+    base.compression.push(base.flags.snappy);
 }
 catch (e) {
-    console.log("Couldn't load snappy compression (Ignore if in browser)");
+    console.warn("Couldn't load snappy compression (Ignore if in browser)");
 }
 
 try {
     base.zlib = require('zlibjs');
-    base.compression = base.compression.concat(base.flags.zlib);
-    base.compression = base.compression.concat(base.flags.gzip);
+    base.compression.push(base.flags.zlib);
+    base.compression.push(base.flags.gzip);
 }
 catch (e) {
-    console.log("Couldn't load zlib/gzip compression");
+    console.warn("Couldn't load zlib/gzip compression");
 }
-
-base.json_compressions = JSON.stringify(base.compression);
 
 
 base.compress = function compress(text, method) {
@@ -160,10 +160,10 @@ base.compress = function compress(text, method) {
     if (method === base.flags.zlib) {
         return base.zlib.deflateSync(new Buffer(text));
     }
-    else if (method === base.flags.gzip) {
+    else if (method === base.flags.gzip)    {
         return base.zlib.gzipSync(new Buffer(text));
     }
-    else if (method === base.flags.snappy) {
+    else if (method === base.flags.snappy)  {
         return base.snappy.compressSync(new Buffer(text));
     }
     else {
@@ -371,12 +371,12 @@ base.SHA256 = function SHA256(text) {
 };
 
 
-base.protocol = class protocol {
+base.Protocol = class Protocol {
     /**
-    * .. js:class:: js2p.base.protocol(subnet, encryption)
+    * .. js:class:: js2p.base.Protocol(subnet, encryption)
     *
     *     This class is used as a subnet object. Its role is to reject undesired connections.
-    *     If you connect to someone who has a different protocol object than you, this descrepency is detected,
+    *     If you connect to someone who has a different Protocol object than you, this descrepency is detected,
     *     and you are silently disconnected.
     *
     *     :param string subnet:     The subnet ID you wish to connect to. Ex: ``'mesh'``
@@ -389,7 +389,7 @@ base.protocol = class protocol {
 
     get id() {
         /**
-        *     .. js:attribute:: js2p.base.protocol.id
+        *     .. js:attribute:: js2p.base.Protocol.id
         *
         *         The ID of your desired network
         */
@@ -398,14 +398,12 @@ base.protocol = class protocol {
     }
 };
 
-base.default_protocol = new base.protocol('', 'Plaintext');
+base.default_protocol = new base.Protocol('', 'Plaintext');
 
 function getCertKeyPair()   {
-    console.log("Creating key pair");
     const pki = require('node-forge').pki;
-    var keys = pki.rsa.generateKeyPair(2048);
+    var keys = pki.rsa.generateKeyPair(1024);
     var cert = pki.createCertificate();
-    console.log("Setting attributes");
     cert.publicKey = keys.publicKey;
     cert.serialNumber = '01';
     cert.validity.notBefore = new Date();
@@ -436,9 +434,7 @@ function getCertKeyPair()   {
         name: 'basicConstraints',
         cA: false
     }]);
-    console.log("Signing");
     cert.sign(keys.privateKey);
-    console.log("Returning");
     return [pki.certificateToPem(cert), pki.privateKeyToPem(keys.privateKey)];
 }
 
@@ -507,15 +503,66 @@ base.InternalMessage = class InternalMessage {
     *     :param number timestamp:  The time at which this message will be sent in seconds UTC
     */
     constructor(msg_type, sender, payload, compression, timestamp) {
-        this.msg_type = new Buffer(msg_type);
-        this.sender = new Buffer(sender);
-        this.payload = payload || [];
-        for (var i = 0; i < this.payload.length; i++)   {
-            this.payload[i] = new Buffer(this.payload[i]);
-        }
-        this.time = timestamp || base.getUTC();
-        this.compression = compression || [];
+        this.__msg_type = msg_type;
+        this.__sender = sender;
+        this.__payload = payload || [];
+        this.__time = timestamp || base.getUTC();
+        this.__compression = compression || [];
         this.compression_fail = false
+        this.__str = null;
+        this.__id = null;
+        this.__full_str = null;
+    }
+
+    __clear_cache() {
+        this.__str = null;
+        this.__id = null;
+        this.__full_str = null;
+    }
+
+    get msg_type()  {
+        return this.__msg_type;
+    }
+
+    set msg_type(x) {
+        this.__clear_cache();
+        this.__msg_type = x;
+    }
+
+    get sender()    {
+        return this.__sender;
+    }
+
+    set sender(x)   {
+        this.__clear_cache();
+        this.__sender = x;
+    }
+
+    get payload()   {
+        return [...this.__payload];
+    }
+
+    set payload(x)  {
+        this.__clear_cache();
+        this.__payload = Array.from(x);
+    }
+
+    get time()  {
+        return this.__time;
+    }
+
+    set time(x) {
+        this.__clear_cache();
+        this.__time = x;
+    }
+
+    get compression()   {
+        return [...this.__compression];
+    }
+
+    set compression(x)  {
+        this.__full_str = null;
+        this.__compression = Array.from(x);
     }
 
     static feed_string(string, sizeless, compressions) {
@@ -530,18 +577,23 @@ base.InternalMessage = class InternalMessage {
         *
         *         :returns: A :js:class:`~js2p.base.InternalMessage` object containing the deserialized message
         */
-        string = base.InternalMessage.sanitize_string(string, sizeless)
-        var compression_return = base.InternalMessage.decompress_string(string, compressions)
-        var compression_fail = compression_return[1]
-        string = compression_return[0]
-        var packets = base.InternalMessage.process_string(string)
-        var msg = new base.InternalMessage(packets[0], packets[1], packets.slice(4), compressions)
-        msg.time = base.from_base_58(packets[3])
-        msg.compression_fail = compression_fail
-        if (msg.id !== packets[2].toString())   {
-            throw new Error(`ID check failed. ${msg.id} !== ${packets[2].toString()}`);
+        string = base.InternalMessage.sanitize_string(string, sizeless);
+        var compression_return = base.InternalMessage.decompress_string(string, compressions);
+        var compression_fail = compression_return[1];
+        string = compression_return[0];
+        var id = string.slice(0, 32);
+        let serialized = string.slice(32);
+        let hash = Buffer.from(base.SHA256(serialized), "hex");
+        if (Buffer.compare(id, hash)) {
+            throw new Error(`ID check failed. ${util.inspect(hash)} !== ${util.inspect(id)}`);
         }
-        return msg
+        var packets = msgpack.decode(serialized);
+        var msg = new base.InternalMessage(packets[0], packets[1], packets.slice(3), compressions);
+        msg.time = packets[2];
+        msg.compression_fail = compression_fail;
+        msg.__id = id;
+        msg.__str = serialized;
+        return msg;
     }
 
     static sanitize_string(string, sizeless) {
@@ -583,22 +635,6 @@ base.InternalMessage = class InternalMessage {
         return [string, compression_fail]
     }
 
-    static process_string(string) {
-        var processed = 0;
-        var expected = string.length;
-        var packets = [];
-        while (processed < expected) {
-            let len = base.unpack_value(new Buffer(string.slice(processed, processed+4)));
-            processed += 4;
-            packets = packets.concat(new Buffer(string.slice(processed, processed+len)));
-            processed += len;
-        }
-        if (processed > expected)   {
-            throw `Could not parse correctly processed=${processed}, expected=${expected}, packets=${packets}`;
-        }
-        return packets;
-    }
-
     get compression_used() {
         /**
         *     .. js:attribute:: js2p.base.InternalMessage.compression_used
@@ -634,15 +670,17 @@ base.InternalMessage = class InternalMessage {
         *
         *         Returns the ID/checksum associated with this message
         */
-        try     {
-            var payload_string = this.payload.join('')
-            var payload_hash = base.SHA384(payload_string + this.time_58)
-            return base.to_base_58(new BigInt(payload_hash, 16))
+        if (this.__id === null) {
+            try     {
+                let payload_hash = base.SHA256(this.__non_len_string);
+                this.__id = Buffer.from(payload_hash, "hex");
+            }
+            catch (err) {
+                console.log(err);
+                console.log(this.payload);
+            }
         }
-        catch (err) {
-            console.log(err);
-            console.log(this.payload);
-        }
+        return this.__id;
     }
 
     get packets() {
@@ -656,22 +694,14 @@ base.InternalMessage = class InternalMessage {
         *
         *         Returns the total "packets" associated with this message
         */
-        var meta = [this.msg_type, this.sender, this.id, this.time_58]
-        return meta.concat(this.payload)
+        return [this.msg_type, this.sender, this.time, ...this.payload];
     }
 
     get __non_len_string() {
-        var buf_array = [];
-        var packets = this.packets;
-        for (var i = 0; i < packets.length; i++)    {
-            buf_array.push(base.pack_value(4, packets[i].length));
-            buf_array.push(new Buffer(packets[i]));
+        if (this.__str === null)  {
+            this.__str = msgpack.encode(this.packets);
         }
-        var total = Buffer.concat(buf_array);
-        if (this.compression_used) {
-            total = base.compress(total, this.compression_used);
-        }
-        return total;
+        return this.__str;
     }
 
     get string() {
@@ -680,8 +710,16 @@ base.InternalMessage = class InternalMessage {
         *
         *         Returns a Buffer containing the serialized version of this message
         */
-        var string = this.__non_len_string
-        return Buffer.concat([base.pack_value(4, string.length), string]);
+        if (this.__full_str === null)   {
+            var string = this.__non_len_string;
+            var id = new Buffer(this.id);
+            var total = Buffer.concat([id, string]);
+            if (this.compression_used) {
+                total = base.compress(total, this.compression_used);
+            }
+            this.__full_str = Buffer.concat([base.pack_value(4, total.length), total]);
+        }
+        return this.__full_str;
     }
 
     get length() {
@@ -698,14 +736,14 @@ base.InternalMessage = class InternalMessage {
     }
 };
 
-base.message = class message {
+base.Message = class Message {
     /**
-    * .. js:class:: js2p.base.message(msg, server)
+    * .. js:class:: js2p.base.Message(msg, server)
     *
-    *     This is the message class we present to the user.
+    *     This is the Message class we present to the user.
     *
     *     :param js2p.base.InternalMessage msg: This is the serialization object you received
-    *     :param js2p.base.base_socket sender:      This is the "socket" object that received it
+    *     :param js2p.base.BaseSocket sender:      This is the "socket" object that received it
     */
     constructor(msg, server) {
         this.msg = msg
@@ -716,7 +754,7 @@ base.message = class message {
         var packets = this.packets;
         var type = packets[0];
         var payload = packets.slice(1);
-        var text = "message {\n";
+        var text = "Message {\n";
         text += ` type: ${util.inspect(type)}\n`;
         text += ` packets: ${util.inspect(payload)}\n`;
         text += ` sender: ${util.inspect(this.sender.toString())} }`;
@@ -725,43 +763,43 @@ base.message = class message {
 
     get time() {
         /**
-        *     .. js:attribute:: js2p.base.message.time
+        *     .. js:attribute:: js2p.base.Message.time
         *
-        *         Returns the time (in seconds UTC) this message was sent at
+        *         Returns the time (in seconds UTC) this Message was sent at
         */
         return this.msg.time
     }
 
     get time_58() {
         /**
-        *     .. js:attribute:: js2p.base.message.time_58
+        *     .. js:attribute:: js2p.base.Message.time_58
         *
-        *         Returns the time (in seconds UTC) this message was sent at, encoded in base_58
+        *         Returns the time (in seconds UTC) this Message was sent at, encoded in base_58
         */
         return this.msg.time_58
     }
 
     get sender() {
         /**
-        *     .. js:attribute:: js2p.base.message.sender
+        *     .. js:attribute:: js2p.base.Message.sender
         *
-        *         Returns the ID of this message's sender
+        *         Returns the ID of this Message's sender
         */
         return this.msg.sender
     }
 
     get id() {
         /**
-        *     .. js:attribute:: js2p.base.message.id
+        *     .. js:attribute:: js2p.base.Message.id
         *
-        *         Returns the ID/checksum associated with this message
+        *         Returns the ID/checksum associated with this Message
         */
         return this.msg.id
     }
 
     get packets() {
         /**
-        *     .. js:attribute:: js2p.base.message.packets
+        *     .. js:attribute:: js2p.base.Message.packets
         *
         *         Returns the packets the sender wished you to have, sans metadata
         */
@@ -770,27 +808,27 @@ base.message = class message {
 
     get length() {
         /**
-        *     .. js:attribute:: js2p.base.message.length
+        *     .. js:attribute:: js2p.base.Message.length
         *
-        *         Returns the serialized length of this message
+        *         Returns the serialized length of this Message
         */
         return this.msg.length
     }
 
     get protocol()  {
         /**
-        *     .. js:attribute:: js2p.base.message.protocol
+        *     .. js:attribute:: js2p.base.Message.protocol
         *
-        *         Returns the :js:class:`~js2p.base.protocol` associated with this message
+        *         Returns the :js:class:`~js2p.base.Protocol` associated with this Message
         */
         return this.server.protocol
     }
 
     reply(packs) {
         /**
-        *     .. js:function:: js2p.base.message.reply(packs)
+        *     .. js:function:: js2p.base.Message.reply(packs)
         *
-        *         Replies privately to this message.
+        *         Replies privately to this Message.
         *
         *         .. warning::
         *
@@ -801,8 +839,8 @@ base.message = class message {
         *
         *         :param packs: A list of packets you want the other user to receive
         */
-        if (this.server.routing_table[this.sender]) {
-            this.server.routing_table[this.sender].send(base.flags.whisper, [base.flags.whisper].concat(packs));
+        if (this.server.routing_table.get(this.sender)) {
+            this.server.routing_table.get(this.sender).send(base.flags.whisper, [base.flags.whisper, ...packs]);
         }
         else    {
             var request_hash = base.SHA384(this.sender + base.to_base_58(base.getUTC()));
@@ -814,20 +852,20 @@ base.message = class message {
     }
 };
 
-base.base_connection = class base_connection   {
+base.BaseConnection = class BaseConnection    {
     /**
-    * .. js:class:: js2p.base.base_connection(sock, server, outgoing)
+    * .. js:class:: js2p.base.BaseConnection(sock, server, outgoing)
     *
     *     This is the template class for connection abstracters.
     *
     *     :param sock:                          This is the raw socket object
-    *     :param js2p.base.base_socket server:  This is a link to the :js:class:`~js2p.base.base_socket` parent
+    *     :param js2p.base.BaseSocket server:  This is a link to the :js:class:`~js2p.base.BaseSocket` parent
     *     :param outgoing:                      This bool describes whether ``server`` initiated the connection
     */
     constructor(sock, server, outgoing)   {
         this.sock = sock;
         this.server = server;
-        this.outgoing = outgoing | false;
+        this.outgoing = outgoing || false;
         this.buffer = new Buffer(0);
         this.id = null;
         this.time = base.getUTC();
@@ -863,7 +901,7 @@ base.base_connection = class base_connection   {
                 self.onClose();
             });
         }
-        else    {
+        else    {  // This part handles browser receives
             this.sock.onmessage = (evt)=>{
                 var fileReader = new FileReader();
                 fileReader.onload = function() {
@@ -886,7 +924,7 @@ base.base_connection = class base_connection   {
 
     onEnd() {
         /**
-        *     .. js:function:: js2p.base.base_connection.onEnd()
+        *     .. js:function:: js2p.base.BaseConnection.onEnd()
         *
         *         This function is run when a connection is ended
         */
@@ -895,11 +933,10 @@ base.base_connection = class base_connection   {
 
     onError(err)    {
         /**
-        *     .. js:function:: js2p.base.base_connection.onError()
+        *     .. js:function:: js2p.base.BaseConnection.onError()
         *
         *         This function is run when a connection experiences an error
         */
-        console.log(`Error: ${err}`);
         if (this.sock.end)  {
             this.sock.end();
             this.sock.destroy(); //These implicitly remove from routing table
@@ -911,7 +948,7 @@ base.base_connection = class base_connection   {
 
     onClose()   {
         /**
-        *     .. js:function:: js2p.base.base_connection.onClose()
+        *     .. js:function:: js2p.base.BaseConnection.onClose()
         *
         *         This function is run when a connection is closed
         */
@@ -920,7 +957,7 @@ base.base_connection = class base_connection   {
 
     send_InternalMessage(msg)   {
         /**
-        *     .. js:function:: js2p.base.base_connection.send_InternalMessage(msg)
+        *     .. js:function:: js2p.base.BaseConnection.send_InternalMessage(msg)
         *
         *         Sends a message through its connection.
         *
@@ -931,7 +968,7 @@ base.base_connection = class base_connection   {
         msg.compression = this.compression;
         // console.log(msg.payload);
         if (msg.msg_type === base.flags.whisper || msg.msg_type === base.flags.broadcast) {
-            this.last_sent = [msg.msg_type].concat(packs);
+            this.last_sent = [msg.msg_type, ...msg.packets];
         }
         // this.__print__(`Sending ${[msg.len()].concat(msg.packets)} to ${this}`, 4);
         if (msg.compression_used)   {
@@ -956,7 +993,7 @@ base.base_connection = class base_connection   {
 
     send(msg_type, packs, id, time)  {
         /**
-        *     .. js:function:: js2p.base.base_connection.send(msg_type, packs, id, time)
+        *     .. js:function:: js2p.base.BaseConnection.send(msg_type, packs, id, time)
         *
         *         Sends a message through its connection.
         *
@@ -983,7 +1020,7 @@ base.base_connection = class base_connection   {
 
     collect_incoming_data(self, data) {
         /**
-        *     .. js:function:: js2p.base.base_connection.collect_incoming_data(self, data)
+        *     .. js:function:: js2p.base.BaseConnection.collect_incoming_data(self, data)
         *
         *         Collects and processes data which just came in on the socket
         *
@@ -1009,23 +1046,23 @@ base.base_connection = class base_connection   {
 
     found_terminator()  {
         /**
-        *     .. js:function:: js2p.base.base_connection.found_terminator()
+        *     .. js:function:: js2p.base.BaseConnection.found_terminator()
         *
         *         This method is called when the expected amount of data is received
         *
         *         :returns: The deserialized message received
         */
         //console.log("I got called");
-        var msg = base.InternalMessage.feed_string(this.buffer.slice(0, this.expected), false, this.compression);
+        let msg_data = this.buffer.slice(0, this.expected);
         this.buffer = this.buffer.slice(this.expected);
         this.expected = 4;
         this.active = false;
-        return msg;
+        return base.InternalMessage.feed_string(msg_data, false, this.compression);
     }
 
     handle_renegotiate(packets) {
         /**
-        *     .. js:function:: js2p.base.base_connection.handle_renegotiate(packets)
+        *     .. js:function:: js2p.base.BaseConnection.handle_renegotiate(packets)
         *
         *         This function handles connection renegotiations. This is used when compression methods
         *         fail, or when a node needs a message resent.
@@ -1034,19 +1071,18 @@ base.base_connection = class base_connection   {
         *
         *         :returns: ``true`` if action was taken, ``undefined`` if not
         */
-        if (packets[0].toString() === base.flags.renegotiate)    {
-            if (packets[4].toString() === base.flags.compression)   {
-                var encoded_methods = JSON.parse(packets[5]);
-                var respond = (base.intersect(this.compression, encoded_methods).length !== this.compression.length);
-                this.compression = encoded_methods;
+        if (packets[0] === base.flags.renegotiate)  {
+            if (packets[4] === base.flags.compression)  {
+                var respond = (base.intersect(this.compression, packets[5]).length !== this.compression.length);
+                this.compression = packets[5];
                 // self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
                 if (respond)    {
-                    var decoded_methods = base.intersect(base.compression, this.compression);
-                    self.send(base.flags.renegotiate, base.flags.compression, JSON.stringify(decoded_methods))
+                    var new_methods = base.intersect(base.compression, this.compression);
+                    self.send(base.flags.renegotiate, base.flags.compression, new_methods)
                 }
                 return true;
             }
-            else if (packets[4].toString() === base.flags.resend)   {
+            else if (packets[4] === base.flags.resend)  {
                 var type = self.last_sent[0];
                 var packs = self.last_sent.slice(1);
                 self.send(type, packs);
@@ -1060,27 +1096,28 @@ base.base_connection = class base_connection   {
     }
 };
 
-base.base_socket = class base_socket   {
+base.BaseSocket = class BaseSocket extends EventEmitter   {
     /**
-    * .. js:class:: js2p.base.base_socket(addr, port [, protocol [, out_addr [, debug_level]]])
+    * .. js:class:: js2p.base.BaseSocket(addr, port [, protocol [, out_addr [, debug_level]]])
     *
-    *     This is the template class for socket abstracters.
+    *     This is the template class for socket abstracters. This class extends :js:class:`EventEmitter`.
     *
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
-    *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
+    *     :param js2p.base.Protocol protocol:   The subnet you're looking to connect to
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
-    *     .. js:attribute:: js2p.base.base_socket.routing_table
+    *     .. js:attribute:: js2p.base.BaseSocket.routing_table
     *
-    *         An object which contains :js:class:`~js2p.base.base_connection` s keyed by their IDs
+    *         A :js:class:`Map` which contains :js:class:`~js2p.base.BaseConnection` s keyed by their IDs
     *
-    *     .. js:attribute:: js2p.base.base_socket.awaiting_ids
+    *     .. js:attribute:: js2p.base.BaseSocket.awaiting_ids
     *
-    *         An array which contains :js:class:`~js2p.base.base_connection` s that are awaiting handshake information
+    *         An array which contains :js:class:`~js2p.base.BaseConnection` s that are awaiting handshake information
     */
     constructor(addr, port, protocol, out_addr, debug_level)   {
+        super();
         var self = this;
         if (addr === '0.0.0.0') {
             let ip = require('ip');
@@ -1098,7 +1135,7 @@ base.base_socket = class base_socket   {
         this.debug_level = debug_level || 0;
 
         this.awaiting_ids = [];
-        this.routing_table = {};
+        this.routing_table = new Map();
         this.id = base.to_base_58(BigInt(base.SHA384(`(${addr}, ${port})${this.protocol.id}${base.user_salt}`), 16));
         this.__handlers = [];
         this.exceptions = [];
@@ -1106,7 +1143,7 @@ base.base_socket = class base_socket   {
 
     get status()    {
         /**
-        *     .. js:attribute:: js2p.base.base_socket.status
+        *     .. js:attribute:: js2p.base.BaseSocket.status
         *
         *         This attribute describes whether the socket is operating as expected.
         *
@@ -1120,14 +1157,14 @@ base.base_socket = class base_socket   {
 
     get outgoing()  {
         /**
-        *     .. js:attribute:: js2p.mesh.mesh_socket.outgoing
+        *     .. js:attribute:: js2p.mesh.MeshSocket.outgoing
         *
         *         This is an array of all outgoing connections. The length of this array is used to determine
         *         whether the "socket" should automatically initiate connections
         */
         var outs = [];
-        for (let key of Object.keys(this.routing_table))   {
-            let node = this.routing_table[key];
+        for (let key of this.routing_table.keys()) {
+            let node = this.routing_table.get(key);
             if (node.outgoing)  {
                 outs.push(node);
             }
@@ -1153,7 +1190,7 @@ base.base_socket = class base_socket   {
 
     register_handler(callback)  {
         /**
-        *     .. js:function:: js2p.base.base_socket.register_handler(callback)
+        *     .. js:function:: js2p.base.BaseSocket.register_handler(callback)
         *
         *         This registers a message callback. Each is run through until one returns ``true``,
         *         rather like :js:func:`Array.some()`. The callback is expected to be of the form:
@@ -1170,21 +1207,19 @@ base.base_socket = class base_socket   {
         *
         *         :param function callback: A function formatted like the above
         */
-        this.__handlers = this.__handlers.concat(callback);
+        this.__handlers.push(callback);
     }
 
     handle_msg(msg, conn) {
-        var ret = false;
-        this.__handlers.some(function(handler)  {
+        for (let handler of this.__handlers)    {
             // self.__print__("Checking handler: %s" % handler.__name__, level=4)
             // console.log(`Entering handler ${handler.name}`);
             if (handler(msg, conn)) {
                 // self.__print__("Breaking from handler: %s" % handler.__name__, level=4)
                 // console.log(`breaking from ${handler.name}`);
-                ret = true;
                 return true
             }
-        });
-        return ret;
+        }
+        return false;
     }
 };

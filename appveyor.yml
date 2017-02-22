@@ -54,6 +54,18 @@ environment:
       PIP: "%PYTHON%\\Scripts\\pip"
       COV: "%PYTHON%\\Scripts\\coverage"
 
+    - PYTHON: "C:\\Python36"
+      PYTHON_VERSION: "3.6"
+      RUN: "%PYTHON%\\python"
+      PIP: "%PYTHON%\\Scripts\\pip"
+      COV: "%PYTHON%\\Scripts\\coverage"
+
+    - PYTHON: "C:\\Python36-x64"
+      PYTHON_VERSION: "3.6"
+      RUN: "%PYTHON%\\python"
+      PIP: "%PYTHON%\\Scripts\\pip"
+      COV: "%PYTHON%\\Scripts\\coverage"
+
     # - PYTHON_VERSION: "pypy2"
     #   RUN: "%APPVEYOR_BUILD_FOLDER%\\pypy-4.0.1-win32\\pypy"
     #   PIP: "%RUN% -m pip"
@@ -67,6 +79,7 @@ environment:
     #   COV: "%RUN% -m coverage"
 
     - NODE: "4"
+      NODE_COMPAT: "test"
     - NODE: "5"
     - NODE: "6"
 

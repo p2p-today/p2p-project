@@ -93,7 +93,7 @@ Base Module (C++ Implementation)
 		- .. data:: simple
 
 
-	.. autoclass:: py2p.cbase.pathfinding_message
+	.. autoclass:: py2p.cbase.InternalMessage
 		:members:
 		:undoc-members:
 		:special-members: __init__, __iter__

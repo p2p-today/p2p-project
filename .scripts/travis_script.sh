@@ -16,7 +16,7 @@ if [ $pyver ]; then
     source venv/bin/activate;
     pip install -r requirements.txt
     make cpython;
-    pip install pytest-coverage codecov wheel
+    pip install pytest-coverage pytest-benchmark codecov wheel
     py.test -vv --cov=./py_src/ ./py_src/
     python setup.py sdist --universal && pip install --no-index --find-links=./dist/ py2p
     python setup.py bdist_wheel
@@ -28,5 +28,9 @@ if [ $pyver ]; then
     python -m coverage xml;
     codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml
 else
-    make jstest;
+    if [ $jsver == 4 ]; then
+        make js_compat_test
+    else
+        make js_codecov
+    fi
 fi

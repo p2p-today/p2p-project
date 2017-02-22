@@ -39,7 +39,6 @@ function execAll(re, string) {
 var folder_map = {
     js_src: "javascript",
     jv_src: "java",
-    go_src: "go",
     cp_src: "cpp",
     c_src: "c"
 };
@@ -52,7 +51,12 @@ function gen_walker(folder) {
         var docs_folder = path.resolve('docs', folder_map[folder]);
         for (var i = 0; i < res.length; i++)  {
             var file = path.resolve('.', folder, res[i]);
-            if (fs.lstatSync(file).isDirectory())   {
+            try {
+                if (fs.lstatSync(file).isDirectory())   {
+                    continue;
+                }
+            }
+            catch (e) {
                 continue;
             }
             var ending = res[i].substr(res[i].lastIndexOf(".") && res[i].indexOf("wrapper") < 0);
@@ -86,7 +90,6 @@ function gen_walker(folder) {
 
 walk('js_src', gen_walker('js_src'));
 walk('jv_src', gen_walker('jv_src'));
-walk('go_src', gen_walker('go_src'));
 walk('cp_src', gen_walker('cp_src'));
 walk('c_src', gen_walker('c_src'));
 

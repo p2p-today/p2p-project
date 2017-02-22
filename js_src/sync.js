@@ -21,13 +21,16 @@ else {
     m = root;
 }
 
-m.default_protocol = new base.protocol('sync', 'Plaintext');
+m.default_protocol = new base.Protocol('sync', 'Plaintext');
 
 m.metatuple = class metatuple   {
     /**
     * .. js:class:: js2p.sync.metatuple(owner, timestamp)
     *
     *     This class is used to store metadata for a particular key
+    *
+    *     :param string owner: The owner of this change
+    *     :param Number timestamp: The time of this change
     */
     constructor(owner, timestamp)   {
         this.owner = owner;
@@ -35,11 +38,11 @@ m.metatuple = class metatuple   {
     }
 }
 
-m.sync_socket = class sync_socket extends mesh.mesh_socket  {
+m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
     /**
-    * .. js:class:: js2p.sync.sync_socket(addr, port [, leasing [, protocol [, out_addr [, debug_level]]]])
+    * .. js:class:: js2p.sync.SyncSocket(addr, port [, leasing [, protocol [, out_addr [, debug_level]]]])
     *
-    *     This is the class for mesh network socket abstraction. It inherits from :js:class:`js2p.mesh.mesh_socket`.
+    *     This is the class for mesh network socket abstraction. It inherits from :js:class:`js2p.mesh.MeshSocket`.
     *     Because of this inheritence, this can also be used as an alert network.
     *
     *     This also implements and optional leasing system by default. This leasing system means that
@@ -50,16 +53,36 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
     *     :param boolean leasing:               Whether this class's leasing system should be enabled (default: ``true``)
-    *     :param js2p.base.protocol protocol:   The subnet you're looking to connect to
+    *     :param js2p.base.Protocol protocol:   The subnet you're looking to connect to
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
+    *
+    *     .. js:function:: js2p.sync.SyncSocket Event 'update'(conn, key, new_data, metatuple)
+    *
+    *         This event is triggered when a key is updated in your synchronized
+    *         dictionary. ``new_meta`` will be an object containing metadata of this
+    *         change, including the time of change, and who initiated the change.
+    *
+    *         :param js2p.sync.SyncSocket conn: A reference to this abstract socket
+    *         :param Buffer key: The key which has a new value
+    *         :param new_data: The new value at that key
+    *         :param js2p.sync.metatuple new_meta: Metadata on the key changer
+    *
+    *     .. js:function:: js2p.sync.SyncSocket Event 'delete'(conn, key)
+    *
+    *         This event is triggered when a key is deleted from your synchronized
+    *         dictionary.
+    *
+    *         :param js2p.sync.SyncSocket conn: A reference to this abstract socket
+    *         :param Buffer key: The key which has a new value
+    *
     */
     constructor(addr, port, leasing, protocol, out_addr, debug_level)   {
         if (!protocol)  {
             protocol = m.default_protocol;
         }
         let lease_descriptor = (leasing !== false) ? '1' : '0';
-        let protocol_used = new base.protocol(protocol.subnet + lease_descriptor, protocol.encryption);
+        let protocol_used = new base.Protocol(protocol.subnet + lease_descriptor, protocol.encryption);
         super(addr, port, protocol_used, out_addr, debug_level);
         this.__leasing = leasing;
         this.data = {};
@@ -68,9 +91,17 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         this.register_handler(function handle_store(msg, conn)  {return self.__handle_store(msg, conn);});
     }
 
-    __store(key, new_data, new_meta, error)   {
+    __check_lease(key, new_data, new_meta)  {
+        let meta = this.metadata[key];
+        return ((!meta) || (meta.owner.toString() === new_meta.owner.toString()) ||
+                (meta.timestamp < base.getUTC() - 3600) ||
+                (meta.timestamp === new_meta.timestamp && meta.owner.toString() > new_meta.owner.toString()) ||
+                ((meta.timestamp < new_meta.timestamp) && (!this.__leasing)));
+    }
+
+    __store(key, new_data, new_meta, error) {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.__store(key, new_data, new_meta, error)
+        *     .. js:function:: js2p.sync.SyncSocket.__store(key, new_data, new_meta, error)
         *
         *         Private API method for storing data
         *
@@ -81,18 +112,16 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *
         *         :raises Error: If someone else has a lease at this value, and ``error`` is not ``false``
         */
-        let meta = this.metadata[key];
-        if ( (!meta) || (meta.owner.toString() === new_meta.owner.toString()) ||
-                (meta.timestamp < base.getUTC() - 3600) ||
-                (meta.timestamp === new_meta.timestamp && meta.owner.toString() > new_meta.owner.toString()) ||
-                ((meta.timestamp < new_meta.timestamp) && (!this.__leasing)) )    {
-            if (new_data.toString() !== '')    {
-                this.metadata[key] = new_meta;
-                this.data[key] = new_data;
-            }
-            else    {
+        if (this.__check_lease(key, new_data, new_meta))    {
+            if (new_data.toString() === '')    {
                 delete this.data[key];
                 delete this.metadata[key];
+                this.emit('delete', this, key);
+            }
+            else    {
+                this.metadata[key] = new_meta;
+                this.data[key] = new_data;
+                this.emit('update', this, key, new_data, new_meta);
             }
         }
         else if (error !== false) {
@@ -102,10 +131,10 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
 
     _send_peers(handler) {
         /**
-        *     .. js:function:: js2p.sync.sync_socket._send_peers(handler)
+        *     .. js:function:: js2p.sync.SyncSocket._send_peers(handler)
         *
-        *         Shortcut method to send a handshake response. This method is extracted from :js:func:`~js2p.mesh.mesh_socket.__handle_handshake`
-        *         in order to allow cleaner inheritence from :js:class:`js2p.sync.sync_socket`
+        *         Shortcut method to send a handshake response. This method is extracted from :js:func:`~js2p.mesh.MeshSocket.__handle_handshake`
+        *         in order to allow cleaner inheritence from :js:class:`js2p.sync.SyncSocket`
         *
         */
         super._send_peers(handler)
@@ -117,20 +146,20 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
 
     __handle_store(msg, handler)  {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.__handle_store
+        *     .. js:function:: js2p.sync.SyncSocket.__handle_store
         *
         *         This callback is used to deal with data storage signals. Its two primary jobs are:
         *
         *            - store data in a given key
         *            - delete data in a given key
         *
-        *            :param msg:        A :js:class:`~js2p.base.message`
-        *            :param handler:    A :js:class:`~js2p.mesh.mesh_connection`
+        *            :param msg:        A :js:class:`~js2p.base.Message`
+        *            :param handler:    A :js:class:`~js2p.mesh.MeshConnection`
         *
         *            :returns: Either ``true`` or ``undefined``
         */
         const packets = msg.packets;
-        if (packets[0].toString() === base.flags.store) {
+        if (packets[0] === base.flags.store) {
             let meta = new m.metatuple(msg.sender, msg.time);
             if (packets.length === 5)   {
                 if (this.data[packets[1]])  {
@@ -145,7 +174,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
 
     get(key, fallback)  {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.get(key [, fallback])
+        *     .. js:function:: js2p.sync.SyncSocket.get(key [, fallback])
         *
         *         Retrieves the value at a given key
         *
@@ -162,32 +191,31 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
 
     set(key, data) {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.set(key, value)
+        *     .. js:function:: js2p.sync.SyncSocket.set(key, value)
         *
         *         Sets the value at a given key
         *
         *         :param key:   The key you wish to look up (must be transformable into a :js:class:`Buffer` )
-        *         :param value: The key you wish to store (must be transformable into a :js:class:`Buffer` )
+        *         :param value: The value you wish to store
         *
-        *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
-        *         :raises:              See :js:func:`~js2p.sync.sync_socket.__store`
+        *         :raises TypeError:    If a key could not be transformed into a :js:class:`Buffer`
+        *         :raises:              See :js:func:`~js2p.sync.SyncSocket.__store`
         */
         let new_meta = new m.metatuple(this.id, base.getUTC());
         let s_key = new Buffer(key);
-        let s_data = (data) ? new Buffer(data) : new Buffer('')
-        this.__store(s_key, s_data, new_meta);
-        this.send([s_key, s_data], undefined, base.flags.store);
+        this.__store(s_key, data, new_meta);
+        this.send([s_key, data], undefined, base.flags.store);
     }
 
     update(update_dict) {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.update(update_dict)
+        *     .. js:function:: js2p.sync.SyncSocket.update(update_dict)
         *
-        *         For each key/value pair in the given object, calls :js:func:`~js2p.sync.sync_socket.set`
+        *         For each key/value pair in the given object, calls :js:func:`~js2p.sync.SyncSocket.set`
         *
         *         :param Object update_dict: An object with keys and values which can be transformed into a :js:class:`Buffer`
         *
-        *         :raises: See :js:func:`~js2p.sync.sync_socket.set`
+        *         :raises: See :js:func:`~js2p.sync.SyncSocket.set`
         */
         for (var key in update_dict)    {
             this.set(key, update_dict[key]);
@@ -196,28 +224,28 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
 
     del(key)    {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.del(key)
+        *     .. js:function:: js2p.sync.SyncSocket.del(key)
         *
         *         Clears the value at a given key
         *
         *         :param key:   The key you wish to look up (must be transformable into a :js:class:`Buffer` )
         *
         *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
-        *         :raises:              See :js:func:`~js2p.sync.sync_socket.set`
+        *         :raises:              See :js:func:`~js2p.sync.SyncSocket.set`
         */
         this.set(key);
     }
 
     *keys()  {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.keys()
+        *     .. js:function:: js2p.sync.SyncSocket.keys()
         *
         *         Returns a generator for all keys presently in the dictionary
         *
         *         Because this data is changed asynchronously, the key is
         *         only garunteed to be present at the time of generation.
         *
-        *         :returns: A generator which yields :js:class:`Buffer`s
+        *         :returns: A generator which yields :js:class:`Buffer` s
         */
         for (let key of Object.keys(this.data)) {
             if (this.get(key, null) !== null)    {
@@ -228,7 +256,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
 
     *values()    {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.values()
+        *     .. js:function:: js2p.sync.SyncSocket.values()
         *
         *         Returns a generator for all values presently in the
         *         dictionary
@@ -236,7 +264,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         Because this data is changed asynchronously, the value is
         *         only garunteed to be accurate at the time of generation.
         *
-        *         :returns: A generator which yields :js:class:`Buffer`s
+        *         :returns: A generator which yields :js:class:`Buffer` s
         */
         for (let key of this.keys())  {
             let val = this.get(key);
@@ -248,7 +276,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
 
     *items() {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.items()
+        *     .. js:function:: js2p.sync.SyncSocket.items()
         *
         *         Returns a generator for all associations presently in the
         *         dictionary
@@ -257,7 +285,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
         *         is only garunteed to be present at the time of generation.
         *
         *         :returns: A generator which yields pairs of
-        *                   :js:class:`Buffer`s
+        *                   :js:class:`Buffer` s
         */
         for (let key of this.keys())  {
             let val = this.get(key);
@@ -269,7 +297,7 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
 
     pop(key, fallback)  {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.pop(key [, fallback])
+        *     .. js:function:: js2p.sync.SyncSocket.pop(key [, fallback])
         *
         *         Returns the value at a given key. As a side effect, it
         *         it deletes that key.
@@ -285,12 +313,12 @@ m.sync_socket = class sync_socket extends mesh.mesh_socket  {
 
     popitem()   {
         /**
-        *     .. js:function:: js2p.sync.sync_socket.popitem()
+        *     .. js:function:: js2p.sync.SyncSocket.popitem()
         *
         *         Returns the association at a key. As a side effect, it
         *         it deletes that key.
         *
-        *         :returns: A pair of :js:class:`Buffer`s
+        *         :returns: A pair of :js:class:`Buffer` s
         */
         for (let key of this.keys())  {
             return [key, this.pop(key)];

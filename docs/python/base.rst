@@ -4,8 +4,9 @@ Base Module
 
 .. automodule:: py2p.base
 	:members:
-	:exclude-members: flags, protocol
+	:exclude-members: flags, Protocol
 	:special-members: __init__, __iter__
+	:private-members:
 	:undoc-members:
 
 	.. autoclass:: flags
@@ -95,5 +96,5 @@ Base Module
 		- .. autoattribute:: simple
 			:annotation:
 
-	.. autoclass:: protocol
+	.. autoclass:: Protocol
 		:exclude-members: id

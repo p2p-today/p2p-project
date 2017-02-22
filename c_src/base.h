@@ -9,8 +9,8 @@
 #define CP2P__STR__( ARG ) CP2P__STR(ARG)
 
 #define C2P_PROTOCOL_MAJOR_VERSION 0
-#define C2P_PROTOCOL_MINOR_VERSION 5
-#define C2P_NODE_VERSION 607
+#define C2P_PROTOCOL_MINOR_VERSION 6
+#define C2P_NODE_VERSION 676
 #define C2P_VERSION CP2P__STR__(C2P_PROTOCOL_MAJOR_VERSION) "." CP2P__STR__(C2P_PROTOCOL_MINOR_VERSION) "." CP2P__STR__(C2P_NODE_VERSION)
 /**
 * .. c:macro:: C2P_PROTOCOL_MAJOR_VERSION
@@ -65,6 +65,7 @@
 //End macro
 
 #include <time.h>
+#include <string.h>
 
 #ifdef _cplusplus
 extern "C" {
@@ -72,72 +73,41 @@ extern "C" {
 
 STATIC_ASSERT(sizeof(size_t) >= 4, "Size of strings is too small to easily meet protocol specs");
 
-#define BROADCAST_FLAG (unsigned char *) "\x00"
-#define BROADCAST_LEN (size_t) 1
-#define RENEGOTIATE_FLAG (unsigned char *) "\x01"
-#define RENEGOTIATE_LEN (size_t) 1
-#define WHISPER_FLAG (unsigned char *) "\x02"
-#define WHISPER_LEN (size_t) 1
-#define PING_FLAG (unsigned char *) "\x03"
-#define PING_LEN (size_t) 1
-#define PONG_FLAG (unsigned char *) "\x04"
-#define PONG_LEN (size_t) 1
-#define COMPRESSION_FLAG (unsigned char *) "\x01"
-#define COMPRESSION_LEN (size_t) 1
-#define HANDSHAKE_FLAG (unsigned char *) "\x05"
-#define HANDSHAKE_LEN (size_t) 1
-#define NOTIFY_FLAG (unsigned char *) "\x06"
-#define NOTIFY_LEN (size_t) 1
-#define PEERS_FLAG (unsigned char *) "\x07"
-#define PEERS_LEN (size_t) 1
-#define REQUEST_FLAG (unsigned char *) "\x08"
-#define REQUEST_LEN (size_t) 1
-#define RESEND_FLAG (unsigned char *) "\x09"
-#define RESEND_LEN (size_t) 1
-#define RESPONSE_FLAG (unsigned char *) "\x0A"
-#define RESPONSE_LEN (size_t) 1
-#define STORE_FLAG (unsigned char *) "\x0B"
-#define STORE_LEN (size_t) 1
-#define RETRIEVE_FLAG (unsigned char *) "\x0C"
-#define RETRIEVE_LEN (size_t) 1
-#define BZ2_FLAG (unsigned char *) "\x10"
-#define BZ2_LEN (size_t) 1
-#define GZIP_FLAG (unsigned char *) "\x11"
-#define GZIP_LEN (size_t) 1
-#define LZMA_FLAG (unsigned char *) "\x12"
-#define LZMA_LEN (size_t) 1
-#define ZLIB_FLAG (unsigned char *) "\x13"
-#define ZLIB_LEN (size_t) 1
-#define BWTC_FLAG (unsigned char *) "\x14"
-#define BWTC_LEN (size_t) 1
-#define CONTEXT1_FLAG (unsigned char *) "\x15"
-#define CONTEXT1_LEN (size_t) 1
-#define DEFSUM_FLAG (unsigned char *) "\x16"
-#define DEFSUM_LEN (size_t) 1
-#define DMC_FLAG (unsigned char *) "\x17"
-#define DMC_LEN (size_t) 1
-#define FENWICK_FLAG (unsigned char *) "\x18"
-#define FENWICK_LEN (size_t) 1
-#define HUFFMAN_FLAG (unsigned char *) "\x19"
-#define HUFFMAN_LEN (size_t) 1
-#define LZJB_FLAG (unsigned char *) "\x1A"
-#define LZJB_LEN (size_t) 1
-#define LZJBR_FLAG (unsigned char *) "\x1B"
-#define LZJBR_LEN (size_t) 1
-#define LZP3_FLAG (unsigned char *) "\x1C"
-#define LZP3_LEN (size_t) 1
-#define MTF_FLAG (unsigned char *) "\x1D"
-#define MTF_LEN (size_t) 1
-#define PPMD_FLAG (unsigned char *) "\x1E"
-#define PPMD_LEN (size_t) 1
-#define SIMPLE_FLAG (unsigned char *) "\x1F"
-#define SIMPLE_LEN (size_t) 1
-#define SNAPPY_FLAG (unsigned char *) "\x20"
-#define SNAPPY_LEN (size_t) 1
+#define BROADCAST_FLAG (unsigned char ) 0x00
+#define RENEGOTIATE_FLAG (unsigned char ) 0x01
+#define WHISPER_FLAG (unsigned char ) 0x02
+#define PING_FLAG (unsigned char ) 0x03
+#define PONG_FLAG (unsigned char ) 0x04
+#define COMPRESSION_FLAG (unsigned char ) 0x01
+#define HANDSHAKE_FLAG (unsigned char ) 0x05
+#define NOTIFY_FLAG (unsigned char ) 0x06
+#define PEERS_FLAG (unsigned char ) 0x07
+#define REQUEST_FLAG (unsigned char ) 0x08
+#define RESEND_FLAG (unsigned char ) 0x09
+#define RESPONSE_FLAG (unsigned char ) 0x0A
+#define STORE_FLAG (unsigned char ) 0x0B
+#define RETRIEVE_FLAG (unsigned char ) 0x0C
+#define BZ2_FLAG (unsigned char ) 0x10
+#define GZIP_FLAG (unsigned char ) 0x11
+#define LZMA_FLAG (unsigned char ) 0x12
+#define ZLIB_FLAG (unsigned char ) 0x13
+#define BWTC_FLAG (unsigned char ) 0x14
+#define CONTEXT1_FLAG (unsigned char ) 0x15
+#define DEFSUM_FLAG (unsigned char ) 0x16
+#define DMC_FLAG (unsigned char ) 0x17
+#define FENWICK_FLAG (unsigned char ) 0x18
+#define HUFFMAN_FLAG (unsigned char ) 0x19
+#define LZJB_FLAG (unsigned char ) 0x1A
+#define LZJBR_FLAG (unsigned char ) 0x1B
+#define LZP3_FLAG (unsigned char ) 0x1C
+#define MTF_FLAG (unsigned char ) 0x1D
+#define PPMD_FLAG (unsigned char ) 0x1E
+#define SIMPLE_FLAG (unsigned char ) 0x1F
+#define SNAPPY_FLAG (unsigned char ) 0x20
 
 static size_t NUM_RESERVED = 0x30;
 
-static unsigned char *RESERVED_FLAGS[] = {
+static unsigned char RESERVED_FLAGS[] = {
     BROADCAST_FLAG,
     RENEGOTIATE_FLAG,
     WHISPER_FLAG,
@@ -151,9 +121,9 @@ static unsigned char *RESERVED_FLAGS[] = {
     RESPONSE_FLAG,
     STORE_FLAG,
     RETRIEVE_FLAG,
-    (unsigned char *) "\x0D",
-    (unsigned char *) "\x0E",
-    (unsigned char *) "\x0F",
+    (unsigned char ) 0x0D,
+    (unsigned char ) 0x0E,
+    (unsigned char ) 0x0F,
     BZ2_FLAG,
     GZIP_FLAG,
     LZMA_FLAG,
@@ -171,74 +141,21 @@ static unsigned char *RESERVED_FLAGS[] = {
     PPMD_FLAG,
     SIMPLE_FLAG,
     SNAPPY_FLAG,
-    (unsigned char *) "\x21",
-    (unsigned char *) "\x22",
-    (unsigned char *) "\x23",
-    (unsigned char *) "\x24",
-    (unsigned char *) "\x25",
-    (unsigned char *) "\x26",
-    (unsigned char *) "\x27",
-    (unsigned char *) "\x28",
-    (unsigned char *) "\x29",
-    (unsigned char *) "\x2A",
-    (unsigned char *) "\x2B",
-    (unsigned char *) "\x2C",
-    (unsigned char *) "\x2D",
-    (unsigned char *) "\x2E",
-    (unsigned char *) "\x2F",
-    NULL /* sentinel */
-};
-
-static size_t RESERVED_LENS[] = {
-    BROADCAST_LEN,
-    RENEGOTIATE_LEN,
-    WHISPER_LEN,
-    PING_LEN,
-    PONG_LEN,
-    HANDSHAKE_LEN,
-    NOTIFY_LEN,
-    PEERS_LEN,
-    REQUEST_LEN,
-    RESEND_LEN,
-    RESPONSE_LEN,
-    STORE_LEN,
-    RETRIEVE_LEN,
-    1,
-    1,
-    1,
-    BZ2_LEN,
-    GZIP_LEN,
-    LZMA_LEN,
-    ZLIB_LEN,
-    BWTC_LEN,
-    CONTEXT1_LEN,
-    DEFSUM_LEN,
-    DMC_LEN,
-    FENWICK_LEN,
-    HUFFMAN_LEN,
-    LZJB_LEN,
-    LZJBR_LEN,
-    LZP3_LEN,
-    MTF_LEN,
-    PPMD_LEN,
-    SIMPLE_LEN,
-    SNAPPY_LEN,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    1,
-    0 /* sentinel */
+    (unsigned char ) 0x21,
+    (unsigned char ) 0x22,
+    (unsigned char ) 0x23,
+    (unsigned char ) 0x24,
+    (unsigned char ) 0x25,
+    (unsigned char ) 0x26,
+    (unsigned char ) 0x27,
+    (unsigned char ) 0x28,
+    (unsigned char ) 0x29,
+    (unsigned char ) 0x2A,
+    (unsigned char ) 0x2B,
+    (unsigned char ) 0x2C,
+    (unsigned char ) 0x2D,
+    (unsigned char ) 0x2E,
+    (unsigned char ) 0x2F
 };
 
 static size_t NUM_COMPRESSIONS = 0;
@@ -332,7 +249,7 @@ static int sanitize_string(char *str, size_t *len, int sizeless)    {
     /**
     * .. c:function:: static int sanitize_string(char *str, size_t *len, int sizeless)
     *
-    *     Mutates str to be clean for processing by process_string.
+    *     Mutates str to be clean for processing by :c:func:`deserializeInternalMessage`.
     *
     *     :param str:       The string you wish to mutate
     *     :param len:       The length of said string
@@ -373,61 +290,6 @@ static int decompress_string(char *str, size_t len, char **result, size_t *res_l
     *result = (char *) malloc(sizeof(char) * len);
     memcpy(result, str, len);
     *res_len = len;
-    return 0;
-}
-
-static int process_string(const char *str, size_t len, char ***packets, size_t **lens, size_t *num_packets)  {
-    /**
-    * .. c:function:: static int process_string(const char *str, size_t len, char **packets, size_t **lens, size_t *num_packets)
-    *
-    *     Transforms a serialized string into an array of packets. This is formatted as an array of strings, an array of lengths,
-    *     and a number of packets. You must provide a pointer to these. Packets must be initialized as an array of :c:type:`char *`.
-    *
-    *     :param str:       The string to deserialize
-    *     :param len:       The length of this string
-    *     :param packets:   A pointer to the returned array of packets. This will be initialized for you
-    *     :param lens:      A pointer to the returned array of packet lengths. This will be initiaized for you
-    *     :num_packets:     A pointer to the number of packets. This will be initialized for you
-    *
-    *     :returns: ``0`` if successful, any other number if not. If it returns non-``0``, ``packets`` and ``lens`` will point to ``NULL``
-    *
-    *     .. warning::
-    *
-    *         If you do not :c:func:`free` ``packets`` and ``lens`` you will develop a memory leak
-    */
-    size_t processed = 0;
-    size_t factor = 16;
-    size_t i;
-    *num_packets = 0;
-    *lens = (size_t *) malloc(sizeof(size_t) * factor);
-    CP2P_DEBUG("Entering while loop\n");
-    while (processed < len)   {
-        size_t tmp = unpack_value(str + processed, 4);
-        CP2P_DEBUG("Processing for packet %i\n", *num_packets);
-        if (!(*num_packets % factor))    {
-            factor *= 2;
-            *lens = (size_t *) realloc(*lens, sizeof(size_t) * factor);
-        }
-        (*lens)[*num_packets] = tmp;
-        processed += tmp + 4;
-        *num_packets += 1;
-    }
-    if (processed > len)    {
-        free(*lens);
-        *lens = NULL;
-        *packets = NULL;
-        return -1;
-    }
-    CP2P_DEBUG("Exited while loop\n");
-    *lens = (size_t *) realloc(*lens, sizeof(size_t) * (*num_packets));
-    *packets = (char **) realloc(*packets, sizeof(char *) * (*num_packets));
-    processed = 4;
-    CP2P_DEBUG("Entering for loop\n");
-    for (i = 0; i < *num_packets; i++)    {
-        (*packets)[i] = (char *) malloc(sizeof(char) * (*lens)[i]);
-        memcpy((*packets)[i], str + processed, (*lens)[i]);
-        processed += (*lens)[i] + 4;
-    }
     return 0;
 }
 

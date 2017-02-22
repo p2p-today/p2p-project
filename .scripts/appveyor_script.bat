@@ -3,8 +3,9 @@ IF DEFINED PIP (
     set HOME=%APPVEYOR_BUILD_FOLDER%
     %PYPY%
     %PIP% install --upgrade setuptools
-    %PIP% install pytest-coverage codecov cryptography wheel
+    %PIP% install pytest-coverage pytest-benchmark codecov cryptography wheel
     %PIP% install -r requirements.txt
+    git submodule update --init
     cd %HOME%
     %RUN% -m pytest -c setup.cfg --cov=./py_src/ ./py_src/ || goto :error
     %RUN% setup.py sdist --universal
@@ -22,9 +23,16 @@ IF DEFINED PIP (
 ) ELSE (
     dir C:\avvm\node
     powershell -Command "Install-Product node $env:NODE"
-    npm install .
-    npm install -g mocha
-    mocha js_src\\test\\* || goto :error
+    npm install
+    npm install -g mocha istanbul codecov
+    IF DEFINED NODE_COMPAT (
+        mkdir build\\babel
+        node node_modules\\babel-cli\\bin\\babel.js js_src -d build\\babel
+        istanbul cover --hook-run-in-context node_modules\\mocha\\bin\\_mocha build\\babel\\test\\* || goto :error
+    ) ELSE (
+        istanbul cover --hook-run-in-context node_modules\\mocha\\bin\\_mocha js_src\\test\\* || goto :error
+    )
+    codecov -f coverage\\coverage.json -t d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
 )
 goto :EOF
 

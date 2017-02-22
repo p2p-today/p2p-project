@@ -10,7 +10,7 @@ Contents:
 
     c/tutorial
     c/base
-    c/utils
+    c/py_utils
     c/InternalMessageStruct
     c/SubnetStruct
     c/BaseConverter
