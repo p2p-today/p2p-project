@@ -8,9 +8,9 @@ Your page will look something like:
 .. code-block:: html
 
     <head>
-        <script type="text/javascript" src="./build/browser-min/js2p-browser-0.6.676-base.min.js"></script>
+        <script type="text/javascript" src="./build/browser-min/js2p-browser-0.6.757-base.min.js"></script>
         <!-- Other js2p loaders here -->
-        <script type="text/javascript" src="./build/browser-min/js2p-browser-0.6.676.min.js"></script>
+        <script type="text/javascript" src="./build/browser-min/js2p-browser-0.6.757.min.js"></script>
     </head>
 
 The two scripts shown are the only required. The library will automatically load any other provided components.
@@ -41,10 +41,10 @@ This example shows the simple construction of a :js:class:`js2p.sync.SyncSocket`
     <!doctype html>
     <html>
         <head>
-            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.676-base.js"></script>
-            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.676-mesh.js"></script>
-            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.676-sync.js"></script>
-            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.676.js"></script>
+            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.757-base.js"></script>
+            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.757-mesh.js"></script>
+            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.757-sync.js"></script>
+            <script type="text/javascript" src="./build/browser/js2p-browser-0.6.757.js"></script>
         </head>
         <body>
             <script type="text/javascript">
