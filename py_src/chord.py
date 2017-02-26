@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import socket
 import sys
 
-from hashlib import (sha1, sha228, sha256, sha384, sha512)
+from hashlib import (sha1, sha224, sha256, sha384, sha512)
 from itertools import chain
 from logging import (DEBUG, INFO)
 from random import choice
@@ -22,10 +22,10 @@ except:
     from .base import Protocol
 
 from . import flags
-from .base import (compression, to_base_58, from_base_58,
-                   BaseConnection, Message, BaseDaemon, BaseSocket,
-                   InternalMessage, compression, MsgPackable)
+from .base import (to_base_58, from_base_58,
+                   BaseConnection, Message, BaseDaemon, BaseSocket)
 from .mesh import (MeshConnection, MeshDaemon, MeshSocket)
+from .messages import (compression, InternalMessage, MsgPackable)
 from .utils import (inherit_doc, getUTC, get_socket, intersect, awaiting_value,
                     most_common, log_entry, sanitize_packet)
 

@@ -2,10 +2,11 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 from . import flags
-from .base import (Message, to_base_58, from_base_58, MsgPackable,
-                   BaseConnection)
+from .base import (Message, BaseConnection)
 from .mesh import (MeshSocket, MeshConnection)
-from .utils import (inherit_doc, getUTC, sanitize_packet, log_entry)
+from .messages import (compression, InternalMessage, MsgPackable)
+from .utils import (to_base_58, from_base_58, inherit_doc, getUTC,
+                    sanitize_packet, log_entry)
 
 try:
     from .cbase import protocol as Protocol

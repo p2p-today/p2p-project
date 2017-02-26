@@ -145,12 +145,12 @@ def handler_registry_validation(iters, start_port, encryption, reg):
         close_all_nodes([f, g])
 
 
-def test_hanlder_registry_Plaintext(iters=3):
+def test_handler_registry_Plaintext(iters=3):
     #type: (int) -> None
     handler_registry_validation(iters, 5500, 'Plaintext', register_1)
 
 
-def test_hanlder_registry_SSL(iters=3):
+def test_handler_registry_SSL(iters=3):
     #type: (int) -> None
     handler_registry_validation(iters, 5600, 'SSL', register_1)
 

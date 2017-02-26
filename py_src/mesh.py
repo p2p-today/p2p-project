@@ -23,18 +23,10 @@ except:
     from .base import Protocol
 
 from . import flags
-from .base import (
-    compression,
-    to_base_58,
-    from_base_58,
-    BaseConnection,
-    Message,
-    MsgPackable,
-    BaseDaemon,
-    BaseSocket,
-    InternalMessage, )
+from .base import (BaseConnection, BaseDaemon, BaseSocket, Message)
+from .messages import (compression, InternalMessage, MsgPackable)
 from .utils import (getUTC, get_socket, intersect, inherit_doc, log_entry,
-                    awaiting_value)
+                    awaiting_value, to_base_58, from_base_58)
 
 max_outgoing = 4
 default_protocol = Protocol('mesh', "Plaintext")  # SSL")

@@ -8,12 +8,45 @@ import subprocess
 import sys
 import time
 
-from typing import (Any, Tuple)
+from functools import partial
+
+from typing import (Any, Callable, Tuple, Union)
 
 from .. import utils
 
 if sys.version_info >= (3, ):
     xrange = range
+
+
+def identity(in_func, out_func, data):
+    #type: (Union[partial, Callable], Union[partial, Callable], Any) -> bool
+    assert data == out_func(in_func(data))
+
+
+def try_identity(in_func, out_func, data_gen, iters):
+    #type: (Callable, Callable, Callable, int) -> bool
+    for _ in xrange(iters):
+        identity(in_func, out_func, data_gen())
+
+
+def test_base_58(benchmark, iters=1000):
+    #type: (Any, int) -> None
+    def data_gen():
+        #type: () -> Tuple[Tuple, Dict]
+        return (utils.to_base_58, utils.from_base_58,
+                random.randint(0, 2**32 - 1)), {}
+
+    benchmark.pedantic(identity, setup=data_gen, rounds=iters)
+
+
+def test_pack_value(benchmark, iters=1000):
+    #type: (Any, int) -> None
+    def data_gen():
+        #type: () -> Tuple[Tuple, Dict]
+        return (partial(utils.pack_value, 128 // 8), utils.unpack_value,
+                random.randint(0, 2**128 - 1)), {}
+
+    benchmark.pedantic(identity, setup=data_gen, rounds=iters)
 
 
 def test_intersect(benchmark, iters=200):
