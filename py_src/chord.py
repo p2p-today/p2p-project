@@ -2,18 +2,15 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import hashlib
-import random
-import select
 import socket
-import struct
 import sys
-import time
-import traceback
-import warnings
 
+from hashlib import (sha1, sha228, sha256, sha384, sha512)
 from itertools import chain
 from logging import (DEBUG, INFO)
+from random import choice
+from time import sleep
+from traceback import format_exc
 
 from async_promises import Promise
 from typing import (cast, Any, Callable, Dict, Iterable, Iterator, Set, Tuple,
@@ -66,11 +63,11 @@ def get_hashes(key):
     assign responisbility for a value based on their SHA384-assigned ID.
     """
     return (
-        int(hashlib.sha1(key).hexdigest(), 16) << 224,  # 384 - 160
-        int(hashlib.sha224(key).hexdigest(), 16) << 160,  # 384 - 224
-        int(hashlib.sha256(key).hexdigest(), 16) << 128,  # 384 - 256
-        int(hashlib.sha384(key).hexdigest(), 16),
-        int(hashlib.sha512(key).hexdigest(), 16))
+        int(sha1(key).hexdigest(), 16) << 224,  # 384 - 160
+        int(sha224(key).hexdigest(), 16) << 160,  # 384 - 224
+        int(sha256(key).hexdigest(), 16) << 128,  # 384 - 256
+        int(sha384(key).hexdigest(), 16),
+        int(sha512(key).hexdigest(), 16))
 
 
 class ChordConnection(MeshConnection):
@@ -330,7 +327,7 @@ class ChordSocket(MeshSocket):
                     except:  # pragma: no cover
                         self.__print__(
                             "Could not connect to %s because\n%s" %
-                            (addr, traceback.format_exc()),
+                            (addr, format_exc()),
                             level=1)
                         continue
             return True
@@ -450,7 +447,7 @@ class ChordSocket(MeshSocket):
         if self.routing_table:
             node = self.find(key)
         elif self.awaiting_ids:
-            node = random.choice(self.awaiting_ids)
+            node = choice(self.awaiting_ids)
         if node in (self, None):
             return awaiting_value(self.data[method].get(key, ''))
         else:
@@ -491,7 +488,7 @@ class ChordSocket(MeshSocket):
         limit = timeout // 0.1
         fails = {None, b''}
         while (common in fails or count <= len(hashes) // 2) and iters < limit:
-            time.sleep(0.1)
+            sleep(0.1)
             iters += 1
             common, count = most_common(vals)
         if common not in fails and count > len(hashes) // 2:
@@ -593,7 +590,7 @@ class ChordSocket(MeshSocket):
         """
         node = self.find(key)  #type: Union[ChordSocket, BaseConnection]
         if self.leeching and node is self and len(self.awaiting_ids):
-            node = random.choice(self.awaiting_ids)
+            node = choice(self.awaiting_ids)
         if node in (self, None):
             if value == b'':
                 del self.data[method][key]

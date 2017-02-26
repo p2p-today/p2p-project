@@ -3,11 +3,11 @@ from __future__ import with_statement
 from __future__ import unicode_literals
 
 from calendar import timegm
-from socket import socket, AF_INET, SOCK_DGRAM, SHUT_RDWR
-from time import gmtime
-from typing import cast, Any, Callable, Iterable, Tuple, Union
-
 from logging import (getLogger, INFO, DEBUG)
+from socket import (socket, AF_INET, SOCK_DGRAM, SHUT_RDWR)
+from time import gmtime
+
+from typing import (cast, Any, Callable, Iterable, Tuple, Union)
 
 from . import flags
 

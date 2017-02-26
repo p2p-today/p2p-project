@@ -2,9 +2,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 import inspect
-import select
 import socket
-import struct
 import sys
 
 from collections import deque
@@ -12,6 +10,8 @@ from platform import system
 from itertools import chain
 from logging import (INFO, DEBUG)
 from random import shuffle
+from select import select
+from struct import error as StructException
 from traceback import format_exc
 
 from typing import (cast, Any, MutableSequence, Sequence, Tuple, Union)
@@ -68,7 +68,7 @@ class MeshConnection(BaseConnection):
                 return msg
             self.server.handle_msg(Message(msg, self.server), self)
             return msg
-        except (IndexError, struct.error):
+        except (IndexError, StructException):
             self.__print__(
                 "Failed to decode message. Expected first compression of: %s."
                 % intersect(compression, self.compression),
@@ -129,7 +129,7 @@ class MeshDaemon(BaseDaemon):
             while self.main_thread.is_alive() and self.alive:
                 conns = chain(self.server.routing_table.values(),
                               self.server.awaiting_ids, (self.sock, ))
-                for handler in select.select(
+                for handler in select(
                         cast(Sequence, conns), [], [], 0.01)[0]:
                     if handler == self.sock:
                         self.handle_accept()
@@ -149,7 +149,7 @@ class MeshDaemon(BaseDaemon):
                 conns = tuple(
                     chain(self.server.routing_table.values(),
                           self.server.awaiting_ids, (self.sock, )))
-                for handler in select.select(conns, [], [], 0.01)[0]:
+                for handler in select(conns, [], [], 0.01)[0]:
                     if handler == self.sock:
                         self.handle_accept()
                     else:
