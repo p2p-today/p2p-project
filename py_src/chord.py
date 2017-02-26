@@ -24,7 +24,8 @@ try:
 except:
     from .base import Protocol
 
-from .base import (flags, compression, to_base_58, from_base_58,
+from . import flags
+from .base import (compression, to_base_58, from_base_58,
                    BaseConnection, Message, BaseDaemon, BaseSocket,
                    InternalMessage, compression, MsgPackable)
 from .mesh import (MeshConnection, MeshDaemon, MeshSocket)

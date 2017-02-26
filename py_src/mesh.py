@@ -21,8 +21,9 @@ try:
     from .cbase import protocol as Protocol
 except:
     from .base import Protocol
+
+from . import flags
 from .base import (
-    flags,
     compression,
     to_base_58,
     from_base_58,

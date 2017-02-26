@@ -9,6 +9,8 @@ from typing import cast, Any, Callable, Iterable, Tuple, Union
 
 from logging import (getLogger, INFO, DEBUG)
 
+from . import flags
+
 
 def log_entry(name, level):
     #type: (str, int) -> Callable
@@ -146,7 +148,6 @@ class awaiting_value(object):
 
     def callback_method(self, method, key):
         #type: (str, str) -> None
-        from .base import flags
         self.callback.send(flags.whisper, flags.retrieved, method, key,
                            self.value)
 
