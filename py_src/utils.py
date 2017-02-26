@@ -104,6 +104,94 @@ def get_lan_ip():
         return IP
 
 
+def pack_value(l, i):
+    #type: (int, int) -> bytes
+    """For value i, pack it into bytes of size length
+
+    Args:
+        length: A positive, integral value describing how long to make
+                    the packed array
+        i:      A positive, integral value to pack into said array
+
+    Returns:
+        A bytes object containing the given value
+
+    Raises:
+        ValueError: If length is not large enough to contain the value
+                        provided
+    """
+    ret = bytearray(l)
+    for x in range(l - 1, -1, -1):  # Iterate over length backwards
+        ret[x] = i & 0xFF
+        i >>= 8
+        if i == 0:
+            break
+    if i:
+        raise ValueError("Value not allocatable in size given")
+    return bytes(ret)
+
+
+def unpack_value(string):
+    #type: (Union[bytes, bytearray, str]) -> int
+    """For a string, return the packed value inside of it
+
+    Args:
+        string: A string or bytes-like object
+
+    Returns:
+        An integral value interpreted from this, as if it were a
+        big-endian, unsigned integral
+    """
+    val = 0
+    for char in bytearray(sanitize_packet(string)):
+        val = val << 8
+        val += char
+    return val
+
+
+base_58 = b'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
+
+
+def to_base_58(i):
+    #type: (int) -> bytes
+    """Takes an integer and returns its corresponding base_58 string
+
+    Args:
+        i: The integral value you wish to encode
+
+    Returns:
+        A :py:class:`bytes` object which contains the base_58 string
+
+    Raises:
+        TypeError: If you feed a non-integral value
+    """
+    string = b""
+    while i:
+        idx = i % 58
+        string = base_58[idx:idx + 1] + string
+        i //= 58
+    if not string:
+        string = base_58[0:1]
+    return string
+
+
+def from_base_58(string):
+    #type: (Union[bytes, bytearray, str]) -> int
+    """Takes a base_58 string and returns its corresponding integer
+
+    Args:
+        string: The base_58 value you wish to decode (string, bytes,
+                    or bytearray)
+
+    Returns:
+        Returns integral value which corresponds to the fed string
+    """
+    decimal = 0
+    for char in sanitize_packet(string):
+        decimal = decimal * 58 + base_58.index(cast(bytes, char))
+    return decimal
+
+
 def getUTC():
     #type: () -> int
     """Returns the current unix time in UTC

@@ -43,7 +43,7 @@ from .sync import SyncSocket
 from .chord import ChordSocket
 # from .kademlia import kademlia_socket
 
-dht_socket = ChordSocket
+DHTSocket = ChordSocket
 
 __version__ = version  #type: str
 version_info = tuple(map(int, __version__.split(".")))  #type: Tuple[int, ...]
@@ -53,7 +53,7 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     #type: (Callable, Protocol, str, int, *Any, **Any) -> None
     raise NotImplementedError("See http://git.p2p.today/issues/130")
     # global seed
-    # seed = dht_socket(addr, port, out_addr = kargs.get('out_addr'))
+    # seed = DHTSocket(addr, port, out_addr = kargs.get('out_addr'))
     # seed.connect(standard_starting_conn)
     # time.sleep(1)
     # conn_list = json.loads(seed.get(proto.id))
