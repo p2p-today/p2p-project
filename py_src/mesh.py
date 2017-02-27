@@ -61,8 +61,8 @@ class MeshConnection(BaseConnection):
             return msg
         except (IndexError, StructException):
             self.__print__(
-                "Failed to decode message. Expected first compression of: %s."
-                % intersect(compression, self.compression),
+                "Failed to decode message. Expected first compression "
+                "of: {}.".format(intersect(compression, self.compression)),
                 level=1)
             self.send(flags.renegotiate, flags.compression, [])
             self.send(flags.renegotiate, flags.resend)
@@ -374,7 +374,7 @@ class MeshSocket(BaseSocket):
             for addr, id in new_peers:
                 if len(tuple(self.outgoing)) < max_outgoing:
                     try:
-                        self.connect(addr[0], addr[1], id.encode())
+                        self.connect(addr[0], addr[1], id)
                     except:  # pragma: no cover
                         self.__print__(
                             "Could not connect to %s because\n%s" %

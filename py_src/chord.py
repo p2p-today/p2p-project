@@ -6,7 +6,7 @@ import sys
 
 from hashlib import (sha1, sha224, sha256, sha384, sha512)
 from itertools import chain
-from logging import (DEBUG, INFO)
+from logging import DEBUG
 from random import choice
 from socket import timeout as TimeoutException
 from time import sleep

@@ -300,6 +300,13 @@ class InternalMessage(object):
         """
         return self.__payload
 
+    @payload.setter
+    def payload(self, value):
+        #type: (InternalMessage, Sequence[MsgPackable]) -> Tuple[MsgPackable, ...]
+        """Sets the payload to a new tuple"""
+        self.__clear_cache()
+        self.__payload = tuple(value)
+
     @property
     def compression_used(self):
         #type: (InternalMessage) -> Union[None, int]
