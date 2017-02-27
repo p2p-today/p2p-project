@@ -21,6 +21,12 @@ catch (e) {
     console.warn('js2p.mesh module not loaded');
 }
 try {
+    m.ford = require('./ford.js');
+}
+catch (e) {
+    console.warn('js2p.ford module not loaded (Did js2p.mesh not load?)');
+}
+try {
     m.sync = require('./sync.js');
 }
 catch (e) {

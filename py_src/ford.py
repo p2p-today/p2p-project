@@ -25,7 +25,7 @@ from .messages import MsgPackable
 from .utils import (inherit_doc, log_entry)
 
 max_outgoing = 4
-default_protocol = Protocol('chord', "Plaintext")  # SSL")
+default_protocol = Protocol('ford', "Plaintext")  # SSL")
 
 
 class FordConnection(MeshConnection):
@@ -49,7 +49,7 @@ class FordDaemon(MeshDaemon):
 
 
 class FordSocket(MeshSocket):
-    __slots__ = ()
+    __slots__ = ('routes',)
 
     @log_entry('py2p.ford.FordSocket.__init__', DEBUG)
     @inherit_doc(MeshSocket.__init__)
