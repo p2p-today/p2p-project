@@ -16,26 +16,25 @@ try:
 
     def test_flags():
         #type: () -> None
-        bf = flags
         cf = cbase.flags
-        assert bf.reserved == cf.reserved
+        assert flags.reserved == cf.reserved
 
         # main flags
-        bf_main = (bf.broadcast, bf.whisper, bf.renegotiate, bf.ping, bf.pong)
+        flags_main = (flags.broadcast, flags.whisper, flags.renegotiate, flags.ping, flags.pong)
         cf_main = (cf.broadcast, cf.whisper, cf.renegotiate, cf.ping, cf.pong)
-        assert bf_main == cf_main
+        assert flags_main == cf_main
 
         # sub-flags
-        bf_sub = (bf.broadcast, bf.compression, bf.whisper, bf.handshake,
-                  bf.ping, bf.pong, bf.notify, bf.peers, bf.request, bf.resend,
-                  bf.response, bf.store, bf.retrieve)
+        flags_sub = (flags.broadcast, flags.compression, flags.whisper, flags.handshake,
+                  flags.ping, flags.pong, flags.notify, flags.peers, flags.request, flags.resend,
+                  flags.response, flags.store, flags.retrieve)
         cf_sub = (cf.broadcast, cf.compression, cf.whisper, cf.handshake,
                   cf.ping, cf.pong, cf.notify, cf.peers, cf.request, cf.resend,
                   cf.response, cf.store, cf.retrieve)
-        assert bf_sub == cf_sub
+        assert flags_sub == cf_sub
 
         # common compression methods
-        assert (bf.zlib, bf.gzip, bf.snappy) == (cf.zlib, cf.gzip, cf.snappy)
+        assert (flags.zlib, flags.gzip, flags.snappy) == (cf.zlib, cf.gzip, cf.snappy)
 
     def test_Protocol(benchmark):
         #type: (Any) -> None
