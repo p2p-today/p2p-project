@@ -62,10 +62,8 @@ def test_intersect(benchmark, iters=200):
 
     def setup():
         #type: () -> Tuple[Tuple, Dict]
-        pair1 = sorted(
-            (randint(0, max_val), randint(0, max_val)))
-        pair2 = sorted(
-            (randint(0, max_val), randint(0, max_val)))
+        pair1 = sorted((randint(0, max_val), randint(0, max_val)))
+        pair2 = sorted((randint(0, max_val), randint(0, max_val)))
         cross1 = (pair1[0], pair2[0])
         cross2 = (pair1[1], pair2[1])
         return (pair1, pair2, cross1, cross2), {}
@@ -76,8 +74,7 @@ def test_intersect(benchmark, iters=200):
 def test_getUTC(iters=20):
     #type: (int) -> None
     while iters:
-        nowa, nowb = (datetime.utcnow() - datetime(
-            1970, 1, 1)), utils.getUTC()
+        nowa, nowb = (datetime.utcnow() - datetime(1970, 1, 1)), utils.getUTC()
         # 1 second error margin
         assert nowa.days * 86400 + nowa.seconds in xrange(nowb - 1, nowb + 2)
         sleep(random())
@@ -100,8 +97,7 @@ def lan_ip_validation_linux():
     # command pulled from http://stackoverflow.com/a/13322549
     command = ("ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | "
                "grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'")
-    output = check_output(
-        command, universal_newlines=True, shell=True)
+    output = check_output(command, universal_newlines=True, shell=True)
     assert utils.get_lan_ip() in output
 
 

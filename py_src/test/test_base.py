@@ -43,10 +43,8 @@ def test_Protocol(benchmark, iters=200, impl=base):
         #type: () -> Tuple[Tuple, Dict]
         sub = str(uuid4())
         enc = str(uuid4())
-        p_hash = sha256(
-            ''.join((sub, enc, base.protocol_version)).encode())
-        return (sub, enc,
-                to_base_58(int(p_hash.hexdigest(), 16)).decode()), {}
+        p_hash = sha256(''.join((sub, enc, base.protocol_version)).encode())
+        return (sub, enc, to_base_58(int(p_hash.hexdigest(), 16)).decode()), {}
 
     benchmark.pedantic(test, setup=setup, rounds=iters)
 
@@ -67,8 +65,8 @@ def test_Message_sans_network(benchmark, iters=1000):
         assert item.msg == base_msg
         assert item.sender == sen
         assert item.id == base_msg.id
-        assert (item.time == base_msg.time == from_base_58(item.time_58)
-                == from_base_58(base_msg.time_58))
+        assert (item.time == base_msg.time == from_base_58(item.time_58) ==
+                from_base_58(base_msg.time_58))
         assert sen in repr(item)
 
     benchmark.pedantic(test, setup=setup, rounds=iters)

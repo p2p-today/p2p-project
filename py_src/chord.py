@@ -13,8 +13,7 @@ from time import sleep
 from traceback import format_exc
 
 from async_promises import Promise
-from typing import (cast, Any, Callable, Dict, Iterator, Set, Tuple,
-                    Union)
+from typing import (cast, Any, Callable, Dict, Iterator, Set, Tuple, Union)
 
 try:
     from .cbase import protocol as Protocol
@@ -164,7 +163,7 @@ class ChordSocket(MeshSocket):
         if not hasattr(self, 'daemon'):
             self.daemon = 'chord reserved'
         super(ChordSocket, self).__init__(addr, port, prot, out_addr,
-                                           debug_level)
+                                          debug_level)
         if self.daemon == 'chord reserved':
             self.daemon = ChordDaemon(addr, port, self)
         self.id_10 = from_base_58(self.id)  #type: int

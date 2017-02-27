@@ -9,11 +9,8 @@ import inspect
 from hashlib import (sha256, sha384)
 from itertools import chain
 from logging import (getLogger, DEBUG)
-from socket import (
-    SHUT_RDWR,
-    error as SocketException,
-    timeout as TimeoutException
-)
+from socket import (SHUT_RDWR, error as SocketException, timeout as
+                    TimeoutException)
 from sys import version_info
 from threading import (Lock, Thread, current_thread)
 from traceback import format_exc
@@ -25,8 +22,8 @@ from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple,
 
 from . import flags
 from .messages import (compression, InternalMessage, MsgPackable)
-from .utils import (getUTC, intersect, get_lan_ip, get_socket,
-                    inherit_doc, log_entry, unpack_value, to_base_58)
+from .utils import (getUTC, intersect, get_lan_ip, get_socket, inherit_doc,
+                    log_entry, unpack_value, to_base_58)
 
 protocol_version = "0.6"
 node_policy_version = "757"
@@ -619,8 +616,8 @@ class Message(object):
                 getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
-            to_send = (flags.whisper, flags.whisper
-                       )  #type: Tuple[MsgPackable, ...]
+            to_send = (flags.whisper,
+                       flags.whisper)  #type: Tuple[MsgPackable, ...]
             self.server.requests[request_id] = to_send + args
             self.server._logger.critical(
                 "You aren't connected to the original sender. This reply is "

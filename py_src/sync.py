@@ -85,7 +85,7 @@ class SyncSocket(MeshSocket):
         protocol_used = Protocol(prot[0] + str(int(leasing)), prot[1])
         self.__leasing = leasing  #type: bool
         super(SyncSocket, self).__init__(addr, port, protocol_used, out_addr,
-                                          debug_level)
+                                         debug_level)
         self.data = cast(Dict[bytes, MsgPackable],
                          {})  #type: Dict[bytes, MsgPackable]
         self.metadata = {}  #type: Dict[bytes, metatuple]

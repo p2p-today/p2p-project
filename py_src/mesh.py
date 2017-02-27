@@ -9,11 +9,7 @@ from itertools import chain
 from logging import DEBUG
 from random import shuffle
 from select import select
-from socket import (
-    getaddrinfo,
-    SHUT_RDWR,
-    error as SocketException
-)
+from socket import (getaddrinfo, SHUT_RDWR, error as SocketException)
 from struct import error as StructException
 from traceback import format_exc
 
@@ -122,8 +118,7 @@ class MeshDaemon(BaseDaemon):
         while self.main_thread.is_alive() and self.alive:
             conns = chain(self.server.routing_table.values(),
                           self.server.awaiting_ids, (self.sock, ))
-            for handler in select(
-                    cast(Sequence, conns), [], [], 0.01)[0]:
+            for handler in select(cast(Sequence, conns), [], [], 0.01)[0]:
                 if handler == self.sock:
                     self.handle_accept()
                 else:
@@ -226,7 +221,7 @@ class MeshSocket(BaseSocket):
         if not hasattr(self, 'daemon'):
             self.daemon = 'mesh reserved'
         super(MeshSocket, self).__init__(addr, port, prot, out_addr,
-                                          debug_level)
+                                         debug_level)
         # Metadata about msg replies where you aren't connected to the sender
         self.requests = {
         }  #type: Dict[Union[bytes, Tuple[bytes, bytes]], Union[Tuple[MsgPackable, ...], awaiting_value]]
@@ -547,8 +542,7 @@ class MeshSocket(BaseSocket):
             "Attempting connection to %s:%s with id %s" %
             (addr, port, repr(id)),
             level=1)
-        if (getaddrinfo(
-                addr, port)[0] == getaddrinfo(*self.out_addr)[0] or
+        if (getaddrinfo(addr, port)[0] == getaddrinfo(*self.out_addr)[0] or
                 id in self.routing_table):
             self.__print__("Connection already established", level=1)
             return False

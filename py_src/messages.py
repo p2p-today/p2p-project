@@ -8,7 +8,6 @@ from . import flags
 from .utils import (pack_value, unpack_value, to_base_58, from_base_58,
                     intersect, getUTC, sanitize_packet)
 
-
 _MsgPackable__ = Union[None, int, float, str, bytes]
 _MsgPackable_ = Union[_MsgPackable__, List[_MsgPackable__], Tuple[
     _MsgPackable__, ...], Dict[str, _MsgPackable__]]
