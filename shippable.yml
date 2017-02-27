@@ -16,8 +16,8 @@ matrix:
     #   env: pyver=3.5
     - python: 3.6
       env: pyver=3.6
-    - python: pypy
-      env: pyver=pypy
+    # - python: pypy
+    #   env: pyver=pypy
     # - python: pypy3
     #   env: pyver=pypy3
     - language: node_js
