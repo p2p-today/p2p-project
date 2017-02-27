@@ -3,12 +3,12 @@ from __future__ import with_statement
 from datetime import datetime, timedelta
 from os import remove
 from socket import socket
-from ssl import wrap_socket, SSLSocket
+from ssl import (wrap_socket, SSLSocket)
 from sys import version_info
 from tempfile import NamedTemporaryFile
 from uuid import uuid4
 
-from typing import Any, Tuple
+from typing import (Any, Tuple)
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -22,14 +22,13 @@ if version_info < (3, ):
     from atexit import register
     cleanup_files = []  #type: List[str]
 
+    @register
     def cleanup():
         #type: () -> None
         #pragma: no cover
         """Cleans SSL certificate and key files"""
         for f in cleanup_files:
             remove(f)
-
-    register(cleanup)
 
 
 def generate_self_signed_cert(cert_file, key_file):

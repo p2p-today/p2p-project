@@ -2,18 +2,18 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-import socket
 import sys
 
 from hashlib import (sha1, sha224, sha256, sha384, sha512)
 from itertools import chain
 from logging import (DEBUG, INFO)
 from random import choice
+from socket import timeout as TimeoutException
 from time import sleep
 from traceback import format_exc
 
 from async_promises import Promise
-from typing import (cast, Any, Callable, Dict, Iterable, Iterator, Set, Tuple,
+from typing import (cast, Any, Callable, Dict, Iterator, Set, Tuple,
                     Union)
 
 try:
@@ -22,12 +22,11 @@ except:
     from .base import Protocol
 
 from . import flags
-from .base import (to_base_58, from_base_58,
-                   BaseConnection, Message, BaseDaemon, BaseSocket)
+from .base import (BaseConnection, Message)
 from .mesh import (MeshConnection, MeshDaemon, MeshSocket)
-from .messages import (compression, InternalMessage, MsgPackable)
-from .utils import (inherit_doc, getUTC, get_socket, intersect, awaiting_value,
-                    most_common, log_entry, sanitize_packet)
+from .messages import MsgPackable
+from .utils import (inherit_doc, awaiting_value, most_common, log_entry,
+                    to_base_58, from_base_58, sanitize_packet)
 
 max_outgoing = 4
 default_protocol = Protocol('chord', "Plaintext")  # SSL")
@@ -212,7 +211,7 @@ class ChordSocket(MeshSocket):
             return o.id_10
 
         def smallest_gap(lst):
-            #type: (Iterable[ChordConnection]) -> ChordConnection
+            #type: (Iterator[ChordConnection]) -> ChordConnection
             coll = sorted(lst, key=get_id)
             coll_len = len(coll)
             circular_triplets = (
@@ -494,7 +493,7 @@ class ChordSocket(MeshSocket):
         if common not in fails and count > len(hashes) // 2:
             return common
         elif iters == limit:
-            raise socket.timeout()
+            raise TimeoutException()
         raise KeyError(
             "This key does not have an agreed-upon value. "
             "values={}, count={}, majority={}, most common ={}".format(
@@ -546,7 +545,7 @@ class ChordSocket(MeshSocket):
             self._logger.debug(
                 'Getting value of {}, with fallback'.format(key, ifError))
             return self.__getitem(key, timeout=timeout)
-        except (KeyError, socket.timeout):
+        except (KeyError, TimeoutException):
             return ifError
 
     def get(self, key, ifError=None, timeout=10):

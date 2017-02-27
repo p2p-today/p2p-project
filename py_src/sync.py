@@ -3,8 +3,8 @@ from __future__ import absolute_import
 
 from . import flags
 from .base import (Message, BaseConnection)
-from .mesh import (MeshSocket, MeshConnection)
-from .messages import (compression, InternalMessage, MsgPackable)
+from .mesh import MeshSocket
+from .messages import MsgPackable
 from .utils import (to_base_58, from_base_58, inherit_doc, getUTC,
                     sanitize_packet, log_entry)
 
@@ -13,7 +13,7 @@ try:
 except:
     from .base import Protocol
 
-from logging import (DEBUG, INFO)
+from logging import DEBUG
 
 from typing import (cast, Any, Dict, Iterator, NamedTuple, Tuple, Union)
 

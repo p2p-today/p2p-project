@@ -3,7 +3,7 @@ from __future__ import with_statement
 from __future__ import unicode_literals
 
 from calendar import timegm
-from logging import (getLogger, INFO, DEBUG)
+from logging import getLogger
 from socket import (socket, AF_INET, SOCK_DGRAM, SHUT_RDWR)
 from time import gmtime
 

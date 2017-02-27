@@ -2,16 +2,17 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 try:
-    import sys
-
     from functools import partial
+    from sys import version_info
+
     from typing import Any
 
-    from .. import base, cbase, flags
+    from .. import (cbase, flags)
 
-    from . import test_base, test_messages
+    from .test_base import test_Protocol as _test_Protocol
+    from .test_messages import test_InternalMessage as _test_InternalMessage
 
-    if sys.version_info >= (3, ):
+    if version_info >= (3, ):
         xrange = range
 
     def test_flags():
@@ -38,11 +39,11 @@ try:
 
     def test_Protocol(benchmark):
         #type: (Any) -> None
-        test_base.test_Protocol(benchmark, impl=cbase)
+        _test_Protocol(benchmark, impl=cbase)
 
     def test_InternalMessage(benchmark):
         #type: (Any) -> None
-        test_messages.test_InternalMessage(benchmark, impl=cbase)
+        _test_InternalMessage(benchmark, impl=cbase)
 
 except ImportError:
     pass

@@ -1,20 +1,23 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-import inspect
-import socket
 import sys
 
 from collections import deque
 from platform import system
 from itertools import chain
-from logging import (INFO, DEBUG)
+from logging import DEBUG
 from random import shuffle
 from select import select
+from socket import (
+    getaddrinfo,
+    SHUT_RDWR,
+    error as SocketException
+)
 from struct import error as StructException
 from traceback import format_exc
 
-from typing import (cast, Any, MutableSequence, Sequence, Tuple, Union)
+from typing import (cast, Any, Sequence, Tuple, Union)
 # from _collections import deque as DequeType
 
 try:
@@ -26,7 +29,7 @@ from . import flags
 from .base import (BaseConnection, BaseDaemon, BaseSocket, Message)
 from .messages import (compression, InternalMessage, MsgPackable)
 from .utils import (getUTC, get_socket, intersect, inherit_doc, log_entry,
-                    awaiting_value, to_base_58, from_base_58)
+                    awaiting_value, from_base_58)
 
 max_outgoing = 4
 default_protocol = Protocol('mesh', "Plaintext")  # SSL")
@@ -113,51 +116,30 @@ class MeshDaemon(BaseDaemon):
         super(MeshDaemon, self).__init__(*args, **kwargs)
         self.conn_type = MeshConnection
 
-    if system() != 'Java':
-
-        def mainloop(self):
-            #type: (MeshDaemon) -> None
-            """Daemon thread which handles all incoming data and connections"""
-            while self.main_thread.is_alive() and self.alive:
-                conns = chain(self.server.routing_table.values(),
-                              self.server.awaiting_ids, (self.sock, ))
-                for handler in select(
-                        cast(Sequence, conns), [], [], 0.01)[0]:
-                    if handler == self.sock:
-                        self.handle_accept()
-                    else:
-                        self.process_data(handler)
-                for handler in chain(
-                        tuple(self.server.routing_table.values()),
-                        self.server.awaiting_ids):
-                    self.kill_old_nodes(handler)
-
-    else:
-
-        def mainloop(self):
-            #type: (MeshDaemon) -> None
-            """Daemon thread which handles all incoming data and connections"""
-            while self.main_thread.is_alive() and self.alive:
-                conns = tuple(
-                    chain(self.server.routing_table.values(),
-                          self.server.awaiting_ids, (self.sock, )))
-                for handler in select(conns, [], [], 0.01)[0]:
-                    if handler == self.sock:
-                        self.handle_accept()
-                    else:
-                        self.process_data(handler)
-                for handler in chain(
-                        tuple(self.server.routing_table.values()),
-                        self.server.awaiting_ids):
-                    self.kill_old_nodes(handler)
+    def mainloop(self):
+        #type: (MeshDaemon) -> None
+        """Daemon thread which handles all incoming data and connections"""
+        while self.main_thread.is_alive() and self.alive:
+            conns = chain(self.server.routing_table.values(),
+                          self.server.awaiting_ids, (self.sock, ))
+            for handler in select(
+                    cast(Sequence, conns), [], [], 0.01)[0]:
+                if handler == self.sock:
+                    self.handle_accept()
+                else:
+                    self.process_data(handler)
+            for handler in chain(
+                    tuple(self.server.routing_table.values()),
+                    self.server.awaiting_ids):
+                self.kill_old_nodes(handler)
 
     def handle_accept(self):
         #type: (MeshDaemon) -> Union[None, MeshConnection]
         """Handle an incoming connection"""
         if sys.version_info >= (3, 3):
-            exceptions = (socket.error, ConnectionError)
+            exceptions = (SocketException, ConnectionError)
         else:
-            exceptions = (socket.error, )
+            exceptions = (SocketException, )
         try:
             conn, addr = self.sock.accept()
             self.__print__('Incoming connection from %s' % repr(addr), level=1)
@@ -238,7 +220,7 @@ class MeshSocket(BaseSocket):
                                 printing event data
 
         Raises:
-            socket.error:   The address you wanted could not be bound, or is
+            SocketException:   The address you wanted could not be bound, or is
                                 otherwise used
         """
         if not hasattr(self, 'daemon'):
@@ -565,8 +547,8 @@ class MeshSocket(BaseSocket):
             "Attempting connection to %s:%s with id %s" %
             (addr, port, repr(id)),
             level=1)
-        if (socket.getaddrinfo(
-                addr, port)[0] == socket.getaddrinfo(*self.out_addr)[0] or
+        if (getaddrinfo(
+                addr, port)[0] == getaddrinfo(*self.out_addr)[0] or
                 id in self.routing_table):
             self.__print__("Connection already established", level=1)
             return False
@@ -597,7 +579,7 @@ class MeshSocket(BaseSocket):
         elif self.routing_table.get(handler.id) is handler:
             self.routing_table.pop(handler.id)
         try:
-            handler.sock.shutdown(socket.SHUT_RDWR)
+            handler.sock.shutdown(SHUT_RDWR)
         except:
             pass
 

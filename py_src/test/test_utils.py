@@ -1,20 +1,19 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-import datetime
-import os
-import random
-import subprocess
-import sys
-import time
-
+from datetime import datetime
 from functools import partial
+from os import remove
+from random import (random, randint)
+from subprocess import check_output
+from sys import (platform, version_info)
+from time import sleep
 
 from typing import (Any, Callable, Tuple, Union)
 
 from .. import utils
 
-if sys.version_info >= (3, ):
+if version_info >= (3, ):
     xrange = range
 
 
@@ -34,7 +33,7 @@ def test_base_58(benchmark, iters=1000):
     def data_gen():
         #type: () -> Tuple[Tuple, Dict]
         return (utils.to_base_58, utils.from_base_58,
-                random.randint(0, 2**32 - 1)), {}
+                randint(0, 2**32 - 1)), {}
 
     benchmark.pedantic(identity, setup=data_gen, rounds=iters)
 
@@ -44,7 +43,7 @@ def test_pack_value(benchmark, iters=1000):
     def data_gen():
         #type: () -> Tuple[Tuple, Dict]
         return (partial(utils.pack_value, 128 // 8), utils.unpack_value,
-                random.randint(0, 2**128 - 1)), {}
+                randint(0, 2**128 - 1)), {}
 
     benchmark.pedantic(identity, setup=data_gen, rounds=iters)
 
@@ -64,9 +63,9 @@ def test_intersect(benchmark, iters=200):
     def setup():
         #type: () -> Tuple[Tuple, Dict]
         pair1 = sorted(
-            (random.randint(0, max_val), random.randint(0, max_val)))
+            (randint(0, max_val), randint(0, max_val)))
         pair2 = sorted(
-            (random.randint(0, max_val), random.randint(0, max_val)))
+            (randint(0, max_val), randint(0, max_val)))
         cross1 = (pair1[0], pair2[0])
         cross2 = (pair1[1], pair2[1])
         return (pair1, pair2, cross1, cross2), {}
@@ -77,19 +76,19 @@ def test_intersect(benchmark, iters=200):
 def test_getUTC(iters=20):
     #type: (int) -> None
     while iters:
-        nowa, nowb = (datetime.datetime.utcnow() - datetime.datetime(
+        nowa, nowb = (datetime.utcnow() - datetime(
             1970, 1, 1)), utils.getUTC()
         # 1 second error margin
         assert nowa.days * 86400 + nowa.seconds in xrange(nowb - 1, nowb + 2)
-        time.sleep(random.random())
+        sleep(random())
         iters -= 1
 
 
 def test_lan_ip():
     #type: () -> None
-    if sys.platform[:5] in ('linux', 'darwi'):
+    if platform[:5] in ('linux', 'darwi'):
         lan_ip_validation_linux()
-    elif sys.platform[:3] in ('win', 'cyg'):
+    elif platform[:3] in ('win', 'cyg'):
         lan_ip_validation_windows()
     else:  # pragma: no cover
         raise Exception(
@@ -101,7 +100,7 @@ def lan_ip_validation_linux():
     # command pulled from http://stackoverflow.com/a/13322549
     command = ("ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | "
                "grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'")
-    output = subprocess.check_output(
+    output = check_output(
         command, universal_newlines=True, shell=True)
     assert utils.get_lan_ip() in output
 
@@ -113,6 +112,6 @@ def lan_ip_validation_windows():
     test_file = open('test.bat', 'w')
     test_file.write(command)
     test_file.close()
-    output = subprocess.check_output(['test.bat'])
+    output = check_output(['test.bat'])
     assert utils.get_lan_ip().encode() in output
-    os.remove('test.bat')
+    remove('test.bat')

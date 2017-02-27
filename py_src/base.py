@@ -5,11 +5,15 @@ from __future__ import print_function
 from __future__ import with_statement
 
 import inspect
-import socket
 
 from hashlib import (sha256, sha384)
 from itertools import chain
-from logging import (getLogger, INFO, DEBUG)
+from logging import (getLogger, DEBUG)
+from socket import (
+    SHUT_RDWR,
+    error as SocketException,
+    timeout as TimeoutException
+)
 from sys import version_info
 from threading import (Lock, Thread, current_thread)
 from traceback import format_exc
@@ -21,9 +25,8 @@ from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple,
 
 from . import flags
 from .messages import (compression, InternalMessage, MsgPackable)
-from .utils import (getUTC, intersect, get_lan_ip, get_socket, sanitize_packet,
-                    inherit_doc, log_entry, pack_value, unpack_value,
-                    to_base_58, from_base_58)
+from .utils import (getUTC, intersect, get_lan_ip, get_socket,
+                    inherit_doc, log_entry, unpack_value, to_base_58)
 
 protocol_version = "0.6"
 node_policy_version = "757"
@@ -107,7 +110,7 @@ class BaseConnection(object):
         try:
             self.sock.send(msg.string)
             return msg
-        except (IOError, socket.error) as e:  # pragma: no cover
+        except (IOError, SocketException) as e:  # pragma: no cover
             self.server.daemon.exceptions.append(format_exc())
             self.server.disconnect(self)
 
@@ -157,7 +160,7 @@ class BaseConnection(object):
         """
         if not bool(data):
             try:
-                self.sock.shutdown(socket.SHUT_RDWR)
+                self.sock.shutdown(SHUT_RDWR)
             except:
                 pass
             return False
@@ -304,10 +307,10 @@ class BaseDaemon(object):
                     return
             while handler.find_terminator():
                 handler.found_terminator()
-        except socket.timeout:  # pragma: no cover
+        except TimeoutException:  # pragma: no cover
             return  # Shouldn't happen with select, but if it does...
         except Exception as e:
-            if (isinstance(e, socket.error) and
+            if (isinstance(e, SocketException) and
                     e.args[0] in (9, 104, 10053, 10054, 10058)):
                 node_id = repr(handler.id or handler)
                 self.__print__(
@@ -329,7 +332,7 @@ class BaseDaemon(object):
         #type: (BaseDaemon) -> None
         self.alive = False
         try:
-            self.sock.shutdown(socket.SHUT_RDWR)
+            self.sock.shutdown(SHUT_RDWR)
         except:  # pragma: no cover
             pass
 
@@ -412,7 +415,7 @@ class BaseSocket(EventEmitter, object):
             self.daemon.daemon.join()
             self.debug_level = 0
             try:
-                self.daemon.sock.shutdown(socket.SHUT_RDWR)
+                self.daemon.sock.shutdown(SHUT_RDWR)
             except:
                 pass
             for conn in chain(
