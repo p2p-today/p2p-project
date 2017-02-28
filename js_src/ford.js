@@ -163,7 +163,6 @@ m.FordSocket = class FordSocket extends mesh.MeshSocket  {
             let path = this.routes[dest];
             to_send[dest] = [this.id, ...path];
         }
-        console.log(`sending paths: ${util.inspect(to_send)}`);
         handler.send(flags.whisper, [flags.new_paths, to_send]);
     }
 
