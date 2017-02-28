@@ -2,19 +2,19 @@ from hashlib import sha256
 from logging import getLogger
 
 from umsgpack import (packb, unpackb, UnsupportedTypeException)
-from typing import (Any, Dict, Iterable, List, Tuple, Union)
+from typing import (Any, Dict, Iterable, List, Sequence, Tuple, Union)
 
 from . import flags
 from .utils import (pack_value, unpack_value, to_base_58, from_base_58,
                     intersect, getUTC, sanitize_packet)
 
-_MsgPackable__ = Union[None, int, float, str, bytes]
+_MsgPackable__ = Union[None, float, str, bytes]
 _MsgPackable_ = Union[_MsgPackable__, List[_MsgPackable__], Tuple[
-    _MsgPackable__, ...], Dict[str, _MsgPackable__]]
+    _MsgPackable__, ...], Dict[Union[str, bytes], _MsgPackable__]]
 _MsgPackable = Union[_MsgPackable_, List[_MsgPackable_], Tuple[
-    _MsgPackable_, ...], Dict[str, _MsgPackable_]]
+    _MsgPackable_, ...], Dict[Union[str, bytes], _MsgPackable_]]
 MsgPackable = Union[_MsgPackable, List[_MsgPackable], Tuple[_MsgPackable, ...],
-                    Dict[str, _MsgPackable]]
+                    Dict[Union[str, bytes], _MsgPackable]]
 
 
 def compress(msg, method):

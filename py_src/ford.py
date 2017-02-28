@@ -11,7 +11,7 @@ from time import sleep
 from traceback import format_exc
 
 from async_promises import Promise
-from typing import (cast, Dict, List)
+from typing import (cast, Any, Dict, List, Union)
 
 try:
     from .cbase import protocol as Protocol
@@ -49,7 +49,7 @@ class FordDaemon(MeshDaemon):
 
 
 class FordSocket(MeshSocket):
-    __slots__ = ('routes',)
+    __slots__ = ('routes', )
 
     @log_entry('py2p.ford.FordSocket.__init__', DEBUG)
     @inherit_doc(MeshSocket.__init__)
@@ -65,7 +65,7 @@ class FordSocket(MeshSocket):
         if not hasattr(self, 'daemon'):
             self.daemon = 'ford reserved'
         super(FordSocket, self).__init__(addr, port, prot, out_addr,
-                                          debug_level)
+                                         debug_level)
         if self.daemon == 'ford reserved':
             self.daemon = FordDaemon(addr, port, self)
         self.routes = {self.id: []}  #type: Dict[bytes, List[bytes]]
@@ -75,14 +75,14 @@ class FordSocket(MeshSocket):
 
     @inherit_doc(MeshSocket.disconnect)
     def disconnect(self, handler):
-        #type: (FordSocket, FordConnection) -> None
+        #type: (MeshSocket, MeshConnection) -> None
         _id = handler.id
         super(FordSocket, self).disconnect(handler)
         if _id in self.routes:
-            path = self.routes[_id]
+            to_send = cast(MsgPackable, {_id: self.routes[_id]})
             del self.routes[_id]
             for conn in tuple(self.routing_table.values()):
-                conn.send(flags.whisper, flags.revoke_paths, {_id: path})
+                conn.send(flags.whisper, flags.revoke_paths, to_send)
 
     def __handle_new_path(self, msg, handler):
         #type: (FordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -102,12 +102,13 @@ class FordSocket(MeshSocket):
         if packets[0] == flags.new_paths:
             respond = False
             for dest, route in packets[1].items():
-                if dest not in self.routes or len(route) < len(self.routes[dest]):
+                if dest not in self.routes or len(route) < len(
+                        self.routes[dest]):
                     self.routes[dest] = route
                     respond = True
             if respond:
                 for handler in self.routing_table.values():
-                    self.send_paths(handler)
+                    self.send_paths(cast(FordConnection, handler))
             return True
 
     def __handle_del_path(self, msg, handler):
@@ -137,9 +138,11 @@ class FordSocket(MeshSocket):
             return True
 
     def send_paths(self, handler):
-        handler.send(flags.whisper, flags.new_paths, dict(
-            (dest, [self.id] + path) for dest, path in self.routes.items()
-        ))
+        #type: (FordSocket, BaseConnection) -> None
+        to_send = cast(MsgPackable,
+                       dict((dest, [self.id] + path)
+                            for dest, path in self.routes.items()))
+        handler.send(flags.whisper, flags.new_paths, to_send)
 
     def __handle_forward(self, msg, handler):
         #type: (FordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -167,7 +170,7 @@ class FordSocket(MeshSocket):
             return True
 
     def sendTo(self, dest, *args, **kargs):
-        #type: (MeshSocket, *MsgPackable, **MsgPackable) -> None
+        #type: (MeshSocket, bytes, *MsgPackable, **MsgPackable) -> None
         """This sends a message to all of your peers. If you use default
         values it will send it to everyone on the network
 
