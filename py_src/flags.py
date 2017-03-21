@@ -27,6 +27,7 @@ retrieved = 0x0D
 forward = 0x0E
 new_paths = 0x0F
 revoke_paths = 0x10
+delta = 0x11
 
 # implemented compression methods
 bz2 = 0x10

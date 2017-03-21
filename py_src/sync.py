@@ -90,12 +90,13 @@ class SyncSocket(MeshSocket):
                          {})  #type: Dict[bytes, MsgPackable]
         self.metadata = {}  #type: Dict[bytes, metatuple]
         self.register_handler(self.__handle_store)
+        self.register_handler(self.__handle_delta)
 
-    def __check_lease(self, key, new_data, new_meta):
-        #type: (SyncSocket, bytes, MsgPackable, metatuple) -> bool
+    def __check_lease(self, key, new_data, new_meta, delta=False):
+        #type: (SyncSocket, bytes, MsgPackable, metatuple, bool) -> bool
         meta = self.metadata.get(key, None)
         return ((meta is None) or (meta.owner == new_meta.owner) or
-                (meta.timestamp < getUTC() - 3600) or
+                (delta and not self.__leasing) or (meta.timestamp < getUTC() - 3600) or
                 (meta.timestamp == new_meta.timestamp and
                  meta.owner > new_meta.owner) or
                 (meta.timestamp < new_meta.timestamp and not self.__leasing))
@@ -129,7 +130,7 @@ class SyncSocket(MeshSocket):
             else:
                 self.metadata[key] = new_meta
                 self.data[key] = new_data
-                self.emit('delete', self, key, new_data, new_meta)
+                self.emit('update', self, key, new_data, new_meta)
         elif error:
             raise KeyError("You don't have permission to change this yet")
 
@@ -256,6 +257,71 @@ class SyncSocket(MeshSocket):
         """
         key = sanitize_packet(key)
         return self.data.get(key, ifError)
+
+    def __delta(self, key, delta, new_meta, error=True):
+        #type: (SyncSockeet, bytes, MsgPackable, metatuple) -> None
+        """Updates a stored mapping with the given delta. This allows for more
+        graceful handling of conflicting changes
+
+        Args:
+            key:    The key you wish to apply a delta to. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            delta:  A mapping which contains the keys you wish to update, and
+                        the values you wish to store
+        """
+        if self.__check_lease(key, delta, new_meta, delta=True):
+            self.metadata[key] = new_meta
+            self.__print__(5, 'Applying a delta of {} to {}'.format(delta, key))
+            if key not in self.data:
+                this.data[key] = {}
+            self.data[key].update(delta)
+            self.emit('update', self, key, self.data[key], new_meta)
+            return
+        elif error:
+            raise KeyError("You don't have permission to change this yet")
+        self.__print__("Did not apply a delta of {} to {}".format(delta, key))
+
+    def apply_delta(self, key, delta):
+        #type: (SyncSockeet, bytes, MsgPackable) -> None
+        """Updates a stored mapping with the given delta. This allows for more
+        graceful handling of conflicting changes
+
+        Args:
+            key:    The key you wish to apply a delta to. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            delta:  A mapping which contains the keys you wish to update, and
+                        the values you wish to store
+
+        Raises:
+            TypeError: If the updated key does not store a mapping already
+        """
+        if not isinstance(self.get(key, None), dict):
+            raise TypeError("Cannot apply delta to a non-mapping")
+        else:
+            new_meta = metatuple(self.id, getUTC())
+            key = sanitize_packet(key)
+            self.__delta(key, delta, new_meta)
+            self.send(key, delta, type=flags.delta)
+
+    def __handle_delta(self, msg, handler):
+        #type: (SyncSocket, Message, BaseConnection) -> Union[bool, None]
+        """This callback is used to deal with delta storage signals. Its
+        primary job is:
+
+             - update the mapping in a given key
+
+             Args:
+                msg:        A :py:class:`~py2p.base.Message`
+                handler:    A :py:class:`~py2p.mesh.MeshConnection`
+
+             Returns:
+                Either ``True`` or ``None``
+        """
+        packets = msg.packets
+        if packets[0] == flags.delta:
+            meta = metatuple(msg.sender, msg.time)
+            self.__delta(packets[1], packets[2], meta, error=False)
+            return True
 
     def __len__(self):
         #type: (SyncSocket) -> int

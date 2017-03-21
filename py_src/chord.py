@@ -178,6 +178,7 @@ class ChordSocket(MeshSocket):
         self.register_handler(self.__handle_retrieve)
         self.register_handler(self.__handle_retrieved)
         self.register_handler(self.__handle_store)
+        self.register_handler(self.__handle_delta)
 
     @property
     def addr(self):
@@ -377,7 +378,7 @@ class ChordSocket(MeshSocket):
                 val = self.__lookup(packets[1],
                                     from_base_58(packets[2]),
                                     cast(ChordConnection, handler))
-                if val.value not in {None, b''}:
+                if val.value not in (None, b''):
                     self.__print__(val.value, level=1)
                     handler.send(flags.whisper, flags.retrieved, packets[1],
                                  packets[2], cast(MsgPackable, val.value))
@@ -402,6 +403,27 @@ class ChordSocket(MeshSocket):
             method = packets[1]
             key = from_base_58(packets[2])
             self.__store(method, key, packets[3])
+            return True
+
+    def __handle_delta(self, msg, handler):
+        #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
+        """This callback is used to deal with delta storage signals. Its
+        primary job is:
+
+             - update the mapping in a given key
+
+             Args:
+                msg:        A :py:class:`~py2p.base.Message`
+                handler:    A :py:class:`~py2p.chord.ChordConnection`
+
+             Returns:
+                Either ``True`` or ``None``
+        """
+        packets = msg.packets
+        if packets[0] == flags.delta:
+            method = packets[1]
+            key = from_base_58(packets[2])
+            self.__delta(method, key, packets[3])
             return True
 
     def dump_data(self, start, end):
@@ -484,7 +506,7 @@ class ChordSocket(MeshSocket):
         common, count = most_common(vals)
         iters = 0
         limit = timeout // 0.1
-        fails = {None, b''}
+        fails = (None, b'')
         while (common in fails or count <= len(hashes) // 2) and iters < limit:
             sleep(0.1)
             iters += 1
@@ -564,14 +586,14 @@ class ChordSocket(MeshSocket):
             A :py:class:`~async_promises.Promise` of the value at said key, or
             the value at ifError if there's an :py:class:`Exception`
         """
-
+        @Promise
         def resolver(resolve, reject):
             #type: (Callable, Callable) -> None
             resolve(self.getSync(key, ifError=ifError, timeout=timeout))
 
         self._logger.debug(
             'Getting Promise of {}, with fallback'.format(key, ifError))
-        return Promise(resolver)
+        return resolver
 
     def __store(self, method, key, value):
         #type: (ChordSocket, bytes, int, MsgPackable) -> None
@@ -648,6 +670,69 @@ class ChordSocket(MeshSocket):
         if _key not in self.__keys:
             raise KeyError(_key)
         self.set(_key, b'')
+
+    def __delta(self, method, key, delta):
+        #type: (ChordSockeet, bytes, bytes, MsgPackable) -> None
+        """Updates the value at a given key, using the supplied delta. This
+        method deals with just *one* of the underlying hash tables.
+
+        Args:
+            method: The hash table that you wish to check. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            key:    The key that you wish to check. Must be a :py:class:`int` or
+                        :py:class:`long`
+            delta:  The delta you wish to apply at this key.
+        """
+        node = self.find(key)  #type: Union[ChordSocket, BaseConnection]
+        if self.leeching and node is self and len(self.awaiting_ids):
+            node = choice(self.awaiting_ids)
+        if node in (self, None):
+            if key not in self.data[method]:
+                self.data[method][key] = {}
+            self.data[method][key].update(delta)
+        else:
+            node.send(flags.whisper, flags.delta, method,
+                      to_base_58(key), delta)
+
+    def apply_delta(self, key, delta):
+        #type: (ChordSockeet, bytes, MsgPackable) -> None
+        """Updates a stored mapping with the given delta. This allows for more
+        graceful handling of conflicting changes
+
+        Args:
+            key:    The key you wish to apply a delta to. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            delta:  A mapping which contains the keys you wish to update, and
+                        the values you wish to store
+
+        Returns:
+            A :py:class:`~async_promises.Promise` which yields the resulting
+            data, or rejects with a :py:class:`TypeError` if the updated key
+            does not store a mapping already.
+
+        Raises:
+            TypeError: If the updated key does not store a mapping already.
+        """
+        if not isinstance(delta, dict):
+            raise TypeError("Cannot apply delta if you feed a non-mapping")
+
+        value = self.get(key)
+
+        @Promise
+        def resolver(resolve, reject):
+            if not isinstance(value.get(), dict) and value.get() is not None:
+                reject(TypeError("Cannot apply delta to a non-mapping"))
+            else:
+                _key = sanitize_packet(key)
+                self._logger.debug('Applying a delta of {} to {}'.format(delta, _key))
+                keys = get_hashes(_key)
+                for method, x in zip(hashes, keys):
+                    self.__delta(method, x, delta)
+                ret = value.get()
+                ret.update(delta)
+                resolve(ret)
+
+        return resolver
 
     def update(self, update_dict):
         #type: (ChordSocket, Dict[Union[bytes, bytearray, str], MsgPackable]) -> None

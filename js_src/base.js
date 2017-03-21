@@ -63,7 +63,7 @@ else {
 *     This is :js:data:`~js2p.base.version_info` joined in the format ``'a.b.c'``
 */
 
-base.version_info = [0, 6, 757];
+base.version_info = [0, 7, 757];
 base.node_policy_version = base.version_info[2].toString();
 base.protocol_version = base.version_info.slice(0, 2).join(".");
 base.version = base.version_info.join('.');
@@ -106,6 +106,7 @@ base.flags = {
     forward:     0x0E,
     new_paths:   0x0F,
     revoke_paths: 0x10,
+    delta:       0x11,
 
     //implemented compression methods
     gzip:     0x11,

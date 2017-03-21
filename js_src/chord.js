@@ -252,11 +252,11 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
             var self = this;
 
             function is_prev(id)    {
-                return distance(base.from_base_58(id), self.id_10).lesserOrEquals(distance(self.prev.id_10, self.id_10));
+                return m.distance(base.from_base_58(id), self.id_10).lesserOrEquals(distance(self.prev.id_10, self.id_10));
             }
 
             function is_next(id)    {
-                return distance(self.id_10, base.from_base_58(id)).lesserOrEquals(distance(self.id_10, self.next.id_10));
+                return m.distance(self.id_10, base.from_base_58(id)).lesserOrEquals(distance(self.id_10, self.next.id_10));
             }
 
             new_peers.forEach(function(peer_array)  {
@@ -267,6 +267,30 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
                         self.__connect(addr[0], addr[1], id);
                 }
             });
+            return true;
+        }
+    }
+
+
+    __handle_delta(self, msg, handler)  {
+        /**
+        *     .. js:function:: js2p.chord.ChordSocket.__handle_delta(msg, conn)
+        *
+        *         This callback is used to deal with delta storage signals. Its
+        *         primary job is:
+        *
+        *             - update the mapping in a given key
+        *
+        *         :param msg:       A :js:class:`~js2p.base.Message`
+        *         :param handler:   A :js:class:`~js2p.chord.ChordConnection`
+        *
+        *         :returns: Either ``True`` or ``None``
+        */
+        let packets = msg.packets
+        if (packets[0] == flags.delta)  {
+            let method = packets[1];
+            let key = from_base_58(packets[2]);
+            this.__delta(method, key, packets[3]);
             return true;
         }
     }
@@ -606,6 +630,26 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         }
         else    {
             node.send(base.flags.whisper, [base.flags.store, method, base.to_base_58(key), value]);
+        }
+    }
+
+    __delta(method, key, delta) {
+        let node = this.find(key);
+        if (this.leeching && Object.is(node, this)) {
+            node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
+        }
+        if (Object.is(node, this))  {
+            if (this.data[method][key] === undefined)   {
+                this.data[method][key] = {};
+            }
+            if (this.data[method][key] instanceof Object)  {
+                for (let _key in delta)  {
+                    this.data[method][key][_key] = delta[_key];
+                }
+            }
+        }
+        else    {
+            node.send(base.flags.whisper, [base.flags.delta, method, base.to_base_58(key), delta]);
         }
     }
 

@@ -25,7 +25,7 @@ from .messages import (compression, InternalMessage, MsgPackable)
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, inherit_doc,
                     log_entry, unpack_value, to_base_58)
 
-protocol_version = "0.6"
+protocol_version = "0.7"
 node_policy_version = "757"
 
 version = '.'.join((protocol_version, node_policy_version))
