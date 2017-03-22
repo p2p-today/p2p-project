@@ -72,6 +72,7 @@ def guess_best_transport():
 def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     #type: (Callable, Protocol, str, int, *Any, **Any) -> None
     from os import path
+    from time import sleep
     from random import shuffle
     from umsgpack import pack, packb, unpack, unpackb
 
@@ -81,21 +82,23 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     ret = socket_type(addr, port, *args, prot=proto, **kargs)
     dict_ = {}
 
-    with open(datafile, 'wb+') as database:
+    with open(datafile, 'rb') as database:
         database.seek(0)
         dict_ = unpack(database)
-        for seeder in dict_[seed_transport].values():
-            try:
-                seed.connect(*seeder)
-            except Exception:
-                continue
 
-        time.sleep(1)
-        conn_list = seed.get(proto.id)
-        for id_, node in seed.routing_table.items():
-            if id_ not in dict_[seed_transport]:
-                dict_[seed_transport][id_] = node.addr
+    for seeder in dict_[seed_transport].values():
+        try:
+            seed.connect(*seeder)
+        except Exception:
+            continue
 
+    sleep(1)
+    conn_list = seed.get(proto.id)
+    for id_, node in seed.routing_table.items():
+        if id_ not in dict_[seed_transport]:
+            dict_[seed_transport][id_] = node.addr
+
+    with open(datafile, 'wb') as database:
         pack(dict_, database)
 
         @conn_list.then

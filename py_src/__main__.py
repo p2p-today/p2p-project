@@ -29,12 +29,12 @@ def seed(transport=None, outward_port=None, outward_address=None, port=None, add
     }[transport]
     if transport not in seed_nodes:
         kwargs = {
-            addr: address,
-            port: port,
-            proto: Protocol('bootstrap', transport)
+            'addr': address,
+            'port': port,
+            'proto': Protocol('bootstrap', transport)
         }
         if outward_address and outward_port:
-            kwargs[out_addr] = (outward_address, outward_port)
+            kwargs['out_addr'] = (outward_address, outward_port)
         seed_nodes[transport] = bootstrap(ChordSocket, **kwargs)
 
 
