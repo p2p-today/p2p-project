@@ -79,7 +79,6 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     seed_transport = guess_best_transport()
     datafile = path.join(path.split(__file__)[0], 'seeders.msgpack')
     seed = DHTSocket(addr, randint(32768, 65535), prot=Protocol('bootstrap', seed_transport))
-    ret = socket_type(addr, port, *args, prot=proto, **kargs)
     dict_ = {}
 
     with open(datafile, 'rb') as database:
@@ -101,15 +100,21 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     with open(datafile, 'wb') as database:
         pack(dict_, database)
 
-        @conn_list.then
-        def then(dct):
-            conns = list(dct.values())
-            shuffle(conns)
-            for info in conns:
-                if len(ret.routing_table) > 4:
-                    break
-                else:
-                    ret.connect(*info)
+    if proto == seed.protocol and socket_type == DHTSocket:
+        ret = seed
+    else:
+        ret = socket_type(addr, port, *args, prot=proto, **kargs)
+
+
+    @conn_list.then
+    def then(dct):
+        conns = list(dct.values())
+        shuffle(conns)
+        for info in conns:
+            if len(ret.routing_table) > 4:
+                break
+            else:
+                ret.connect(*info)
 
     return ret
 
