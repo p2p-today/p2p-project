@@ -67,6 +67,6 @@ def test_Message_sans_network(benchmark, iters=1000):
         assert item.id == base_msg.id
         assert (item.time == base_msg.time == from_base_58(item.time_58) ==
                 from_base_58(base_msg.time_58))
-        assert sen in repr(item)
+        assert "{}".format(sen) in repr(item)
 
     benchmark.pedantic(test, setup=setup, rounds=iters)
