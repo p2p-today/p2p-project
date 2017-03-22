@@ -82,9 +82,13 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     dict_ = {}
 
     with open(datafile, 'wb+') as database:
+        database.seek(0)
         dict_ = unpack(database)
         for seeder in dict_[seed_transport].values():
-            seed.connect(*seeder)
+            try:
+                seed.connect(*seeder)
+            except Exception:
+                continue
 
         time.sleep(1)
         conn_list = seed.get(proto.id)
