@@ -87,33 +87,34 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
         except Exception:
             continue
 
-    sleep(1)
-    conn_list = seed.get(proto.id)
-    for id_, node in seed.routing_table.items():
-        if id_ not in dict_[proto.encryption]:
-            dict_[proto.encryption][id_] = list(node.addr)
+    @seed.once('connect')
+    def on_connect(_):
+        #type: (DHTSocket) -> None
+        request = seed.get(proto.id)
 
-    with open(datafile, 'wb') as database:
-        pack(dict_, database)
+        @request.then
+        def on_receipt(dct):
+            #type: (Dict[bytes, List[Union[str, int]]]) -> None
+            conns = tuple(dct.values()) if isinstance(dct, dict) else ()
+            shuffle(conns)
+            for info in conns:
+                if len(ret.routing_table) > 4:
+                    break
+                else:
+                    try:
+                        ret.connect(*info)
+                    except Exception:
+                        continue
+            seed.apply_delta(cast(bytes, proto.id), {ret.id: ret.out_addr}).catch(warn)
 
+        on_receipt.catch(warn)
 
-    @conn_list.then
-    def then(dct):
-        #type: (Dict[bytes, List[Union[str, int]]]) -> None
-        conns = list(dct.values()) if isinstance(dct, dict) else []
-        shuffle(conns)
-        for info in conns:
-            if len(ret.routing_table) > 4:
-                break
-            else:
-                try:
-                    ret.connect(*info)
-                except Exception:
-                    continue
-        seed.apply_delta(cast(bytes, proto.id), {ret.id: ret.out_addr}).catch(warn)
+        for id_, node in seed.routing_table.items():
+            if id_ not in dict_[proto.encryption]:
+                dict_[proto.encryption][id_] = list(node.addr)
 
-    watch = then
-    then.catch(warn)
+        with open(datafile, 'wb') as database:
+            pack(dict_, database)
 
     return ret
 
