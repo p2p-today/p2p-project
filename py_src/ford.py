@@ -11,7 +11,7 @@ from time import sleep
 from traceback import format_exc
 
 from async_promises import Promise
-from typing import (cast, Any, Dict, List, Union)
+from typing import (cast, Any, Dict, List, Tuple, Union)
 
 try:
     from .cbase import protocol as Protocol
@@ -110,6 +110,7 @@ class FordSocket(MeshSocket):
                 for handler in self.routing_table.values():
                     self.send_paths(cast(FordConnection, handler))
             return True
+        return None
 
     def __handle_del_path(self, msg, handler):
         #type: (FordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -136,6 +137,7 @@ class FordSocket(MeshSocket):
                 for handler in self.routing_table.values():
                     self.send_paths(handler)
             return True
+        return None
 
     def send_paths(self, handler):
         #type: (FordSocket, BaseConnection) -> None
@@ -168,6 +170,7 @@ class FordSocket(MeshSocket):
                     imsg.payload = packets[2:]
                 self.routing_table[path[0]].send_InternalMessage(imsg)
             return True
+        return None
 
     def sendTo(self, dest, *args, **kargs):
         #type: (MeshSocket, bytes, *MsgPackable, **MsgPackable) -> None

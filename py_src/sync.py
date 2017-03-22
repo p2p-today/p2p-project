@@ -167,6 +167,7 @@ class SyncSocket(MeshSocket):
                 meta = metatuple(packets[3], from_base_58(packets[4]))
             self.__store(packets[1], packets[2], meta, error=False)
             return True
+        return None
 
     def __setitem__(self, key, data):
         #type: (SyncSocket, bytes, MsgPackable) -> None
@@ -259,7 +260,7 @@ class SyncSocket(MeshSocket):
         return self.data.get(key, ifError)
 
     def __delta(self, key, delta, new_meta, error=True):
-        #type: (SyncSockeet, bytes, MsgPackable, metatuple) -> None
+        #type: (SyncSocket, bytes, MsgPackable, metatuple, bool) -> None
         """Updates a stored mapping with the given delta. This allows for more
         graceful handling of conflicting changes
 
@@ -274,7 +275,7 @@ class SyncSocket(MeshSocket):
             self.__print__(5, 'Applying a delta of {} to {}'.format(delta, key))
             if key not in self.data:
                 self.data[key] = {}
-            self.data[key].update(delta)
+            self.data[key].update(delta)  #type: ignore
             self.emit('update', self, key, self.data[key], new_meta)
             return
         elif error:
@@ -282,7 +283,7 @@ class SyncSocket(MeshSocket):
         self.__print__("Did not apply a delta of {} to {}".format(delta, key))
 
     def apply_delta(self, key, delta):
-        #type: (SyncSockeet, bytes, MsgPackable) -> None
+        #type: (SyncSocket, bytes, MsgPackable) -> None
         """Updates a stored mapping with the given delta. This allows for more
         graceful handling of conflicting changes
 
@@ -323,6 +324,7 @@ class SyncSocket(MeshSocket):
             meta = metatuple(msg.sender, msg.time)
             self.__delta(packets[1], packets[2], meta, error=False)
             return True
+        return None
 
     def __len__(self):
         #type: (SyncSocket) -> int

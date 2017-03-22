@@ -265,6 +265,7 @@ class ChordSocket(MeshSocket):
                 if len(tuple(self.outgoing)) > max_outgoing:
                     self.disconnect_least_efficient()
             return True
+        return None
 
     def __handle_key(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -290,6 +291,7 @@ class ChordSocket(MeshSocket):
                 self.__keys.add(packets[1])
                 self.emit('add', self, packets[1])
             return True
+        return None
 
     def _handle_peers(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -330,6 +332,7 @@ class ChordSocket(MeshSocket):
                             level=1)
                         continue
             return True
+        return None
 
     def __handle_retrieved(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -357,6 +360,7 @@ class ChordSocket(MeshSocket):
                 if value.callback:
                     value.callback_method(packets[1], packets[2])
             return True
+        return None
 
     def __handle_retrieve(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -383,6 +387,7 @@ class ChordSocket(MeshSocket):
                     handler.send(flags.whisper, flags.retrieved, packets[1],
                                  packets[2], cast(MsgPackable, val.value))
                 return True
+        return None
 
     def __handle_store(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -404,6 +409,7 @@ class ChordSocket(MeshSocket):
             key = from_base_58(packets[2])
             self.__store(method, key, packets[3])
             return True
+        return None
 
     def __handle_delta(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -425,6 +431,7 @@ class ChordSocket(MeshSocket):
             key = from_base_58(packets[2])
             self.__delta(method, key, packets[3])
             return True
+        return None
 
     def dump_data(self, start, end):
         #type: (ChordSocket, int, int) -> Dict[bytes, Dict[int, MsgPackable]]
@@ -479,7 +486,7 @@ class ChordSocket(MeshSocket):
             return ret
 
     def __getitem(self, key, timeout=10):
-        #type: (ChordSocket, bytes, int) -> MsgPackable
+        #type: (ChordSocket, Union[bytes, bytearray, str], int) -> MsgPackable
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -506,12 +513,11 @@ class ChordSocket(MeshSocket):
         common, count = most_common(vals)
         iters = 0
         limit = timeout // 0.1
-        fails = (None, b'')
-        while (common in fails or count <= len(hashes) // 2) and iters < limit:
+        while (common is None or count <= len(hashes) // 2) and iters < limit:
             sleep(0.1)
             iters += 1
             common, count = most_common(vals)
-        if common not in fails and count > len(hashes) // 2:
+        if common is None and count > len(hashes) // 2:
             return common
         elif iters == limit:
             raise TimeoutException()
@@ -521,7 +527,7 @@ class ChordSocket(MeshSocket):
                 vals, count, len(hashes) // 2 + 1, common))
 
     def __getitem__(self, key):
-        #type: (ChordSocket, bytes) -> MsgPackable
+        #type: (ChordSocket, Union[bytes, bytearray, str]) -> MsgPackable
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -543,7 +549,7 @@ class ChordSocket(MeshSocket):
         return self.__getitem(key)
 
     def getSync(self, key, ifError=None, timeout=10):
-        #type: (ChordSocket, bytes, MsgPackable, int) -> MsgPackable
+        #type: (ChordSocket, Union[bytes, bytearray, str], MsgPackable, int) -> MsgPackable
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -570,7 +576,7 @@ class ChordSocket(MeshSocket):
             return ifError
 
     def get(self, key, ifError=None, timeout=10):
-        #type: (ChordSocket, bytes, MsgPackable, int) -> Promise
+        #type: (ChordSocket, Union[bytes, bytearray, str], MsgPackable, int) -> Promise
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -672,7 +678,7 @@ class ChordSocket(MeshSocket):
         self.set(_key, None)
 
     def __delta(self, method, key, delta):
-        #type: (ChordSockeet, bytes, bytes, MsgPackable) -> None
+        #type: (ChordSocket, bytes, int, MsgPackable) -> None
         """Updates the value at a given key, using the supplied delta. This
         method deals with just *one* of the underlying hash tables.
 
@@ -689,13 +695,13 @@ class ChordSocket(MeshSocket):
         if node in (self, None):
             if key not in self.data[method]:
                 self.data[method][key] = {}
-            self.data[method][key].update(delta)
+            self.data[method][key].update(delta)  #type: ignore
         else:
             node.send(flags.whisper, flags.delta, method,
                       to_base_58(key), delta)
 
     def apply_delta(self, key, delta):
-        #type: (ChordSockeet, bytes, MsgPackable) -> None
+        #type: (ChordSocket, Union[bytes, bytearray, str], MsgPackable) -> Promise
         """Updates a stored mapping with the given delta. This allows for more
         graceful handling of conflicting changes
 
@@ -720,6 +726,7 @@ class ChordSocket(MeshSocket):
 
         @Promise
         def resolver(resolve, reject):
+            #type: (Callable, Callable) -> None
             if not isinstance(value.get(), dict) and value.get() is not None:
                 reject(TypeError("Cannot apply delta to a non-mapping: {}".format(value.get())))
             else:

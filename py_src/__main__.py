@@ -2,6 +2,8 @@ from __future__ import print_function
 
 import click
 
+from typing import Dict
+
 from sys import argv
 from time import sleep
 
@@ -9,11 +11,12 @@ from . import bootstrap
 from .chord import ChordSocket, Protocol
 
 verbosity = 0
-seed_nodes = {}
+seed_nodes = {}  #type: Dict[str, ChordSocket]
 
 
 @click.group()
 def cli():
+    #type: () -> None
     pass
 
 
@@ -25,6 +28,7 @@ def cli():
 @click.option('--port', type=int, default=44565)
 @click.option('-v', '--verbose', count=True)
 def seed(verbose=0, transport=None, outward_port=None, outward_address=None, port=None, address=None):
+    #type: (int, str, int, str, int, str) -> None
     transport = {
     'TCP': 'Plaintext',
     'SSL': 'SSL'
@@ -43,6 +47,7 @@ def seed(verbose=0, transport=None, outward_port=None, outward_address=None, por
 
 
 def main():
+    #type: () -> None
     try:
         cli(prog_name='py2p')
     except SystemExit:

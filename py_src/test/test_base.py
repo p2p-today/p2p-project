@@ -53,7 +53,7 @@ def test_Message_sans_network(benchmark, iters=1000):
     #type: (Any, int) -> None
     def setup():
         #type: () -> Tuple[Tuple, Dict]
-        sen = str(uuid4())
+        sen = str(uuid4()).encode()
         pac = gen_random_list(36, 10)
         base_msg = base.InternalMessage(base.flags.broadcast, sen, pac)
         return (sen, pac, base_msg), {}

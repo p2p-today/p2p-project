@@ -87,7 +87,7 @@ class BaseConnection(object):
         self.active = False
 
     def send_InternalMessage(self, msg):
-        #type: (BaseConnection, InternalMessage) -> InternalMessage
+        #type: (BaseConnection, InternalMessage) -> Union[InternalMessage, None]
         """Sends a preconstructed message
 
         Args:
@@ -110,6 +110,7 @@ class BaseConnection(object):
         except (IOError, SocketException) as e:  # pragma: no cover
             self.server.daemon.exceptions.append(format_exc())
             self.server.disconnect(self)
+            return None
 
     def send(self, msg_type, *args, **kargs):
         #type: (BaseConnection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
@@ -131,8 +132,8 @@ class BaseConnection(object):
             ``None`` if the sending was unsuccessful
         """
         # Latter is returned if key not found
-        id = kargs.get('id', self.server.id)
-        time = kargs.get('time') or getUTC()
+        id = cast(bytes, kargs.get('id', self.server.id))
+        time = cast(int, kargs.get('time') or getUTC())
         # Begin real method
         msg = InternalMessage(
             msg_type, id, args, self.compression, timestamp=time)
@@ -490,6 +491,7 @@ class BaseSocket(EventEmitter, object):
                 self.__print__(
                     "Breaking from handler: %s" % handler.__name__, level=4)
                 return True
+        return None
 
     @property
     def status(self):

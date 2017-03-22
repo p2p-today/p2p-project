@@ -103,6 +103,7 @@ def register_1(msg, handler):
     if packets[1] == b'test':
         handler.send(flags.whisper, flags.whisper, b"success")
         return True
+    return None
 
 
 def register_2(msg, handler):
@@ -111,6 +112,7 @@ def register_2(msg, handler):
     if packets[1] == b'test':
         msg.reply(b"success")
         return True
+    return None
 
 
 def handler_registry_validation(iters, start_port, encryption, reg):

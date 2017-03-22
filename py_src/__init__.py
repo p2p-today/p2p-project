@@ -35,7 +35,7 @@ Submodules:
     * test:        Unit tests for this library
 """
 
-from typing import (Any, Callable, List, Tuple)
+from typing import (Any, Callable, cast, Dict, List, Tuple, Union)
 
 from .base import (Protocol, version, protocol_version, node_policy_version)
 from .mesh import MeshSocket
@@ -50,7 +50,7 @@ version_info = tuple(map(int, __version__.split(".")))  #type: Tuple[int, ...]
 
 
 __all__ = ["mesh", "chord", "kademlia", "base",
-           "ssl_wrapper", "__main__", "cli"]  #type: List[str]
+           "ssl_wrapper", "__main__"]  #type: List[str]
 
 try:
     import cbase
@@ -60,22 +60,20 @@ except ImportError:
     pass
 
 
-watch = None
-
 def bootstrap(socket_type, proto, addr, port, *args, **kargs):
-    #type: (Callable, Protocol, str, int, *Any, **Any) -> None
+    #type: (Callable, Protocol, str, int, *Any, **Any) -> Union[MeshSocket, SyncSocket, ChordSocket]
     from os import path
     from time import sleep
-    from random import shuffle, randint
+    from random import (shuffle, randint)
     from warnings import warn
-    from umsgpack import pack, packb, unpack, unpackb
+    from umsgpack import (pack, packb, unpack, unpackb)
 
-    ret = socket_type(addr, port, *args, prot=proto, **kargs)
+    ret = socket_type(addr, port, *args, prot=proto, **kargs)  #type: Union[MeshSocket, SyncSocket, ChordSocket]
     datafile = path.join(path.split(__file__)[0], 'seeders.msgpack')
-    dict_ = {}
+    dict_ = {}  #type: Dict[str, Dict[bytes, List[Union[str, int]]]]
     seed_protocol = Protocol('bootstrap', proto.encryption)
     if proto == seed_protocol and socket_type == DHTSocket:
-        seed = ret
+        seed = cast(DHTSocket, ret)  #type: ChordSocket
     else:
         seed = DHTSocket(addr, randint(32768, 65535), prot=seed_protocol)
 
@@ -93,7 +91,7 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     conn_list = seed.get(proto.id)
     for id_, node in seed.routing_table.items():
         if id_ not in dict_[proto.encryption]:
-            dict_[proto.encryption][id_] = node.addr
+            dict_[proto.encryption][id_] = list(node.addr)
 
     with open(datafile, 'wb') as database:
         pack(dict_, database)
@@ -101,7 +99,8 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
 
     @conn_list.then
     def then(dct):
-        conns = list(dct.values()) if isinstance(dct, dict) else ()
+        #type: (Dict[bytes, List[Union[str, int]]]) -> None
+        conns = list(dct.values()) if isinstance(dct, dict) else []
         shuffle(conns)
         for info in conns:
             if len(ret.routing_table) > 4:
@@ -111,7 +110,7 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
                     ret.connect(*info)
                 except Exception:
                     continue
-        seed.apply_delta(proto.id, {ret.id: ret.out_addr}).catch(warn)
+        seed.apply_delta(cast(bytes, proto.id), {ret.id: ret.out_addr}).catch(warn)
 
     watch = then
     then.catch(warn)

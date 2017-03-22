@@ -253,8 +253,8 @@ class InternalMessage(object):
             self,  #type: InternalMessage
             msg_type,  #type: MsgPackable
             sender,  #type: bytes
-            payload,  #type: Iterable[MsgPackable, ...]
-            compression=None,  #type: Union[None, Iterable[int, ...]]
+            payload,  #type: Iterable[MsgPackable]
+            compression=None,  #type: Union[None, Iterable[int]]
             timestamp=None  #type: Union[None, int]
     ):  #type: (...) -> None
         """Initializes a InternalMessage instance
@@ -302,7 +302,7 @@ class InternalMessage(object):
 
     @payload.setter
     def payload(self, value):
-        #type: (InternalMessage, Sequence[MsgPackable]) -> Tuple[MsgPackable, ...]
+        #type: (InternalMessage, Sequence[MsgPackable]) -> None
         """Sets the payload to a new tuple"""
         self.__clear_cache()
         self.__payload = tuple(value)

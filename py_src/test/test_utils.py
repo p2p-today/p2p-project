@@ -9,7 +9,7 @@ from subprocess import check_output
 from sys import (platform, version_info)
 from time import sleep
 
-from typing import (Any, Callable, Tuple, Union)
+from typing import (Any, Callable, Dict, Tuple, Union)
 
 from .. import utils
 
@@ -18,12 +18,12 @@ if version_info >= (3, ):
 
 
 def identity(in_func, out_func, data):
-    #type: (Union[partial, Callable], Union[partial, Callable], Any) -> bool
+    #type: (Union[partial, Callable], Union[partial, Callable], Any) -> None
     assert data == out_func(in_func(data))
 
 
 def try_identity(in_func, out_func, data_gen, iters):
-    #type: (Callable, Callable, Callable, int) -> bool
+    #type: (Callable, Callable, Callable, int) -> None
     for _ in xrange(iters):
         identity(in_func, out_func, data_gen())
 

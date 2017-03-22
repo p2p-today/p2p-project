@@ -8,7 +8,7 @@ from sys import version_info
 from tempfile import NamedTemporaryFile
 from uuid import uuid4
 
-from typing import (Any, Tuple)
+from typing import (Any, List, Tuple)
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
