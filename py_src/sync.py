@@ -273,7 +273,7 @@ class SyncSocket(MeshSocket):
             self.metadata[key] = new_meta
             self.__print__(5, 'Applying a delta of {} to {}'.format(delta, key))
             if key not in self.data:
-                this.data[key] = {}
+                self.data[key] = {}
             self.data[key].update(delta)
             self.emit('update', self, key, self.data[key], new_meta)
             return
@@ -295,7 +295,8 @@ class SyncSocket(MeshSocket):
         Raises:
             TypeError: If the updated key does not store a mapping already
         """
-        if not isinstance(self.get(key, None), dict):
+        prev = self.get(key, None)
+        if not isinstance(prev, dict) and prev is not None:
             raise TypeError("Cannot apply delta to a non-mapping")
         else:
             new_meta = metatuple(self.id, getUTC())
