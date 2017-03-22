@@ -115,6 +115,7 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
                 break
             else:
                 ret.connect(*info)
+        seed.apply_delta(proto.id, {ret.id: ret.out_addr})
 
     return ret
 
