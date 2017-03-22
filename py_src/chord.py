@@ -378,7 +378,7 @@ class ChordSocket(MeshSocket):
                 val = self.__lookup(packets[1],
                                     from_base_58(packets[2]),
                                     cast(ChordConnection, handler))
-                if val.value not in (None, b''):
+                if val.value is not None:
                     self.__print__(val.value, level=1)
                     handler.send(flags.whisper, flags.retrieved, packets[1],
                                  packets[2], cast(MsgPackable, val.value))
@@ -612,7 +612,7 @@ class ChordSocket(MeshSocket):
         if self.leeching and node is self and len(self.awaiting_ids):
             node = choice(self.awaiting_ids)
         if node in (self, None):
-            if value == b'':
+            if value is None:
                 del self.data[method][key]
             else:
                 self.data[method][key] = value
@@ -652,10 +652,10 @@ class ChordSocket(MeshSocket):
         keys = get_hashes(_key)
         for method, x in zip(hashes, keys):
             self.__store(method, x, value)
-        if _key not in self.__keys and value != b'':
+        if _key not in self.__keys and value is not None:
             self.__keys.add(_key)
             self.send(_key, type=flags.notify)
-        elif _key in self.__keys and value == b'':
+        elif _key in self.__keys and value is None:
             self.__keys.add(_key)
             self.send(_key, b'del', type=flags.notify)
 
@@ -669,7 +669,7 @@ class ChordSocket(MeshSocket):
         _key = sanitize_packet(key)
         if _key not in self.__keys:
             raise KeyError(_key)
-        self.set(_key, b'')
+        self.set(_key, None)
 
     def __delta(self, method, key, delta):
         #type: (ChordSockeet, bytes, bytes, MsgPackable) -> None
@@ -728,7 +728,7 @@ class ChordSocket(MeshSocket):
                 keys = get_hashes(_key)
                 for method, x in zip(hashes, keys):
                     self.__delta(method, x, delta)
-                ret = value.get()
+                ret = value.get() or {}
                 ret.update(delta)
                 resolve(ret)
 

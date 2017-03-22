@@ -13,10 +13,8 @@ seed_nodes = {}
 
 
 @click.group()
-@click.option('-v', '--verbose', count=True)
-def cli(verbose=0):
-    verbosity = verbose
-    click.echo('Verbosity mode is {}'.format(verbosity))
+def cli():
+    pass
 
 
 @cli.command()
@@ -25,7 +23,8 @@ def cli(verbose=0):
 @click.option('--outward_port', type=int)
 @click.option('--address', type=str, default='0.0.0.0')
 @click.option('--port', type=int, default=44565)
-def seed(transport=None, outward_port=None, outward_address=None, port=None, address=None):
+@click.option('-v', '--verbose', count=True)
+def seed(verbose=0, transport=None, outward_port=None, outward_address=None, port=None, address=None):
     transport = {
     'TCP': 'Plaintext',
     'SSL': 'SSL'
@@ -34,7 +33,8 @@ def seed(transport=None, outward_port=None, outward_address=None, port=None, add
         kwargs = {
             'addr': address,
             'port': port,
-            'proto': Protocol('bootstrap', transport)
+            'proto': Protocol('bootstrap', transport),
+            'debug_level': verbose
         }
         if outward_address and outward_port:
             kwargs['out_addr'] = (outward_address, outward_port)

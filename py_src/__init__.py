@@ -60,32 +60,25 @@ except ImportError:
     pass
 
 
-def guess_best_transport():
-    #type: () -> str
-    try:
-        from . import ssl_wrapper
-        return 'SSL'
-    except Exception:
-        return 'Plaintext'
-
+watch = None
 
 def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     #type: (Callable, Protocol, str, int, *Any, **Any) -> None
     from os import path
     from time import sleep
     from random import shuffle, randint
+    from warnings import warn
     from umsgpack import pack, packb, unpack, unpackb
 
-    seed_transport = guess_best_transport()
     datafile = path.join(path.split(__file__)[0], 'seeders.msgpack')
-    seed = DHTSocket(addr, randint(32768, 65535), prot=Protocol('bootstrap', seed_transport))
+    seed = DHTSocket(addr, randint(32768, 65535), prot=Protocol('bootstrap', proto.encryption))
     dict_ = {}
 
     with open(datafile, 'rb') as database:
         database.seek(0)
         dict_ = unpack(database)
 
-    for seeder in dict_[seed_transport].values():
+    for seeder in dict_[proto.encryption].values():
         try:
             seed.connect(*seeder)
         except Exception:
@@ -94,8 +87,8 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     sleep(1)
     conn_list = seed.get(proto.id)
     for id_, node in seed.routing_table.items():
-        if id_ not in dict_[seed_transport]:
-            dict_[seed_transport][id_] = node.addr
+        if id_ not in dict_[proto.encryption]:
+            dict_[proto.encryption][id_] = node.addr
 
     with open(datafile, 'wb') as database:
         pack(dict_, database)
@@ -108,14 +101,20 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
 
     @conn_list.then
     def then(dct):
-        conns = list(dct.values())
+        conns = list(dct.values()) if isinstance(dct, dict) else ()
         shuffle(conns)
         for info in conns:
             if len(ret.routing_table) > 4:
                 break
             else:
-                ret.connect(*info)
-        seed.apply_delta(proto.id, {ret.id: ret.out_addr})
+                try:
+                    ret.connect(*info)
+                except Exception:
+                    continue
+        seed.apply_delta(proto.id, {ret.id: ret.out_addr}).catch(warn)
+
+    watch = then
+    then.catch(warn)
 
     return ret
 
