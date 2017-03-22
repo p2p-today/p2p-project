@@ -70,9 +70,13 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     from warnings import warn
     from umsgpack import pack, packb, unpack, unpackb
 
+    ret = socket_type(addr, port, *args, prot=proto, **kargs)
     datafile = path.join(path.split(__file__)[0], 'seeders.msgpack')
-    seed = DHTSocket(addr, randint(32768, 65535), prot=Protocol('bootstrap', proto.encryption))
     dict_ = {}
+    if proto == seed.protocol and socket_type == DHTSocket:
+        seed = ret
+    else:
+        seed = DHTSocket(addr, randint(32768, 65535), prot=Protocol('bootstrap', proto.encryption))
 
     with open(datafile, 'rb') as database:
         database.seek(0)
@@ -92,11 +96,6 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
 
     with open(datafile, 'wb') as database:
         pack(dict_, database)
-
-    if proto == seed.protocol and socket_type == DHTSocket:
-        ret = seed
-    else:
-        ret = socket_type(addr, port, *args, prot=proto, **kargs)
 
 
     @conn_list.then
