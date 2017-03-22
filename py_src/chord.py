@@ -469,7 +469,7 @@ class ChordSocket(MeshSocket):
         elif self.awaiting_ids:
             node = choice(self.awaiting_ids)
         if node in (self, None):
-            return awaiting_value(self.data[method].get(key, ''))
+            return awaiting_value(self.data[method].get(key, None))
         else:
             node.send(flags.whisper, flags.retrieve, method, to_base_58(key))
             ret = awaiting_value()
@@ -721,7 +721,7 @@ class ChordSocket(MeshSocket):
         @Promise
         def resolver(resolve, reject):
             if not isinstance(value.get(), dict) and value.get() is not None:
-                reject(TypeError("Cannot apply delta to a non-mapping"))
+                reject(TypeError("Cannot apply delta to a non-mapping: {}".format(value.get())))
             else:
                 _key = sanitize_packet(key)
                 self._logger.debug('Applying a delta of {} to {}'.format(delta, _key))
