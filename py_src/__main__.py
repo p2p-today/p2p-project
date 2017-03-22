@@ -2,6 +2,9 @@ from __future__ import print_function
 
 import click
 
+from sys import argv
+from time import sleep
+
 from . import bootstrap
 from .chord import ChordSocket, Protocol
 
@@ -39,15 +42,24 @@ def seed(transport=None, outward_port=None, outward_address=None, port=None, add
 
 
 def main():
-    cli(prog_name='py2p')
-    if seed_nodes != {}:
-        try:
-            while True:
-                time.sleep(100)
-        except:
-            for node in seed_nodes.values():
-                node.unjoin()
-                node.close()
+    try:
+        cli(prog_name='py2p')
+    except SystemExit:
+        if 'seed' not in argv:
+            raise
+
+    click.echo("Seeding the bootstrap network on:")
+    for transport, node in seed_nodes.items():
+        click.echo("\t- {} ({}:{})".format(transport, *node.addr))
+
+    try:
+        while True:
+            sleep(100)
+    except:
+        click.echo("Shutting down...")
+        for node in seed_nodes.values():
+            node.unjoin()
+            node.close()
 
 
 if __name__ == '__main__':
