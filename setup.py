@@ -114,7 +114,11 @@ def main():
             ext_modules=ext_modules,
             classifiers=classifiers,
             install_requires=install_requires,
-            extras_require=extras_require)
+            extras_require=extras_require,
+            entry_points='''
+            [console_scripts]
+            py2p=py2p.__main__:cli
+        ''')
     except:
         print("Not building C code due to errors")
         setup(
@@ -130,7 +134,11 @@ def main():
             package_dir={'py2p': 'py_src'},
             classifiers=classifiers,
             install_requires=install_requires,
-            extras_require=extras_require)
+            extras_require=extras_require,
+            entry_points='''
+            [console_scripts]
+            py2p=py2p.__main__:cli
+        ''')
 
 
 if __name__ == "__main__":
