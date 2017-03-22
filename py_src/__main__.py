@@ -39,6 +39,7 @@ def seed(transport=None, outward_port=None, outward_address=None, port=None, add
         if outward_address and outward_port:
             kwargs['out_addr'] = (outward_address, outward_port)
         seed_nodes[transport] = bootstrap(ChordSocket, **kwargs)
+        seed_nodes[transport].join()
 
 
 def main():
