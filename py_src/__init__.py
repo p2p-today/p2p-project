@@ -73,12 +73,12 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     #type: (Callable, Protocol, str, int, *Any, **Any) -> None
     from os import path
     from time import sleep
-    from random import shuffle
+    from random import shuffle, randint
     from umsgpack import pack, packb, unpack, unpackb
 
     seed_transport = guess_best_transport()
     datafile = path.join(path.split(__file__)[0], 'seeders.msgpack')
-    seed = DHTSocket(addr, port-1, prot=Protocol('bootstrap', seed_transport))
+    seed = DHTSocket(addr, randint(32768, 65535), prot=Protocol('bootstrap', seed_transport))
     ret = socket_type(addr, port, *args, prot=proto, **kargs)
     dict_ = {}
 
