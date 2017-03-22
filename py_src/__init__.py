@@ -73,10 +73,11 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
     ret = socket_type(addr, port, *args, prot=proto, **kargs)
     datafile = path.join(path.split(__file__)[0], 'seeders.msgpack')
     dict_ = {}
-    if proto == seed.protocol and socket_type == DHTSocket:
+    seed_protocol = Protocol('bootstrap', proto.encryption)
+    if proto == seed_protocol and socket_type == DHTSocket:
         seed = ret
     else:
-        seed = DHTSocket(addr, randint(32768, 65535), prot=Protocol('bootstrap', proto.encryption))
+        seed = DHTSocket(addr, randint(32768, 65535), prot=seed_protocol)
 
     with open(datafile, 'rb') as database:
         database.seek(0)
