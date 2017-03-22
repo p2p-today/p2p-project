@@ -621,7 +621,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
             node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
         }
         if (Object.is(node, this))  {
-            if (value === '')    {
+            if (value === null)    {
                 delete this.data[method][key];
             }
             else    {
@@ -672,11 +672,11 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         this.__store('sha256', keys[2], value);
         this.__store('sha384', keys[3], value);
         this.__store('sha512', keys[4], value);
-        if (!this.__keys.has(key) && value !== '')   {
+        if (!this.__keys.has(key) && value !== null)    {
             this.__keys.add(key);
             this.send([key], undefined, base.flags.notify);
         }
-        else if (this.__keys.has(key) && value === '')   {
+        else if (this.__keys.has(key) && value === null)    {
             this.__keys.add(key);
             this.send([key, 'del'], undefined, base.flags.notify);
         }
@@ -708,7 +708,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
         *         :raises:              See :js:func:`~js2p.chord.ChordSocket.set`
         */
-        this.set(key);
+        this.set(key, null);
     }
 
     *keys()  {
