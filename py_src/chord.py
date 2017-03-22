@@ -322,7 +322,7 @@ class ChordSocket(MeshSocket):
                 if len(tuple(self.outgoing)) < max_outgoing or is_prev(
                         id) or is_next(id):
                     try:
-                        self.__connect(addr[0], addr[1], id.encode())
+                        self.__connect(addr[0], addr[1], id)
                     except:  # pragma: no cover
                         self.__print__(
                             "Could not connect to %s because\n%s" %
