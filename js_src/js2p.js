@@ -41,6 +41,67 @@ catch (e) {
 m.version = m.base.version;
 m.version_info = m.base.version_info;
 
-m.bootstrap = function bootstrap(net_id, constrcutor, addr, port, protocol, seeding)  {
-    throw new Error("Not yet implemented (see #130)");
+function _get_database()    {
+    return {'SSL': {
+                'euclid': ['euclid.nmu.edu', 44566],
+                'turing': ['turing.nmu.edu', 44566],
+                'p2p.today': ['blog.p2p.today', 44566]},
+            'Plaintext': {
+                'euclid': ['euclid.nmu.edu', 44565],
+                'turing': ['turing.nmu.edu', 44565],
+                'p2p.today': ['blog.p2p.today', 44565]
+            }};
+}
+
+function _update_database() {}
+
+m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    {
+    let ret = new socket_type(addr, port, protocol, ...args);
+    let dict = _get_database();
+    let seed_protocol = new m.base.Protocol('bootstrap', protocol.encryption);
+    let seed = ret;
+    if (protocol.id !== seed_protocol.id || !(m.chord && socket_type === m.chord.ChordSocket))  {
+        seed = new DHTSocket(addr, Math.random() * 32768 + 32767, seed_protocol);
+    }
+
+    if (dict[protocol.encryption] !== undefined)   {
+        for (let key of Object.keys(dict[protocol.encryption]))    {
+            let seeder = dict[protocol.encryption][key];
+            try {
+                seed.connect(...seeder);
+            }
+            catch(e)    {}
+        }
+    }
+
+    seed.once('connect', function on_connect(_) {
+        let request = seed.get(protocol.id);
+        request.then(function on_receipt(dct)   {
+            for (let key of new Set(Object.keys(dct)))  {
+                if (ret.routing_table.size > 4) {
+                    break;
+                }
+                else    {
+                    let info = dct[key];
+                    try {
+                        ret.connect(...info);
+                    }
+                    catch(e)    {}
+                }
+            }
+            let id_ = ret.id;
+            seed.apply_delta(proto.id, {id_: ret.out_addr}).catch(console.warn)
+        }).catch(console.warn);
+
+        for (let id_ of seed.routing_table.keys())  {
+            if (dict[proto.encryption][id_] === undefined)   {
+                let node = seed.routing_table.get(id_);
+                dict[proto.encryption][id_] = node.addr;
+            }
+        }
+
+        _update_database(dict)
+    });
+
+    return ret
 }
