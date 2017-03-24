@@ -74,8 +74,11 @@ def _get_database():
         return unpack(database)
 
 
-def _set_database(dict_, routing_table, proto):
-    # type: (Dict[str, Dict[bytes, List[Union[str, int]]]], Dict[bytes, BaseConnection], Protocol) -> None
+def _set_database(
+  dict_,  # type: Dict[str, Dict[bytes, List[Union[str, int]]]]
+  routing_table  # type: Dict[bytes, BaseConnection]
+  proto  # type: Protocol
+):  # type: (...) -> None
     for id_, node in routing_table.items():
         if id_ not in dict_[proto.encryption]:
             dict_[proto.encryption][id_] = list(node.addr)
@@ -85,8 +88,14 @@ def _set_database(dict_, routing_table, proto):
         pack(dict_, database)
 
 
-def bootstrap(socket_type, proto, addr, port, *args, **kargs):
-    # type: (Callable, Protocol, str, int, *Any, **Any) -> Union[MeshSocket, SyncSocket, ChordSocket]
+def bootstrap(
+    socket_type,  # type: Callable
+    proto,  # type: Protocol
+    addr,  # type: str
+    port,  # type: int
+    *args,  # type: *Any
+    **kargs  # type: **Any
+):  # type: (...) -> Union[MeshSocket, SyncSocket, ChordSocket]
     ret = socket_type(
         addr, port, *args, prot=proto,
         **kargs)  #type: Union[MeshSocket, SyncSocket, ChordSocket]
