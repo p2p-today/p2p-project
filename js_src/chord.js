@@ -287,7 +287,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         *         :returns: Either ``True`` or ``None``
         */
         let packets = msg.packets
-        if (packets[0] == flags.delta)  {
+        if (packets[0] === flags.delta)  {
             let method = packets[1];
             let key = from_base_58(packets[2]);
             this.__delta(method, key, packets[3]);
