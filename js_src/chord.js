@@ -569,24 +569,23 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
             let count = ctuple[1];
             let iters = 0
             let limit = Math.floor(timeout / 0.1) || 100;
-            let fails = new Set([undefined, null, '']);
 
             function check()    {
-                if ((fails.has(common) || count <= 2) && iters < limit)   {
+                if ((common === undefined || count <= 2) && iters < limit)   {
                     setTimeout(check, 100);
                     iters += 1
                     ctuple = most_common(vals);
                     common = ctuple[0];
                     count = ctuple[1];
                 }
-                else if (!fails.has(common) && count > 2) {
+                else if (common !== undefined && count > 2) {
                     fulfill(common);
                 }
                 else if (iters === limit)   {
-                    reject(new Error("Time out"));
+                    reject(new Error(`Time out: ${util.inspect(vals)}`));
                 }
                 else    {
-                    reject(new Error(`This key does not have an agreed-upon value. values=${utils.inspect(vals)}, count=${count}, majority=3, most common=${utils.inspect(common)}`));
+                    reject(new Error(`This key does not have an agreed-upon value. values=${util.inspect(vals)}, count=${count}, majority=3, most common=${util.inspect(common)}`));
                 }
             }
             check();

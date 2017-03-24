@@ -378,14 +378,17 @@ class ChordSocket(MeshSocket):
         """
         packets = msg.packets
         if packets[0] == flags.retrieve:
-            if packets[1] in hashes:
-                val = self.__lookup(packets[1],
+            if sanitize_packet(packets[1]) in hashes:
+                val = self.__lookup(sanitize_packet(packets[1]),
                                     from_base_58(packets[2]),
                                     cast(ChordConnection, handler))
                 if val.value is not None:
                     self.__print__(val.value, level=1)
                     handler.send(flags.whisper, flags.retrieved, packets[1],
                                  packets[2], cast(MsgPackable, val.value))
+                else:
+                    handler.send(flags.whisper, flags.retrieved, packets[1],
+                                 packets[2], None)
                 return True
         return None
 

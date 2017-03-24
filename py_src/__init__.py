@@ -76,7 +76,7 @@ def _get_database():
 
 def _set_database(
   dict_,  # type: Dict[str, Dict[bytes, List[Union[str, int]]]]
-  routing_table  # type: Dict[bytes, BaseConnection]
+  routing_table,  # type: Dict[bytes, BaseConnection]
   proto  # type: Protocol
 ):  # type: (...) -> None
     for id_, node in routing_table.items():

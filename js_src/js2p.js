@@ -61,7 +61,7 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
     let seed_protocol = new m.base.Protocol('bootstrap', protocol.encryption);
     let seed = ret;
     if (protocol.id !== seed_protocol.id || !(m.chord && socket_type === m.chord.ChordSocket))  {
-        seed = new DHTSocket(addr, Math.random() * 32768 + 32767, seed_protocol);
+        seed = new m.chord.ChordSocket(addr, Math.floor(Math.random() * 32768) + 32767, seed_protocol);
     }
 
     if (dict[protocol.encryption] !== undefined)   {
