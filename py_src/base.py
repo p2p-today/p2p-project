@@ -614,8 +614,8 @@ class Message(object):
         else:
             self.server._logger.debug('Requesting connection for direct reply'
                                       ' to Message ID {}'.format(self.id))
-            request_hash = sha384(self.sender + to_base_58(
-                getUTC())).hexdigest()
+            request_hash = sha384(self.sender +
+                                  to_base_58(getUTC())).hexdigest()
             request_id = to_base_58(int(request_hash, 16))
             self.server.send(request_id, self.sender, type=flags.request)
             to_send = (flags.whisper,

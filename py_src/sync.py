@@ -96,7 +96,8 @@ class SyncSocket(MeshSocket):
         #type: (SyncSocket, bytes, MsgPackable, metatuple, bool) -> bool
         meta = self.metadata.get(key, None)
         return ((meta is None) or (meta.owner == new_meta.owner) or
-                (delta and not self.__leasing) or (meta.timestamp < getUTC() - 3600) or
+                (delta and not self.__leasing) or
+                (meta.timestamp < getUTC() - 3600) or
                 (meta.timestamp == new_meta.timestamp and
                  meta.owner > new_meta.owner) or
                 (meta.timestamp < new_meta.timestamp and not self.__leasing))
@@ -272,7 +273,8 @@ class SyncSocket(MeshSocket):
         """
         if self.__check_lease(key, delta, new_meta, delta=True):
             self.metadata[key] = new_meta
-            self.__print__(5, 'Applying a delta of {} to {}'.format(delta, key))
+            self.__print__(5, 'Applying a delta of {} to {}'.format(
+                delta, key))
             if key not in self.data:
                 self.data[key] = {}
             self.data[key].update(delta)  #type: ignore

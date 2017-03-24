@@ -32,8 +32,8 @@ def test_base_58(benchmark, iters=1000):
     #type: (Any, int) -> None
     def data_gen():
         #type: () -> Tuple[Tuple, Dict]
-        return (utils.to_base_58, utils.from_base_58,
-                randint(0, 2**32 - 1)), {}
+        return (utils.to_base_58, utils.from_base_58, randint(0,
+                                                              2**32 - 1)), {}
 
     benchmark.pedantic(identity, setup=data_gen, rounds=iters)
 
@@ -55,8 +55,9 @@ def test_intersect(benchmark, iters=200):
     def test(pair1, pair2, cross1, cross2):
         #type: (Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> None
         if max(cross1) < min(cross2):
-            assert (utils.intersect(range(*pair1), range(*pair2)) == tuple(
-                range(max(cross1), min(cross2))))
+            assert (utils.intersect(
+                range(*pair1),
+                range(*pair2)) == tuple(range(max(cross1), min(cross2))))
         else:
             assert utils.intersect(range(*pair1), range(*pair2)) == ()
 

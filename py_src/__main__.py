@@ -11,12 +11,12 @@ from . import bootstrap
 from .chord import ChordSocket, Protocol
 
 verbosity = 0
-seed_nodes = {}  #type: Dict[str, ChordSocket]
+seed_nodes = {}  # type: Dict[str, ChordSocket]
 
 
 @click.group()
 def cli():
-    #type: () -> None
+    # type: () -> None
     pass
 
 
@@ -27,12 +27,15 @@ def cli():
 @click.option('--address', type=str, default='0.0.0.0')
 @click.option('--port', type=int, default=44565)
 @click.option('-v', '--verbose', count=True)
-def seed(verbose=0, transport=None, outward_port=None, outward_address=None, port=None, address=None):
-    #type: (int, str, int, str, int, str) -> None
-    transport = {
-    'TCP': 'Plaintext',
-    'SSL': 'SSL'
-    }[transport]
+def seed(
+        verbose=0,  # type: int
+        transport=None,  # type: str
+        outward_port=None,  # type: int
+        outward_address=None,  # type: str
+        port=None,  # type: int
+        address=None  # type: str
+):  # type: (...) -> None
+    transport = {'TCP': 'Plaintext', 'SSL': 'SSL'}[transport]
     if transport not in seed_nodes:
         kwargs = {
             'addr': address,
@@ -47,7 +50,7 @@ def seed(verbose=0, transport=None, outward_port=None, outward_address=None, por
 
 
 def main():
-    #type: () -> None
+    # type: () -> None
     try:
         cli(prog_name='py2p')
     except SystemExit:

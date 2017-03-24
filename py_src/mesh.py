@@ -439,9 +439,9 @@ class MeshSocket(BaseSocket):
                 handler.send(flags.whisper, flags.peers,
                              cast(MsgPackable, self._get_peer_list()))
             elif self.routing_table.get(packets[2]):
-                handler.send(
-                    flags.broadcast, flags.response, packets[1],
-                    [self.routing_table.get(packets[2]).addr, packets[2]])
+                handler.send(flags.broadcast, flags.response, packets[1], [
+                    self.routing_table.get(packets[2]).addr, packets[2]
+                ])
             return True
         return None
 
@@ -545,8 +545,7 @@ class MeshSocket(BaseSocket):
                     this node
         """
         self.__print__(
-            "Attempting connection to %s:%s with id %s" %
-            (addr, port, repr(id)),
+            "Attempting connection to %s:%s with id %s".format(addr, port, id),
             level=1)
         if (getaddrinfo(addr, port)[0] == getaddrinfo(*self.out_addr)[0] or
                 id in self.routing_table):
