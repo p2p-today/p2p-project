@@ -8,30 +8,6 @@ engines:
       - javascript
       - python
       - php
-    exclude_fingerprints:
-      - 5de99b224ef15d5982f28ad883217817
-      - a4904e1bb797df1090879535bcadeae4
-      - 98cf09e372b83a194bdf71107a97074a
-      - 2c1611a8d29d03a6f557fc3827aeeca0
-      - b084b705606f106fb116029b92e5a6cf
-      - 6672f12d51d66b93d2385affbf929e0a
-      - ebe4b23b4a9a763738af9399771ee5e9
-      - df7560f7cecb58026ae7d8dcd247ffba
-      - 159e8adf8a3e8cd61bb5e9de1c78da33
-      - 0511db0bfd510cdcfb2ecd080cbf8993
-      - 0d6601bfd2a9f00e972db6f0f594fea0
-      - d098e5074e270ba459e0dfb5fee17663
-      - 2d21bc6adeb012585bebc59cdbf51cac
-      - 9d00c8c9fc815b3999e7a11cb80074df
-      - 6e01dcdfb0b6ad72e7d1c986b87603e6
-      - fec3c4f3837296dbee23d5bd702cd1ef
-      - 9c169098be7ee91af4527f0b6800a00a
-      - 522679549062f55ae23812ec4b65f7d0
-      - 02735adaec86c98e03c728b91ca5eb8f
-      - cffbf7f43320c4b62f1afda8d3bd5c96
-      - 867cab435a4e487c2f8fd29af48658fb
-      - 0439d6ad912ba7ed2d67a0bb2f285827
-
   eslint:
     enabled: true
   fixme:
@@ -40,10 +16,16 @@ engines:
     enabled: true
   gnu-complexity:
     enabled: true
-#  nodesecurity:
-#    enabled: true
+  nodesecurity:
+    enabled: true
   pep8:
     enabled: true
+  checkstyle:
+    enabled: true
+    channel: "beta"
+  pmd:
+    enabled: true
+    channel: "beta"
 ratings:
   paths:
     - "**.h"
@@ -53,6 +35,7 @@ ratings:
     - "**.js"
     - "**.jsx"
     - "**.module"
+    - "**.java"
     - "**.php"
     - "**.py"
     - "**.rb"
