@@ -1,0 +1,42 @@
+---
+engines:
+  duplication:
+    enabled: true
+    config:
+      languages:
+      - ruby
+      - javascript
+      - python
+      - php
+  eslint:
+    enabled: true
+  fixme:
+    enabled: true
+  radon:
+    enabled: true
+  gnu-complexity:
+    enabled: true
+  nodesecurity:
+    enabled: true
+  pep8:
+    enabled: true
+  checkstyle:
+    enabled: true
+    channel: "beta"
+  pmd:
+    enabled: true
+    channel: "beta"
+ratings:
+  paths:
+    - "**.h"
+    - "**.cpp"
+    - "**.c"
+    - "**.inc"
+    - "**.js"
+    - "**.jsx"
+    - "**.module"
+    - "**.java"
+    - "**.php"
+    - "**.py"
+    - "**.rb"
+exclude_paths: []
