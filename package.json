@@ -1,7 +1,7 @@
 {
   "name": "js2p",
   "main": "js_src/js2p.js",
-  "version": "0.6.757",
+  "version": "0.7.757",
   "license": "LGPL-3.0",
   "repository": {
     "type": "git",

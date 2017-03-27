@@ -93,7 +93,7 @@ class awaiting_value    {
     callback_method(method, key)    {
         this.callback.send(
             base.flags.whisper,
-            [base.flags.retrieved, method, key, self.value]
+            [base.flags.retrieved, method, key, this.value]
         );
     }
 }
@@ -578,7 +578,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
                     common = ctuple[0];
                     count = ctuple[1];
                 }
-                else if (common !== undefined && count > 2) {
+                else if (common !== undefined && common !== null && count > 2) {
                     fulfill(common);
                 }
                 else if (iters === limit)   {
@@ -650,6 +650,59 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         else    {
             node.send(base.flags.whisper, [base.flags.delta, method, base.to_base_58(key), delta]);
         }
+    }
+
+    apply_delta(key, delta) {
+        /*Updates a stored mapping with the given delta. This allows for more
+        graceful handling of conflicting changes
+
+        Args:
+            key:    The key you wish to apply a delta to. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            delta:  A mapping which contains the keys you wish to update, and
+                        the values you wish to store
+
+        Returns:
+            A :py:class:`~async_promises.Promise` which yields the resulting
+            data, or rejects with a :py:class:`TypeError` if the updated key
+            does not store a mapping already.
+
+        Raises:
+            TypeError: If the updated key does not store a mapping already.
+        */
+
+        const self = this;
+
+        return new Promise((resolve, reject)=>{
+            if (!(delta instanceof Object)) {
+                reject(new Error("Cannot apply delta if you feed a non-mapping"));
+            }
+
+            function on_success(value)    {
+                let _key = new Buffer(key);
+                let keys = m.get_hashes(_key);
+                let hashes = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512'];
+                for (let i in keys) {
+                    self.__delta(hashes[i], keys[i], delta);
+                }
+                for (let k of Object.keys(delta))    {
+                    value[k] = delta[k];
+                }
+                resolve(value)
+            }
+
+            self.get(key).then(
+                (value)=>{
+                    if (value instanceof Object)    {
+                        on_success(value);
+                    }
+                    else    {
+                        reject(new Error("This key already has a non-mapping value"));
+                    }
+                },
+                ()=>{on_success({})}
+            );
+        });
     }
 
     set(key, value) {
