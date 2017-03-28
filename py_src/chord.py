@@ -474,6 +474,7 @@ class ChordSocket(MeshSocket):
             object, which either contains or will eventually contain its result
         """
         node = self  #type: Union[ChordSocket, BaseConnection]
+        method = sanitize_packet(method)
         if self.routing_table:
             node = self.find(key)
         elif self.awaiting_ids:
@@ -619,6 +620,7 @@ class ChordSocket(MeshSocket):
                         or :py:class:`bytes`-like object
         """
         node = self.find(key)  #type: Union[ChordSocket, BaseConnection]
+        method = sanitize_packet(method)
         if self.leeching and node is self and len(self.awaiting_ids):
             node = choice(self.awaiting_ids)
         if node in (self, None):
@@ -694,6 +696,7 @@ class ChordSocket(MeshSocket):
             delta:  The delta you wish to apply at this key.
         """
         node = self.find(key)  #type: Union[ChordSocket, BaseConnection]
+        method = sanitize_packet(method)
         if self.leeching and node is self and len(self.awaiting_ids):
             node = choice(self.awaiting_ids)
         if node in (self, None):
