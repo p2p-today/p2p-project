@@ -90,8 +90,10 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
                 }
             }
             let id_ = ret.id;
-            seed.apply_delta(proto.id, {id_: ret.out_addr}).catch(console.warn)
-        }).catch(console.warn);
+            seed.apply_delta(proto.id, {id_: ret.out_addr}).catch(console.warn);
+        }).catch((err)=>{
+            seed.apply_delta(proto.id, {ret.id: ret.out_addr}).catch(console.warn);
+        });
 
         for (let id_ of seed.routing_table.keys())  {
             if (dict[proto.encryption][id_] === undefined)   {
