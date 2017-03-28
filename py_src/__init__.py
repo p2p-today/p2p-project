@@ -93,8 +93,8 @@ def bootstrap(
     proto,  # type: Protocol
     addr,  # type: str
     port,  # type: int
-    *args,  # type: *Any
-    **kargs  # type: **Any
+    *args,  # type: Any
+    **kargs  # type: Any
 ):  # type: (...) -> Union[MeshSocket, SyncSocket, ChordSocket]
     ret = socket_type(
         addr, port, *args, prot=proto,
