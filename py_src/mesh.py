@@ -545,7 +545,7 @@ class MeshSocket(BaseSocket):
                     this node
         """
         self.__print__(
-            "Attempting connection to %s:%s with id %s".format(addr, port, id),
+            "Attempting connection to {}:{} with id {}".format(addr, port, id),
             level=1)
         if (getaddrinfo(addr, port)[0] == getaddrinfo(*self.out_addr)[0] or
                 id in self.routing_table):
