@@ -28,16 +28,6 @@ def try_identity(in_func, out_func, data_gen, iters):
         identity(in_func, out_func, data_gen())
 
 
-def test_base_58(benchmark, iters=1000):
-    #type: (Any, int) -> None
-    def data_gen():
-        #type: () -> Tuple[Tuple, Dict]
-        return (utils.to_base_58, utils.from_base_58,
-                randint(0, 2**32 - 1)), {}
-
-    benchmark.pedantic(identity, setup=data_gen, rounds=iters)
-
-
 def test_pack_value(benchmark, iters=1000):
     #type: (Any, int) -> None
     def data_gen():

@@ -13,6 +13,7 @@ from socket import (getaddrinfo, SHUT_RDWR, error as SocketException)
 from struct import error as StructException
 from traceback import format_exc
 
+from base58 import b58decode_int
 from typing import (cast, Any, Dict, List, Sequence, Set, Tuple, Union)
 # from _collections import deque as DequeType
 
@@ -25,7 +26,7 @@ from . import flags
 from .base import (BaseConnection, BaseDaemon, BaseSocket, Message)
 from .messages import (compression, InternalMessage, MsgPackable)
 from .utils import (getUTC, get_socket, intersect, inherit_doc, log_entry,
-                    awaiting_value, from_base_58)
+                    awaiting_value)
 
 max_outgoing = 4
 default_protocol = Protocol('mesh', "Plaintext")  # SSL")
@@ -293,7 +294,7 @@ class MeshSocket(BaseSocket):
         self.__print__(
             "Resolving peer conflict on id %s" % repr(h_id), level=1)
         to_keep, to_kill = None, None  #type: Union[None, BaseConnection], Union[None, BaseConnection]
-        if (bool(from_base_58(self.id) > from_base_58(h_id)) ^
+        if (bool(b58decode_int(self.id) > b58decode_int(h_id)) ^
                 bool(handler.outgoing)):  # logical xor
             self.__print__("Closing outgoing connection", level=1)
             to_keep, to_kill = self.routing_table[h_id], handler

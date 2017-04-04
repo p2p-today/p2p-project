@@ -13,6 +13,7 @@ from time import sleep
 from traceback import format_exc
 
 from async_promises import Promise
+from base58 import (b58encode_int, b58decode_int)
 from typing import (cast, Any, Callable, Dict, Iterator, Set, Tuple, Union)
 
 try:
@@ -25,7 +26,7 @@ from .base import (BaseConnection, Message)
 from .mesh import (MeshConnection, MeshDaemon, MeshSocket)
 from .messages import MsgPackable
 from .utils import (inherit_doc, awaiting_value, most_common, log_entry,
-                    to_base_58, from_base_58, sanitize_packet)
+                    sanitize_packet)
 
 max_outgoing = 4
 default_protocol = Protocol('chord', "Plaintext")  # SSL")
@@ -89,7 +90,7 @@ class ChordConnection(MeshConnection):
         #type: (ChordConnection) -> int
         """Returns the nodes ID as an integer"""
         if self.__id_10 == -1:
-            self.__id_10 = from_base_58(self.id)
+            self.__id_10 = b58decode_int(self.id)
         return self.__id_10
 
 
@@ -166,7 +167,7 @@ class ChordSocket(MeshSocket):
                                           debug_level)
         if self.daemon == 'chord reserved':
             self.daemon = ChordDaemon(addr, port, self)
-        self.id_10 = from_base_58(self.id)  #type: int
+        self.id_10 = b58decode_int(self.id)  #type: int
         self.data = dict((
             (method, {})
             for method in hashes))  #type: Dict[bytes, Dict[int, MsgPackable]]
@@ -312,12 +313,12 @@ class ChordSocket(MeshSocket):
 
             def is_prev(id):
                 #type: (Union[bytes, bytearray, str]) -> bool
-                return distance(from_base_58(id), self.id_10) <= distance(
+                return distance(b58decode_int(id), self.id_10) <= distance(
                     self.prev.id_10, self.id_10)
 
             def is_next(id):
                 #type: (Union[bytes, bytearray, str]) -> bool
-                return distance(self.id_10, from_base_58(id)) <= distance(
+                return distance(self.id_10, b58decode_int(id)) <= distance(
                     self.id_10, self.next.id_10)
 
             for addr, id in new_peers:
@@ -380,7 +381,7 @@ class ChordSocket(MeshSocket):
         if packets[0] == flags.retrieve:
             if packets[1] in hashes:
                 val = self.__lookup(packets[1],
-                                    from_base_58(packets[2]),
+                                    b58decode_int(packets[2]),
                                     cast(ChordConnection, handler))
                 if val.value is not None:
                     self.__print__(val.value, level=1)
@@ -406,7 +407,7 @@ class ChordSocket(MeshSocket):
         packets = msg.packets
         if packets[0] == flags.store:
             method = packets[1]
-            key = from_base_58(packets[2])
+            key = b58decode_int(packets[2])
             self.__store(method, key, packets[3])
             return True
         return None
@@ -428,7 +429,7 @@ class ChordSocket(MeshSocket):
         packets = msg.packets
         if packets[0] == flags.delta:
             method = packets[1]
-            key = from_base_58(packets[2])
+            key = b58decode_int(packets[2])
             self.__delta(method, key, packets[3])
             return True
         return None
@@ -478,11 +479,11 @@ class ChordSocket(MeshSocket):
         if node in (self, None):
             return awaiting_value(self.data[method].get(key, None))
         else:
-            node.send(flags.whisper, flags.retrieve, method, to_base_58(key))
+            node.send(flags.whisper, flags.retrieve, method, b58encode_int(key))
             ret = awaiting_value()
             if handler:
                 ret.callback = handler
-            self.requests[method, to_base_58(key)] = ret
+            self.requests[method, b58encode_int(key)] = ret
             return ret
 
     def __getitem(self, key, timeout=10):
@@ -624,7 +625,7 @@ class ChordSocket(MeshSocket):
                 self.data[method][key] = value
         else:
             node.send(flags.whisper, flags.store, method,
-                      to_base_58(key), value)
+                      b58encode_int(key), value)
 
     def __setitem__(self, key, value):
         #type: (ChordSocket,  Union[bytes, bytearray, str], MsgPackable) -> None
@@ -698,7 +699,7 @@ class ChordSocket(MeshSocket):
             self.data[method][key].update(delta)  #type: ignore
         else:
             node.send(flags.whisper, flags.delta, method,
-                      to_base_58(key), delta)
+                      b58encode_int(key), delta)
 
     def apply_delta(self, key, delta):
         #type: (ChordSocket, Union[bytes, bytearray, str], MsgPackable) -> Promise

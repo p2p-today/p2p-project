@@ -1,12 +1,13 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
+from base58 import (b58encode_int, b58decode_int)
+
 from . import flags
 from .base import (Message, BaseConnection)
 from .mesh import MeshSocket
 from .messages import MsgPackable
-from .utils import (to_base_58, from_base_58, inherit_doc, getUTC,
-                    sanitize_packet, log_entry)
+from .utils import (inherit_doc, getUTC, sanitize_packet, log_entry)
 
 try:
     from .cbase import protocol as Protocol
@@ -141,7 +142,7 @@ class SyncSocket(MeshSocket):
         for key in self:
             meta = self.metadata[key]
             handler.send(flags.whisper, flags.store, key, self[key],
-                         meta.owner, to_base_58(meta.timestamp))
+                         meta.owner, b58encode_int(meta.timestamp))
 
     def __handle_store(self, msg, handler):
         #type: (SyncSocket, Message, BaseConnection) -> Union[bool, None]
@@ -164,7 +165,7 @@ class SyncSocket(MeshSocket):
             if len(packets) == 5:
                 if self.data.get(packets[1]):
                     return None
-                meta = metatuple(packets[3], from_base_58(packets[4]))
+                meta = metatuple(packets[3], b58decode_int(packets[4]))
             self.__store(packets[1], packets[2], meta, error=False)
             return True
         return None

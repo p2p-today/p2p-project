@@ -1,12 +1,13 @@
 from hashlib import sha256
 from logging import getLogger
 
+from base58 import (b58encode_int, b58decode_int)
 from umsgpack import (packb, unpackb, UnsupportedTypeException)
 from typing import (Any, Dict, Iterable, List, Sequence, Tuple, Union)
 
 from . import flags
-from .utils import (pack_value, unpack_value, to_base_58, from_base_58,
-                    intersect, getUTC, sanitize_packet)
+from .utils import (pack_value, unpack_value, intersect, getUTC,
+                    sanitize_packet)
 
 _MsgPackable__ = Union[None, float, str, bytes]
 _MsgPackable_ = Union[_MsgPackable__, List[_MsgPackable__], Tuple[
@@ -372,7 +373,7 @@ class InternalMessage(object):
     def time_58(self):
         #type: (InternalMessage) -> bytes
         """Returns this message's timestamp in base_58"""
-        return to_base_58(self.__time)
+        return b58encode_int(self.__time)
 
     @property
     def id(self):

@@ -7,10 +7,10 @@ from os import urandom
 from sys import version_info
 from uuid import uuid4
 
+from base58 import (b58encode_int as to_base_58, b58decode_int as from_base_58)
 from typing import (Any, Dict, Tuple)
 
 from .. import base
-from ..utils import (to_base_58, from_base_58)
 from ..messages import MsgPackable
 
 if version_info >= (3, ):
@@ -44,7 +44,7 @@ def test_Protocol(benchmark, iters=200, impl=base):
         sub = str(uuid4())
         enc = str(uuid4())
         p_hash = sha256(''.join((sub, enc, base.protocol_version)).encode())
-        return (sub, enc, to_base_58(int(p_hash.hexdigest(), 16)).decode()), {}
+        return (sub, enc, to_base_58(int(p_hash.hexdigest(), 16))), {}
 
     benchmark.pedantic(test, setup=setup, rounds=iters)
 

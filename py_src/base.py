@@ -16,6 +16,7 @@ from threading import (Lock, Thread, current_thread)
 from traceback import format_exc
 from uuid import uuid4
 
+from base58 import (b58encode, b58encode_int)
 from pyee import EventEmitter
 from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple,
                     Sequence, Tuple, Union)
@@ -23,7 +24,7 @@ from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple,
 from . import flags
 from .messages import (compression, InternalMessage, MsgPackable)
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, inherit_doc,
-                    log_entry, unpack_value, to_base_58)
+                    log_entry, unpack_value)
 
 protocol_version = "0.7"
 node_policy_version = "757"
@@ -53,7 +54,7 @@ class Protocol(
         """The SHA-256-based ID of the Protocol"""
         h = sha256(''.join(str(x) for x in self).encode())
         h.update(protocol_version.encode())
-        return to_base_58(int(h.hexdigest(), 16)).decode()
+        return b58encode_int(int(h.hexdigest(), 16))
 
 
 default_protocol = Protocol('', "Plaintext")  # SSL")
@@ -392,7 +393,7 @@ class BaseSocket(EventEmitter, object):
             self.out_addr = addr, port
         info = (str(self.out_addr).encode(), prot.id.encode(), user_salt)
         h = sha384(b''.join(info))
-        self.id = to_base_58(int(h.hexdigest(), 16))  #type: bytes
+        self.id = b58encode_int(int(h.hexdigest(), 16)).decode()  #type: bytes
         self._logger = getLogger('{}.{}.{}'.format(
             self.__class__.__module__, self.__class__.__name__, self.id))
         self.__handlers = [
@@ -614,9 +615,9 @@ class Message(object):
         else:
             self.server._logger.debug('Requesting connection for direct reply'
                                       ' to Message ID {}'.format(self.id))
-            request_hash = sha384(self.sender + to_base_58(
-                getUTC())).hexdigest()
-            request_id = to_base_58(int(request_hash, 16))
+            request_hash = sha384(self.sender + b58encode_int(
+                getUTC()).decode()).hexdigest()
+            request_id = b58encode_int(int(request_hash, 16)).decode()
             self.server.send(request_id, self.sender, type=flags.request)
             to_send = (flags.whisper,
                        flags.whisper)  #type: Tuple[MsgPackable, ...]
