@@ -124,7 +124,7 @@ class SyncSocket(MeshSocket):
                           is ``True``
         """
         if self.__check_lease(key, new_data, new_meta):
-            if new_data == b'':
+            if new_data == None:
                 del self.data[key]
                 del self.metadata[key]
                 self.emit('delete', self, key)
@@ -142,7 +142,7 @@ class SyncSocket(MeshSocket):
         for key in self:
             meta = self.metadata[key]
             handler.send(flags.whisper, flags.store, key, self[key],
-                         meta.owner, to_base_58(meta.timestamp))
+                         meta.owner, meta.timestamp)
 
     def __handle_store(self, msg, handler):
         #type: (SyncSocket, Message, BaseConnection) -> Union[bool, None]
@@ -165,7 +165,7 @@ class SyncSocket(MeshSocket):
             if len(packets) == 5:
                 if self.data.get(packets[1]):
                     return None
-                meta = metatuple(packets[3], from_base_58(packets[4]))
+                meta = metatuple(packets[3], packets[4])
             self.__store(packets[1], packets[2], meta, error=False)
             return True
         return None
@@ -334,7 +334,7 @@ class SyncSocket(MeshSocket):
 
     def __delitem__(self, key):
         #type: (SyncSocket, bytes) -> None
-        self[key] = b''
+        self[key] = None
 
     def keys(self):
         #type: (SyncSocket) -> Iterator[bytes]
