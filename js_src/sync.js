@@ -115,7 +115,7 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
         *         :raises Error: If someone else has a lease at this value, and ``error`` is not ``false``
         */
         if (this.__check_lease(key, new_data, new_meta))    {
-            if (new_data.toString() === '')    {
+            if (new_data.toString() === null)    {
                 delete this.data[key];
                 delete this.metadata[key];
                 this.emit('delete', this, key);
@@ -142,7 +142,7 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
         super._send_peers(handler)
         for (var key in this.data)  {
             let meta = this.metadata[key];
-            handler.send(base.flags.whisper, [base.flags.store, key, this.data[key], meta.owner, base.to_base_58(meta.timestamp)]);
+            handler.send(base.flags.whisper, [base.flags.store, key, this.data[key], meta.owner, meta.timestamp]);
         }
     }
 
@@ -167,7 +167,7 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
                 if (this.data[packets[1]])  {
                     return;
                 }
-                meta = new m.metatuple(packets[3], base.from_base_58(packets[4]));
+                meta = new m.metatuple(packets[3], packets[4]);
             }
             this.__store(packets[1], packets[2], meta, false);
             return true;
@@ -308,7 +308,7 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
         *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
         *         :raises:              See :js:func:`~js2p.sync.SyncSocket.set`
         */
-        this.set(key);
+        this.set(key, null);
     }
 
     *keys()  {

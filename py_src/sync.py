@@ -97,7 +97,8 @@ class SyncSocket(MeshSocket):
         #type: (SyncSocket, bytes, MsgPackable, metatuple, bool) -> bool
         meta = self.metadata.get(key, None)
         return ((meta is None) or (meta.owner == new_meta.owner) or
-                (delta and not self.__leasing) or (meta.timestamp < getUTC() - 3600) or
+                (delta and not self.__leasing) or
+                (meta.timestamp < getUTC() - 3600) or
                 (meta.timestamp == new_meta.timestamp and
                  meta.owner > new_meta.owner) or
                 (meta.timestamp < new_meta.timestamp and not self.__leasing))
@@ -124,7 +125,7 @@ class SyncSocket(MeshSocket):
                           is ``True``
         """
         if self.__check_lease(key, new_data, new_meta):
-            if new_data == b'':
+            if new_data == None:
                 del self.data[key]
                 del self.metadata[key]
                 self.emit('delete', self, key)
@@ -142,7 +143,7 @@ class SyncSocket(MeshSocket):
         for key in self:
             meta = self.metadata[key]
             handler.send(flags.whisper, flags.store, key, self[key],
-                         meta.owner, b58encode_int(meta.timestamp))
+                         meta.owner, meta.timestamp)
 
     def __handle_store(self, msg, handler):
         #type: (SyncSocket, Message, BaseConnection) -> Union[bool, None]
@@ -165,7 +166,7 @@ class SyncSocket(MeshSocket):
             if len(packets) == 5:
                 if self.data.get(packets[1]):
                     return None
-                meta = metatuple(packets[3], b58decode_int(packets[4]))
+                meta = metatuple(packets[3], packets[4])
             self.__store(packets[1], packets[2], meta, error=False)
             return True
         return None
@@ -273,7 +274,8 @@ class SyncSocket(MeshSocket):
         """
         if self.__check_lease(key, delta, new_meta, delta=True):
             self.metadata[key] = new_meta
-            self.__print__(5, 'Applying a delta of {} to {}'.format(delta, key))
+            self.__print__(5, 'Applying a delta of {} to {}'.format(
+                delta, key))
             if key not in self.data:
                 self.data[key] = {}
             self.data[key].update(delta)  #type: ignore
@@ -333,7 +335,7 @@ class SyncSocket(MeshSocket):
 
     def __delitem__(self, key):
         #type: (SyncSocket, bytes) -> None
-        self[key] = b''
+        self[key] = None
 
     def keys(self):
         #type: (SyncSocket) -> Iterator[bytes]

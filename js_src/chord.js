@@ -93,7 +93,7 @@ class awaiting_value    {
     callback_method(method, key)    {
         this.callback.send(
             base.flags.whisper,
-            [base.flags.retrieved, method, key, self.value]
+            [base.flags.retrieved, method, key, this.value]
         );
     }
 }
@@ -287,7 +287,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         *         :returns: Either ``True`` or ``None``
         */
         let packets = msg.packets
-        if (packets[0] == flags.delta)  {
+        if (packets[0] === flags.delta)  {
             let method = packets[1];
             let key = from_base_58(packets[2]);
             this.__delta(method, key, packets[3]);
@@ -569,24 +569,23 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
             let count = ctuple[1];
             let iters = 0
             let limit = Math.floor(timeout / 0.1) || 100;
-            let fails = new Set([undefined, null, '']);
 
             function check()    {
-                if ((fails.has(common) || count <= 2) && iters < limit)   {
+                if ((common === undefined || count <= 2) && iters < limit)   {
                     setTimeout(check, 100);
                     iters += 1
                     ctuple = most_common(vals);
                     common = ctuple[0];
                     count = ctuple[1];
                 }
-                else if (!fails.has(common) && count > 2) {
+                else if (common !== undefined && common !== null && count > 2) {
                     fulfill(common);
                 }
                 else if (iters === limit)   {
-                    reject(new Error("Time out"));
+                    reject(new Error(`Time out: ${util.inspect(vals)}`));
                 }
                 else    {
-                    reject(new Error(`This key does not have an agreed-upon value. values=${utils.inspect(vals)}, count=${count}, majority=3, most common=${utils.inspect(common)}`));
+                    reject(new Error(`This key does not have an agreed-upon value. values=${util.inspect(vals)}, count=${count}, majority=3, most common=${util.inspect(common)}`));
                 }
             }
             check();
@@ -651,6 +650,59 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         else    {
             node.send(base.flags.whisper, [base.flags.delta, method, base.to_base_58(key), delta]);
         }
+    }
+
+    apply_delta(key, delta) {
+        /*Updates a stored mapping with the given delta. This allows for more
+        graceful handling of conflicting changes
+
+        Args:
+            key:    The key you wish to apply a delta to. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            delta:  A mapping which contains the keys you wish to update, and
+                        the values you wish to store
+
+        Returns:
+            A :py:class:`~async_promises.Promise` which yields the resulting
+            data, or rejects with a :py:class:`TypeError` if the updated key
+            does not store a mapping already.
+
+        Raises:
+            TypeError: If the updated key does not store a mapping already.
+        */
+
+        const self = this;
+
+        return new Promise((resolve, reject)=>{
+            if (!(delta instanceof Object)) {
+                reject(new Error("Cannot apply delta if you feed a non-mapping"));
+            }
+
+            function on_success(value)    {
+                let _key = new Buffer(key);
+                let keys = m.get_hashes(_key);
+                let hashes = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512'];
+                for (let i in keys) {
+                    self.__delta(hashes[i], keys[i], delta);
+                }
+                for (let k of Object.keys(delta))    {
+                    value[k] = delta[k];
+                }
+                resolve(value)
+            }
+
+            self.get(key).then(
+                (value)=>{
+                    if (value instanceof Object)    {
+                        on_success(value);
+                    }
+                    else    {
+                        reject(new Error("This key already has a non-mapping value"));
+                    }
+                },
+                ()=>{on_success({})}
+            );
+        });
     }
 
     set(key, value) {

@@ -87,8 +87,10 @@ class BaseConnection(object):
         self.expected = 4
         self.active = False
 
-    def send_InternalMessage(self, msg):
-        #type: (BaseConnection, InternalMessage) -> Union[InternalMessage, None]
+    def send_InternalMessage(
+        self,  # type: BaseConnection
+        msg  # type: InternalMessage
+    ):  # type: (...) -> Union[InternalMessage, None]
         """Sends a preconstructed message
 
         Args:

@@ -45,8 +45,9 @@ def test_intersect(benchmark, iters=200):
     def test(pair1, pair2, cross1, cross2):
         #type: (Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> None
         if max(cross1) < min(cross2):
-            assert (utils.intersect(range(*pair1), range(*pair2)) == tuple(
-                range(max(cross1), min(cross2))))
+            assert (utils.intersect(
+                range(*pair1),
+                range(*pair2)) == tuple(range(max(cross1), min(cross2))))
         else:
             assert utils.intersect(range(*pair1), range(*pair2)) == ()
 

@@ -231,18 +231,16 @@ class InternalMessage(object):
         # First section checks size header
         _string = cls.__sanitize_string(string, sizeless)
         # Then we attempt to decompress
-        _string, compression_fail = cls.__decompress_string(_string,
-                                                            compressions)
+        _string, compression_fail = cls.__decompress_string(
+            _string, compressions)
         id_ = _string[0:32]
         serialized = _string[32:]
         checksum = sha256(serialized).digest()
-        assert id_ == checksum, "Checksum failed: {} != {}".format(id_,
-                                                                   checksum)
+        assert id_ == checksum, "Checksum failed: {} != {}".format(
+            id_, checksum)
         packets = unpackb(serialized)
-        msg = cls(packets[0],
-                  packets[1],
-                  packets[3:],
-                  compression=compressions)
+        msg = cls(
+            packets[0], packets[1], packets[3:], compression=compressions)
         msg.time = packets[2]
         msg.compression_fail = compression_fail
         msg._InternalMessage__id = checksum

@@ -107,7 +107,9 @@ def delta_validation(iters, start_port, num_nodes, encryption, leasing):
             sleep(0.5)
         print("----------------------Test event----------------------")
         nodes[0].apply_delta('store', {'seven': 7})
-        nodes[1].apply_delta('store', {'array': [1, 2, 3, 4, 5, 6, 7, 8, 9], 'number': 256})
+        nodes[1].apply_delta(
+            'store', {'array': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                      'number': 256})
         nodes[2].apply_delta('store', {'three': {'three': 'three'}})
         sleep(num_nodes)
         print("----------------------Test ended----------------------")
@@ -115,10 +117,14 @@ def delta_validation(iters, start_port, num_nodes, encryption, leasing):
         print([len(n.routing_table) for n in nodes])
         for node in nodes:
             print(node.status, len(node.routing_table))
-            assert node['store'] == {'seven': 7,
-                                     'three': {'three': 'three'},
-                                     'array': [1, 2, 3, 4, 5, 6, 7, 8, 9],
-                                     'number': 256}
+            assert node['store'] == {
+                'seven': 7,
+                'three': {
+                    'three': 'three'
+                },
+                'array': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                'number': 256
+            }
 
         close_all_nodes(nodes)
 

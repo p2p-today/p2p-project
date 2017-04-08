@@ -215,9 +215,9 @@ class ChordSocket(MeshSocket):
             #type: (Iterator[ChordConnection]) -> ChordConnection
             coll = sorted(lst, key=get_id)
             coll_len = len(coll)
-            circular_triplets = (
-                (coll[x], coll[(x + 1) % coll_len], coll[(x + 2) % coll_len])
-                for x in range(coll_len))
+            circular_triplets = ((coll[x], coll[(x + 1) % coll_len],
+                                  coll[(x + 2) % coll_len])
+                                 for x in range(coll_len))
             narrowest = None  #type: Union[None, ChordConnection]
             gap = 2**384  #type: int
             for beg, mid, end in circular_triplets:
@@ -379,14 +379,17 @@ class ChordSocket(MeshSocket):
         """
         packets = msg.packets
         if packets[0] == flags.retrieve:
-            if packets[1] in hashes:
-                val = self.__lookup(packets[1],
+            if sanitize_packet(packets[1]) in hashes:
+                val = self.__lookup(sanitize_packet(packets[1]),
                                     b58decode_int(packets[2]),
                                     cast(ChordConnection, handler))
                 if val.value is not None:
                     self.__print__(val.value, level=1)
                     handler.send(flags.whisper, flags.retrieved, packets[1],
                                  packets[2], cast(MsgPackable, val.value))
+                else:
+                    handler.send(flags.whisper, flags.retrieved, packets[1],
+                                 packets[2], None)
                 return True
         return None
 
@@ -445,9 +448,9 @@ class ChordSocket(MeshSocket):
         Returns:
             A nested :py:class:`dict` containing your data from start to end
         """
-        ret = dict((
-            (method, {})
-            for method in hashes))  #type: Dict[bytes, Dict[int, MsgPackable]]
+        ret = dict(
+            ((method, {})
+             for method in hashes))  #type: Dict[bytes, Dict[int, MsgPackable]]
         self.__print__("Entering dump_data", level=1)
         for method, table in self.data.items():
             for key, value in table.items():
@@ -472,6 +475,7 @@ class ChordSocket(MeshSocket):
             object, which either contains or will eventually contain its result
         """
         node = self  #type: Union[ChordSocket, BaseConnection]
+        method = sanitize_packet(method)
         if self.routing_table:
             node = self.find(key)
         elif self.awaiting_ids:
@@ -593,6 +597,7 @@ class ChordSocket(MeshSocket):
             A :py:class:`~async_promises.Promise` of the value at said key, or
             the value at ifError if there's an :py:class:`Exception`
         """
+
         @Promise
         def resolver(resolve, reject):
             #type: (Callable, Callable) -> None
@@ -616,6 +621,7 @@ class ChordSocket(MeshSocket):
                         or :py:class:`bytes`-like object
         """
         node = self.find(key)  #type: Union[ChordSocket, BaseConnection]
+        method = sanitize_packet(method)
         if self.leeching and node is self and len(self.awaiting_ids):
             node = choice(self.awaiting_ids)
         if node in (self, None):
@@ -691,6 +697,7 @@ class ChordSocket(MeshSocket):
             delta:  The delta you wish to apply at this key.
         """
         node = self.find(key)  #type: Union[ChordSocket, BaseConnection]
+        method = sanitize_packet(method)
         if self.leeching and node is self and len(self.awaiting_ids):
             node = choice(self.awaiting_ids)
         if node in (self, None):
@@ -729,10 +736,13 @@ class ChordSocket(MeshSocket):
         def resolver(resolve, reject):
             #type: (Callable, Callable) -> None
             if not isinstance(value.get(), dict) and value.get() is not None:
-                reject(TypeError("Cannot apply delta to a non-mapping: {}".format(value.get())))
+                reject(
+                    TypeError("Cannot apply delta to a non-mapping: {}".format(
+                        value.get())))
             else:
                 _key = sanitize_packet(key)
-                self._logger.debug('Applying a delta of {} to {}'.format(delta, _key))
+                self._logger.debug(
+                    'Applying a delta of {} to {}'.format(delta, _key))
                 keys = get_hashes(_key)
                 for method, x in zip(hashes, keys):
                     self.__delta(method, x, delta)

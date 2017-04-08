@@ -42,7 +42,8 @@ from warnings import warn
 from typing import (Any, Callable, cast, Dict, List, Tuple, Union)
 from umsgpack import (pack, unpack)
 
-from .base import (Protocol, version, protocol_version, node_policy_version, BaseConnection)
+from .base import (Protocol, version, protocol_version, node_policy_version,
+                   BaseConnection)
 from .mesh import MeshSocket
 from .sync import SyncSocket
 from .chord import ChordSocket
@@ -53,9 +54,8 @@ DHTSocket = ChordSocket
 __version__ = version  #type: str
 version_info = tuple(map(int, __version__.split(".")))  #type: Tuple[int, ...]
 
-
-__all__ = ["mesh", "chord", "kademlia", "base",
-           "ssl_wrapper", "__main__"]  #type: List[str]
+__all__ = ["mesh", "chord", "kademlia", "base", "ssl_wrapper",
+           "__main__"]  #type: List[str]
 
 try:
     import cbase
@@ -68,14 +68,17 @@ _datafile = path.join(path.split(__file__)[0], 'seeders.msgpack')
 
 
 def _get_database():
-    #type: () -> Dict[str, Dict[bytes, List[Union[str, int]]]]
+    # type: () -> Dict[str, Dict[bytes, List[Union[str, int]]]]
     with open(_datafile, 'rb') as database:
         database.seek(0)
         return unpack(database)
 
 
-def _set_database(dict_, routing_table, proto):
-    #type: (Dict[str, Dict[bytes, List[Union[str, int]]]], Dict[bytes, BaseConnection], Protocol) -> None
+def _set_database(
+  dict_,  # type: Dict[str, Dict[bytes, List[Union[str, int]]]]
+  routing_table,  # type: Dict[bytes, BaseConnection]
+  proto  # type: Protocol
+):  # type: (...) -> None
     for id_, node in routing_table.items():
         if id_ not in dict_[proto.encryption]:
             dict_[proto.encryption][id_] = list(node.addr)
@@ -85,9 +88,17 @@ def _set_database(dict_, routing_table, proto):
         pack(dict_, database)
 
 
-def bootstrap(socket_type, proto, addr, port, *args, **kargs):
-    #type: (Callable, Protocol, str, int, *Any, **Any) -> Union[MeshSocket, SyncSocket, ChordSocket]
-    ret = socket_type(addr, port, *args, prot=proto, **kargs)  #type: Union[MeshSocket, SyncSocket, ChordSocket]
+def bootstrap(
+    socket_type,  # type: Callable
+    proto,  # type: Protocol
+    addr,  # type: str
+    port,  # type: int
+    *args,  # type: Any
+    **kargs  # type: Any
+):  # type: (...) -> Union[MeshSocket, SyncSocket, ChordSocket]
+    ret = socket_type(
+        addr, port, *args, prot=proto,
+        **kargs)  #type: Union[MeshSocket, SyncSocket, ChordSocket]
     seed_protocol = Protocol('bootstrap', proto.encryption)
     if proto == seed_protocol and socket_type == DHTSocket:
         seed = cast(DHTSocket, ret)  #type: DHTSocket
@@ -103,11 +114,12 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
 
     @seed.once('connect')
     def on_connect(_):
-        #type: (DHTSocket) -> None
+        # type: (DHTSocket) -> None
         request = seed.get(proto.id)
+
         @request.then
         def on_receipt(dct):
-            #type: (Dict[bytes, List[Union[str, int]]]) -> None
+            # type: (Dict[bytes, List[Union[str, int]]]) -> None
             conns = list(dct.values()) if isinstance(dct, dict) else []
             shuffle(conns)
             for info in conns:
@@ -118,7 +130,8 @@ def bootstrap(socket_type, proto, addr, port, *args, **kargs):
                         ret.connect(*info)
                     except Exception:
                         continue
-            seed.apply_delta(cast(bytes, proto.id), {ret.id: ret.out_addr}).catch(warn)
+            seed.apply_delta(cast(bytes, proto.id), {ret.id:
+                                                     ret.out_addr}).catch(warn)
 
         on_receipt.catch(warn)
         _set_database(dict_, seed.routing_table, proto)
