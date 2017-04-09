@@ -9,6 +9,7 @@ from subprocess import check_output
 from sys import (platform, version_info)
 from time import sleep
 
+from pytest import mark
 from typing import (Any, Callable, Dict, Tuple, Union)
 
 from .. import utils
@@ -28,6 +29,7 @@ def try_identity(in_func, out_func, data_gen, iters):
         identity(in_func, out_func, data_gen())
 
 
+@mark.run(order=1)
 def test_pack_value(benchmark, iters=1000):
     #type: (Any, int) -> None
     def data_gen():
@@ -38,6 +40,7 @@ def test_pack_value(benchmark, iters=1000):
     benchmark.pedantic(identity, setup=data_gen, rounds=iters)
 
 
+@mark.run(order=1)
 def test_intersect(benchmark, iters=200):
     #type: (Any, int) -> None
     max_val = 2**12 - 1
@@ -62,6 +65,7 @@ def test_intersect(benchmark, iters=200):
     benchmark.pedantic(test, setup=setup, rounds=iters)
 
 
+@mark.run(order=1)
 def test_getUTC(iters=20):
     #type: (int) -> None
     while iters:
@@ -72,6 +76,7 @@ def test_getUTC(iters=20):
         iters -= 1
 
 
+@mark.run(order=1)
 def test_lan_ip():
     #type: () -> None
     if platform[:5] in ('linux', 'darwi'):

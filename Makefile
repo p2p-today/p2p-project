@@ -16,7 +16,7 @@ help:
 
 pip = -m pip install
 py_deps = $(pip) cryptography --upgrade
-py_test_deps = $(pip) pytest-coverage pytest-benchmark
+py_test_deps = $(pip) pytest-coverage pytest-benchmark pytest-ordering
 docs_deps = $(pip) sphinx sphinxcontrib-napoleon sphinx_rtd_theme
 
 ifeq ($(shell python -c 'import sys; print(int(hasattr(sys, "real_prefix")))'), 0) # check for virtualenv

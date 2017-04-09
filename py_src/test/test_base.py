@@ -8,6 +8,7 @@ from sys import version_info
 from uuid import uuid4
 
 from base58 import (b58encode_int as to_base_58, b58decode_int as from_base_58)
+from pytest import mark
 from typing import (Any, Dict, Tuple)
 
 from .. import base
@@ -22,6 +23,7 @@ def gen_random_list(item_size, list_size):
     return tuple(urandom(item_size) for _ in xrange(list_size))
 
 
+@mark.run(order=1)
 def test_Protocol(benchmark, iters=200, impl=base):
     #type: (Any, int, Any) -> None
     def test(sub, enc, id_):
@@ -49,6 +51,7 @@ def test_Protocol(benchmark, iters=200, impl=base):
     benchmark.pedantic(test, setup=setup, rounds=iters)
 
 
+@mark.run(order=2)
 def test_Message_sans_network(benchmark, iters=1000):
     #type: (Any, int) -> None
     def setup():

@@ -6,7 +6,7 @@ from __future__ import absolute_import
 from time import sleep
 from sys import version_info
 
-from pytest import raises
+from pytest import (mark, raises)
 
 from .. import (flags, sync)
 
@@ -63,21 +63,25 @@ def storage_validation(iters, start_port, num_nodes, encryption, leasing):
         close_all_nodes(nodes)
 
 
+@mark.run(order=4)
 def test_storage_leasing_Plaintext(iters=2):
     #type: (int) -> None
     storage_validation(iters, 7100, 3, 'Plaintext', True)
 
 
+@mark.run(order=4)
 def test_storage_leasing_SSL(iters=2):
     #type: (int) -> None
     storage_validation(iters, 7200, 3, 'SSL', True)
 
 
+@mark.run(order=4)
 def test_storage_Plaintext(iters=2):
     #type: (int) -> None
     storage_validation(iters, 7300, 3, 'Plaintext', False)
 
 
+@mark.run(order=4)
 def test_storage_SSL(iters=2):
     #type: (int) -> None
     storage_validation(iters, 7400, 3, 'SSL', False)
@@ -129,11 +133,13 @@ def delta_validation(iters, start_port, num_nodes, encryption, leasing):
         close_all_nodes(nodes)
 
 
+@mark.run(order=4)
 def test_delta_Plaintext(iters=2):
     #type: (int) -> None
     delta_validation(iters, 7500, 3, 'Plaintext', False)
 
 
+@mark.run(order=4)
 def test_delta_SSL(iters=2):
     #type: (int) -> None
     delta_validation(iters, 7600, 3, 'SSL', False)

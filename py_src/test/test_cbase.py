@@ -5,6 +5,7 @@ try:
     from functools import partial
     from sys import version_info
 
+    from pytest import mark
     from typing import Any
 
     from .. import (cbase, flags)
@@ -15,6 +16,7 @@ try:
     if version_info >= (3, ):
         xrange = range
 
+    @mark.run(order=3)
     def test_flags():
         #type: () -> None
         cf = cbase.flags
