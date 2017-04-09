@@ -395,7 +395,7 @@ class BaseSocket(EventEmitter, object):
             self.out_addr = addr, port
         info = (str(self.out_addr).encode(), prot.id.encode(), user_salt)
         h = sha384(b''.join(info))
-        self.id = b58encode_int(int(h.hexdigest(), 16)).decode()  #type: bytes
+        self.id = b58encode_int(int(h.hexdigest(), 16)).encode()  #type: bytes
         self._logger = getLogger('{}.{}.{}'.format(
             self.__class__.__module__, self.__class__.__name__, self.id))
         self.__handlers = [
