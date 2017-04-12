@@ -905,7 +905,8 @@ base.BaseConnection = class BaseConnection    {
                 self.onClose();
             });
         }
-        else    {  // This part handles browser receives
+        else    { // pragma: no cover
+            // This part handles browser receives
             this.sock.onmessage = (evt)=>{
                 var fileReader = new FileReader();
                 fileReader.onload = function() {
