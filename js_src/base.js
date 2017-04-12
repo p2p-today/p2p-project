@@ -618,7 +618,7 @@ base.InternalMessage = class InternalMessage {
 
     static decompress_string(string, compressions) {
         var compression_fail = false
-        compressions = compressions || []
+        compressions = base.intersect(compressions || [], base.compression);
         for (var i = 0; i < compressions.length; i++) {
             //console.log(`Checking ${compressions[i]} compression`)
             if (base.compression.indexOf(compressions[i]) > -1) {  // module scope compression
@@ -645,13 +645,7 @@ base.InternalMessage = class InternalMessage {
         *
         *         Returns the compression method used in this message, as defined in :js:data:`~js2p.base.flags`, or ``undefined`` if none
         */
-        for (var i = 0; i < base.compression.length; i++) {
-            for (var j = 0; j < this.compression.length; j++) {
-                if (base.compression[i] === this.compression[j]) {
-                    return base.compression[i];
-                }
-            }
-        }
+        return base.intersect(base.compression, this.compression)[0];
     }
 
     get time_58() {
@@ -754,6 +748,7 @@ base.Message = class Message {
         this.server = server
     }
 
+    /* istanbul ignore next */
     inspect()   {
         var packets = this.packets;
         var type = packets[0];
@@ -880,6 +875,7 @@ base.BaseConnection = class BaseConnection    {
         this.active = false;
         var self = this;
 
+        /* istanbul ignore else */
         if (this.sock.on)   {
             this.sock.on('data', (data)=>{
                 self.collect_incoming_data(self, data);
@@ -905,7 +901,7 @@ base.BaseConnection = class BaseConnection    {
                 self.onClose();
             });
         }
-        else    { // pragma: no cover
+        else    {
             // This part handles browser receives
             this.sock.onmessage = (evt)=>{
                 var fileReader = new FileReader();
