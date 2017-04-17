@@ -22,6 +22,7 @@ elif [ $jsver ]; then
     nvm use $jsver
     node --version
     echo "$jsver"
+    npm install -g yarn
     if [ $jsver -eq 4 ]; then
         make js_compat_test
     else
