@@ -114,9 +114,9 @@ function most_common(tmp)   {
         return [undefined, 0];
     }
 
-    function comparator(o)  {
-        return function(v)  {
-            return equal(v,o);
+    const comparator = (o)=>{
+        return (v)=>{
+            return equal(v, o);
         }
     }
 
@@ -124,7 +124,7 @@ function most_common(tmp)   {
         return lst.filter(comparator(a)).length
              - lst.filter(comparator(b)).length;
     }).pop();
-    return [ret, lst.filter(comparator(ret)).length+1];
+    return [ret, lst.filter(comparator(ret)).length + 1];
 }
 
 
@@ -570,6 +570,14 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
             let iters = 0
             let limit = Math.floor(timeout / 0.1) || 100;
 
+            let cleanup = ()=>{
+                delete this.requests[`sha1,${base.to_base_58(keys[0])}`];
+                delete this.requests[`sha224,${base.to_base_58(keys[1])}`];
+                delete this.requests[`sha256,${base.to_base_58(keys[2])}`];
+                delete this.requests[`sha384,${base.to_base_58(keys[3])}`];
+                delete this.requests[`sha512,${base.to_base_58(keys[4])}`];
+            }
+
             function check()    {
                 if ((common === undefined || count <= 2) && iters < limit)   {
                     setTimeout(check, 100);
@@ -579,12 +587,15 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
                     count = ctuple[1];
                 }
                 else if (common !== undefined && common !== null && count > 2) {
+                    cleanup();
                     fulfill(common);
                 }
                 else if (iters === limit)   {
+                    cleanup();
                     reject(new Error(`Time out: ${util.inspect(vals)}`));
                 }
                 else    {
+                    cleanup();
                     reject(new Error(`This key does not have an agreed-upon value. values=${util.inspect(vals)}, count=${count}, majority=3, most common=${util.inspect(common)}`));
                 }
             }
