@@ -68,7 +68,9 @@ jsver = $(shell node -p "require('./package.json').version")
 
 ## Install Javascript dependencies, preferring to use yarn, but using npm if it must
 jsdeps: LICENSE
-	@yarn || npm install
+	@mv npm-shrinkwrap.json .npm-shrinkwrap.json; \
+	yarn || npm install; \
+	mv .npm-shrinkwrap.json npm-shrinkwrap.json
 
 ## Copying documentation from C-like language into the proper Restructred Text files
 jsdocs:
