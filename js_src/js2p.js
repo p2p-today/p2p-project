@@ -65,13 +65,13 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
     let dict = _get_database();
     let seed_protocol = new m.base.Protocol('bootstrap', protocol.encryption);
     let seed = ret;
-    if (protocol.id !== seed_protocol.id || !(m.chord && socket_type === m.chord.ChordSocket))  {
+    if (ret.protocol.id !== seed_protocol.id || !(m.chord && socket_type === m.chord.ChordSocket))  {
         seed = new m.chord.ChordSocket(addr, Math.floor(Math.random() * 32768) + 32767, seed_protocol);
     }
 
-    if (dict[protocol.encryption] !== undefined)   {
-        for (let key of Object.keys(dict[protocol.encryption]))    {
-            let seeder = dict[protocol.encryption][key];
+    if (dict[ret.protocol.encryption] !== undefined)   {
+        for (let key of Object.keys(dict[ret.protocol.encryption]))    {
+            let seeder = dict[ret.protocol.encryption][key];
             try {
                 seed.connect(...seeder);
             }
@@ -80,7 +80,7 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
     }
 
     seed.once('connect', function on_connect(_) {
-        let request = seed.get(protocol.id);
+        let request = seed.get(ret.protocol.id);
         let id_ = ret.id;
         request.then(function on_receipt(dct)   {
             for (let key of new Set(Object.keys(dct)))  {
@@ -95,15 +95,15 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
                     catch(e)    {}
                 }
             }
-            seed.apply_delta(proto.id, {id_: ret.out_addr}).catch(console.warn);
+            seed.apply_delta(ret.protocol.id, {id_: ret.out_addr}).catch(console.warn);
         }).catch((err)=>{
-            seed.apply_delta(proto.id, {id_: ret.out_addr}).catch(console.warn);
+            seed.apply_delta(ret.protocol.id, {id_: ret.out_addr}).catch(console.warn);
         });
 
         for (let id_ of seed.routing_table.keys())  {
-            if (dict[proto.encryption][id_] === undefined)   {
+            if (dict[ret.protocol.encryption][id_] === undefined)   {
                 let node = seed.routing_table.get(id_);
-                dict[proto.encryption][id_] = node.addr;
+                dict[ret.protocol.encryption][id_] = node.addr;
             }
         }
 

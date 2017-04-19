@@ -100,13 +100,13 @@ def bootstrap(
         addr, port, *args, prot=proto,
         **kargs)  #type: Union[MeshSocket, SyncSocket, ChordSocket]
     seed_protocol = Protocol('bootstrap', proto.encryption)
-    if proto == seed_protocol and socket_type == DHTSocket:
+    if ret.protocol == seed_protocol and socket_type == DHTSocket:
         seed = cast(DHTSocket, ret)  #type: DHTSocket
     else:
         seed = DHTSocket(addr, randint(32768, 65535), prot=seed_protocol)
 
     dict_ = _get_database()
-    for seeder in dict_[proto.encryption].values():
+    for seeder in dict_[ret.protocol.encryption].values():
         try:
             seed.connect(*seeder)
         except Exception:
@@ -115,7 +115,7 @@ def bootstrap(
     @seed.once('connect')
     def on_connect(_):
         # type: (DHTSocket) -> None
-        request = seed.get(proto.id)
+        request = seed.get(ret.protocol.id)
 
         @request.then
         def on_receipt(dct):
@@ -130,11 +130,11 @@ def bootstrap(
                         ret.connect(*info)
                     except Exception:
                         continue
-            seed.apply_delta(cast(bytes, proto.id), {ret.id:
+            seed.apply_delta(cast(bytes, ret.protocol.id), {ret.id:
                                                      ret.out_addr}).catch(warn)
 
         on_receipt.catch(warn)
-        _set_database(dict_, seed.routing_table, proto)
+        _set_database(dict_, seed.routing_table, ret.protocol)
 
     return ret
 
