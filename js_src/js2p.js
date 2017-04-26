@@ -81,7 +81,8 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
 
     seed.once('connect', function on_connect(_) {
         let request = seed.get(ret.protocol.id);
-        let id_ = ret.id;
+        let delta = {};
+        delta[ret.id] = ret.out_addr;
         request.then(function on_receipt(dct)   {
             for (let key of new Set(Object.keys(dct)))  {
                 if (ret.routing_table.size > 4) {
@@ -95,9 +96,9 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
                     catch(e)    {}
                 }
             }
-            seed.apply_delta(ret.protocol.id, {id_: ret.out_addr}).catch(console.warn);
+            seed.apply_delta(ret.protocol.id, delta).catch(console.warn);
         }).catch((err)=>{
-            seed.apply_delta(ret.protocol.id, {id_: ret.out_addr}).catch(console.warn);
+            seed.apply_delta(ret.protocol.id, delta).catch(console.warn);
         });
 
         for (let id_ of seed.routing_table.keys())  {
