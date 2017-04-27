@@ -210,8 +210,8 @@ class BaseConnection(object):
             ``True`` if an action was taken, ``False`` if not
         """
         if packets[0] == flags.renegotiate:
-            if packets[4] == flags.compression:
-                encoded_methods = packets[5]
+            if packets[3] == flags.compression:
+                encoded_methods = packets[4]
                 respond = (self.compression != encoded_methods)
                 self.compression = list(cast(Iterable[int], encoded_methods))
                 self.__print__(
@@ -223,7 +223,7 @@ class BaseConnection(object):
                               cast(Tuple[int, ...],
                                    intersect(compression, self.compression)))
                 return True
-            elif packets[4] == flags.resend:
+            elif packets[3] == flags.resend:
                 self.send(*self.last_sent)
                 return True
         return False

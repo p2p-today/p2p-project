@@ -1073,9 +1073,9 @@ base.BaseConnection = class BaseConnection    {
         *         :returns: ``true`` if action was taken, ``undefined`` if not
         */
         if (packets[0] === base.flags.renegotiate)  {
-            if (packets[4] === base.flags.compression)  {
-                var respond = (base.intersect(this.compression, packets[5]).length !== this.compression.length);
-                this.compression = packets[5];
+            if (packets[3] === base.flags.compression)  {
+                var respond = (base.intersect(this.compression, packets[4]).length !== this.compression.length);
+                this.compression = packets[4];
                 // self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
                 if (respond)    {
                     var new_methods = base.intersect(base.compression, this.compression);
@@ -1083,7 +1083,7 @@ base.BaseConnection = class BaseConnection    {
                 }
                 return true;
             }
-            else if (packets[4] === base.flags.resend)  {
+            else if (packets[3] === base.flags.resend)  {
                 var type = self.last_sent[0];
                 var packs = self.last_sent.slice(1);
                 self.send(type, packs);
