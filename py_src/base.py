@@ -325,6 +325,7 @@ class BaseDaemon(object):
                     "this, please post a copy of your MeshSocket.status to "
                     "git.p2p.today/issues." % handler.id,
                     level=0)
+                self.__print__("This exception was: {}".format(e), level=1)
                 self.exceptions.append(format_exc())
             self.server.disconnect(handler)
             self.server.request_peers()

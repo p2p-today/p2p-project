@@ -60,10 +60,12 @@ class MeshConnection(BaseConnection):
                 return msg
             self.server.handle_msg(Message(msg, self.server), self)
             return msg
-        except (IndexError, StructException):
+        except (IndexError, StructException) as e:
             self.__print__(
                 "Failed to decode message. Expected first compression "
-                "of: {}.".format(intersect(compression, self.compression)),
+                "of: {}. Exception: {}".format(intersect(compression,
+                                               self.compression),
+                                               e),
                 level=1)
             self.send(flags.renegotiate, flags.compression, [])
             self.send(flags.renegotiate, flags.resend)

@@ -115,6 +115,7 @@ def bootstrap(
         request.catch(warn)
         @request.then
         def on_request_finished(dct):
+            # type: (Any) -> None
             conns = list(dct.values())
             shuffle(conns)
             for info in conns:
@@ -125,6 +126,8 @@ def bootstrap(
                         ret.connect(*info)
                     except Exception:
                         continue
+            if ret is not seed:
+                seed.close()
 
         _set_database(dict_, seed.routing_table, ret.protocol)
 
