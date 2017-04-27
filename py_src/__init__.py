@@ -106,21 +106,16 @@ def bootstrap(
         seed = DHTSocket(addr, randint(32768, 65535), prot=seed_protocol)
 
     dict_ = _get_database()
-    for seeder in dict_[ret.protocol.encryption].values():
-        try:
-            seed.connect(*seeder)
-        except Exception:
-            continue
 
     @seed.once('connect')
     def on_connect(_):
         # type: (DHTSocket) -> None
-        request = seed.get(ret.protocol.id)
-
+        request = seed.apply_delta(cast(bytes, ret.protocol.id), {ret.id:
+                                                     ret.out_addr})
+        request.catch(warn)
         @request.then
-        def on_receipt(dct):
-            # type: (Dict[bytes, List[Union[str, int]]]) -> None
-            conns = list(dct.values()) if isinstance(dct, dict) else []
+        def on_request_finished(dct):
+            conns = list(dct.values())
             shuffle(conns)
             for info in conns:
                 if len(ret.routing_table) > 4:
@@ -130,11 +125,14 @@ def bootstrap(
                         ret.connect(*info)
                     except Exception:
                         continue
-            seed.apply_delta(cast(bytes, ret.protocol.id), {ret.id:
-                                                     ret.out_addr}).catch(warn)
 
-        on_receipt.catch(warn)
         _set_database(dict_, seed.routing_table, ret.protocol)
+
+    for seeder in dict_[ret.protocol.encryption].values():
+        try:
+            seed.connect(*seeder)
+        except Exception:
+            continue
 
     return ret
 

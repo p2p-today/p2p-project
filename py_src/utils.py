@@ -186,7 +186,7 @@ def get_socket(protocol, serverside=False):
 class awaiting_value(object):
     """Proxy object for an asynchronously retrieved item"""
 
-    def __init__(self, value=b''):
+    def __init__(self, value=None):
         #type: (awaiting_value, Any) -> None
         self.value = value  #type: Union[None, bool, int, dict, bytes, str, list, tuple]
         self.callback = None  #type: Any
@@ -225,6 +225,4 @@ def most_common(tmp):
         ret = max(set(lst), key=lst.count)
     except TypeError:  # in case of unhashable
         ret = max(lst, key=lst.count)
-    if lst.count(ret) == lst.count(-1):
-        return -1, lst.count(ret)
     return ret, lst.count(ret)

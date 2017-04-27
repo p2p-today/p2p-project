@@ -9,7 +9,6 @@ from itertools import chain
 from logging import DEBUG
 from random import choice
 from socket import timeout as TimeoutException
-from time import sleep
 from traceback import format_exc
 
 from async_promises import Promise
@@ -519,10 +518,11 @@ class ChordSocket(MeshSocket):
         iters = 0
         limit = timeout // 0.1
         while (common is None or count <= len(hashes) // 2) and iters < limit:
-            sleep(0.1)
+            self.daemon.daemon.join(0.1)  # This (correctly) errors if running
+                                          # in daemon thread, sleep doesn't
             iters += 1
             common, count = most_common(vals)
-        if common is None and count > len(hashes) // 2:
+        if common is not None and count > len(hashes) // 2:
             return common
         elif iters == limit:
             raise TimeoutException()
@@ -577,7 +577,11 @@ class ChordSocket(MeshSocket):
             self._logger.debug(
                 'Getting value of {}, with fallback'.format(key, ifError))
             return self.__getitem(key, timeout=timeout)
-        except (KeyError, TimeoutException):
+        except (KeyError, TimeoutException) as e:
+            self._logger.debug(
+                'Did not get value of {}, so returning {}. Due to {}'.format(
+                    key, ifError, e
+                ))
             return ifError
 
     def get(self, key, ifError=None, timeout=10):
