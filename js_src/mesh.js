@@ -93,10 +93,10 @@ m.MeshConnection = class MeshConnection extends base.BaseConnection  {
         try {
             var msg = super.found_terminator();
             //console.log(msg.packets);
-            if (this.handle_waterfall(msg, msg.packets))   {
+            if (this.handle_renegotiate(msg.packets))  {
                 return true;
             }
-            else if (this.handle_renegotiate(msg.packets))  {
+            else if (this.handle_waterfall(msg, msg.packets))   {
                 return true;
             }
             this.server.handle_msg(new base.Message(msg, this.server), this);

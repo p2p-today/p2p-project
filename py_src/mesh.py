@@ -54,9 +54,9 @@ class MeshConnection(BaseConnection):
             msg = super(MeshConnection, self).found_terminator()
             packets = msg.packets
             self.__print__("Message received: {}".format(packets), level=1)
-            if self.handle_waterfall(msg, packets):
+            if self.handle_renegotiate(packets):
                 return msg
-            elif self.handle_renegotiate(packets):
+            elif self.handle_waterfall(msg, packets):
                 return msg
             self.server.handle_msg(Message(msg, self.server), self)
             return msg
