@@ -518,8 +518,8 @@ class ChordSocket(MeshSocket):
         iters = 0
         limit = timeout // 0.1
         while (common is None or count <= len(hashes) // 2) and iters < limit:
-            self.daemon.daemon.join(0.1)  # This (correctly) errors if running
-                                          # in daemon thread, sleep doesn't
+            self.daemon.daemon.join(0.1)  # type: ignore
+            # This (correctly) errors if running in daemon thread, sleep doesn't
             iters += 1
             common, count = most_common(vals)
         if common is not None and count > len(hashes) // 2:
