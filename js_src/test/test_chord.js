@@ -112,44 +112,40 @@ describe('chord', function() {
                                     'array': [1,2,3,4,5,6,7,8,9],
                                     'number': 256
                                 }).then(()=>{
-                                    setTimeout(()=>{
-                                        node1.get('test').then(shouldEqual({
-                                            '1': 2,
-                                            '测试': '成功',
-                                            'store': 'store',
-                                            'array': [1,2,3,4,5,6,7,8,9],
-                                            'number': 256
-                                        })).catch(onError);
-                                        node2.get('test').then(shouldEqual({
-                                            '1': 2,
-                                            '测试': '成功',
-                                            'store': 'store',
-                                            'array': [1,2,3,4,5,6,7,8,9],
-                                            'number': 256
-                                        })).catch(onError);
-                                    }, 250);
+                                    node1.get('test').then(shouldEqual({
+                                        '1': 2,
+                                        '测试': '成功',
+                                        'store': 'store',
+                                        'array': [1,2,3,4,5,6,7,8,9],
+                                        'number': 256
+                                    })).catch(onError);
+                                    node2.get('test').then(shouldEqual({
+                                        '1': 2,
+                                        '测试': '成功',
+                                        'store': 'store',
+                                        'array': [1,2,3,4,5,6,7,8,9],
+                                        'number': 256
+                                    })).catch(onError);
                                 });
-                                node2.apply_delta('test1', {
-                                    '测试': '成功',
-                                    'store': 'store',
-                                    'array': [1,2,3,4,5,6,7,8,9],
-                                    'number': 256
-                                }).then(()=>{
-                                    setTimeout(()=>{
-                                        node1.get('test1').then(shouldEqual({
-                                            '测试': '成功',
-                                            'store': 'store',
-                                            'array': [1,2,3,4,5,6,7,8,9],
-                                            'number': 256
-                                        })).catch(onError);
-                                        node2.get('test1').then(shouldEqual({
-                                            '测试': '成功',
-                                            'store': 'store',
-                                            'array': [1,2,3,4,5,6,7,8,9],
-                                            'number': 256
-                                        })).catch(onError);
-                                    }, 250);
-                                });
+                                // node2.apply_delta('test1', {
+                                //     '测试': '成功',
+                                //     'store': 'store',
+                                //     'array': [1,2,3,4,5,6,7,8,9],
+                                //     'number': 256
+                                // }).then(()=>{
+                                //     node1.get('test1').then(shouldEqual({
+                                //         '测试': '成功',
+                                //         'store': 'store',
+                                //         'array': [1,2,3,4,5,6,7,8,9],
+                                //         'number': 256
+                                //     })).catch(onError);
+                                //     node2.get('test1').then(shouldEqual({
+                                //         '测试': '成功',
+                                //         'store': 'store',
+                                //         'array': [1,2,3,4,5,6,7,8,9],
+                                //         'number': 256
+                                //     })).catch(onError);
+                                // });
                             });
                             function check() {
                                 if (!count) {
