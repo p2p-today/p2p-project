@@ -1092,6 +1092,10 @@ base.BaseConnection = class BaseConnection    {
         }
     }
 
+    close() {
+        this.onError();
+    }
+
     __print__() {
 
     }
@@ -1140,6 +1144,16 @@ base.BaseSocket = class BaseSocket extends EventEmitter   {
         this.id = base.to_base_58(BigInt(base.SHA384(`(${addr}, ${port})${this.protocol.id}${base.user_salt}`), 16));
         this.__handlers = [];
         this.exceptions = [];
+    }
+
+    close() {
+        if (this.incoming)  {
+            this.incoming.close();
+        }
+        for (let key of this.routing_table.keys())  {
+            let handler = this.routing_table.get(key);
+            handler.close();
+        };
     }
 
     get status()    {

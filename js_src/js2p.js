@@ -46,16 +46,19 @@ function _get_database()    {
             'Plaintext': {
                 'euclid': ['euclid.nmu.edu', 44565],
                 'turing': ['turing.nmu.edu', 44565],
-                'p2p.today': ['blog.p2p.today', 44565],
+                'p2p.today': ['blog.p2p.today', 44565]
+            },
             'SSL': {
                 'euclid': ['euclid.nmu.edu', 44566],
                 'turing': ['turing.nmu.edu', 44566],
-                'p2p.today': ['blog.p2p.today', 44566]},
+                'p2p.today': ['blog.p2p.today', 44566]
+            },
             'ws': {
                 'euclid': ['euclid.nmu.edu', 44567],
                 'turing': ['turing.nmu.edu', 44567],
-                'p2p.today': ['blog.p2p.today', 44567]}
-            }};
+                'p2p.today': ['blog.p2p.today', 44567]
+            }
+        };
 }
 
 function _update_database() {}
@@ -69,21 +72,18 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
         seed = new m.chord.ChordSocket(addr, Math.floor(Math.random() * 32768) + 32767, seed_protocol);
     }
 
-    if (dict[ret.protocol.encryption] !== undefined)   {
-        for (let key of Object.keys(dict[ret.protocol.encryption]))    {
-            let seeder = dict[ret.protocol.encryption][key];
-            try {
-                seed.connect(...seeder);
-            }
-            catch(e)    {}
-        }
-    }
-
-    seed.once('connect', function on_connect(_) {
-        let request = seed.get(ret.protocol.id);
+    seed.once('connect', ()=>{
         let delta = {};
         delta[ret.id] = ret.out_addr;
-        request.then(function on_receipt(dct)   {
+        let request = seed.apply_delta(ret.protocol.id, delta);
+
+        let on_error = (e)=>{
+            console.warn(e);
+            seeder.close();
+        }
+
+        request.catch(on_error);
+        request.then((dct)=>{
             for (let key of new Set(Object.keys(dct)))  {
                 if (ret.routing_table.size > 4) {
                     break;
@@ -91,15 +91,16 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
                 else    {
                     let info = dct[key];
                     try {
+                        console.log(`Attempting connection to ${util.inspect(info)}`);
                         ret.connect(...info);
                     }
-                    catch(e)    {}
+                    catch(e)    {
+                        console.warn(e);
+                    }
                 }
             }
-            seed.apply_delta(ret.protocol.id, delta).catch(console.warn);
-        }).catch((err)=>{
-            seed.apply_delta(ret.protocol.id, delta).catch(console.warn);
-        });
+            seeder.close();
+        }).catch(on_error);
 
         for (let id_ of seed.routing_table.keys())  {
             if (dict[ret.protocol.encryption][id_] === undefined)   {
@@ -110,6 +111,16 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
 
         _update_database(dict)
     });
+
+    if (dict[ret.protocol.encryption] !== undefined)   {
+        for (let key of Object.keys(dict[ret.protocol.encryption]))    {
+            let seeder = dict[ret.protocol.encryption][key];
+            try {
+                seed.connect(...seeder);
+            }
+            catch(e)    {}
+        }
+    }
 
     return ret
 }

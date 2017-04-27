@@ -195,6 +195,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         this.conn_type = m.ChordConnection;
         this.leeching = true;
         this.id_10 = base.from_base_58(this.id);
+        this.connect_override = true;
         this.data = {
             'sha1': {},
             'sha224': {},
@@ -392,6 +393,9 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
             if (new_meta !== conn.leeching)  {
                 this._send_meta(conn);
                 conn.leeching = new_meta;
+                if (!conn.leeching && [...this.data_storing].length === 1) {
+                    this.emit('connect', this);
+                }
                 if (!this.leeching && !conn.leeching)   {
                     this._send_peers(conn);
                     let update = this.dump_data(conn.id_10, this.id_10);
@@ -453,7 +457,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
                 conn.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], val.value]);
             }
             catch (e)   {
-                console.log(e);
+                console.warn(e);
             }
             return true;
         }
@@ -702,10 +706,13 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
                 resolve(value)
             }
 
-            self.get(key).then(
+            self.get(key, null).then(
                 (value)=>{
                     if (value instanceof Object)    {
                         on_success(value);
+                    }
+                    else if (value === null)    {
+                        on_success({});
                     }
                     else    {
                         reject(new Error("This key already has a non-mapping value"));
