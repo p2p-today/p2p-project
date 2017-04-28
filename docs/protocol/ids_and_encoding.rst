@@ -12,26 +12,8 @@ This encoding is taken from Bitcoin. If you’ve ever seen a Bitcoin
 address, you’ve seen base\_58 encoding in action. The goal behind
 it is to provide data compression without compromising its human
 readability. Base\_58, for the purposes of this protocol, is
-defined by the following python methods.
-
-.. code-block:: python
-
-    base_58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
-
-    def to_base_58(i):
-        string = ""
-        while i:
-            string = base_58[i % 58] + string
-            i = i // 58    # Floor division is needed to prevent floats
-        return string.encode()
-
-    def from_base_58(string):
-        if isinstance(string, bytes):
-            string = string.decode()
-        decimal = 0
-        for char in string:
-            decimal = decimal * 58 + base_58.index(char)
-        return decimal
+defined by the `base58 <https://github.com/p2p-today/base58>`_
+python module.
 
 Subnets
 +++++++
@@ -48,7 +30,7 @@ them from connecting. A rough definition would be as follows:
        def id(self):
            info = [str(x) for x in self] + [protocol_version]
            h = hashlib.sha256(''.join(info).encode())
-           return to_base_58(int(h.hexdigest(), 16))
+           return base58.b58encode(h.digest())
 
 Or more explicitly in javascript:
 
@@ -78,9 +60,9 @@ converted into base\_58.
 Message IDs
 +++++++++++
 
-A message ID is also a SHA-384 hash. In this case, it is on a
-message’s payload and its timestamp.
+A message ID is also a SHA-256 hash. In this case, it is on a
+message’s payload and metadata
 
-To get the hash, first join each packet together in order. Append
-to this the message’s timestamp in base\_58. The ID you will use
-is the hash of this string, encoded into base\_58.
+To get the hash, first join each packet together in the order:
+``[msg.msg_type, msg.sender, msg.time, ...msg.payload]``. Then encode this in
+msgpack, pass it through SHA-256, and return the resulting binary digest.
