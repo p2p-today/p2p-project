@@ -40,7 +40,7 @@ m.metatuple = class metatuple   {
 
 m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
     /**
-    * .. js:class:: js2p.sync.SyncSocket(addr, port [, leasing [, protocol [, out_addr [, debug_level]]]])
+    * .. js:class:: js2p.sync.SyncSocket(addr, port [, protocol [, leasing [, out_addr [, debug_level]]]])
     *
     *     This is the class for mesh network socket abstraction. It inherits from :js:class:`js2p.mesh.MeshSocket`.
     *     Because of this inheritence, this can also be used as an alert network.
@@ -52,8 +52,8 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
     *
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
-    *     :param boolean leasing:               Whether this class's leasing system should be enabled (default: ``true``)
     *     :param js2p.base.Protocol protocol:   The subnet you're looking to connect to
+    *     :param boolean leasing:               Whether this class's leasing system should be enabled (default: ``true``)
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
@@ -77,7 +77,7 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
     *         :param Buffer key: The key which has a new value
     *
     */
-    constructor(addr, port, leasing, protocol, out_addr, debug_level)   {
+    constructor(addr, port, protocol, leasing, out_addr, debug_level)   {
         if (!protocol)  {
             protocol = m.default_protocol;
         }

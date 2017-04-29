@@ -18,10 +18,10 @@ describe('sync', function() {
         for (let text in transports)    {
 
             function test_storage(leasing, done)    {
-                var node1 = new sync.SyncSocket('localhost', start_port++, leasing, new base.Protocol('sync', transports[text]));
-                var node2 = new sync.SyncSocket('localhost', start_port++, leasing, new base.Protocol('sync', transports[text]));
+                var node1 = new sync.SyncSocket('localhost', start_port++, new base.Protocol('sync', transports[text]), leasing);
+                var node2 = new sync.SyncSocket('localhost', start_port++, new base.Protocol('sync', transports[text]), leasing);
 
-                node1.connect(node2.addr[0], node2.addr[1]);
+                node1.connect(...node2.addr);
 
                 setTimeout(function()   {
                     node1.set('test', 'value');
@@ -58,12 +58,12 @@ describe('sync', function() {
             });
 
             function test_delta(done)    {
-                var node1 = new sync.SyncSocket('localhost', start_port++, false, new base.Protocol('sync', transports[text]));
-                var node2 = new sync.SyncSocket('localhost', start_port++, false, new base.Protocol('sync', transports[text]));
-                var node3 = new sync.SyncSocket('localhost', start_port++, false, new base.Protocol('sync', transports[text]));
+                var node1 = new sync.SyncSocket('localhost', start_port++, new base.Protocol('sync', transports[text]), false);
+                var node2 = new sync.SyncSocket('localhost', start_port++, new base.Protocol('sync', transports[text]), false);
+                var node3 = new sync.SyncSocket('localhost', start_port++, new base.Protocol('sync', transports[text]), false);
 
-                node1.connect(node2.addr[0], node2.addr[1]);
-                node1.connect(node3.addr[0], node3.addr[1]);
+                node1.connect(...node2.addr);
+                node1.connect(...node3.addr);
 
                 setTimeout(function()   {
                     setTimeout(function()   {
