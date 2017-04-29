@@ -69,7 +69,12 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
     let seed_protocol = new m.base.Protocol('bootstrap', protocol.encryption);
     let seed = ret;
     if (ret.protocol.id !== seed_protocol.id || !(m.chord && socket_type === m.chord.ChordSocket))  {
-        seed = new m.chord.ChordSocket(addr, Math.floor(Math.random() * 32768) + 32767, seed_protocol);
+        if (ret.port)   {
+            seed = new m.chord.ChordSocket(addr, Math.floor(Math.random() * 32768) + 32767, seed_protocol);
+        }
+        else {
+            seed = new m.chord.ChordSocket(null, null, seed_protocol);
+        }
     }
 
     seed.once('connect', ()=>{
