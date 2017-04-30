@@ -104,7 +104,7 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
                     }
                 }
             }
-            seeder.close();
+            seed.close();
         }).catch(on_error);
 
         for (let id_ of seed.routing_table.keys())  {
