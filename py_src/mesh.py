@@ -13,7 +13,8 @@ from socket import (getaddrinfo, SHUT_RDWR, error as SocketException)
 from struct import error as StructException
 from traceback import format_exc
 
-from typing import (cast, Any, Sequence, Tuple, Union)
+from base58 import b58decode_int
+from typing import (cast, Any, Dict, List, Sequence, Set, Tuple, Union)
 # from _collections import deque as DequeType
 
 try:
@@ -25,7 +26,7 @@ from . import flags
 from .base import (BaseConnection, BaseDaemon, BaseSocket, Message)
 from .messages import (compression, InternalMessage, MsgPackable)
 from .utils import (getUTC, get_socket, intersect, inherit_doc, log_entry,
-                    awaiting_value, from_base_58)
+                    awaiting_value)
 
 max_outgoing = 4
 default_protocol = Protocol('mesh', "Plaintext")  # SSL")
@@ -48,24 +49,27 @@ class MeshConnection(BaseConnection):
 
     @inherit_doc(BaseConnection.found_terminator)
     def found_terminator(self):
-        #type: (MeshConnection) -> InternalMessage
+        #type: (MeshConnection) -> Union[InternalMessage, None]
         try:
             msg = super(MeshConnection, self).found_terminator()
             packets = msg.packets
             self.__print__("Message received: {}".format(packets), level=1)
-            if self.handle_waterfall(msg, packets):
+            if self.handle_renegotiate(packets):
                 return msg
-            elif self.handle_renegotiate(packets):
+            elif self.handle_waterfall(msg, packets):
                 return msg
             self.server.handle_msg(Message(msg, self.server), self)
             return msg
-        except (IndexError, StructException):
+        except (IndexError, StructException) as e:
             self.__print__(
                 "Failed to decode message. Expected first compression "
-                "of: {}.".format(intersect(compression, self.compression)),
+                "of: {}. Exception: {}".format(intersect(compression,
+                                               self.compression),
+                                               e),
                 level=1)
             self.send(flags.renegotiate, flags.compression, [])
             self.send(flags.renegotiate, flags.resend)
+            return None
 
     def handle_waterfall(self, msg, packets):
         #type: (MeshConnection, InternalMessage, Tuple[MsgPackable, ...]) -> bool
@@ -144,7 +148,7 @@ class MeshDaemon(BaseDaemon):
             self.server.awaiting_ids.append(handler)
             return handler
         except exceptions:
-            pass
+            return None
 
 
 class MeshSocket(BaseSocket):
@@ -247,6 +251,7 @@ class MeshSocket(BaseSocket):
                 self.__print__(
                     "Ignoring message with invalid subflag", level=4)
             return True
+        return None
 
     def _get_peer_list(self):
         #type: (MeshSocket) -> List[Tuple[Tuple[str, int], bytes]]
@@ -291,7 +296,7 @@ class MeshSocket(BaseSocket):
         self.__print__(
             "Resolving peer conflict on id %s" % repr(h_id), level=1)
         to_keep, to_kill = None, None  #type: Union[None, BaseConnection], Union[None, BaseConnection]
-        if (bool(from_base_58(self.id) > from_base_58(h_id)) ^
+        if (bool(b58decode_int(self.id) > b58decode_int(h_id)) ^
                 bool(handler.outgoing)):  # logical xor
             self.__print__("Closing outgoing connection", level=1)
             to_keep, to_kill = self.routing_table[h_id], handler
@@ -354,6 +359,7 @@ class MeshSocket(BaseSocket):
             self.routing_table.update({packets[1]: handler})
             self._send_peers(handler)
             return True
+        return None
 
     def _handle_peers(self, msg, handler):
         #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
@@ -382,6 +388,7 @@ class MeshSocket(BaseSocket):
                             level=1)
                         continue
             return True
+        return None
 
     def __handle_response(self, msg, handler):
         #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
@@ -411,6 +418,7 @@ class MeshSocket(BaseSocket):
                     self.connect(addr[0][0], addr[0][1], addr[1])
                     self.routing_table[addr[1]].send(*_msg)
             return True
+        return None
 
     def __handle_request(self, msg, handler):
         #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
@@ -434,10 +442,11 @@ class MeshSocket(BaseSocket):
                 handler.send(flags.whisper, flags.peers,
                              cast(MsgPackable, self._get_peer_list()))
             elif self.routing_table.get(packets[2]):
-                handler.send(
-                    flags.broadcast, flags.response, packets[1],
-                    [self.routing_table.get(packets[2]).addr, packets[2]])
+                handler.send(flags.broadcast, flags.response, packets[1], [
+                    self.routing_table.get(packets[2]).addr, packets[2]
+                ])
             return True
+        return None
 
     def send(self, *args, **kargs):
         #type: (MeshSocket, *MsgPackable, **MsgPackable) -> None
@@ -539,8 +548,7 @@ class MeshSocket(BaseSocket):
                     this node
         """
         self.__print__(
-            "Attempting connection to %s:%s with id %s" %
-            (addr, port, repr(id)),
+            "Attempting connection to {}:{} with id {}".format(addr, port, id),
             level=1)
         if (getaddrinfo(addr, port)[0] == getaddrinfo(*self.out_addr)[0] or
                 id in self.routing_table):
@@ -555,6 +563,7 @@ class MeshSocket(BaseSocket):
             self.routing_table.update({id: handler})
         else:
             self.awaiting_ids.append(handler)
+        return None
 
     def disconnect(self, handler):
         #type: (MeshSocket, MeshConnection) -> None

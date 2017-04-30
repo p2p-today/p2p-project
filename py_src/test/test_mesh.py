@@ -5,6 +5,7 @@ from socket import SHUT_RDWR
 from sys import version_info
 from time import sleep
 
+from pytest import mark
 from typing import (Callable, Iterable, Union)
 
 from .. import (flags, mesh)
@@ -54,11 +55,13 @@ def propagation_validation(iters, start_port, num_nodes, encryption):
         close_all_nodes(nodes)
 
 
+@mark.run(order=4)
 def test_propagation_Plaintext(iters=3):
     #type: (int) -> None
     propagation_validation(iters, 5100, 3, 'Plaintext')
 
 
+@mark.run(order=4)
 def test_propagation_SSL(iters=3):
     #type: (int) -> None
     propagation_validation(iters, 5200, 3, 'SSL')
@@ -87,11 +90,13 @@ def protocol_rejection_validation(iters, start_port, encryption):
         close_all_nodes([f, g])
 
 
+@mark.run(order=4)
 def test_protocol_rejection_Plaintext(iters=3):
     #type: (int) -> None
     protocol_rejection_validation(iters, 5300, 'Plaintext')
 
 
+@mark.run(order=4)
 def test_protocol_rejection_SSL(iters=3):
     #type: (int) -> None
     protocol_rejection_validation(iters, 5400, 'SSL')
@@ -103,6 +108,7 @@ def register_1(msg, handler):
     if packets[1] == b'test':
         handler.send(flags.whisper, flags.whisper, b"success")
         return True
+    return None
 
 
 def register_2(msg, handler):
@@ -111,6 +117,7 @@ def register_2(msg, handler):
     if packets[1] == b'test':
         msg.reply(b"success")
         return True
+    return None
 
 
 def handler_registry_validation(iters, start_port, encryption, reg):
@@ -145,21 +152,25 @@ def handler_registry_validation(iters, start_port, encryption, reg):
         close_all_nodes([f, g])
 
 
+@mark.run(order=4)
 def test_handler_registry_Plaintext(iters=3):
     #type: (int) -> None
     handler_registry_validation(iters, 5500, 'Plaintext', register_1)
 
 
+@mark.run(order=4)
 def test_handler_registry_SSL(iters=3):
     #type: (int) -> None
     handler_registry_validation(iters, 5600, 'SSL', register_1)
 
 
+@mark.run(order=4)
 def test_reply_Plaintext(iters=3):
     #type: (int) -> None
     handler_registry_validation(iters, 5700, 'Plaintext', register_2)
 
 
+@mark.run(order=4)
 def test_reply_SSL(iters=3):
     #type: (int) -> None
     handler_registry_validation(iters, 5800, 'SSL', register_2)

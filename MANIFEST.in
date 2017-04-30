@@ -6,6 +6,7 @@ include setup.py
 include .coveragerc
 include py_src/*.rst
 include py_src/*.py
+include py_src/seeders.msgpack
 include py_src/test/*.py
 include c_src/*
 include c_src/sha/*

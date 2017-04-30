@@ -16,7 +16,7 @@ help:
 
 pip = -m pip install
 py_deps = $(pip) cryptography --upgrade
-py_test_deps = $(pip) pytest-coverage pytest-benchmark
+py_test_deps = $(pip) pytest-coverage pytest-benchmark pytest-ordering
 docs_deps = $(pip) sphinx sphinxcontrib-napoleon sphinx_rtd_theme
 
 ifeq ($(shell python -c 'import sys; print(int(hasattr(sys, "real_prefix")))'), 0) # check for virtualenv
@@ -68,7 +68,9 @@ jsver = $(shell node -p "require('./package.json').version")
 
 ## Install Javascript dependencies, preferring to use yarn, but using npm if it must
 jsdeps: LICENSE
-	@yarn || npm install
+	@mv npm-shrinkwrap.json .npm-shrinkwrap.json; \
+	yarn || npm install; \
+	mv .npm-shrinkwrap.json npm-shrinkwrap.json
 
 ## Copying documentation from C-like language into the proper Restructred Text files
 jsdocs:
@@ -91,7 +93,7 @@ browser: jsdeps
 	node ../node_modules/browserify/bin/cmd.js -r ./base.js -o ../build/browser/js2p-browser-$(jsver)-base.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../build/browser/js2p-browser-$(jsver)-mesh.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-$(jsver)-sync.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-$(jsver)-chord.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./chord.js -o ../build/browser/js2p-browser-$(jsver)-chord.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../build/browser/js2p-browser-$(jsver).js -s js2p
 
 ## Package Javascript code into browser bundles and minify them
@@ -126,7 +128,7 @@ browser-compat: js-compat
 	node ../../node_modules/browserify/bin/cmd.js -r ./base.js -o ../browser-compat/js2p-browser-$(jsver)-base.babel.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../browser-compat/js2p-browser-$(jsver)-mesh.babel.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../browser-compat/js2p-browser-$(jsver)-sync.babel.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../browser-compat/js2p-browser-$(jsver)-chord.babel.js -u snappy -u nodejs-websocket -u node-forge;\
+	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./chord.js -o ../browser-compat/js2p-browser-$(jsver)-chord.babel.js -u snappy -u nodejs-websocket -u node-forge;\
 	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../browser-compat/js2p-browser-$(jsver).babel.js -s js2p
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4 AND package it into browser bundles, then minify it

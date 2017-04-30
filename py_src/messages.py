@@ -1,12 +1,13 @@
 from hashlib import sha256
 from logging import getLogger
 
+from base58 import (b58encode_int, b58decode_int)
 from umsgpack import (packb, unpackb, UnsupportedTypeException)
 from typing import (Any, Dict, Iterable, List, Sequence, Tuple, Union)
 
 from . import flags
-from .utils import (pack_value, unpack_value, to_base_58, from_base_58,
-                    intersect, getUTC, sanitize_packet)
+from .utils import (pack_value, unpack_value, intersect, getUTC,
+                    sanitize_packet)
 
 _MsgPackable__ = Union[None, float, str, bytes]
 _MsgPackable_ = Union[_MsgPackable__, List[_MsgPackable__], Tuple[
@@ -230,18 +231,16 @@ class InternalMessage(object):
         # First section checks size header
         _string = cls.__sanitize_string(string, sizeless)
         # Then we attempt to decompress
-        _string, compression_fail = cls.__decompress_string(_string,
-                                                            compressions)
+        _string, compression_fail = cls.__decompress_string(
+            _string, compressions)
         id_ = _string[0:32]
         serialized = _string[32:]
         checksum = sha256(serialized).digest()
-        assert id_ == checksum, "Checksum failed: {} != {}".format(id_,
-                                                                   checksum)
+        assert id_ == checksum, "Checksum failed: {} != {}".format(
+            id_, checksum)
         packets = unpackb(serialized)
-        msg = cls(packets[0],
-                  packets[1],
-                  packets[3:],
-                  compression=compressions)
+        msg = cls(
+            packets[0], packets[1], packets[3:], compression=compressions)
         msg.time = packets[2]
         msg.compression_fail = compression_fail
         msg._InternalMessage__id = checksum
@@ -253,8 +252,8 @@ class InternalMessage(object):
             self,  #type: InternalMessage
             msg_type,  #type: MsgPackable
             sender,  #type: bytes
-            payload,  #type: Iterable[MsgPackable, ...]
-            compression=None,  #type: Union[None, Iterable[int, ...]]
+            payload,  #type: Iterable[MsgPackable]
+            compression=None,  #type: Union[None, Iterable[int]]
             timestamp=None  #type: Union[None, int]
     ):  #type: (...) -> None
         """Initializes a InternalMessage instance
@@ -302,7 +301,7 @@ class InternalMessage(object):
 
     @payload.setter
     def payload(self, value):
-        #type: (InternalMessage, Sequence[MsgPackable]) -> Tuple[MsgPackable, ...]
+        #type: (InternalMessage, Sequence[MsgPackable]) -> None
         """Sets the payload to a new tuple"""
         self.__clear_cache()
         self.__payload = tuple(value)
@@ -372,7 +371,7 @@ class InternalMessage(object):
     def time_58(self):
         #type: (InternalMessage) -> bytes
         """Returns this message's timestamp in base_58"""
-        return to_base_58(self.__time)
+        return b58encode_int(self.__time)
 
     @property
     def id(self):

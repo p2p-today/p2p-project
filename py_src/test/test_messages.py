@@ -7,7 +7,7 @@ from random import randint
 from struct import pack
 from sys import version_info
 
-from pytest import raises
+from pytest import (mark, raises)
 
 from functools import partial
 
@@ -22,6 +22,7 @@ if version_info >= (3, ):
     xrange = range
 
 
+@mark.run(order=1)
 def test_compression(iters=500):
     #type: (int) -> None
     for _ in xrange(iters):
@@ -32,6 +33,7 @@ def test_compression(iters=500):
             identity(compress, decompress, data)
 
 
+@mark.run(order=1)
 def test_compression_exceptions(iters=100):
     #type: (int) -> None
     for _ in xrange(iters):
@@ -43,6 +45,7 @@ def test_compression_exceptions(iters=100):
             messages.decompress(test, urandom(4))  #type: ignore
 
 
+@mark.run(order=1)
 def test_InternalMessage(benchmark, iters=500, impl=messages):
     #type: (Any, int, Any) -> None
     max_val = 2**8

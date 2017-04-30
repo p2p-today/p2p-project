@@ -39,7 +39,7 @@ This is our unorganized network. It operates under three simple rules:
 
 Using these principles you can create a messaging network which scales linearly with the number of nodes.
 
-Currently there is an implementation in [Python](https:dev-docs.p2p.today/python/mesh) and Javascript &lt;https:dev-docs.p2p.today/javascript/mesh&gt;. More tractable documentation can be found in their tutorial sections. For a more in-depth explanation you can see [it's specifications](https:dev-docs.p2p.today/protocol/mesh) or [this slideshow](http://slides.p2p.today/).
+Currently there is an implementation in [Python](https://dev-docs.p2p.today/python/mesh) and [Javascript](https://dev-docs.p2p.today/javascript/mesh). More tractable documentation can be found in their tutorial sections. For a more in-depth explanation you can see [it's specifications](https://dev-docs.p2p.today/protocol/mesh) or [this slideshow](http://slides.p2p.today/).
 
 Sync Table
 ==========
@@ -70,3 +70,5 @@ Donate
 ======
 
 Bitcoin: [1BwVXxPj9JSEUoAx3HvcNjjJTHb2qsyjUr](https://blockchain.info/address/1BwVXxPj9JSEUoAx3HvcNjjJTHb2qsyjUr)
+
+Ethereum: [0x0eb3BD61f48959662AC9411E5A2EC71aC845B687](https://etherscan.io/address/0x0eb3BD61f48959662AC9411E5A2EC71aC845B687)

@@ -13,7 +13,7 @@ if [ $pyver ]; then
     coverage xml
     codecov --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5 --file=coverage.xml
 elif [ $jsver ]; then
-    sudo apt-get install build-essential libssl-dev
+    sudo apt-get update && sudo apt-get install build-essential libssl-dev
     wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.32.0/install.sh | bash
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" # This loads nvm
@@ -22,6 +22,7 @@ elif [ $jsver ]; then
     nvm use $jsver
     node --version
     echo "$jsver"
+    npm install -g yarn
     if [ $jsver -eq 4 ]; then
         make js_compat_test
     else

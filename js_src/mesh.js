@@ -93,10 +93,10 @@ m.MeshConnection = class MeshConnection extends base.BaseConnection  {
         try {
             var msg = super.found_terminator();
             //console.log(msg.packets);
-            if (this.handle_waterfall(msg, msg.packets))   {
+            if (this.handle_renegotiate(msg.packets))  {
                 return true;
             }
-            else if (this.handle_renegotiate(msg.packets))  {
+            else if (this.handle_waterfall(msg, msg.packets))   {
                 return true;
             }
             this.server.handle_msg(new base.Message(msg, this.server), this);
@@ -466,9 +466,6 @@ m.MeshSocket = class MeshSocket extends base.BaseSocket  {
             //     this.__resolve_connection_conflict(handler, packets[1]);
             // }
             conn.id = packets[1];
-            if (!conn.addr && this.routing_table.size === 0)  {
-                this.emit('connect', this);
-            }
             conn.addr = packets[3];
             //console.log(`changed compression methods to: ${packets[4]}`);
             conn.compression = packets[4];
@@ -476,9 +473,12 @@ m.MeshSocket = class MeshSocket extends base.BaseSocket  {
             if (this.awaiting_ids.indexOf(conn) > -1)   {  // handler in this.awaiting_ids
                 this.awaiting_ids.splice(this.awaiting_ids.indexOf(conn), 1);
                 this._send_handshake(conn);
+                this._send_peers(conn);
+            }
+            if (this.routing_table.size === 0 && !this.connect_override)    {
+                this.emit('connect', this);
             }
             this.routing_table.set(packets[1], conn);
-            this._send_peers(conn);
             return true;
         }
     }

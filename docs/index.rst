@@ -71,6 +71,8 @@ Donate
 
 Bitcoin: `1BwVXxPj9JSEUoAx3HvcNjjJTHb2qsyjUr <https://blockchain.info/address/1BwVXxPj9JSEUoAx3HvcNjjJTHb2qsyjUr>`_
 
+Ethereum: `0x0eb3BD61f48959662AC9411E5A2EC71aC845B687 <https://etherscan.io/address/0x0eb3BD61f48959662AC9411E5A2EC71aC845B687>`_
+
 Previous Versions
 ~~~~~~~~~~~~~~~~~
 

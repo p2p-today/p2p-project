@@ -9,10 +9,10 @@ from itertools import chain
 from logging import DEBUG
 from random import choice
 from socket import timeout as TimeoutException
-from time import sleep
 from traceback import format_exc
 
 from async_promises import Promise
+from base58 import (b58encode_int, b58decode_int)
 from typing import (cast, Any, Callable, Dict, Iterator, Set, Tuple, Union)
 
 try:
@@ -25,7 +25,7 @@ from .base import (BaseConnection, Message)
 from .mesh import (MeshConnection, MeshDaemon, MeshSocket)
 from .messages import MsgPackable
 from .utils import (inherit_doc, awaiting_value, most_common, log_entry,
-                    to_base_58, from_base_58, sanitize_packet)
+                    sanitize_packet)
 
 max_outgoing = 4
 default_protocol = Protocol('chord', "Plaintext")  # SSL")
@@ -89,7 +89,7 @@ class ChordConnection(MeshConnection):
         #type: (ChordConnection) -> int
         """Returns the nodes ID as an integer"""
         if self.__id_10 == -1:
-            self.__id_10 = from_base_58(self.id)
+            self.__id_10 = b58decode_int(self.id)
         return self.__id_10
 
 
@@ -166,7 +166,7 @@ class ChordSocket(MeshSocket):
                                           debug_level)
         if self.daemon == 'chord reserved':
             self.daemon = ChordDaemon(addr, port, self)
-        self.id_10 = from_base_58(self.id)  #type: int
+        self.id_10 = b58decode_int(self.id)  #type: int
         self.data = dict((
             (method, {})
             for method in hashes))  #type: Dict[bytes, Dict[int, MsgPackable]]
@@ -178,6 +178,7 @@ class ChordSocket(MeshSocket):
         self.register_handler(self.__handle_retrieve)
         self.register_handler(self.__handle_retrieved)
         self.register_handler(self.__handle_store)
+        self.register_handler(self.__handle_delta)
 
     @property
     def addr(self):
@@ -213,9 +214,9 @@ class ChordSocket(MeshSocket):
             #type: (Iterator[ChordConnection]) -> ChordConnection
             coll = sorted(lst, key=get_id)
             coll_len = len(coll)
-            circular_triplets = (
-                (coll[x], coll[(x + 1) % coll_len], coll[(x + 2) % coll_len])
-                for x in range(coll_len))
+            circular_triplets = ((coll[x], coll[(x + 1) % coll_len],
+                                  coll[(x + 2) % coll_len])
+                                 for x in range(coll_len))
             narrowest = None  #type: Union[None, ChordConnection]
             gap = 2**384  #type: int
             for beg, mid, end in circular_triplets:
@@ -264,6 +265,7 @@ class ChordSocket(MeshSocket):
                 if len(tuple(self.outgoing)) > max_outgoing:
                     self.disconnect_least_efficient()
             return True
+        return None
 
     def __handle_key(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -289,6 +291,7 @@ class ChordSocket(MeshSocket):
                 self.__keys.add(packets[1])
                 self.emit('add', self, packets[1])
             return True
+        return None
 
     def _handle_peers(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -309,19 +312,19 @@ class ChordSocket(MeshSocket):
 
             def is_prev(id):
                 #type: (Union[bytes, bytearray, str]) -> bool
-                return distance(from_base_58(id), self.id_10) <= distance(
+                return distance(b58decode_int(id), self.id_10) <= distance(
                     self.prev.id_10, self.id_10)
 
             def is_next(id):
                 #type: (Union[bytes, bytearray, str]) -> bool
-                return distance(self.id_10, from_base_58(id)) <= distance(
+                return distance(self.id_10, b58decode_int(id)) <= distance(
                     self.id_10, self.next.id_10)
 
             for addr, id in new_peers:
                 if len(tuple(self.outgoing)) < max_outgoing or is_prev(
                         id) or is_next(id):
                     try:
-                        self.__connect(addr[0], addr[1], id.encode())
+                        self.__connect(addr[0], addr[1], id)
                     except:  # pragma: no cover
                         self.__print__(
                             "Could not connect to %s because\n%s" %
@@ -329,6 +332,7 @@ class ChordSocket(MeshSocket):
                             level=1)
                         continue
             return True
+        return None
 
     def __handle_retrieved(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -356,6 +360,7 @@ class ChordSocket(MeshSocket):
                 if value.callback:
                     value.callback_method(packets[1], packets[2])
             return True
+        return None
 
     def __handle_retrieve(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -373,15 +378,19 @@ class ChordSocket(MeshSocket):
         """
         packets = msg.packets
         if packets[0] == flags.retrieve:
-            if packets[1] in hashes:
-                val = self.__lookup(packets[1],
-                                    from_base_58(packets[2]),
+            if sanitize_packet(packets[1]) in hashes:
+                val = self.__lookup(sanitize_packet(packets[1]),
+                                    b58decode_int(packets[2]),
                                     cast(ChordConnection, handler))
-                if val.value not in {None, b''}:
+                if val.value is not None:
                     self.__print__(val.value, level=1)
                     handler.send(flags.whisper, flags.retrieved, packets[1],
                                  packets[2], cast(MsgPackable, val.value))
+                else:
+                    handler.send(flags.whisper, flags.retrieved, packets[1],
+                                 packets[2], None)
                 return True
+        return None
 
     def __handle_store(self, msg, handler):
         #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
@@ -400,9 +409,32 @@ class ChordSocket(MeshSocket):
         packets = msg.packets
         if packets[0] == flags.store:
             method = packets[1]
-            key = from_base_58(packets[2])
+            key = b58decode_int(packets[2])
             self.__store(method, key, packets[3])
             return True
+        return None
+
+    def __handle_delta(self, msg, handler):
+        #type: (ChordSocket, Message, BaseConnection) -> Union[bool, None]
+        """This callback is used to deal with delta storage signals. Its
+        primary job is:
+
+             - update the mapping in a given key
+
+             Args:
+                msg:        A :py:class:`~py2p.base.Message`
+                handler:    A :py:class:`~py2p.chord.ChordConnection`
+
+             Returns:
+                Either ``True`` or ``None``
+        """
+        packets = msg.packets
+        if packets[0] == flags.delta:
+            method = packets[1]
+            key = b58decode_int(packets[2])
+            self.__delta(method, key, packets[3])
+            return True
+        return None
 
     def dump_data(self, start, end):
         #type: (ChordSocket, int, int) -> Dict[bytes, Dict[int, MsgPackable]]
@@ -415,9 +447,9 @@ class ChordSocket(MeshSocket):
         Returns:
             A nested :py:class:`dict` containing your data from start to end
         """
-        ret = dict((
-            (method, {})
-            for method in hashes))  #type: Dict[bytes, Dict[int, MsgPackable]]
+        ret = dict(
+            ((method, {})
+             for method in hashes))  #type: Dict[bytes, Dict[int, MsgPackable]]
         self.__print__("Entering dump_data", level=1)
         for method, table in self.data.items():
             for key, value in table.items():
@@ -442,22 +474,23 @@ class ChordSocket(MeshSocket):
             object, which either contains or will eventually contain its result
         """
         node = self  #type: Union[ChordSocket, BaseConnection]
+        method = sanitize_packet(method)
         if self.routing_table:
             node = self.find(key)
         elif self.awaiting_ids:
             node = choice(self.awaiting_ids)
         if node in (self, None):
-            return awaiting_value(self.data[method].get(key, ''))
+            return awaiting_value(self.data[method].get(key, None))
         else:
-            node.send(flags.whisper, flags.retrieve, method, to_base_58(key))
+            node.send(flags.whisper, flags.retrieve, method, b58encode_int(key))
             ret = awaiting_value()
             if handler:
                 ret.callback = handler
-            self.requests[method, to_base_58(key)] = ret
+            self.requests[method, b58encode_int(key)] = ret
             return ret
 
     def __getitem(self, key, timeout=10):
-        #type: (ChordSocket, bytes, int) -> MsgPackable
+        #type: (ChordSocket, Union[bytes, bytearray, str], int) -> MsgPackable
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -484,12 +517,12 @@ class ChordSocket(MeshSocket):
         common, count = most_common(vals)
         iters = 0
         limit = timeout // 0.1
-        fails = {None, b''}
-        while (common in fails or count <= len(hashes) // 2) and iters < limit:
-            sleep(0.1)
+        while (common is None or count <= len(hashes) // 2) and iters < limit:
+            self.daemon.daemon.join(0.1)  # type: ignore
+            # This (correctly) errors if running in daemon thread, sleep doesn't
             iters += 1
             common, count = most_common(vals)
-        if common not in fails and count > len(hashes) // 2:
+        if common is not None and count > len(hashes) // 2:
             return common
         elif iters == limit:
             raise TimeoutException()
@@ -499,7 +532,7 @@ class ChordSocket(MeshSocket):
                 vals, count, len(hashes) // 2 + 1, common))
 
     def __getitem__(self, key):
-        #type: (ChordSocket, bytes) -> MsgPackable
+        #type: (ChordSocket, Union[bytes, bytearray, str]) -> MsgPackable
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -521,7 +554,7 @@ class ChordSocket(MeshSocket):
         return self.__getitem(key)
 
     def getSync(self, key, ifError=None, timeout=10):
-        #type: (ChordSocket, bytes, MsgPackable, int) -> MsgPackable
+        #type: (ChordSocket, Union[bytes, bytearray, str], MsgPackable, int) -> MsgPackable
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -544,11 +577,15 @@ class ChordSocket(MeshSocket):
             self._logger.debug(
                 'Getting value of {}, with fallback'.format(key, ifError))
             return self.__getitem(key, timeout=timeout)
-        except (KeyError, TimeoutException):
+        except (KeyError, TimeoutException) as e:
+            self._logger.debug(
+                'Did not get value of {}, so returning {}. Due to {}'.format(
+                    key, ifError, e
+                ))
             return ifError
 
     def get(self, key, ifError=None, timeout=10):
-        #type: (ChordSocket, bytes, MsgPackable, int) -> Promise
+        #type: (ChordSocket, Union[bytes, bytearray, str], MsgPackable, int) -> Promise
         """Looks up the value at a given key.
         Under the covers, this actually checks five different hash tables, and
         returns the most common value given.
@@ -565,13 +602,14 @@ class ChordSocket(MeshSocket):
             the value at ifError if there's an :py:class:`Exception`
         """
 
+        @Promise
         def resolver(resolve, reject):
             #type: (Callable, Callable) -> None
             resolve(self.getSync(key, ifError=ifError, timeout=timeout))
 
         self._logger.debug(
             'Getting Promise of {}, with fallback'.format(key, ifError))
-        return Promise(resolver)
+        return resolver
 
     def __store(self, method, key, value):
         #type: (ChordSocket, bytes, int, MsgPackable) -> None
@@ -587,16 +625,17 @@ class ChordSocket(MeshSocket):
                         or :py:class:`bytes`-like object
         """
         node = self.find(key)  #type: Union[ChordSocket, BaseConnection]
+        method = sanitize_packet(method)
         if self.leeching and node is self and len(self.awaiting_ids):
             node = choice(self.awaiting_ids)
         if node in (self, None):
-            if value == b'':
+            if value is None:
                 del self.data[method][key]
             else:
                 self.data[method][key] = value
         else:
             node.send(flags.whisper, flags.store, method,
-                      to_base_58(key), value)
+                      b58encode_int(key), value)
 
     def __setitem__(self, key, value):
         #type: (ChordSocket,  Union[bytes, bytearray, str], MsgPackable) -> None
@@ -630,10 +669,10 @@ class ChordSocket(MeshSocket):
         keys = get_hashes(_key)
         for method, x in zip(hashes, keys):
             self.__store(method, x, value)
-        if _key not in self.__keys and value != b'':
+        if _key not in self.__keys and value is not None:
             self.__keys.add(_key)
             self.send(_key, type=flags.notify)
-        elif _key in self.__keys and value == b'':
+        elif _key in self.__keys and value is None:
             self.__keys.add(_key)
             self.send(_key, b'del', type=flags.notify)
 
@@ -647,7 +686,75 @@ class ChordSocket(MeshSocket):
         _key = sanitize_packet(key)
         if _key not in self.__keys:
             raise KeyError(_key)
-        self.set(_key, b'')
+        self.set(_key, None)
+
+    def __delta(self, method, key, delta):
+        #type: (ChordSocket, bytes, int, MsgPackable) -> None
+        """Updates the value at a given key, using the supplied delta. This
+        method deals with just *one* of the underlying hash tables.
+
+        Args:
+            method: The hash table that you wish to check. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            key:    The key that you wish to check. Must be a :py:class:`int` or
+                        :py:class:`long`
+            delta:  The delta you wish to apply at this key.
+        """
+        node = self.find(key)  #type: Union[ChordSocket, BaseConnection]
+        method = sanitize_packet(method)
+        if self.leeching and node is self and len(self.awaiting_ids):
+            node = choice(self.awaiting_ids)
+        if node in (self, None):
+            if key not in self.data[method]:
+                self.data[method][key] = {}
+            self.data[method][key].update(delta)  #type: ignore
+        else:
+            node.send(flags.whisper, flags.delta, method,
+                      b58encode_int(key), delta)
+
+    def apply_delta(self, key, delta):
+        #type: (ChordSocket, Union[bytes, bytearray, str], MsgPackable) -> Promise
+        """Updates a stored mapping with the given delta. This allows for more
+        graceful handling of conflicting changes
+
+        Args:
+            key:    The key you wish to apply a delta to. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            delta:  A mapping which contains the keys you wish to update, and
+                        the values you wish to store
+
+        Returns:
+            A :py:class:`~async_promises.Promise` which yields the resulting
+            data, or rejects with a :py:class:`TypeError` if the updated key
+            does not store a mapping already.
+
+        Raises:
+            TypeError: If the updated key does not store a mapping already.
+        """
+        if not isinstance(delta, dict):
+            raise TypeError("Cannot apply delta if you feed a non-mapping")
+
+        value = self.get(key)
+
+        @Promise
+        def resolver(resolve, reject):
+            #type: (Callable, Callable) -> None
+            if not isinstance(value.get(), dict) and value.get() is not None:
+                reject(
+                    TypeError("Cannot apply delta to a non-mapping: {}".format(
+                        value.get())))
+            else:
+                _key = sanitize_packet(key)
+                self._logger.debug(
+                    'Applying a delta of {} to {}'.format(delta, _key))
+                keys = get_hashes(_key)
+                for method, x in zip(hashes, keys):
+                    self.__delta(method, x, delta)
+                ret = value.get() or {}
+                ret.update(delta)
+                resolve(ret)
+
+        return resolver
 
     def update(self, update_dict):
         #type: (ChordSocket, Dict[Union[bytes, bytearray, str], MsgPackable]) -> None

@@ -30,6 +30,11 @@ These flags will denote the secondary purpose, or a more specific purpose, of a 
 - response      = ``0x0A``
 - store         = ``0x0B``
 - retrieve      = ``0x0C``
+- retrieved     = ``0x0D``
+- forward       = ``0x0E``
+- RESERVED      = ``0x0F``
+- RESERVED      = ``0x10``
+- delta         = ``0x11``
 
 Compression Flags
 +++++++++++++++++

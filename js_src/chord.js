@@ -93,7 +93,7 @@ class awaiting_value    {
     callback_method(method, key)    {
         this.callback.send(
             base.flags.whisper,
-            [base.flags.retrieved, method, key, self.value]
+            [base.flags.retrieved, method, key, this.value]
         );
     }
 }
@@ -114,9 +114,9 @@ function most_common(tmp)   {
         return [undefined, 0];
     }
 
-    function comparator(o)  {
-        return function(v)  {
-            return equal(v,o);
+    const comparator = (o)=>{
+        return (v)=>{
+            return equal(v, o);
         }
     }
 
@@ -124,7 +124,7 @@ function most_common(tmp)   {
         return lst.filter(comparator(a)).length
              - lst.filter(comparator(b)).length;
     }).pop();
-    return [ret, lst.filter(comparator(ret)).length+1];
+    return [ret, lst.filter(comparator(ret)).length + 1];
 }
 
 
@@ -195,6 +195,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         this.conn_type = m.ChordConnection;
         this.leeching = true;
         this.id_10 = base.from_base_58(this.id);
+        this.connect_override = true;
         this.data = {
             'sha1': {},
             'sha224': {},
@@ -252,11 +253,11 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
             var self = this;
 
             function is_prev(id)    {
-                return distance(base.from_base_58(id), self.id_10).lesserOrEquals(distance(self.prev.id_10, self.id_10));
+                return m.distance(base.from_base_58(id), self.id_10).lesserOrEquals(distance(self.prev.id_10, self.id_10));
             }
 
             function is_next(id)    {
-                return distance(self.id_10, base.from_base_58(id)).lesserOrEquals(distance(self.id_10, self.next.id_10));
+                return m.distance(self.id_10, base.from_base_58(id)).lesserOrEquals(distance(self.id_10, self.next.id_10));
             }
 
             new_peers.forEach(function(peer_array)  {
@@ -267,6 +268,30 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
                         self.__connect(addr[0], addr[1], id);
                 }
             });
+            return true;
+        }
+    }
+
+
+    __handle_delta(self, msg, handler)  {
+        /**
+        *     .. js:function:: js2p.chord.ChordSocket.__handle_delta(msg, conn)
+        *
+        *         This callback is used to deal with delta storage signals. Its
+        *         primary job is:
+        *
+        *             - update the mapping in a given key
+        *
+        *         :param msg:       A :js:class:`~js2p.base.Message`
+        *         :param handler:   A :js:class:`~js2p.chord.ChordConnection`
+        *
+        *         :returns: Either ``True`` or ``None``
+        */
+        let packets = msg.packets
+        if (packets[0] === flags.delta)  {
+            let method = packets[1];
+            let key = from_base_58(packets[2]);
+            this.__delta(method, key, packets[3]);
             return true;
         }
     }
@@ -368,6 +393,9 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
             if (new_meta !== conn.leeching)  {
                 this._send_meta(conn);
                 conn.leeching = new_meta;
+                if (!conn.leeching && [...this.data_storing].length === 1) {
+                    this.emit('connect', this);
+                }
                 if (!this.leeching && !conn.leeching)   {
                     this._send_peers(conn);
                     let update = this.dump_data(conn.id_10, this.id_10);
@@ -429,7 +457,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
                 conn.send(base.flags.whisper, [base.flags.retrieved, packets[1], packets[2], val.value]);
             }
             catch (e)   {
-                console.log(e);
+                console.warn(e);
             }
             return true;
         }
@@ -545,24 +573,34 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
             let count = ctuple[1];
             let iters = 0
             let limit = Math.floor(timeout / 0.1) || 100;
-            let fails = new Set([undefined, null, '']);
+
+            let cleanup = ()=>{
+                delete this.requests[`sha1,${base.to_base_58(keys[0])}`];
+                delete this.requests[`sha224,${base.to_base_58(keys[1])}`];
+                delete this.requests[`sha256,${base.to_base_58(keys[2])}`];
+                delete this.requests[`sha384,${base.to_base_58(keys[3])}`];
+                delete this.requests[`sha512,${base.to_base_58(keys[4])}`];
+            }
 
             function check()    {
-                if ((fails.has(common) || count <= 2) && iters < limit)   {
+                if ((common === undefined || count <= 2) && iters < limit)   {
                     setTimeout(check, 100);
                     iters += 1
                     ctuple = most_common(vals);
                     common = ctuple[0];
                     count = ctuple[1];
                 }
-                else if (!fails.has(common) && count > 2) {
+                else if (common !== undefined && common !== null && count > 2) {
+                    cleanup();
                     fulfill(common);
                 }
                 else if (iters === limit)   {
-                    reject(new Error("Time out"));
+                    cleanup();
+                    reject(new Error(`Time out: ${util.inspect(vals)}`));
                 }
                 else    {
-                    reject(new Error(`This key does not have an agreed-upon value. values=${utils.inspect(vals)}, count=${count}, majority=3, most common=${utils.inspect(common)}`));
+                    cleanup();
+                    reject(new Error(`This key does not have an agreed-upon value. values=${util.inspect(vals)}, count=${count}, majority=3, most common=${util.inspect(common)}`));
                 }
             }
             check();
@@ -597,7 +635,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
             node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
         }
         if (Object.is(node, this))  {
-            if (value === '')    {
+            if (value === null)    {
                 delete this.data[method][key];
             }
             else    {
@@ -607,6 +645,82 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         else    {
             node.send(base.flags.whisper, [base.flags.store, method, base.to_base_58(key), value]);
         }
+    }
+
+    __delta(method, key, delta) {
+        let node = this.find(key);
+        if (this.leeching && Object.is(node, this)) {
+            node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
+        }
+        if (Object.is(node, this))  {
+            if (this.data[method][key] === undefined)   {
+                this.data[method][key] = {};
+            }
+            if (this.data[method][key] instanceof Object)  {
+                for (let _key in delta)  {
+                    this.data[method][key][_key] = delta[_key];
+                }
+            }
+        }
+        else    {
+            node.send(base.flags.whisper, [base.flags.delta, method, base.to_base_58(key), delta]);
+        }
+    }
+
+    apply_delta(key, delta) {
+        /*Updates a stored mapping with the given delta. This allows for more
+        graceful handling of conflicting changes
+
+        Args:
+            key:    The key you wish to apply a delta to. Must be a
+                        :py:class:`str` or :py:class:`bytes`-like object
+            delta:  A mapping which contains the keys you wish to update, and
+                        the values you wish to store
+
+        Returns:
+            A :py:class:`~async_promises.Promise` which yields the resulting
+            data, or rejects with a :py:class:`TypeError` if the updated key
+            does not store a mapping already.
+
+        Raises:
+            TypeError: If the updated key does not store a mapping already.
+        */
+
+        const self = this;
+
+        return new Promise((resolve, reject)=>{
+            if (!(delta instanceof Object)) {
+                reject(new Error("Cannot apply delta if you feed a non-mapping"));
+            }
+
+            function on_success(value)    {
+                let _key = new Buffer(key);
+                let keys = m.get_hashes(_key);
+                let hashes = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512'];
+                for (let i in keys) {
+                    self.__delta(hashes[i], keys[i], delta);
+                }
+                for (let k of Object.keys(delta))    {
+                    value[k] = delta[k];
+                }
+                resolve(value)
+            }
+
+            self.get(key, null).then(
+                (value)=>{
+                    if (value instanceof Object)    {
+                        on_success(value);
+                    }
+                    else if (value === null)    {
+                        on_success({});
+                    }
+                    else    {
+                        reject(new Error("This key already has a non-mapping value"));
+                    }
+                },
+                ()=>{on_success({})}
+            );
+        });
     }
 
     set(key, value) {
@@ -628,11 +742,11 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         this.__store('sha256', keys[2], value);
         this.__store('sha384', keys[3], value);
         this.__store('sha512', keys[4], value);
-        if (!this.__keys.has(key) && value !== '')   {
+        if (!this.__keys.has(key) && value !== null)    {
             this.__keys.add(key);
             this.send([key], undefined, base.flags.notify);
         }
-        else if (this.__keys.has(key) && value === '')   {
+        else if (this.__keys.has(key) && value === null)    {
             this.__keys.add(key);
             this.send([key, 'del'], undefined, base.flags.notify);
         }
@@ -664,7 +778,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
         *         :raises:              See :js:func:`~js2p.chord.ChordSocket.set`
         */
-        this.set(key);
+        this.set(key, null);
     }
 
     *keys()  {

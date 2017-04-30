@@ -16,6 +16,7 @@ from threading import (Lock, Thread, current_thread)
 from traceback import format_exc
 from uuid import uuid4
 
+from base58 import (b58encode, b58encode_int)
 from pyee import EventEmitter
 from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple,
                     Sequence, Tuple, Union)
@@ -23,9 +24,9 @@ from typing import (cast, Any, Callable, Dict, Iterable, List, NamedTuple,
 from . import flags
 from .messages import (compression, InternalMessage, MsgPackable)
 from .utils import (getUTC, intersect, get_lan_ip, get_socket, inherit_doc,
-                    log_entry, unpack_value, to_base_58)
+                    log_entry, unpack_value)
 
-protocol_version = "0.6"
+protocol_version = "0.7"
 node_policy_version = "757"
 
 version = '.'.join((protocol_version, node_policy_version))
@@ -53,7 +54,7 @@ class Protocol(
         """The SHA-256-based ID of the Protocol"""
         h = sha256(''.join(str(x) for x in self).encode())
         h.update(protocol_version.encode())
-        return to_base_58(int(h.hexdigest(), 16)).decode()
+        return b58encode_int(int(h.hexdigest(), 16))
 
 
 default_protocol = Protocol('', "Plaintext")  # SSL")
@@ -86,8 +87,10 @@ class BaseConnection(object):
         self.expected = 4
         self.active = False
 
-    def send_InternalMessage(self, msg):
-        #type: (BaseConnection, InternalMessage) -> InternalMessage
+    def send_InternalMessage(
+        self,  # type: BaseConnection
+        msg  # type: InternalMessage
+    ):  # type: (...) -> Union[InternalMessage, None]
         """Sends a preconstructed message
 
         Args:
@@ -110,6 +113,7 @@ class BaseConnection(object):
         except (IOError, SocketException) as e:  # pragma: no cover
             self.server.daemon.exceptions.append(format_exc())
             self.server.disconnect(self)
+            return None
 
     def send(self, msg_type, *args, **kargs):
         #type: (BaseConnection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
@@ -131,8 +135,8 @@ class BaseConnection(object):
             ``None`` if the sending was unsuccessful
         """
         # Latter is returned if key not found
-        id = kargs.get('id', self.server.id)
-        time = kargs.get('time') or getUTC()
+        id = cast(bytes, kargs.get('id', self.server.id))
+        time = cast(int, kargs.get('time') or getUTC())
         # Begin real method
         msg = InternalMessage(
             msg_type, id, args, self.compression, timestamp=time)
@@ -206,8 +210,8 @@ class BaseConnection(object):
             ``True`` if an action was taken, ``False`` if not
         """
         if packets[0] == flags.renegotiate:
-            if packets[4] == flags.compression:
-                encoded_methods = packets[5]
+            if packets[3] == flags.compression:
+                encoded_methods = packets[4]
                 respond = (self.compression != encoded_methods)
                 self.compression = list(cast(Iterable[int], encoded_methods))
                 self.__print__(
@@ -219,7 +223,7 @@ class BaseConnection(object):
                               cast(Tuple[int, ...],
                                    intersect(compression, self.compression)))
                 return True
-            elif packets[4] == flags.resend:
+            elif packets[3] == flags.resend:
                 self.send(*self.last_sent)
                 return True
         return False
@@ -321,6 +325,7 @@ class BaseDaemon(object):
                     "this, please post a copy of your MeshSocket.status to "
                     "git.p2p.today/issues." % handler.id,
                     level=0)
+                self.__print__("This exception was: {}".format(e), level=1)
                 self.exceptions.append(format_exc())
             self.server.disconnect(handler)
             self.server.request_peers()
@@ -391,7 +396,7 @@ class BaseSocket(EventEmitter, object):
             self.out_addr = addr, port
         info = (str(self.out_addr).encode(), prot.id.encode(), user_salt)
         h = sha384(b''.join(info))
-        self.id = to_base_58(int(h.hexdigest(), 16))  #type: bytes
+        self.id = b58encode_int(int(h.hexdigest(), 16)).encode()  #type: bytes
         self._logger = getLogger('{}.{}.{}'.format(
             self.__class__.__module__, self.__class__.__name__, self.id))
         self.__handlers = [
@@ -490,6 +495,7 @@ class BaseSocket(EventEmitter, object):
                 self.__print__(
                     "Breaking from handler: %s" % handler.__name__, level=4)
                 return True
+        return None
 
     @property
     def status(self):
@@ -612,9 +618,9 @@ class Message(object):
         else:
             self.server._logger.debug('Requesting connection for direct reply'
                                       ' to Message ID {}'.format(self.id))
-            request_hash = sha384(self.sender + to_base_58(
-                getUTC())).hexdigest()
-            request_id = to_base_58(int(request_hash, 16))
+            request_hash = sha384(self.sender + b58encode_int(
+                getUTC()).decode()).hexdigest()
+            request_id = b58encode_int(int(request_hash, 16)).decode()
             self.server.send(request_id, self.sender, type=flags.request)
             to_send = (flags.whisper,
                        flags.whisper)  #type: Tuple[MsgPackable, ...]
