@@ -28,10 +28,11 @@ def compress(msg, method):
         method: The compression method you wish to use. Supported
                     (assuming installed):
 
-                    - :py:class:`~base.flags.gzip`
-                    - :py:class:`~base.flags.zlib`
-                    - :py:class:`~base.flags.bz2`
-                    - :py:class:`~base.flags.lzma`
+                    - :py:data:`~py2p.flags.gzip`
+                    - :py:data:`~py2p.flags.zlib`
+                    - :py:data:`~py2p.flags.bz2`
+                    - :py:data:`~py2p.flags.lzma`
+                    - :py:data:`~py2p.flags.snappy`
 
     Returns:
         Defined by the compression method, but typically the bytes of the
@@ -43,8 +44,8 @@ def compress(msg, method):
         :py:class:`bytearray`
 
     Raises:
-        A :py:class:`ValueError` if there is an unknown compression method,
-            or a method-specific error
+        ValueError: if there is an unknown compression method, or a
+            method-specific error
     """
     if method in (flags.gzip, flags.zlib):
         wbits = 15 + (16 * (method == flags.gzip))
@@ -71,10 +72,11 @@ def decompress(msg, method):
         method: The decompression method you wish to use. Supported
                     (assuming installed):
 
-                    - :py:class:`~base.flags.gzip`
-                    - :py:class:`~base.flags.zlib`
-                    - :py:class:`~base.flags.bz2`
-                    - :py:class:`~base.flags.lzma`
+                    - :py:data:`~py2p.flags.gzip`
+                    - :py:data:`~py2p.flags.zlib`
+                    - :py:data:`~py2p.flags.bz2`
+                    - :py:data:`~py2p.flags.lzma`
+                    - :py:data:`~py2p.flags.snappy`
 
     Returns:
         Defined by the decompression method, but typically the bytes of the
@@ -86,8 +88,8 @@ def decompress(msg, method):
         :py:class:`bytearray`
 
     Raises:
-        A :py:class:`ValueError` if there is an unknown compression method,
-            or a method-specific error
+        ValueError: if there is an unknown compression method, or a
+            method-specific error
     """
     if method in (flags.gzip, flags.zlib):
         return zlib.decompress(msg, zlib.MAX_WBITS | 32)
@@ -176,13 +178,13 @@ class InternalMessage(object):
     @classmethod
     def __decompress_string(cls, string, compressions=None):
         #type: (Any, bytes, Union[None, Iterable[int]]) -> Tuple[bytes, bool]
-        """Returns a tuple containing the decompressed bytes and a boolean
-        as to whether decompression failed or not
+        """Returns a tuple containing the decompressed :py:class:`bytes` and a
+        :py:class:`bool` as to whether decompression failed or not
 
         Args:
             string:         The possibly-compressed message you wish to parse
             compressions:   A list of the standard compression methods this
-                                message may be under (default: [])
+                                message may be under (default: ``[]``)
 
         Returns:
             A decompressed version of the message
@@ -208,21 +210,22 @@ class InternalMessage(object):
     @classmethod
     def feed_string(cls, string, sizeless=False, compressions=None):
         #type: (Any, Union[bytes, bytearray, str], bool, Union[None, Iterable[int]]) -> InternalMessage
-        """Constructs a InternalMessage from a string or bytes object.
+        """Constructs a :py:class:`~py2p.messages.InternalMessage` from a string
+        or :py:class:`bytes` object.
 
         Args:
             string:         The string you wish to parse
-            sizeless:       A boolean which describes whether this string has
-                                its size header (default: it does)
-            compressions:   A list containing the standardized compression
+            sizeless:       A :py:class:`bool` which describes whether this
+                                string has its size header (default: it does)
+            compressions:   A iterable containing the standardized compression
                                 methods this message might be under
-                                (default: [])
+                                (default: ``[]``)
 
         Returns:
-            A base.InternalMessage from the given string
+            A :py:class:`~py2p.messages.InternalMessage` from the given string
 
         Raises:
-           AttributeError: Fed a non-string, non-bytes argument
+           AttributeError: Fed a non-string, non-:py:class:`bytes` argument
            AssertionError: Initial size header is incorrect
            ValueError:     Unrecognized compression method fed in compressions
            IndexError:     Packet headers are incorrect OR
@@ -256,26 +259,21 @@ class InternalMessage(object):
             compression=None,  #type: Union[None, Iterable[int]]
             timestamp=None  #type: Union[None, int]
     ):  #type: (...) -> None
-        """Initializes a InternalMessage instance
+        """Initializes a :py:class:`~py2p.messages.InternalMessage` instance
 
         Args:
-            msg_type:       A bytes-like header for the message you wish
-                                to send
-            sender:         A bytes-like sender ID the message is using
-            payload:        A iterable of bytes-like objects containing the
-                                payload of the message
+            msg_type:       A header for the message you wish to send
+            sender:         A sender ID the message is using
+            payload:        An iterable of objects containing the payload of the
+                                message
             compression:    A list of the compression methods this message
-                                may use (default: [])
-            timestamp:      The current UTC timestamp (as an integer)
-                                (default: result of utils.getUTC())
+                                may use (default: ``[]``)
+            timestamp:      The current UTC timestamp (as an :py:class:`int`)
+                                (default: result of
+                                :py:func:`py2p.utils.getUTC`)
 
         Raises:
-            TypeError:  If you feed an object which cannot convert to bytes
-
-        Warning:
-            If you feed a unicode object, it will be decoded using utf-8.
-            All other objects are treated as raw bytes. If you desire a
-            particular codec, encode it yourself before feeding it in.
+            TypeError:  If you feed an object which cannot be fed to msgpack
         """
         self.__msg_type = msg_type
         self.__sender = sender
@@ -302,7 +300,7 @@ class InternalMessage(object):
     @payload.setter
     def payload(self, value):
         #type: (InternalMessage, Sequence[MsgPackable]) -> None
-        """Sets the payload to a new tuple"""
+        """Sets the payload to a new :py:class:`tuple`"""
         self.__clear_cache()
         self.__payload = tuple(value)
 
