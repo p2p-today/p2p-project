@@ -96,7 +96,6 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
                 else    {
                     let info = dct[key];
                     try {
-                        console.log(`Attempting connection to ${util.inspect(info)}`);
                         ret.connect(...info);
                     }
                     catch(e)    {

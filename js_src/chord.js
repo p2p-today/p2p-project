@@ -388,14 +388,12 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         if (packets[0] === base.flags.handshake && packets.length === 2) {
             if (!conn.id)   {
                 conn.id = msg.sender;
+                this.move_to_routing_table(conn.id, conn);
             }
             let new_meta = (packets[1].toString() === '1');
-            console.log('meta received', new_meta);
             if (new_meta !== conn.leeching)  {
-                console.log('different than before');
                 this._send_meta(conn);
                 conn.leeching = new_meta;
-                this.move_to_routing_table(msg.sender, conn);
                 if (!conn.leeching && [...this.data_storing].length === 1) {
                     this.emit('connect', this);
                 }
