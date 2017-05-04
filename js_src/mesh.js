@@ -470,17 +470,21 @@ m.MeshSocket = class MeshSocket extends base.BaseSocket  {
             //console.log(`changed compression methods to: ${packets[4]}`);
             conn.compression = packets[4];
             // self.__print__("Compression methods changed to %s" % repr(handler.compression), level=4)
-            if (this.awaiting_ids.indexOf(conn) > -1)   {  // handler in this.awaiting_ids
-                this.awaiting_ids.splice(this.awaiting_ids.indexOf(conn), 1);
-                this._send_handshake(conn);
-                this._send_peers(conn);
-            }
-            if (this.routing_table.size === 0 && !this.connect_override)    {
-                this.emit('connect', this);
-            }
-            this.routing_table.set(packets[1], conn);
+            this.move_to_routing_table(packets[1], conn);
             return true;
         }
+    }
+
+    move_to_routing_table(id, conn) {
+        if (this.awaiting_ids.indexOf(conn) > -1)   {  // handler in this.awaiting_ids
+            this.awaiting_ids.splice(this.awaiting_ids.indexOf(conn), 1);
+            this._send_handshake(conn);
+            this._send_peers(conn);
+        }
+        if (this.routing_table.size === 0 && !this.connect_override)    {
+            this.emit('connect', this);
+        }
+        this.routing_table.set(id, conn);
     }
 
     __handle_peers(msg, conn)   {
