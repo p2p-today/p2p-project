@@ -19,15 +19,15 @@ if version_info >= (3, ):
 
 
 def gen_random_list(item_size, list_size):
-    #type: (int, int) -> Tuple[bytes, ...]
+    # type: (int, int) -> Tuple[bytes, ...]
     return tuple(urandom(item_size) for _ in xrange(list_size))
 
 
 @mark.run(order=1)
 def test_Protocol(benchmark, iters=200, impl=base):
-    #type: (Any, int, Any) -> None
+    # type: (Any, int, Any) -> None
     def test(sub, enc, id_):
-        #type: (str, str, str) -> None
+        # type: (str, str, str) -> None
         print("constructing")
         if hasattr(impl, 'protocol'):
             Protocol = impl.protocol
@@ -42,7 +42,7 @@ def test_Protocol(benchmark, iters=200, impl=base):
         assert id_ == test.id
 
     def setup():
-        #type: () -> Tuple[Tuple, Dict]
+        # type: () -> Tuple[Tuple, Dict]
         sub = str(uuid4())
         enc = str(uuid4())
         p_hash = sha256(''.join((sub, enc, base.protocol_version)).encode())
@@ -53,16 +53,16 @@ def test_Protocol(benchmark, iters=200, impl=base):
 
 @mark.run(order=2)
 def test_Message_sans_network(benchmark, iters=1000):
-    #type: (Any, int) -> None
+    # type: (Any, int) -> None
     def setup():
-        #type: () -> Tuple[Tuple, Dict]
+        # type: () -> Tuple[Tuple, Dict]
         sen = str(uuid4()).encode()
         pac = gen_random_list(36, 10)
         base_msg = base.InternalMessage(base.flags.broadcast, sen, pac)
         return (sen, pac, base_msg), {}
 
     def test(sen, pac, base_msg):
-        #type: (MsgPackable, MsgPackable, base.InternalMessage) -> None
+        # type: (MsgPackable, MsgPackable, base.InternalMessage) -> None
         item = base.Message(base_msg, None)
         assert item.packets == pac
         assert item.msg == base_msg

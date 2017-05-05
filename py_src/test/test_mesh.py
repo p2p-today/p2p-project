@@ -16,13 +16,13 @@ if version_info >= (3, ):
 
 
 def close_all_nodes(nodes):
-    #type: (Iterable[mesh.MeshSocket]) -> None
+    # type: (Iterable[mesh.MeshSocket]) -> None
     for node in nodes:
         node.close()
 
 
 def propagation_validation(iters, start_port, num_nodes, encryption):
-    #type: (int, int, int, str) -> None
+    # type: (int, int, int, str) -> None
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         nodes = [
@@ -57,18 +57,18 @@ def propagation_validation(iters, start_port, num_nodes, encryption):
 
 @mark.run(order=4)
 def test_propagation_Plaintext(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     propagation_validation(iters, 5100, 3, 'Plaintext')
 
 
 @mark.run(order=4)
 def test_propagation_SSL(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     propagation_validation(iters, 5200, 3, 'SSL')
 
 
 def protocol_rejection_validation(iters, start_port, encryption):
-    #type: (int, int, str) -> None
+    # type: (int, int, str) -> None
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         f = mesh.MeshSocket(
@@ -92,18 +92,18 @@ def protocol_rejection_validation(iters, start_port, encryption):
 
 @mark.run(order=4)
 def test_protocol_rejection_Plaintext(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     protocol_rejection_validation(iters, 5300, 'Plaintext')
 
 
 @mark.run(order=4)
 def test_protocol_rejection_SSL(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     protocol_rejection_validation(iters, 5400, 'SSL')
 
 
 def register_1(msg, handler):
-    #type: (Message, BaseConnection) -> Union[None, bool]
+    # type: (Message, BaseConnection) -> Union[None, bool]
     packets = msg.packets
     if packets[1] == b'test':
         handler.send(flags.whisper, flags.whisper, b"success")
@@ -112,7 +112,7 @@ def register_1(msg, handler):
 
 
 def register_2(msg, handler):
-    #type: (Message, BaseConnection) -> Union[None, bool]
+    # type: (Message, BaseConnection) -> Union[None, bool]
     packets = msg.packets
     if packets[1] == b'test':
         msg.reply(b"success")
@@ -121,7 +121,7 @@ def register_2(msg, handler):
 
 
 def handler_registry_validation(iters, start_port, encryption, reg):
-    #type: (int, int, str, Callable) -> None
+    # type: (int, int, str, Callable) -> None
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         f = mesh.MeshSocket(
@@ -154,25 +154,25 @@ def handler_registry_validation(iters, start_port, encryption, reg):
 
 @mark.run(order=4)
 def test_handler_registry_Plaintext(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     handler_registry_validation(iters, 5500, 'Plaintext', register_1)
 
 
 @mark.run(order=4)
 def test_handler_registry_SSL(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     handler_registry_validation(iters, 5600, 'SSL', register_1)
 
 
 @mark.run(order=4)
 def test_reply_Plaintext(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     handler_registry_validation(iters, 5700, 'Plaintext', register_2)
 
 
 @mark.run(order=4)
 def test_reply_SSL(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     handler_registry_validation(iters, 5800, 'SSL', register_2)
 
 

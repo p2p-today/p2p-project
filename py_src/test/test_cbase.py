@@ -18,7 +18,7 @@ try:
 
     @mark.run(order=3)
     def test_flags():
-        #type: () -> None
+        # type: () -> None
         cf = cbase.flags
         assert flags.reserved == cf.reserved
 
@@ -43,11 +43,11 @@ try:
                                                           cf.snappy)
 
     def test_Protocol(benchmark):
-        #type: (Any) -> None
+        # type: (Any) -> None
         _test_Protocol(benchmark, impl=cbase)
 
     def test_InternalMessage(benchmark):
-        #type: (Any) -> None
+        # type: (Any) -> None
         _test_InternalMessage(benchmark, impl=cbase)
 
 except ImportError:

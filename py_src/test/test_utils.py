@@ -19,21 +19,21 @@ if version_info >= (3, ):
 
 
 def identity(in_func, out_func, data):
-    #type: (Union[partial, Callable], Union[partial, Callable], Any) -> None
+    # type: (Union[partial, Callable], Union[partial, Callable], Any) -> None
     assert data == out_func(in_func(data))
 
 
 def try_identity(in_func, out_func, data_gen, iters):
-    #type: (Callable, Callable, Callable, int) -> None
+    # type: (Callable, Callable, Callable, int) -> None
     for _ in xrange(iters):
         identity(in_func, out_func, data_gen())
 
 
 @mark.run(order=1)
 def test_pack_value(benchmark, iters=1000):
-    #type: (Any, int) -> None
+    # type: (Any, int) -> None
     def data_gen():
-        #type: () -> Tuple[Tuple, Dict]
+        # type: () -> Tuple[Tuple, Dict]
         return (partial(utils.pack_value, 128 // 8), utils.unpack_value,
                 randint(0, 2**128 - 1)), {}
 
@@ -42,11 +42,11 @@ def test_pack_value(benchmark, iters=1000):
 
 @mark.run(order=1)
 def test_intersect(benchmark, iters=200):
-    #type: (Any, int) -> None
+    # type: (Any, int) -> None
     max_val = 2**12 - 1
 
     def test(pair1, pair2, cross1, cross2):
-        #type: (Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> None
+        # type: (Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> None
         if max(cross1) < min(cross2):
             assert (utils.intersect(
                 range(*pair1),
@@ -55,7 +55,7 @@ def test_intersect(benchmark, iters=200):
             assert utils.intersect(range(*pair1), range(*pair2)) == ()
 
     def setup():
-        #type: () -> Tuple[Tuple, Dict]
+        # type: () -> Tuple[Tuple, Dict]
         pair1 = sorted((randint(0, max_val), randint(0, max_val)))
         pair2 = sorted((randint(0, max_val), randint(0, max_val)))
         cross1 = (pair1[0], pair2[0])
@@ -67,7 +67,7 @@ def test_intersect(benchmark, iters=200):
 
 @mark.run(order=1)
 def test_getUTC(iters=20):
-    #type: (int) -> None
+    # type: (int) -> None
     while iters:
         nowa, nowb = (datetime.utcnow() - datetime(1970, 1, 1)), utils.getUTC()
         # 1 second error margin
@@ -78,7 +78,7 @@ def test_getUTC(iters=20):
 
 @mark.run(order=1)
 def test_lan_ip():
-    #type: () -> None
+    # type: () -> None
     if platform[:5] in ('linux', 'darwi'):
         lan_ip_validation_linux()
     elif platform[:3] in ('win', 'cyg'):
@@ -89,7 +89,7 @@ def test_lan_ip():
 
 
 def lan_ip_validation_linux():
-    #type: () -> None
+    # type: () -> None
     # command pulled from http://stackoverflow.com/a/13322549
     command = ("ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | "
                "grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'")
@@ -98,7 +98,7 @@ def lan_ip_validation_linux():
 
 
 def lan_ip_validation_windows():
-    #type: () -> None
+    # type: () -> None
     # command pulled from http://stackoverflow.com/a/17634009
     command = """for /f "delims=[] tokens=2" %%a in ('ping %computername% -4 -n 1 ^| findstr "["') do (echo %%a)"""
     test_file = open('test.bat', 'w')

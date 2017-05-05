@@ -24,7 +24,7 @@ if version_info >= (3, ):
 
 @mark.run(order=1)
 def test_compression(iters=500):
-    #type: (int) -> None
+    # type: (int) -> None
     for _ in xrange(iters):
         data = urandom(36)
         for method in messages.compression:
@@ -35,23 +35,23 @@ def test_compression(iters=500):
 
 @mark.run(order=1)
 def test_compression_exceptions(iters=100):
-    #type: (int) -> None
+    # type: (int) -> None
     for _ in xrange(iters):
         test = urandom(36)
         with raises(Exception):
-            messages.compress(test, urandom(4))  #type: ignore
+            messages.compress(test, urandom(4))  # type: ignore
 
         with raises(Exception):
-            messages.decompress(test, urandom(4))  #type: ignore
+            messages.decompress(test, urandom(4))  # type: ignore
 
 
 @mark.run(order=1)
 def test_InternalMessage(benchmark, iters=500, impl=messages):
-    #type: (Any, int, Any) -> None
+    # type: (Any, int, Any) -> None
     max_val = 2**8
 
     def setup():
-        #type: () -> Tuple[Tuple, Dict]
+        # type: () -> Tuple[Tuple, Dict]
         length = randint(0, max_val)
         array = gen_random_list(36, length)
         InternalMessage_serialization_validation(array, impl)
@@ -63,7 +63,7 @@ def test_InternalMessage(benchmark, iters=500, impl=messages):
 
 
 def InternalMessage_constructor_validation(array, impl):
-    #type: (Tuple[messages.MsgPackable, ...], Any) -> None
+    # type: (Tuple[messages.MsgPackable, ...], Any) -> None
     msg = impl.InternalMessage(flags.broadcast, u'\xff', array)
     assert array == msg.payload
     assert msg.packets == (flags.broadcast, u'\xff', msg.time) + array
@@ -73,7 +73,7 @@ def InternalMessage_constructor_validation(array, impl):
 
 
 def InternalMessage_serialization_validation(array, impl):
-    #type: (Tuple[messages.MsgPackable, ...], Any) -> None
+    # type: (Tuple[messages.MsgPackable, ...], Any) -> None
     msg = impl.InternalMessage(flags.broadcast, u'\xff', array)
     if impl != messages:
         assert messages.InternalMessage.feed_string(msg.string).id == msg.id
@@ -88,7 +88,7 @@ def InternalMessage_serialization_validation(array, impl):
 
 
 def InternalMessage_exceptions_validiation(array, impl):
-    #type: (Tuple[messages.MsgPackable, ...], Any) -> None
+    # type: (Tuple[messages.MsgPackable, ...], Any) -> None
     msg = impl.InternalMessage(flags.broadcast, 'TEST SENDER', array)
     for method in impl.compression:
         msg.compression = [method]
