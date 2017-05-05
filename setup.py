@@ -70,10 +70,13 @@ def has_environment_marker_support():
 def main():
     #type: () -> None
     ext_modules = []
-    install_requires = open(os.path.join(loc, 'requirements.txt'),
-                            'r').read().split()
     install_requires = [
-        req for req in install_requires if not req.startswith('git+')
+        'custom_inherit',
+        'async_promises',
+        'u-msgpack-python',
+        'pyee',
+        'typing',
+        'base58'
     ]
     extras_require = {'SSL': ['cryptography'], 'snappy': ['python-snappy']}
     if has_environment_marker_support():
