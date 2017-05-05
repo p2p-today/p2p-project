@@ -125,7 +125,7 @@ class SyncSocket(MeshSocket):
                           is ``True``
         """
         if self.__check_lease(key, new_data, new_meta):
-            if new_data == None:
+            if new_data is None:
                 del self.data[key]
                 del self.metadata[key]
                 self.emit('delete', self, key)
@@ -196,7 +196,8 @@ class SyncSocket(MeshSocket):
                         - :py:class:`unicode`
                         - :py:class:`tuple`
                         - :py:class:`list`
-                        - :py:class:`dict` (if all keys are :py:class:`unicode`)
+                        - :py:class:`dict` (if all keys are
+                            :py:class:`unicode`)
         """
         new_meta = metatuple(self.id, getUTC())
         key = sanitize_packet(key)

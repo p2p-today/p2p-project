@@ -208,8 +208,12 @@ class InternalMessage(object):
         return (string, compression_fail)
 
     @classmethod
-    def feed_string(cls, string, sizeless=False, compressions=None):
-        # type: (Any, Union[bytes, bytearray, str], bool, Union[None, Iterable[int]]) -> InternalMessage
+    def feed_string(
+        cls,  # type: Any
+        string,  # type: Union[bytes, bytearray, str]
+        sizeless=False,  # type: bool
+        compressions=None  # type: Union[None, Iterable[int]]
+    ):  # type: (...) -> InternalMessage
         """Constructs a :py:class:`~py2p.messages.InternalMessage` from a string
         or :py:class:`bytes` object.
 
@@ -264,8 +268,8 @@ class InternalMessage(object):
         Args:
             msg_type:       A header for the message you wish to send
             sender:         A sender ID the message is using
-            payload:        An iterable of objects containing the payload of the
-                                message
+            payload:        An iterable of objects containing the payload of
+                                the message
             compression:    A list of the compression methods this message
                                 may use (default: ``[]``)
             timestamp:      The current UTC timestamp (as an :py:class:`int`)

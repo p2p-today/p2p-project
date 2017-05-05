@@ -40,8 +40,12 @@ class MeshConnection(BaseConnection):
     """
 
     @inherit_doc(BaseConnection.send)
-    def send(self, msg_type, *args, **kargs):
-        # type: (MeshConnection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
+    def send(
+        self,  # type: MeshConnection
+        msg_type,  # type: MsgPackable
+        *args,  # type: MsgPackable
+        **kargs  # type: Union[bytes, int]
+    ):  # type: (...) -> InternalMessage
         msg = super(MeshConnection, self).send(msg_type, *args, **kargs)
         if msg and (msg.id, msg.time) not in self.server.waterfalls:
             self.server.waterfalls.add((msg.id, msg.time))
@@ -70,8 +74,11 @@ class MeshConnection(BaseConnection):
             self.send(flags.renegotiate, flags.resend)
             return None
 
-    def handle_waterfall(self, msg, packets):
-        # type: (MeshConnection, InternalMessage, Tuple[MsgPackable, ...]) -> bool
+    def handle_waterfall(
+        self,  # type: MeshConnection
+        msg,  # type: InternalMessage
+        packets  # type: Tuple[MsgPackable, ...]
+    ):  # type: (...) -> bool
         """This method determines whether this message has been previously
         received or not.
 
@@ -172,7 +179,8 @@ class MeshSocket(BaseSocket):
         connection to the network. So if you are suddenly disconnected, and
         manage to recover, that function will execute again.
 
-        To avoid this, call ``once('connect')``. That will usually be more correct.
+        To avoid this, call ``once('connect')``. That will usually be more
+        correct.
 
         :param py2p.mesh.MeshSocket conn: A reference to this abstract socket
 
@@ -294,7 +302,7 @@ class MeshSocket(BaseSocket):
         """
         self.__print__(
             "Resolving peer conflict on id %s" % repr(h_id), level=1)
-        to_keep, to_kill = None, None  # type: Union[None, BaseConnection], Union[None, BaseConnection]
+        to_kill = to_keep = None  # type: Union[None, BaseConnection]
         if (bool(b58decode_int(self.id) > b58decode_int(h_id)) ^
                 bool(handler.outgoing)):  # logical xor
             self.__print__("Closing outgoing connection", level=1)
@@ -474,7 +482,8 @@ class MeshSocket(BaseSocket):
                         - :py:class:`unicode`
                         - :py:class:`tuple`
                         - :py:class:`list`
-                        - :py:class:`dict` (if all keys are :py:class:`unicode`)
+                        - :py:class:`dict` (if all keys are
+                            :py:class:`unicode`)
 
         Warning:
 

@@ -45,8 +45,12 @@ def test_intersect(benchmark, iters=200):
     # type: (Any, int) -> None
     max_val = 2**12 - 1
 
-    def test(pair1, pair2, cross1, cross2):
-        # type: (Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> None
+    def test(
+        pair1,  # type: Tuple[int, int]
+        pair2,  # type: Tuple[int, int]
+        cross1,  # type: Tuple[int, int]
+        cross2  # type: Tuple[int, int]
+    ):  # type: (...) -> None
         if max(cross1) < min(cross2):
             assert (utils.intersect(
                 range(*pair1),
@@ -100,7 +104,8 @@ def lan_ip_validation_linux():
 def lan_ip_validation_windows():
     # type: () -> None
     # command pulled from http://stackoverflow.com/a/17634009
-    command = """for /f "delims=[] tokens=2" %%a in ('ping %computername% -4 -n 1 ^| findstr "["') do (echo %%a)"""
+    command = ('for /f "delims=[] tokens=2" %%a in (\'ping %computername%'
+               ' -4 -n 1 ^| findstr "["\') do (echo %%a)')
     test_file = open('test.bat', 'w')
     test_file.write(command)
     test_file.close()
