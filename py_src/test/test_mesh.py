@@ -1,27 +1,28 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-import socket
-import sys
-import time
+from socket import SHUT_RDWR
+from sys import version_info
+from time import sleep
 
+from pytest import mark
 from typing import (Callable, Iterable, Union)
 
-from .. import mesh
-from ..base import (flags, BaseConnection, Message)
+from .. import (flags, mesh)
+from ..base import (BaseConnection, Message)
 
-if sys.version_info >= (3, ):
+if version_info >= (3, ):
     xrange = range
 
 
 def close_all_nodes(nodes):
-    #type: (Iterable[mesh.MeshSocket]) -> None
+    # type: (Iterable[mesh.MeshSocket]) -> None
     for node in nodes:
         node.close()
 
 
 def propagation_validation(iters, start_port, num_nodes, encryption):
-    #type: (int, int, int, str) -> None
+    # type: (int, int, int, str) -> None
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         nodes = [
@@ -39,10 +40,10 @@ def propagation_validation(iters, start_port, num_nodes, encryption):
                 debug_level=5)
             nodes[-1].connect('localhost', start_port + i * num_nodes + j)
             nodes.append(new_node)
-            time.sleep(0.5)
+            sleep(0.5)
         print("----------------------Test event----------------------")
         nodes[0].send(b"hello")
-        time.sleep(num_nodes)
+        sleep(num_nodes)
         print("----------------------Test ended----------------------")
         print(nodes[0].id)
         print([len(n.routing_table) for n in nodes])
@@ -54,18 +55,20 @@ def propagation_validation(iters, start_port, num_nodes, encryption):
         close_all_nodes(nodes)
 
 
+@mark.run(order=4)
 def test_propagation_Plaintext(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     propagation_validation(iters, 5100, 3, 'Plaintext')
 
 
+@mark.run(order=4)
 def test_propagation_SSL(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     propagation_validation(iters, 5200, 3, 'SSL')
 
 
 def protocol_rejection_validation(iters, start_port, encryption):
-    #type: (int, int, str) -> None
+    # type: (int, int, str) -> None
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         f = mesh.MeshSocket(
@@ -80,41 +83,45 @@ def protocol_rejection_validation(iters, start_port, encryption):
             debug_level=5)
         print("----------------------Test event----------------------")
         g.connect('localhost', start_port + i * 2)
-        time.sleep(1)
+        sleep(1)
         print("----------------------Test ended----------------------")
         assert (len(f.routing_table) == len(f.awaiting_ids) ==
                 len(g.routing_table) == len(g.awaiting_ids) == 0)
         close_all_nodes([f, g])
 
 
+@mark.run(order=4)
 def test_protocol_rejection_Plaintext(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     protocol_rejection_validation(iters, 5300, 'Plaintext')
 
 
+@mark.run(order=4)
 def test_protocol_rejection_SSL(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     protocol_rejection_validation(iters, 5400, 'SSL')
 
 
 def register_1(msg, handler):
-    #type: (Message, BaseConnection) -> Union[None, bool]
+    # type: (Message, BaseConnection) -> Union[None, bool]
     packets = msg.packets
     if packets[1] == b'test':
         handler.send(flags.whisper, flags.whisper, b"success")
         return True
+    return None
 
 
 def register_2(msg, handler):
-    #type: (Message, BaseConnection) -> Union[None, bool]
+    # type: (Message, BaseConnection) -> Union[None, bool]
     packets = msg.packets
     if packets[1] == b'test':
         msg.reply(b"success")
         return True
+    return None
 
 
 def handler_registry_validation(iters, start_port, encryption, reg):
-    #type: (int, int, str, Callable) -> None
+    # type: (int, int, str, Callable) -> None
     for i in xrange(iters):
         print("----------------------Test start----------------------")
         f = mesh.MeshSocket(
@@ -130,38 +137,42 @@ def handler_registry_validation(iters, start_port, encryption, reg):
 
         f.register_handler(reg)
         g.connect('localhost', start_port + i * 2)
-        time.sleep(1)
+        sleep(1)
         print("----------------------1st  event----------------------")
         g.send(b'test')
-        time.sleep(1)
+        sleep(1)
         print("----------------------1st  ended----------------------")
         assert all((not f.recv(), g.recv()))
-        time.sleep(1)
+        sleep(1)
         print("----------------------2nd  event----------------------")
         g.send('not test')
-        time.sleep(1)
+        sleep(1)
         print("----------------------2nd  ended----------------------")
         assert all((f.recv(), not g.recv()))
         close_all_nodes([f, g])
 
 
-def test_hanlder_registry_Plaintext(iters=3):
-    #type: (int) -> None
+@mark.run(order=4)
+def test_handler_registry_Plaintext(iters=3):
+    # type: (int) -> None
     handler_registry_validation(iters, 5500, 'Plaintext', register_1)
 
 
-def test_hanlder_registry_SSL(iters=3):
-    #type: (int) -> None
+@mark.run(order=4)
+def test_handler_registry_SSL(iters=3):
+    # type: (int) -> None
     handler_registry_validation(iters, 5600, 'SSL', register_1)
 
 
+@mark.run(order=4)
 def test_reply_Plaintext(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     handler_registry_validation(iters, 5700, 'Plaintext', register_2)
 
 
+@mark.run(order=4)
 def test_reply_SSL(iters=3):
-    #type: (int) -> None
+    # type: (int) -> None
     handler_registry_validation(iters, 5800, 'SSL', register_2)
 
 
@@ -188,14 +199,14 @@ def test_reply_SSL(iters=3):
 #                              debug_level=2)
 #         f.connect('localhost', start_port + i*3 + 1)
 #         g.connect('localhost', start_port + i*3 + 2)
-#         time.sleep(0.5)
+#         sleep(0.5)
 #         assert (len(f.routing_table) == len(g.routing_table) ==
 #                 len(h.routing_table) == 2), "Initial connection failed"
 #         print("----------------------Disconnect----------------------")
 #         disconnect(f, method)
 #         for j in range(4)[::-1]:
 #             print(j)
-#             time.sleep(1)
+#             sleep(1)
 #         print("----------------------Test ended----------------------")
 #         try:
 #             assert (len(f.routing_table) == len(g.routing_table) ==

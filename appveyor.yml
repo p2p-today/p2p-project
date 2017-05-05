@@ -82,6 +82,7 @@ environment:
       NODE_COMPAT: "test"
     - NODE: "5"
     - NODE: "6"
+    - NODE: "7"
 
 matrix:
   allow_failures:

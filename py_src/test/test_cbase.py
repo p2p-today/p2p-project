@@ -2,53 +2,53 @@ from __future__ import print_function
 from __future__ import absolute_import
 
 try:
-    import hashlib
-    import os
-    import random
-    import struct
-    import sys
-    import uuid
-
     from functools import partial
+    from sys import version_info
+
+    from pytest import mark
     from typing import Any
 
-    from .. import base, cbase
+    from .. import (cbase, flags)
 
-    from . import test_base
+    from .test_base import test_Protocol as _test_Protocol
+    from .test_messages import test_InternalMessage as _test_InternalMessage
 
-    if sys.version_info >= (3, ):
+    if version_info >= (3, ):
         xrange = range
 
+    @mark.run(order=3)
     def test_flags():
-        #type: () -> None
-        bf = base.flags
+        # type: () -> None
         cf = cbase.flags
-        assert bf.reserved == cf.reserved
+        assert flags.reserved == cf.reserved
 
         # main flags
-        bf_main = (bf.broadcast, bf.whisper, bf.renegotiate, bf.ping, bf.pong)
+        flags_main = (flags.broadcast, flags.whisper, flags.renegotiate,
+                      flags.ping, flags.pong)
         cf_main = (cf.broadcast, cf.whisper, cf.renegotiate, cf.ping, cf.pong)
-        assert bf_main == cf_main
+        assert flags_main == cf_main
 
         # sub-flags
-        bf_sub = (bf.broadcast, bf.compression, bf.whisper, bf.handshake,
-                  bf.ping, bf.pong, bf.notify, bf.peers, bf.request, bf.resend,
-                  bf.response, bf.store, bf.retrieve)
+        flags_sub = (flags.broadcast, flags.compression, flags.whisper,
+                     flags.handshake, flags.ping, flags.pong, flags.notify,
+                     flags.peers, flags.request, flags.resend, flags.response,
+                     flags.store, flags.retrieve)
         cf_sub = (cf.broadcast, cf.compression, cf.whisper, cf.handshake,
                   cf.ping, cf.pong, cf.notify, cf.peers, cf.request, cf.resend,
                   cf.response, cf.store, cf.retrieve)
-        assert bf_sub == cf_sub
+        assert flags_sub == cf_sub
 
         # common compression methods
-        assert (bf.zlib, bf.gzip, bf.snappy) == (cf.zlib, cf.gzip, cf.snappy)
+        assert (flags.zlib, flags.gzip, flags.snappy) == (cf.zlib, cf.gzip,
+                                                          cf.snappy)
 
-    def test_protocol(benchmark):
-        #type: (Any) -> None
-        test_base.test_protocol(benchmark, impl=cbase)
+    def test_Protocol(benchmark):
+        # type: (Any) -> None
+        _test_Protocol(benchmark, impl=cbase)
 
     def test_InternalMessage(benchmark):
-        #type: (Any) -> None
-        test_base.test_InternalMessage(benchmark, impl=cbase)
+        # type: (Any) -> None
+        _test_InternalMessage(benchmark, impl=cbase)
 
 except ImportError:
     pass

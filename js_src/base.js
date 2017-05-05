@@ -63,7 +63,7 @@ else {
 *     This is :js:data:`~js2p.base.version_info` joined in the format ``'a.b.c'``
 */
 
-base.version_info = [0, 6, 757];
+base.version_info = [0, 7, 870];
 base.node_policy_version = base.version_info[2].toString();
 base.protocol_version = base.version_info.slice(0, 2).join(".");
 base.version = base.version_info.join('.');
@@ -103,6 +103,10 @@ base.flags = {
     store:       0x0B,
     retrieve:    0x0C,
     retrieved:   0x0D,
+    forward:     0x0E,
+    new_paths:   0x0F,
+    revoke_paths: 0x10,
+    delta:       0x11,
 
     //implemented compression methods
     gzip:     0x11,
@@ -614,7 +618,7 @@ base.InternalMessage = class InternalMessage {
 
     static decompress_string(string, compressions) {
         var compression_fail = false
-        compressions = compressions || []
+        compressions = base.intersect(compressions || [], base.compression);
         for (var i = 0; i < compressions.length; i++) {
             //console.log(`Checking ${compressions[i]} compression`)
             if (base.compression.indexOf(compressions[i]) > -1) {  // module scope compression
@@ -641,13 +645,7 @@ base.InternalMessage = class InternalMessage {
         *
         *         Returns the compression method used in this message, as defined in :js:data:`~js2p.base.flags`, or ``undefined`` if none
         */
-        for (var i = 0; i < base.compression.length; i++) {
-            for (var j = 0; j < this.compression.length; j++) {
-                if (base.compression[i] === this.compression[j]) {
-                    return base.compression[i];
-                }
-            }
-        }
+        return base.intersect(base.compression, this.compression)[0];
     }
 
     get time_58() {
@@ -750,6 +748,7 @@ base.Message = class Message {
         this.server = server
     }
 
+    /* istanbul ignore next */
     inspect()   {
         var packets = this.packets;
         var type = packets[0];
@@ -876,6 +875,7 @@ base.BaseConnection = class BaseConnection    {
         this.active = false;
         var self = this;
 
+        /* istanbul ignore else */
         if (this.sock.on)   {
             this.sock.on('data', (data)=>{
                 self.collect_incoming_data(self, data);
@@ -901,7 +901,8 @@ base.BaseConnection = class BaseConnection    {
                 self.onClose();
             });
         }
-        else    {  // This part handles browser receives
+        else    {
+            // This part handles browser receives
             this.sock.onmessage = (evt)=>{
                 var fileReader = new FileReader();
                 fileReader.onload = function() {
@@ -1072,9 +1073,9 @@ base.BaseConnection = class BaseConnection    {
         *         :returns: ``true`` if action was taken, ``undefined`` if not
         */
         if (packets[0] === base.flags.renegotiate)  {
-            if (packets[4] === base.flags.compression)  {
-                var respond = (base.intersect(this.compression, packets[5]).length !== this.compression.length);
-                this.compression = packets[5];
+            if (packets[3] === base.flags.compression)  {
+                var respond = (base.intersect(this.compression, packets[4]).length !== this.compression.length);
+                this.compression = packets[4];
                 // self.__print__("Compression methods changed to: %s" % repr(self.compression), level=2)
                 if (respond)    {
                     var new_methods = base.intersect(base.compression, this.compression);
@@ -1082,13 +1083,17 @@ base.BaseConnection = class BaseConnection    {
                 }
                 return true;
             }
-            else if (packets[4] === base.flags.resend)  {
+            else if (packets[3] === base.flags.resend)  {
                 var type = self.last_sent[0];
                 var packs = self.last_sent.slice(1);
                 self.send(type, packs);
                 return true;
             }
         }
+    }
+
+    close() {
+        this.onError();
     }
 
     __print__() {
@@ -1139,6 +1144,16 @@ base.BaseSocket = class BaseSocket extends EventEmitter   {
         this.id = base.to_base_58(BigInt(base.SHA384(`(${addr}, ${port})${this.protocol.id}${base.user_salt}`), 16));
         this.__handlers = [];
         this.exceptions = [];
+    }
+
+    close() {
+        if (this.incoming)  {
+            this.incoming.close();
+        }
+        for (let key of this.routing_table.keys())  {
+            let handler = this.routing_table.get(key);
+            handler.close();
+        };
     }
 
     get status()    {

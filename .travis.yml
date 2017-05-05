@@ -45,6 +45,10 @@ matrix:
     #   os: osx
     #   env: Cov='true' pyver=pypy3 pydist=homebrew
     - language: node_js
+      node_js: "7"
+      os: osx
+      env: jsver=7
+    - language: node_js
       node_js: "6"
       os: osx
       env: jsver=6

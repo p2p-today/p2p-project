@@ -1,17 +1,16 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-import random
-import sys
-import time
-import uuid
+from sys import version_info
+from time import sleep
+from uuid import uuid4
 
-import pytest
+from pytest import raises
 
 from .. import chord
 from .test_mesh import close_all_nodes
 
-if sys.version_info >= (3, ):
+if version_info >= (3, ):
     xrange = range
 
 # def protocol_rejection_validation(iters, start_port, encryption, k=4,
@@ -27,7 +26,7 @@ if sys.version_info >= (3, ):
 #         print("----------------------Test event----------------------")
 #         g.connect('localhost', start_port + i*2)
 #         g.join()
-#         time.sleep(1)
+#         sleep(1)
 #         print("----------------------Test ended----------------------")
 #         assert (len(f.routing_table) == len(f.awaiting_ids) ==
 #                 len(g.routing_table) == len(g.awaiting_ids) == 0)
@@ -56,12 +55,12 @@ if sys.version_info >= (3, ):
 #         node.id_10 = index
 #         node.id = chord.to_base_58(index)
 #         node.connect(*nodes[(index - 1) % len(nodes)].addr)
-#         time.sleep(0.1)
+#         sleep(0.1)
 #
 #     for node in nodes:
 #         node.join()
 #
-#     time.sleep(3 * k)
+#     sleep(3 * k)
 #
 #     for node in nodes:
 #         print("%s:" % node.id)
@@ -91,12 +90,12 @@ if sys.version_info >= (3, ):
 #     for i in xrange(iters):
 #         nodes = gen_connected_list(start_port + i * 2**k, encryption, k)
 
-#         test_key = str(uuid.uuid4())
-#         test_data = str(uuid.uuid4())
+#         test_key = str(uuid4())
+#         test_data = str(uuid4())
 
 #         nodes[0][test_key] = test_data
 
-#         time.sleep(2*k)
+#         sleep(2*k)
 
 #         for meth in chord.hashes:
 #             assert any((bool(node.data[meth]) for node in nodes))
@@ -113,16 +112,16 @@ if sys.version_info >= (3, ):
 #     for i in xrange(iters):
 #         nodes = gen_connected_list(start_port + i * 2**k, encryption, k)
 
-#         test_key = str(uuid.uuid4())
-#         test_data = str(uuid.uuid4())
+#         test_key = str(uuid4())
+#         test_data = str(uuid4())
 
 #         nodes[0][test_key] = test_data
 
-#         time.sleep(2*k)
+#         sleep(2*k)
 
 #         for node in nodes:
 #             assert node[test_key] == test_data
-#             with pytest.raises(KeyError):
+#             with raises(KeyError):
 #                 node[test_data]
 
 # def test_retrieval_Plaintext(iters=1):

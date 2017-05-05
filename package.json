@@ -1,7 +1,7 @@
 {
   "name": "js2p",
   "main": "js_src/js2p.js",
-  "version": "0.6.757",
+  "version": "0.7.870",
   "license": "LGPL-3.0",
   "repository": {
     "type": "git",
@@ -16,7 +16,9 @@
     "equal": "^0.1.1",
     "ip": "^1.1.4",
     "jssha": "^2.2.0",
-    "msgpack-lite": "^0.1.26"
+    "msgpack-lite": "^0.1.26",
+    "vorpal": "^1.11.4",
+    "yargs": "^7.0.2"
   },
   "optionalDependencies": {
     "babel-runtime": "^6.22.0",

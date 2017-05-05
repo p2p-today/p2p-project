@@ -12,6 +12,8 @@ Contents:
     python/base
     python/cbase
     python/utils
+    python/messages
+    python/flags
     python/mesh
     python/sync
     python/chord
@@ -25,5 +27,5 @@ Supported Transport Methods
 +==========+==========================================+
 | TCP      | ``py2p.base.Protocol(app, 'Plaintext')`` |
 +----------+------------------------------------------+
-| SSL      | ``py2p.base.Protocol(app, 'SSL')``       |
+| TLS/SSL  | ``py2p.base.Protocol(app, 'SSL')``       |
 +----------+------------------------------------------+

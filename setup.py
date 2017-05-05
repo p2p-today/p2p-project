@@ -111,10 +111,17 @@ def main():
             license='LGPLv3',
             packages=['py2p', 'py2p.test'],
             package_dir={'py2p': os.path.join(loc, 'py_src')},
+            package_data={'py2p': [os.path.join(loc,
+                                                'py_src',
+                                                'seeders.msgpack')]},
             ext_modules=ext_modules,
             classifiers=classifiers,
             install_requires=install_requires,
-            extras_require=extras_require)
+            extras_require=extras_require,
+            entry_points='''
+            [console_scripts]
+            py2p=py2p.__main__:cli
+        ''')
     except:
         print("Not building C code due to errors")
         setup(
@@ -128,9 +135,16 @@ def main():
             license='LGPLv3',
             packages=['py2p', 'py2p.test'],
             package_dir={'py2p': 'py_src'},
+            package_data={'py2p': [os.path.join(loc,
+                                                'py_src',
+                                                'seeders.msgpack')]},
             classifiers=classifiers,
             install_requires=install_requires,
-            extras_require=extras_require)
+            extras_require=extras_require,
+            entry_points='''
+            [console_scripts]
+            py2p=py2p.__main__:cli
+        ''')
 
 
 if __name__ == "__main__":

@@ -3,11 +3,12 @@ from __future__ import with_statement
 from datetime import datetime, timedelta
 from os import remove
 from socket import socket
-from ssl import wrap_socket, SSLSocket
+from ssl import (wrap_socket, SSLSocket)
 from sys import version_info
 from tempfile import NamedTemporaryFile
-from typing import Any, Tuple
 from uuid import uuid4
+
+from typing import (Any, List, Tuple)
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -19,20 +20,19 @@ from cryptography.x509.oid import NameOID
 
 if version_info < (3, ):
     from atexit import register
-    cleanup_files = []  #type: List[str]
+    cleanup_files = []  # type: List[str]
 
+    @register
     def cleanup():
-        #type: () -> None
-        #pragma: no cover
+        # type: () -> None
+        # pragma: no cover
         """Cleans SSL certificate and key files"""
         for f in cleanup_files:
             remove(f)
 
-    register(cleanup)
-
 
 def generate_self_signed_cert(cert_file, key_file):
-    #type: (Any, Any) -> None
+    # type: (Any, Any) -> None
     """Given two file-like objects, generate an SSL key and certificate
 
     Args:
@@ -71,7 +71,7 @@ def generate_self_signed_cert(cert_file, key_file):
 
 
 def get_socket(server_side):
-    #type: (bool) -> SSLSocket
+    # type: (bool) -> SSLSocket
     """Returns a socket set up as server or client side
 
     Args:
@@ -81,7 +81,7 @@ def get_socket(server_side):
         An SSL socket object
     """
     if server_side:
-        names = ('', '')  #type: Tuple[str, str]
+        names = ('', '')  # type: Tuple[str, str]
         with NamedTemporaryFile(delete=False, suffix=".cert") as cert_file:
             with NamedTemporaryFile(delete=False, suffix=".key") as key_file:
                 generate_self_signed_cert(cert_file, key_file)
@@ -91,7 +91,7 @@ def get_socket(server_side):
             suppress_ragged_eofs=True,
             server_side=True,
             keyfile=names[1],
-            certfile=names[0])  #type: SSLSocket
+            certfile=names[0])  # type: SSLSocket
         if version_info >= (3, ):
             remove(names[0])
             remove(names[1])

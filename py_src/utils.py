@@ -3,21 +3,23 @@ from __future__ import with_statement
 from __future__ import unicode_literals
 
 from calendar import timegm
-from socket import socket, AF_INET, SOCK_DGRAM, SHUT_RDWR
+from logging import getLogger
+from socket import (socket, AF_INET, SOCK_DGRAM, SHUT_RDWR)
 from time import gmtime
-from typing import cast, Any, Callable, Iterable, Tuple, Union
 
-from logging import (getLogger, INFO, DEBUG)
+from typing import (cast, Any, Callable, Iterable, Tuple, Union)
+
+from . import flags
 
 
 def log_entry(name, level):
-    #type: (str, int) -> Callable
+    # type: (str, int) -> Callable
     def annotation(function):
-        #type: (Callable) -> Callable
+        # type: (Callable) -> Callable
         log = getLogger(name)
 
         def caller(*args, **kwargs):
-            #type: (*Any, **Any) -> Any
+            # type: (*Any, **Any) -> Any
             log.log(level, "Entering function {}".format(name))
             ret = function(*args, **kwargs)
             log.log(level, "Exiting function {}".format(name))
@@ -33,7 +35,7 @@ def log_entry(name, level):
 
 
 def inherit_doc(function):
-    #type: (Callable) -> Callable
+    # type: (Callable) -> Callable
     """A decorator which allows you to inherit docstrings from a specified
     function."""
     logger = getLogger('py2p.utils.inherit_doc')
@@ -48,7 +50,7 @@ def inherit_doc(function):
 
 
 def sanitize_packet(packet):
-    #type: (Union[bytes, bytearray, str]) -> bytes
+    # type: (Union[bytes, bytearray, str]) -> bytes
     """Function to sanitize a packet for InternalMessage serialization,
     or dict keying
     """
@@ -60,7 +62,7 @@ def sanitize_packet(packet):
 
 
 def intersect(*args):
-    #type: (*Iterable[Any]) -> Tuple[Any, ...]
+    # type: (*Iterable[Any]) -> Tuple[Any, ...]
     """Finds the intersection of several iterables
 
     Args:
@@ -85,12 +87,12 @@ def intersect(*args):
 
 
 def get_lan_ip():
-    #type: () -> str
+    # type: () -> str
     """Retrieves the LAN ip. Expanded from http://stackoverflow.com/a/28950776
 
     Note: This will return '127.0.0.1' if it is not connected to a network
     """
-    s = socket(AF_INET, SOCK_DGRAM)  #type: socket
+    s = socket(AF_INET, SOCK_DGRAM)  # type: socket
     try:
         # doesn't even have to be reachable
         s.connect(('8.8.8.8', 23))
@@ -102,8 +104,53 @@ def get_lan_ip():
         return IP
 
 
+def pack_value(l, i):
+    # type: (int, int) -> bytes
+    """For value i, pack it into bytes of size length
+
+    Args:
+        length: A positive, integral value describing how long to make
+                    the packed array
+        i:      A positive, integral value to pack into said array
+
+    Returns:
+        A bytes object containing the given value
+
+    Raises:
+        ValueError: If length is not large enough to contain the value
+                        provided
+    """
+    ret = bytearray(l)
+    for x in range(l - 1, -1, -1):  # Iterate over length backwards
+        ret[x] = i & 0xFF
+        i >>= 8
+        if i == 0:
+            break
+    if i:
+        raise ValueError("Value not allocatable in size given")
+    return bytes(ret)
+
+
+def unpack_value(string):
+    # type: (Union[bytes, bytearray, str]) -> int
+    """For a string, return the packed value inside of it
+
+    Args:
+        string: A string or bytes-like object
+
+    Returns:
+        An integral value interpreted from this, as if it were a
+        big-endian, unsigned integral
+    """
+    val = 0
+    for char in bytearray(sanitize_packet(string)):
+        val = val << 8
+        val += char
+    return val
+
+
 def getUTC():
-    #type: () -> int
+    # type: () -> int
     """Returns the current unix time in UTC
 
     Note: This will always return an integral value
@@ -112,7 +159,7 @@ def getUTC():
 
 
 def get_socket(protocol, serverside=False):
-    #type: (Any, bool) -> Any
+    # type: (Any, bool) -> Any
     """Given a protocol object, return the appropriate socket
 
     Args:
@@ -139,24 +186,23 @@ def get_socket(protocol, serverside=False):
 class awaiting_value(object):
     """Proxy object for an asynchronously retrieved item"""
 
-    def __init__(self, value=b''):
-        #type: (awaiting_value, Any) -> None
-        self.value = value  #type: Union[None, bool, int, dict, bytes, str, list, tuple]
-        self.callback = None  #type: Any
+    def __init__(self, value=None):
+        # type: (awaiting_value, Any) -> None
+        self.value = value  # type: Union[None, bool, int, dict, bytes, str, list, tuple]
+        self.callback = None  # type: Any
 
     def callback_method(self, method, key):
-        #type: (str, str) -> None
-        from .base import flags
+        # type: (str, str) -> None
         self.callback.send(flags.whisper, flags.retrieved, method, key,
                            self.value)
 
     def __repr__(self):
-        #type: (awaiting_value) -> str
+        # type: (awaiting_value) -> str
         return "<" + repr(self.value) + ">"
 
 
 def most_common(tmp):
-    #type: (Iterable[Any]) -> Tuple[Any, int]
+    # type: (Iterable[Any]) -> Tuple[Any, int]
     """Returns the most common element in a list
 
     Args:
@@ -175,7 +221,8 @@ def most_common(tmp):
             lst.append(item.value)
         else:
             lst.append(item)
-    ret = max(set(lst), key=lst.count)
-    if lst.count(ret) == lst.count(-1):
-        return -1, lst.count(ret)
+    try:
+        ret = max(set(lst), key=lst.count)
+    except TypeError:  # in case of unhashable
+        ret = max(lst, key=lst.count)
     return ret, lst.count(ret)

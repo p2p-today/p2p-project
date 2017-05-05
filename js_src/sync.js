@@ -40,7 +40,7 @@ m.metatuple = class metatuple   {
 
 m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
     /**
-    * .. js:class:: js2p.sync.SyncSocket(addr, port [, leasing [, protocol [, out_addr [, debug_level]]]])
+    * .. js:class:: js2p.sync.SyncSocket(addr, port [, protocol [, leasing [, out_addr [, debug_level]]]])
     *
     *     This is the class for mesh network socket abstraction. It inherits from :js:class:`js2p.mesh.MeshSocket`.
     *     Because of this inheritence, this can also be used as an alert network.
@@ -52,8 +52,8 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
     *
     *     :param string addr:                   The address you'd like to bind to
     *     :param number port:                   The port you'd like to bind to
-    *     :param boolean leasing:               Whether this class's leasing system should be enabled (default: ``true``)
     *     :param js2p.base.Protocol protocol:   The subnet you're looking to connect to
+    *     :param boolean leasing:               Whether this class's leasing system should be enabled (default: ``true``)
     *     :param array out_addr:                Your outward-facing address
     *     :param number debug_level:            The verbosity of debug prints
     *
@@ -77,7 +77,7 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
     *         :param Buffer key: The key which has a new value
     *
     */
-    constructor(addr, port, leasing, protocol, out_addr, debug_level)   {
+    constructor(addr, port, protocol, leasing, out_addr, debug_level)   {
         if (!protocol)  {
             protocol = m.default_protocol;
         }
@@ -89,11 +89,13 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
         this.metadata = {};
         const self = this;
         this.register_handler(function handle_store(msg, conn)  {return self.__handle_store(msg, conn);});
+        this.register_handler(function handle_delta(msg, conn)  {return self.__handle_delta(msg, conn);});
     }
 
-    __check_lease(key, new_data, new_meta)  {
+    __check_lease(key, new_data, new_meta, delta)  {
         let meta = this.metadata[key];
         return ((!meta) || (meta.owner.toString() === new_meta.owner.toString()) ||
+                (delta && !this.__leasing) ||
                 (meta.timestamp < base.getUTC() - 3600) ||
                 (meta.timestamp === new_meta.timestamp && meta.owner.toString() > new_meta.owner.toString()) ||
                 ((meta.timestamp < new_meta.timestamp) && (!this.__leasing)));
@@ -113,7 +115,7 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
         *         :raises Error: If someone else has a lease at this value, and ``error`` is not ``false``
         */
         if (this.__check_lease(key, new_data, new_meta))    {
-            if (new_data.toString() === '')    {
+            if (new_data.toString() === null)    {
                 delete this.data[key];
                 delete this.metadata[key];
                 this.emit('delete', this, key);
@@ -140,7 +142,7 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
         super._send_peers(handler)
         for (var key in this.data)  {
             let meta = this.metadata[key];
-            handler.send(base.flags.whisper, [base.flags.store, key, this.data[key], meta.owner, base.to_base_58(meta.timestamp)]);
+            handler.send(base.flags.whisper, [base.flags.store, key, this.data[key], meta.owner, meta.timestamp]);
         }
     }
 
@@ -165,7 +167,7 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
                 if (this.data[packets[1]])  {
                     return;
                 }
-                meta = new m.metatuple(packets[3], base.from_base_58(packets[4]));
+                meta = new m.metatuple(packets[3], packets[4]);
             }
             this.__store(packets[1], packets[2], meta, false);
             return true;
@@ -207,6 +209,79 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
         this.send([s_key, data], undefined, base.flags.store);
     }
 
+    __delta(key, delta, new_meta, error) {
+        /**
+        *     .. js:function:: js2p.sync.SyncSocket.__delta(key, delta, new_meta, error)
+        *
+        *         Private API method for storing data
+        *
+        *         :param key:        The key you wish to store data at
+        *         :param delta:      The delta you wish to apply at said key
+        *         :param new_meta:   The metadata associated with this storage
+        *         :param error:      A boolean which says whether to raise a :py:class:`KeyError` if you can't store there
+        *
+        *         :raises Error: If someone else has a lease at this value, and ``error`` is not ``false``
+        */
+        if (this.__check_lease(key, delta, new_meta, true))    {
+            if (this.data[key] === undefined)   {
+                this.data[key] = {};
+            }
+            if (this.data[key] instanceof Object)  {
+                this.metadata[key] = new_meta;
+                for (let _key in delta)  {
+                    this.data[key][_key] = delta[_key];
+                }
+                this.emit('update', this, key, this.data[key], new_meta);
+            }
+            else if (error !== false)    {
+                throw new Error("You cannot apply a delta to a non-mapping");
+            }
+        }
+        else if (error !== false) {
+            throw new Error("You don't have permission to change this yet");
+        }
+    }
+
+    apply_delta(key, delta) {
+        /**
+        *     .. js:function:: js2p.sync.SyncSocket.apply_delta(key, delta)
+        *
+        *         Sets the value at a given key
+        *
+        *         :param key:   The key you wish to look up (must be transformable into a :js:class:`Buffer` )
+        *         :param delta: The detla you wish to apply at said key
+        *
+        *         :raises TypeError:    If a key could not be transformed into a :js:class:`Buffer`
+        *         :raises TypeError:    If the value stored at this key is not a mapping, or delta is not a mapping
+        *         :raises:              See :js:func:`~js2p.sync.SyncSocket.__delta`
+        */
+        let new_meta = new m.metatuple(this.id, base.getUTC());
+        let s_key = new Buffer(key);
+        this.__delta(s_key, delta, new_meta);
+        this.send([s_key, delta], undefined, base.flags.delta);
+    }
+
+    __handle_delta(msg, handler)  {
+        /**
+        *     .. js:function:: js2p.sync.SyncSocket.__handle_delta
+        *
+        *         This callback is used to deal with data delta signals. Its primary job is:
+        *
+        *            - apply a delta at a given key
+        *
+        *            :param msg:        A :js:class:`~js2p.base.Message`
+        *            :param handler:    A :js:class:`~js2p.mesh.MeshConnection`
+        *
+        *            :returns: Either ``true`` or ``undefined``
+        */
+        const packets = msg.packets;
+        if (packets[0] === base.flags.delta) {
+            let meta = new m.metatuple(msg.sender, msg.time);
+            this.__delta(packets[1], packets[2], meta, false);
+            return true;
+        }
+    }
+
     update(update_dict) {
         /**
         *     .. js:function:: js2p.sync.SyncSocket.update(update_dict)
@@ -233,7 +308,7 @@ m.SyncSocket = class SyncSocket extends mesh.MeshSocket  {
         *         :raises TypeError:    If a key or value could not be transformed into a :js:class:`Buffer`
         *         :raises:              See :js:func:`~js2p.sync.SyncSocket.set`
         */
-        this.set(key);
+        this.set(key, null);
     }
 
     *keys()  {

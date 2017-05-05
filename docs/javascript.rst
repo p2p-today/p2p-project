@@ -24,7 +24,7 @@ Supported Transport Methods
 +============+==============================================+
 | TCP        | ``new js2p.base.Protocol(app, 'Plaintext')`` |
 +------------+----------------------------------------------+
-| SSL        | ``new js2p.base.Protocol(app, 'SSL')``       |
+| TLS/SSL    | ``new js2p.base.Protocol(app, 'SSL')``       |
 +------------+----------------------------------------------+
 | Websocket  | ``new js2p.base.Protocol(app, 'ws')``        |
 +------------+----------------------------------------------+
