@@ -115,8 +115,12 @@ class BaseConnection(object):
             self.server.disconnect(self)
             return None
 
-    def send(self, msg_type, *args, **kargs):
-        # type: (BaseConnection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
+    def send(
+            self,  # type: BaseConnection
+            msg_type,  # type: MsgPackable
+            *args,  # type: MsgPackable
+            **kargs  # type: Union[bytes, int]
+    ):  # type: (...) -> InternalMessage
         """Sends a message through its connection.
 
         Args:
@@ -182,8 +186,8 @@ class BaseConnection(object):
     def found_terminator(self):
         # type: (BaseConnection) -> InternalMessage
         """Processes received messages"""
-        raw_msg, self.buffer = bytes(self.buffer[:self.expected]), \
-                               self.buffer[self.expected:]
+        raw_msg, self.buffer = bytes(
+            self.buffer[:self.expected]), self.buffer[self.expected:]
         self.__print__("Received: %s" % repr(raw_msg), level=6)
         self.active = len(self.buffer) > 4
         if self.active:
@@ -427,8 +431,10 @@ class BaseSocket(EventEmitter, object):
 
     if version_info >= (3, ):
 
-        def register_handler(self, method):
-            # type: (BaseSocket, Callable[[Message, BaseConnection], Union[bool, None]]) -> None
+        def register_handler(
+                self,  # type: BaseSocket
+                method  # type: Callable[..., Union[bool, None]]
+        ):  # type: (...) -> None
             """Register a handler for incoming method.
 
             Args:
@@ -453,8 +459,10 @@ class BaseSocket(EventEmitter, object):
 
     else:
 
-        def register_handler(self, method):
-            # type: (BaseSocket, Callable[[Message, BaseConnection], Union[bool, None]]) -> None
+        def register_handler(
+                self,  # type: BaseSocket
+                method  # type: Callable[..., Union[bool, None]]
+        ):  # type: (...) -> None
             """Register a handler for incoming method.
 
             Args:

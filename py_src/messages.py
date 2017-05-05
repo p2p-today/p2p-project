@@ -411,7 +411,8 @@ class InternalMessage(object):
                         - :py:class:`unicode`
                         - :py:class:`tuple`
                         - :py:class:`list`
-                        - :py:class:`dict` (if all keys are :py:class:`unicode`)
+                        - :py:class:`dict` (if all keys are
+                            :py:class:`unicode`)
         """
         if not self.__string:
             try:
