@@ -29,6 +29,9 @@ matrix:
     - language: node_js
       node_js: "6"
       env: jsver=6
+    - language: node_js
+      node_js: "7"
+      env: jsver=7
   allow_failures:
     - python: pypy
     - python: pypy3
