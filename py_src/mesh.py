@@ -41,7 +41,7 @@ class MeshConnection(BaseConnection):
 
     @inherit_doc(BaseConnection.send)
     def send(self, msg_type, *args, **kargs):
-        #type: (MeshConnection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
+        # type: (MeshConnection, MsgPackable, *MsgPackable, **Union[bytes, int]) -> InternalMessage
         msg = super(MeshConnection, self).send(msg_type, *args, **kargs)
         if msg and (msg.id, msg.time) not in self.server.waterfalls:
             self.server.waterfalls.add((msg.id, msg.time))
@@ -49,7 +49,7 @@ class MeshConnection(BaseConnection):
 
     @inherit_doc(BaseConnection.found_terminator)
     def found_terminator(self):
-        #type: (MeshConnection) -> Union[InternalMessage, None]
+        # type: (MeshConnection) -> Union[InternalMessage, None]
         try:
             msg = super(MeshConnection, self).found_terminator()
             packets = msg.packets
@@ -63,16 +63,15 @@ class MeshConnection(BaseConnection):
         except (IndexError, StructException) as e:
             self.__print__(
                 "Failed to decode message. Expected first compression "
-                "of: {}. Exception: {}".format(intersect(compression,
-                                               self.compression),
-                                               e),
+                "of: {}. Exception: {}".format(
+                    intersect(compression, self.compression), e),
                 level=1)
             self.send(flags.renegotiate, flags.compression, [])
             self.send(flags.renegotiate, flags.resend)
             return None
 
     def handle_waterfall(self, msg, packets):
-        #type: (MeshConnection, InternalMessage, Tuple[MsgPackable, ...]) -> bool
+        # type: (MeshConnection, InternalMessage, Tuple[MsgPackable, ...]) -> bool
         """This method determines whether this message has been previously
         received or not.
 
@@ -112,12 +111,12 @@ class MeshDaemon(BaseDaemon):
     @log_entry('py2p.mesh.MeshDaemon', DEBUG)
     @inherit_doc(BaseDaemon.__init__)
     def __init__(self, *args, **kwargs):
-        #type: (Any, *Any, **Any) -> None
+        # type: (Any, *Any, **Any) -> None
         super(MeshDaemon, self).__init__(*args, **kwargs)
         self.conn_type = MeshConnection
 
     def mainloop(self):
-        #type: (MeshDaemon) -> None
+        # type: (MeshDaemon) -> None
         """Daemon thread which handles all incoming data and connections"""
         while self.main_thread.is_alive() and self.alive:
             conns = chain(self.server.routing_table.values(),
@@ -133,7 +132,7 @@ class MeshDaemon(BaseDaemon):
                 self.kill_old_nodes(handler)
 
     def handle_accept(self):
-        #type: (MeshDaemon) -> Union[None, MeshConnection]
+        # type: (MeshDaemon) -> Union[None, MeshConnection]
         """Handle an incoming connection"""
         if sys.version_info >= (3, 3):
             exceptions = (SocketException, ConnectionError)
@@ -197,13 +196,13 @@ class MeshSocket(BaseSocket):
 
     @log_entry('py2p.mesh.MeshSocket', DEBUG)
     def __init__(
-            self,  #type: Any
-            addr,  #type: str
-            port,  #type: int
-            prot=default_protocol,  #type: Protocol
-            out_addr=None,  #type: Union[None, Tuple[str, int]]
-            debug_level=0  #type: int
-    ):  #type: (...) -> None
+            self,  # type: Any
+            addr,  # type: str
+            port,  # type: int
+            prot=default_protocol,  # type: Protocol
+            out_addr=None,  # type: Union[None, Tuple[str, int]]
+            debug_level=0  # type: int
+    ):  # type: (...) -> None
         """Initializes a mesh socket
 
         Args:
@@ -228,11 +227,11 @@ class MeshSocket(BaseSocket):
                                          debug_level)
         # Metadata about msg replies where you aren't connected to the sender
         self.requests = {
-        }  #type: Dict[Union[bytes, Tuple[bytes, bytes]], Union[Tuple[MsgPackable, ...], awaiting_value]]
+        }  # type: Dict[Union[bytes, Tuple[bytes, bytes]], Union[Tuple[MsgPackable, ...], awaiting_value]]
         # Metadata of messages to waterfall
-        self.waterfalls = set()  #type: Set[Tuple[bytes, int]]
+        self.waterfalls = set()  # type: Set[Tuple[bytes, int]]
         # Queue of received messages. Access through recv()
-        self.queue = deque()  #type: deque
+        self.queue = deque()  # type: deque
         if self.daemon == 'mesh reserved':
             self.daemon = MeshDaemon(addr, port, self)
         self.register_handler(self.__handle_handshake)
@@ -242,7 +241,7 @@ class MeshSocket(BaseSocket):
 
     @inherit_doc(BaseSocket.handle_msg)
     def handle_msg(self, msg, conn):
-        #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
+        # type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
         if not super(MeshSocket, self).handle_msg(msg, conn):
             if msg.packets[0] in (flags.whisper, flags.broadcast):
                 self.queue.appendleft(msg)
@@ -254,7 +253,7 @@ class MeshSocket(BaseSocket):
         return None
 
     def _get_peer_list(self):
-        #type: (MeshSocket) -> List[Tuple[Tuple[str, int], bytes]]
+        # type: (MeshSocket) -> List[Tuple[Tuple[str, int], bytes]]
         """This function is used to generate a list-formatted group of your
         peers. It goes in format ``[ ((addr, port), ID), ...]``
         """
@@ -264,7 +263,7 @@ class MeshSocket(BaseSocket):
         return peer_list
 
     def _send_handshake(self, handler):
-        #type: (MeshSocket, MeshConnection) -> None
+        # type: (MeshSocket, MeshConnection) -> None
         """Shortcut method for sending a handshake to a given handler
 
         Args:
@@ -277,7 +276,7 @@ class MeshSocket(BaseSocket):
         handler.compression = tmp_compress
 
     def __resolve_connection_conflict(self, handler, h_id):
-        #type: (MeshSocket, BaseConnection, bytes) -> None
+        # type: (MeshSocket, BaseConnection, bytes) -> None
         """Sometimes in trying to recover a network a race condition is
         created. This function applies a heuristic to try and organize the
         fallout from that race condition. While it isn't perfect, it seems to
@@ -295,7 +294,7 @@ class MeshSocket(BaseSocket):
         """
         self.__print__(
             "Resolving peer conflict on id %s" % repr(h_id), level=1)
-        to_keep, to_kill = None, None  #type: Union[None, BaseConnection], Union[None, BaseConnection]
+        to_keep, to_kill = None, None  # type: Union[None, BaseConnection], Union[None, BaseConnection]
         if (bool(b58decode_int(self.id) > b58decode_int(h_id)) ^
                 bool(handler.outgoing)):  # logical xor
             self.__print__("Closing outgoing connection", level=1)
@@ -309,7 +308,7 @@ class MeshSocket(BaseSocket):
         self.routing_table.update({h_id: to_keep})
 
     def _send_peers(self, handler):
-        #type: (MeshSocket, BaseConnection) -> None
+        # type: (MeshSocket, BaseConnection) -> None
         """Shortcut method to send a handshake response. This method is
         extracted from :py:meth:`.__handle_handshake` in order to allow
         cleaner inheritence from :py:class:`py2p.sync.SyncSocket`
@@ -318,7 +317,7 @@ class MeshSocket(BaseSocket):
                      cast(MsgPackable, self._get_peer_list()))
 
     def __handle_handshake(self, msg, handler):
-        #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
+        # type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with handshake signals. Its three
         primary jobs are:
 
@@ -362,7 +361,7 @@ class MeshSocket(BaseSocket):
         return None
 
     def _handle_peers(self, msg, handler):
-        #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
+        # type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with peer signals. Its primary jobs
         is to connect to the given peers, if this does not exceed
         :py:const:`py2p.mesh.max_outgoing`
@@ -391,7 +390,7 @@ class MeshSocket(BaseSocket):
         return None
 
     def __handle_response(self, msg, handler):
-        #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
+        # type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with response signals. Its two
         primary jobs are:
 
@@ -421,7 +420,7 @@ class MeshSocket(BaseSocket):
         return None
 
     def __handle_request(self, msg, handler):
-        #type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
+        # type: (MeshSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with request signals. Its three
         primary jobs are:
 
@@ -449,7 +448,7 @@ class MeshSocket(BaseSocket):
         return None
 
     def send(self, *args, **kargs):
-        #type: (MeshSocket, *MsgPackable, **MsgPackable) -> None
+        # type: (MeshSocket, *MsgPackable, **MsgPackable) -> None
         """This sends a message to all of your peers. If you use default
         values it will send it to everyone on the network
 
@@ -495,7 +494,7 @@ class MeshSocket(BaseSocket):
             handler.send(main_flag, send_type, *args)
 
     def __clean_waterfalls(self):
-        #type: (MeshSocket) -> None
+        # type: (MeshSocket) -> None
         """This function cleans the :py:class:`set` of recently relayed
         messages based on the following heuristics:
 
@@ -504,7 +503,7 @@ class MeshSocket(BaseSocket):
         self.waterfalls = {i for i in self.waterfalls if i[1] > getUTC() - 60}
 
     def waterfall(self, msg):
-        #type: (MeshSocket, Message) -> bool
+        # type: (MeshSocket, Message) -> bool
         """This function handles message relays. Its return value is based on
         whether it took an action or not.
 
@@ -526,7 +525,7 @@ class MeshSocket(BaseSocket):
             return False
 
     def connect(self, addr, port, id=None, conn_type=MeshConnection):
-        #type: (MeshSocket, str, int, bytes, Any) -> Union[None, bool]
+        # type: (MeshSocket, str, int, bytes, Any) -> Union[None, bool]
         """This function connects you to a specific node in the overall
         network. Connecting to one node *should* connect you to the rest of
         the network, however if you connect to the wrong subnet, the handshake
@@ -566,13 +565,13 @@ class MeshSocket(BaseSocket):
         return None
 
     def disconnect(self, handler):
-        #type: (MeshSocket, MeshConnection) -> None
+        # type: (MeshSocket, MeshConnection) -> None
         """Closes a given connection, and removes it from your routing tables
 
         Args:
             handler: the connection you would like to close
         """
-        node_id = handler.id  #type: Union[bytes, str]
+        node_id = handler.id  # type: Union[bytes, str]
         if not node_id:
             node_id = repr(handler)
         self.__print__(
@@ -587,12 +586,12 @@ class MeshSocket(BaseSocket):
             pass
 
     def request_peers(self):
-        #type: (MeshSocket) -> None
+        # type: (MeshSocket) -> None
         """Requests your peers' routing tables"""
         self.send('*', type=flags.request, flag=flags.whisper)
 
     def recv(self, quantity=1):
-        #type: (MeshSocket, int) -> Union[None, Message, List[Message]]
+        # type: (MeshSocket, int) -> Union[None, Message, List[Message]]
         """This function has two behaviors depending on whether quantity is
         left as default.
 

@@ -13,13 +13,13 @@ from . import flags
 
 
 def log_entry(name, level):
-    #type: (str, int) -> Callable
+    # type: (str, int) -> Callable
     def annotation(function):
-        #type: (Callable) -> Callable
+        # type: (Callable) -> Callable
         log = getLogger(name)
 
         def caller(*args, **kwargs):
-            #type: (*Any, **Any) -> Any
+            # type: (*Any, **Any) -> Any
             log.log(level, "Entering function {}".format(name))
             ret = function(*args, **kwargs)
             log.log(level, "Exiting function {}".format(name))
@@ -35,7 +35,7 @@ def log_entry(name, level):
 
 
 def inherit_doc(function):
-    #type: (Callable) -> Callable
+    # type: (Callable) -> Callable
     """A decorator which allows you to inherit docstrings from a specified
     function."""
     logger = getLogger('py2p.utils.inherit_doc')
@@ -50,7 +50,7 @@ def inherit_doc(function):
 
 
 def sanitize_packet(packet):
-    #type: (Union[bytes, bytearray, str]) -> bytes
+    # type: (Union[bytes, bytearray, str]) -> bytes
     """Function to sanitize a packet for InternalMessage serialization,
     or dict keying
     """
@@ -62,7 +62,7 @@ def sanitize_packet(packet):
 
 
 def intersect(*args):
-    #type: (*Iterable[Any]) -> Tuple[Any, ...]
+    # type: (*Iterable[Any]) -> Tuple[Any, ...]
     """Finds the intersection of several iterables
 
     Args:
@@ -87,12 +87,12 @@ def intersect(*args):
 
 
 def get_lan_ip():
-    #type: () -> str
+    # type: () -> str
     """Retrieves the LAN ip. Expanded from http://stackoverflow.com/a/28950776
 
     Note: This will return '127.0.0.1' if it is not connected to a network
     """
-    s = socket(AF_INET, SOCK_DGRAM)  #type: socket
+    s = socket(AF_INET, SOCK_DGRAM)  # type: socket
     try:
         # doesn't even have to be reachable
         s.connect(('8.8.8.8', 23))
@@ -105,7 +105,7 @@ def get_lan_ip():
 
 
 def pack_value(l, i):
-    #type: (int, int) -> bytes
+    # type: (int, int) -> bytes
     """For value i, pack it into bytes of size length
 
     Args:
@@ -132,7 +132,7 @@ def pack_value(l, i):
 
 
 def unpack_value(string):
-    #type: (Union[bytes, bytearray, str]) -> int
+    # type: (Union[bytes, bytearray, str]) -> int
     """For a string, return the packed value inside of it
 
     Args:
@@ -150,7 +150,7 @@ def unpack_value(string):
 
 
 def getUTC():
-    #type: () -> int
+    # type: () -> int
     """Returns the current unix time in UTC
 
     Note: This will always return an integral value
@@ -159,7 +159,7 @@ def getUTC():
 
 
 def get_socket(protocol, serverside=False):
-    #type: (Any, bool) -> Any
+    # type: (Any, bool) -> Any
     """Given a protocol object, return the appropriate socket
 
     Args:
@@ -187,22 +187,22 @@ class awaiting_value(object):
     """Proxy object for an asynchronously retrieved item"""
 
     def __init__(self, value=None):
-        #type: (awaiting_value, Any) -> None
-        self.value = value  #type: Union[None, bool, int, dict, bytes, str, list, tuple]
-        self.callback = None  #type: Any
+        # type: (awaiting_value, Any) -> None
+        self.value = value  # type: Union[None, bool, int, dict, bytes, str, list, tuple]
+        self.callback = None  # type: Any
 
     def callback_method(self, method, key):
-        #type: (str, str) -> None
+        # type: (str, str) -> None
         self.callback.send(flags.whisper, flags.retrieved, method, key,
                            self.value)
 
     def __repr__(self):
-        #type: (awaiting_value) -> str
+        # type: (awaiting_value) -> str
         return "<" + repr(self.value) + ">"
 
 
 def most_common(tmp):
-    #type: (Iterable[Any]) -> Tuple[Any, int]
+    # type: (Iterable[Any]) -> Tuple[Any, int]
     """Returns the most common element in a list
 
     Args:

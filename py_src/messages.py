@@ -19,7 +19,7 @@ MsgPackable = Union[_MsgPackable, List[_MsgPackable], Tuple[_MsgPackable, ...],
 
 
 def compress(msg, method):
-    #type: (bytes, int) -> bytes
+    # type: (bytes, int) -> bytes
     """Shortcut method for compression
 
     Args:
@@ -63,7 +63,7 @@ def compress(msg, method):
 
 
 def decompress(msg, method):
-    #type: (bytes, int) -> bytes
+    # type: (bytes, int) -> bytes
     """Shortcut method for decompression
 
     Args:
@@ -149,7 +149,7 @@ class InternalMessage(object):
 
     @classmethod
     def __sanitize_string(cls, string, sizeless=False):
-        #type: (Any, Union[bytes, bytearray, str], bool) -> bytes
+        # type: (Any, Union[bytes, bytearray, str], bool) -> bytes
         """Removes the size header for further processing.
         Also checks if the header is valid.
 
@@ -177,7 +177,7 @@ class InternalMessage(object):
 
     @classmethod
     def __decompress_string(cls, string, compressions=None):
-        #type: (Any, bytes, Union[None, Iterable[int]]) -> Tuple[bytes, bool]
+        # type: (Any, bytes, Union[None, Iterable[int]]) -> Tuple[bytes, bool]
         """Returns a tuple containing the decompressed :py:class:`bytes` and a
         :py:class:`bool` as to whether decompression failed or not
 
@@ -209,7 +209,7 @@ class InternalMessage(object):
 
     @classmethod
     def feed_string(cls, string, sizeless=False, compressions=None):
-        #type: (Any, Union[bytes, bytearray, str], bool, Union[None, Iterable[int]]) -> InternalMessage
+        # type: (Any, Union[bytes, bytearray, str], bool, Union[None, Iterable[int]]) -> InternalMessage
         """Constructs a :py:class:`~py2p.messages.InternalMessage` from a string
         or :py:class:`bytes` object.
 
@@ -252,13 +252,13 @@ class InternalMessage(object):
         return msg
 
     def __init__(
-            self,  #type: InternalMessage
-            msg_type,  #type: MsgPackable
-            sender,  #type: bytes
-            payload,  #type: Iterable[MsgPackable]
-            compression=None,  #type: Union[None, Iterable[int]]
-            timestamp=None  #type: Union[None, int]
-    ):  #type: (...) -> None
+            self,  # type: InternalMessage
+            msg_type,  # type: MsgPackable
+            sender,  # type: bytes
+            payload,  # type: Iterable[MsgPackable]
+            compression=None,  # type: Union[None, Iterable[int]]
+            timestamp=None  # type: Union[None, int]
+    ):  # type: (...) -> None
         """Initializes a :py:class:`~py2p.messages.InternalMessage` instance
 
         Args:
@@ -279,19 +279,19 @@ class InternalMessage(object):
         self.__sender = sender
         self.__payload = tuple(payload)
         self.__time = timestamp or getUTC()
-        self.__id = None  #type: Union[None, bytes]
-        self.__string = None  #type: Union[None, bytes]
-        self.__full_string = None  #type: Union[None, bytes]
+        self.__id = None  # type: Union[None, bytes]
+        self.__string = None  # type: Union[None, bytes]
+        self.__full_string = None  # type: Union[None, bytes]
         self.compression_fail = False
 
         if compression:
-            self.__compression = tuple(compression)  #type: Tuple[int, ...]
+            self.__compression = tuple(compression)  # type: Tuple[int, ...]
         else:
             self.__compression = ()
 
     @property
     def payload(self):
-        #type: (InternalMessage) -> Tuple[MsgPackable, ...]
+        # type: (InternalMessage) -> Tuple[MsgPackable, ...]
         """Returns a :py:class:`tuple` containing the message payload encoded
         as :py:class:`bytes`
         """
@@ -299,55 +299,55 @@ class InternalMessage(object):
 
     @payload.setter
     def payload(self, value):
-        #type: (InternalMessage, Sequence[MsgPackable]) -> None
+        # type: (InternalMessage, Sequence[MsgPackable]) -> None
         """Sets the payload to a new :py:class:`tuple`"""
         self.__clear_cache()
         self.__payload = tuple(value)
 
     @property
     def compression_used(self):
-        #type: (InternalMessage) -> Union[None, int]
+        # type: (InternalMessage) -> Union[None, int]
         """Returns the compression method this message is using"""
         for method in intersect(compression, self.compression):
             return method
         return None
 
     def __clear_cache(self):
-        #type: (InternalMessage) -> None
+        # type: (InternalMessage) -> None
         self.__full_string = None
         self.__string = None
         self.__id = None
 
     @property
     def msg_type(self):
-        #type: (InternalMessage) -> MsgPackable
+        # type: (InternalMessage) -> MsgPackable
         return self.__msg_type
 
     @msg_type.setter
     def msg_type(self, val):
-        #type: (InternalMessage, MsgPackable) -> None
+        # type: (InternalMessage, MsgPackable) -> None
         self.__clear_cache()
         self.__msg_type = val
 
     @property
     def sender(self):
-        #type: (InternalMessage) -> bytes
+        # type: (InternalMessage) -> bytes
         return self.__sender
 
     @sender.setter
     def sender(self, val):
-        #type: (InternalMessage, bytes) -> None
+        # type: (InternalMessage, bytes) -> None
         self.__clear_cache()
         self.__sender = val
 
     @property
     def compression(self):
-        #type: (InternalMessage) -> Tuple[int, ...]
+        # type: (InternalMessage) -> Tuple[int, ...]
         return self.__compression
 
     @compression.setter
     def compression(self, val):
-        #type: (InternalMessage, Iterable[int]) -> None
+        # type: (InternalMessage, Iterable[int]) -> None
         new_comps = intersect(compression, val)
         old_comp = self.compression_used
         if (old_comp, ) != new_comps[0:1]:
@@ -356,24 +356,24 @@ class InternalMessage(object):
 
     @property
     def time(self):
-        #type: (InternalMessage) -> int
+        # type: (InternalMessage) -> int
         return self.__time
 
     @time.setter
     def time(self, val):
-        #type: (InternalMessage, int) -> None
+        # type: (InternalMessage, int) -> None
         self.__clear_cache()
         self.__time = val
 
     @property
     def time_58(self):
-        #type: (InternalMessage) -> bytes
+        # type: (InternalMessage) -> bytes
         """Returns this message's timestamp in base_58"""
         return b58encode_int(self.__time)
 
     @property
     def id(self):
-        #type: (InternalMessage) -> bytes
+        # type: (InternalMessage) -> bytes
         """Returns the message id"""
         if not self.__id:
             payload_hash = sha256(self.__non_len_string)
@@ -382,7 +382,7 @@ class InternalMessage(object):
 
     @property
     def packets(self):
-        #type: (InternalMessage) -> Tuple[MsgPackable, ...]
+        # type: (InternalMessage) -> Tuple[MsgPackable, ...]
         """Returns the full :py:class:`tuple` of packets in this message
         encoded as :py:class:`bytes`, excluding the header
         """
@@ -390,7 +390,7 @@ class InternalMessage(object):
 
     @property
     def __non_len_string(self):
-        #type: (InternalMessage) -> bytes
+        # type: (InternalMessage) -> bytes
         """Returns a :py:class:`bytes` object containing the entire message,
         excepting the total length header
 
@@ -418,7 +418,7 @@ class InternalMessage(object):
 
     @property
     def string(self):
-        #type: (InternalMessage) -> bytes
+        # type: (InternalMessage) -> bytes
         """Returns a :py:class:`bytes` representation of the message
 
         Raises:
@@ -434,5 +434,5 @@ class InternalMessage(object):
         return self.__full_string
 
     def __len__(self):
-        #type: (InternalMessage) -> int
+        # type: (InternalMessage) -> int
         return len(self.string)

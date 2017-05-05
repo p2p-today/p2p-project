@@ -36,13 +36,13 @@ class FordDaemon(MeshDaemon):
     @log_entry('py2p.ford.FordDaemon.__init__', DEBUG)
     @inherit_doc(MeshDaemon.__init__)
     def __init__(self, *args, **kwargs):
-        #type: (Any, *Any, **Any) -> None
+        # type: (Any, *Any, **Any) -> None
         super(FordDaemon, self).__init__(*args, **kwargs)
         self.conn_type = FordConnection
 
     @inherit_doc(MeshDaemon.handle_accept)
     def handle_accept(self):
-        #type: (FordDaemon) -> FordConnection
+        # type: (FordDaemon) -> FordConnection
         handler = super(FordDaemon, self).handle_accept()
         self.server.send_paths(handler)
         return cast(FordConnection, handler)
@@ -54,13 +54,13 @@ class FordSocket(MeshSocket):
     @log_entry('py2p.ford.FordSocket.__init__', DEBUG)
     @inherit_doc(MeshSocket.__init__)
     def __init__(
-            self,  #type: Any
-            addr,  #type: str
-            port,  #type: int
-            prot=default_protocol,  #type: Protocol
-            out_addr=None,  #type: Union[None, Tuple[str, int]]
-            debug_level=0  #type: int
-    ):  #type: (...) -> None
+            self,  # type: Any
+            addr,  # type: str
+            port,  # type: int
+            prot=default_protocol,  # type: Protocol
+            out_addr=None,  # type: Union[None, Tuple[str, int]]
+            debug_level=0  # type: int
+    ):  # type: (...) -> None
         """Initialize a chord socket"""
         if not hasattr(self, 'daemon'):
             self.daemon = 'ford reserved'
@@ -68,14 +68,14 @@ class FordSocket(MeshSocket):
                                          debug_level)
         if self.daemon == 'ford reserved':
             self.daemon = FordDaemon(addr, port, self)
-        self.routes = {self.id: []}  #type: Dict[bytes, List[bytes]]
+        self.routes = {self.id: []}  # type: Dict[bytes, List[bytes]]
         self.register_handler(self.__handle_new_path)
         self.register_handler(self.__handle_del_path)
         self.register_handler(self.__handle_forward)
 
     @inherit_doc(MeshSocket.disconnect)
     def disconnect(self, handler):
-        #type: (MeshSocket, MeshConnection) -> None
+        # type: (MeshSocket, MeshConnection) -> None
         _id = handler.id
         super(FordSocket, self).disconnect(handler)
         if _id in self.routes:
@@ -85,7 +85,7 @@ class FordSocket(MeshSocket):
                 conn.send(flags.whisper, flags.revoke_paths, to_send)
 
     def __handle_new_path(self, msg, handler):
-        #type: (FordSocket, Message, BaseConnection) -> Union[bool, None]
+        # type: (FordSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with ford paths.
         Its primary job is:
 
@@ -113,7 +113,7 @@ class FordSocket(MeshSocket):
         return None
 
     def __handle_del_path(self, msg, handler):
-        #type: (FordSocket, Message, BaseConnection) -> Union[bool, None]
+        # type: (FordSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with ford paths.
         Its primary job is:
 
@@ -140,14 +140,14 @@ class FordSocket(MeshSocket):
         return None
 
     def send_paths(self, handler):
-        #type: (FordSocket, BaseConnection) -> None
+        # type: (FordSocket, BaseConnection) -> None
         to_send = cast(MsgPackable,
                        dict((dest, [self.id] + path)
                             for dest, path in self.routes.items()))
         handler.send(flags.whisper, flags.new_paths, to_send)
 
     def __handle_forward(self, msg, handler):
-        #type: (FordSocket, Message, BaseConnection) -> Union[bool, None]
+        # type: (FordSocket, Message, BaseConnection) -> Union[bool, None]
         """This callback is used to deal with ford paths.
         Its primary job is:
 
@@ -173,7 +173,7 @@ class FordSocket(MeshSocket):
         return None
 
     def sendTo(self, dest, *args, **kargs):
-        #type: (MeshSocket, bytes, *MsgPackable, **MsgPackable) -> None
+        # type: (MeshSocket, bytes, *MsgPackable, **MsgPackable) -> None
         """This sends a message to all of your peers. If you use default
         values it will send it to everyone on the network
 
