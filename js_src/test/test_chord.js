@@ -19,6 +19,29 @@ describe('chord', function() {
 
         let count = 10;
         let errs = [];
+        let node1, node2;
+
+        function make_check(done) {
+            function check() {
+                if (!count) {
+                    if (!errs.length) {
+                        done();
+                    }
+                    else {
+                        done(new Error(
+                            util.inspect(
+                                errs.concat([
+                                    node1.status,
+                                    node2.status
+                                ]))));
+                    }
+                }
+                else {
+                    setTimeout(check, 100);
+                }
+            }
+            check();
+        }
 
         function shouldEqual(desired) {
             return function(val) {
@@ -39,14 +62,13 @@ describe('chord', function() {
 
             it(`should store values correctly (over ${text})`, function(done) {
                 this.timeout(2500 * (3 && text === 'SSL/TLS' + 1));
-                var node1 = new chord.ChordSocket('localhost', start_port++, new base.Protocol('chord', transports[text]));
-                var node2 = new chord.ChordSocket('localhost', start_port++, new base.Protocol('chord', transports[text]));
+                node1 = new chord.ChordSocket('localhost', start_port++, new base.Protocol('chord', transports[text]));
+                node2 = new chord.ChordSocket('localhost', start_port++, new base.Protocol('chord', transports[text]));
 
                 node1.join();
                 node2.join();
-                node1.connect(node2.addr[0], node2.addr[1]);
 
-                setTimeout(()=>{
+                node1.on('connect', ()=>{
                     node1.set('test', 'value');
                     setTimeout(()=>{
                         count = 10;
@@ -68,26 +90,11 @@ describe('chord', function() {
                             node2.get('number').then(shouldEqual(256)).catch(onError);
                             node1.get('array').then(shouldEqual([1,2,3,4,5,6,7,8,9])).catch(onError);
                             node2.get('array').then(shouldEqual([1,2,3,4,5,6,7,8,9])).catch(onError);
-                            function check() {
-                                if (!count) {
-                                    if (!errs.length) {
-                                        done();
-                                    }
-                                    else {
-                                        done(new Error(errs.concat([
-                                            util.inspect(node1.status),
-                                            util.inspect(node2.status)
-                                        ])));
-                                    }
-                                }
-                                else {
-                                    setTimeout(check, 100);
-                                }
-                            }
-                            check();
                         }, 500);
                     }, 500);
-                }, 250);
+                });
+                make_check(done);
+                node1.connect(...node2.addr);
             });
 
             it(`should apply deltas correctly (over ${text})`, function(done) {
@@ -97,9 +104,8 @@ describe('chord', function() {
 
                 node1.join();
                 node2.join();
-                node1.connect(node2.addr[0], node2.addr[1]);
 
-                setTimeout(()=>{
+                node1.on('connect', ()=>{
                     node1.set('test', {'1':2});
                     setTimeout(()=>{
                         count = 4;
@@ -127,47 +133,34 @@ describe('chord', function() {
                                         'number': 256
                                     })).catch(onError);
                                 });
-                                // node2.apply_delta('test1', {
-                                //     '测试': '成功',
-                                //     'store': 'store',
-                                //     'array': [1,2,3,4,5,6,7,8,9],
-                                //     'number': 256
-                                // }).then(()=>{
-                                //     node1.get('test1').then(shouldEqual({
-                                //         '测试': '成功',
-                                //         'store': 'store',
-                                //         'array': [1,2,3,4,5,6,7,8,9],
-                                //         'number': 256
-                                //     })).catch(onError);
-                                //     node2.get('test1').then(shouldEqual({
-                                //         '测试': '成功',
-                                //         'store': 'store',
-                                //         'array': [1,2,3,4,5,6,7,8,9],
-                                //         'number': 256
-                                //     })).catch(onError);
-                                // });
                             });
-                            function check() {
-                                if (!count) {
-                                    if (!errs.length) {
-                                        done();
-                                    }
-                                    else {
-                                        done(new Error(errs.concat([
-                                            util.inspect(node1.status),
-                                            util.inspect(node2.status)
-                                        ])));
-                                    }
-                                }
-                                else {
-                                    setTimeout(check, 100);
-                                }
-                            }
-                            check();
                         });
                     }, 500);
-                }, 500);
+                });
+                node1.connect(...node2.addr);
+                make_check(done);
             });
+
+            // it(`should apply cold start deltas correctly (over ${text})`, function(done) {
+            //     this.timeout(2500 * (3 && text === 'SSL/TLS' + 1));
+            //     var node1 = new chord.ChordSocket('localhost', start_port++, new base.Protocol('chord', transports[text]));
+            //     var node2 = new chord.ChordSocket('localhost', start_port++, new base.Protocol('chord', transports[text]));
+            //
+            //     node1.join();
+            //     node2.join();
+            //     count = 3;
+            //     errs = [];
+            //
+            //     node1.on('connect', ()=>{
+            //         node1.apply_delta('test', {'1':2}).then(shouldEqual({'1':2})).catch(onError);
+            //         setTimeout(()=>{
+            //             node1.get('test').then(shouldEqual({'1':2})).catch(onError);
+            //             node2.get('test').then(shouldEqual({'1':2})).catch(onError);
+            //         }, 750);
+            //     });
+            //     node1.connect(...node2.addr);
+            //     make_check(done);
+            // });
         }
 
     });

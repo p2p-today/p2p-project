@@ -209,6 +209,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         this.register_handler(function __handle_retrieved(msg, conn)  {return self.__handle_retrieved(msg, conn);});
         this.register_handler(function __handle_retrieve(msg, conn)  {return self.__handle_retrieve(msg, conn);});
         this.register_handler(function __handle_store(msg, conn)  {return self.__handle_store(msg, conn);});
+        this.register_handler(function __handle_delta(msg, conn)  {return self.__handle_delta(msg, conn);});
     }
 
     __on_TCP_Connection(sock)  {
@@ -273,7 +274,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
     }
 
 
-    __handle_delta(self, msg, handler)  {
+    __handle_delta(msg, handler)  {
         /**
         *     .. js:function:: js2p.chord.ChordSocket.__handle_delta(msg, conn)
         *
@@ -287,10 +288,10 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
         *
         *         :returns: Either ``True`` or ``None``
         */
-        let packets = msg.packets
-        if (packets[0] === flags.delta)  {
+        let packets = msg.packets;
+        if (packets[0] === base.flags.delta)  {
             let method = packets[1];
-            let key = from_base_58(packets[2]);
+            let key = base.from_base_58(packets[2]);
             this.__delta(method, key, packets[3]);
             return true;
         }
@@ -650,7 +651,7 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
 
     __delta(method, key, delta) {
         let node = this.find(key);
-        if (this.leeching && Object.is(node, this)) {
+        if (this.leeching && Object.is(node, this) && this.awaiting_ids.length) {
             node = this.awaiting_ids[Math.floor(Math.random()*this.awaiting_ids.length)];
         }
         if (Object.is(node, this))  {
@@ -707,13 +708,10 @@ m.ChordSocket = class ChordSocket extends mesh.MeshSocket    {
                 resolve(value)
             }
 
-            self.get(key, null).then(
+            self.get(key, {}).then(
                 (value)=>{
                     if (value instanceof Object)    {
                         on_success(value);
-                    }
-                    else if (value === null)    {
-                        on_success({});
                     }
                     else    {
                         reject(new Error("This key already has a non-mapping value"));
