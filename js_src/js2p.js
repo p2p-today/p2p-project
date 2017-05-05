@@ -78,9 +78,15 @@ m.bootstrap = function bootstrap(socket_type, protocol, addr, port, ...args)    
     }
 
     seed.once('connect', ()=>{
-        let delta = {};
-        delta[ret.id] = ret.out_addr;
-        let request = seed.apply_delta(ret.protocol.id, delta);
+        let request;
+        if (ret.out_addr[0] !== null) {
+            let delta = {};
+            delta[ret.id] = ret.out_addr;
+            request = seed.apply_delta(ret.protocol.id, delta);
+        }
+        else {
+            request = seed.get(ret.protocol.id);
+        }
 
         let on_error = (e)=>{
             console.warn(e);
