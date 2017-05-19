@@ -148,148 +148,75 @@ browser-min-compat: browser-compat-min
 #Begin Python section
 
 ## Build python-only code for whatever your default system python is
-python: LICENSE setup.py
-	@echo "Checking dependencies..."
-	@python $(py_deps) --upgrade
-	@python $(pip) -r requirements.txt --upgrade $(user_postfix)
-	@echo "Building python-only version..."
-	@python setup.py build --universal
+python:
+	@cd py2p; $(MAKE) python
 
 ## Build python-only code for whatever your system python3 version is
-python3: LICENSE setup.py
-	@echo "Checking dependencies..."
-	@$(python3) $(py_deps) --upgrade
-	@$(python3) $(pip) -r requirements.txt --upgrade $(user_postfix)
-	@echo "Building python-only version..."
-	@$(python3) setup.py build --universal
+python3:
+	@cd py2p; $(MAKE) python3
 
 ## Build python-only code for whatever your system python2 version is
-python2: LICENSE setup.py
-	@echo "Checking dependencies..."
-	@$(python2) $(py_deps) --upgrade
-	@$(python2) $(pip) -r requirements.txt --upgrade $(user_postfix)
-	@echo "Building python-only version..."
-	@$(python2) setup.py build --universal
+python2:
+	@cd py2p; $(MAKE) python2
 
 ## Build python-only code for whatever your system pypy version is
-pypy: LICENSE setup.py
-	@echo "Checking dependencies..."
-	@pypy $(py_deps) --upgrade
-	@pypy $(pip) -r requirements.txt --upgrade $(user_postfix)
-	@echo "Building python-only version..."
-	@pypy setup.py build --universal
+pypy:
+	@cd py2p; $(MAKE) pypy
 
-ifeq ($(pypy), True)
-cpython: python
-
-else
-## Build binary and python code for whatever your default system python is (python-only if that's pypy)
-cpython: python submodules
-	@echo "Building with C extensions..."
-ifeq ($(debug), true)
-	@python setup.py build --debug
-else
-	@python setup.py build
-endif
-endif
+cpython:
+	@cd py2p; $(MAKE) cpython
 
 ## Build binary and python code for whatever your system python3 version is
-cpython3: python3 submodules
-	@echo "Building with C extensions..."
-ifeq ($(debug), true)
-	@$(python3) setup.py build --debug
-else
-	@$(python3) setup.py build
-endif
+cpython3:
+	@cd py2p; $(MAKE) cpython3
 
 ## Build binary and python code for whatever your system python2 version is
-cpython2: python2 submodules
-	@echo "Building with C extensions..."
-ifeq ($(debug), true)
-	@$(python2) setup.py build --debug
-else
-	@$(python2) setup.py build
-endif
+cpython2:
+	@cd py2p; $(MAKE) cpython2
 
 ## Install python test dependencies
 pytestdeps:
-	@echo "Checking test dependencies..."
-	@python $(py_test_deps) --upgrade
+	@cd py2p; $(MAKE) pytestdeps
 
 ## Install python2 test dependencies
 py2testdeps:
-	@echo "Checking test dependencies..."
-	@$(python2) $(py_test_deps) --upgrade
+	@cd py2p; $(MAKE) py2testdeps
 
 ## Install python3 test dependencies
 py3testdeps:
-	@echo "Checking test dependencies..."
-	@$(python3) $(py_test_deps) --upgrade
+	@cd py2p; $(MAKE) py3testdeps
 
 ## Run python tests
-pytest: LICENSE setup.py setup.cfg python pytestdeps
-ifeq ($(cov), true)
-	@python -m pytest -c ./setup.cfg --cov=build/$(pyunvlibdir) build/$(pyunvlibdir)
-else
-	@python -m pytest -c ./setup.cfg build/$(pyunvlibdir)
-endif
+pytest:
+	@cd py2p; $(MAKE) pytest
 
 ## Run python2 tests
-py2test: LICENSE setup.py setup.cfg python2 py2testdeps
-ifeq ($(cov), true)
-	@$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
-else
-	@$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
-endif
+py2test:
+	@cd py2p; $(MAKE) py2test
 
 ## Run python3 tests
-py3test: LICENSE setup.py setup.cfg python3 py3testdeps
-	@echo $(py3libdir)
-ifeq ($(cov), true)
-	@$(python3) -m pytest -c ./setup.cfg --cov=build/lib build/lib
-else
-	@$(python3) -m pytest -c ./setup.cfg build/lib
-endif
+py3test:
+	@cd py2p; $(MAKE) py3test
 
-ifeq ($(pypy), True)
-cpytest: pytest
-
-else
 ## Run cpython tests
-cpytest: LICENSE setup.py setup.cfg cpython pytestdeps
-ifeq ($(cov), true)
-	@python -m pytest -c ./setup.cfg --cov=build/$(pylibdir) build/$(pylibdir)
-else
-	@python -m pytest -c ./setup.cfg build/$(pylibdir)
-endif
-endif
+cpytest:
+	@cd py2p; $(MAKE) cpytest
 
 ## Run cpython2 tests
-cpy2test: LICENSE setup.py setup.cfg cpython2 py2testdeps
-ifeq ($(cov), true)
-	@$(python2) -m pytest -c ./setup.cfg --cov=build/$(py2libdir) build/$(py2libdir)
-else
-	@$(python2) -m pytest -c ./setup.cfg build/$(py2libdir)
-endif
+cpy2test:
+	@cd py2p; $(MAKE) cpy2test
 
 ## Run cpython3 tests
-cpy3test: LICENSE setup.py setup.cfg cpython3 py3testdeps
-ifeq ($(cov), true)
-	@$(python3) -m pytest -c ./setup.cfg --cov=build/$(py3libdir) build/$(py3libdir)
-else
-	@$(python3) -m pytest -c ./setup.cfg build/$(py3libdir)
-endif
+cpy3test:
+	@cd py2p; $(MAKE) cpy3test
 
 ## Format the python code in place with YAPF
-pyformat: clean
-	@$(python3) -m pip install yapf --upgrade $(user_postfix)
-	@$(python3) -m yapf py_src -ri
-	@$(MAKE) mypy pytest
+pyformat:
+	@cd py2p; $(MAKE) pyformat
 
 ## Run mypy tests
 mypy:
-	@$(python3) -m pip install mypy --upgrade $(user_postfix)
-	@$(python3) -m mypy . --check-untyped-defs --ignore-missing-imports --disallow-untyped-calls --disallow-untyped-defs
+	@cd py2p; $(MAKE) mypy
 
 ## Build html documentation
 html: jsdocs submodules
@@ -301,17 +228,18 @@ html: jsdocs submodules
 
 ## Clean up local folders, including Javascript depenedencies
 clean:
-	@rm -rf .benchmarks .cache build coverage dist docs/py2p node_modules py2p venv py_src/__pycache__ \
-	py_src/test/__pycache__ py_src/*.pyc py_src/test/*.pyc py_src/*.so
+	@rm -rf .cache build docs/py2p node_modules
 	@find docs/c          ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/cpp        ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/java       ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/javascript ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@cd docs; $(MAKE) clean
+	@cd py2p; $(MAKE) clean
 
 ## Run all python-related build recipes
-py_all: LICENSE setup.py setup.cfg python2 python3 html cpython2 cpython3 pypy
-
+py_all:
+	@cd py2p; $(MAKE) py_all
+	
 ## Run all Javascript-related build recipes
 js_all: LICENSE ES5 html browser browser-min browser-compat browser-compat-min
 

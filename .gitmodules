@@ -7,3 +7,6 @@
 [submodule "c2p"]
 	path = c2p
 	url = https://github.com/p2p-today/c2p
+[submodule "py2p"]
+	path = py2p
+	url = https://github.com/p2p-today/py2p
