@@ -10,3 +10,6 @@
 [submodule "py2p"]
 	path = py2p
 	url = https://github.com/p2p-today/py2p
+[submodule "js2p"]
+	path = js2p
+	url = https://github.com/p2p-today/js2p

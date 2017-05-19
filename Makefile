@@ -14,46 +14,6 @@ help:
 	} \
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
-pip = -m pip install
-py_deps = $(pip) cryptography --upgrade
-py_test_deps = $(pip) pytest-coverage pytest-benchmark pytest-ordering
-docs_deps = $(pip) sphinx sphinxcontrib-napoleon sphinx_rtd_theme
-
-ifeq ($(shell python -c 'import sys; print(int(hasattr(sys, "real_prefix")))'), 0) # check for virtualenv
-	py_deps += --user
-	py_test_deps += --user
-	docs_deps += --user
-	user_postfix = --user
-else
-	user_postfix =
-endif
-
-ifeq ($(shell python -c 'import sys; print((sys.version_info[0]))'), 3)
-	python2 = python2
-	python3 = python
-else
-	python2 = python
-	python3 = python3
-endif
-
-ifeq ($(shell python -c "import sys; print(hasattr(sys, 'pypy_version_info'))"), True)
-	pypy = True
-	ifeq ($(python2), python)
-		python2 = python2
-	endif
-else
-	pypy = False
-endif
-
-pylibdir = $(shell python -c "import sys, sysconfig; print('lib.{}-{v[0]}.{v[1]}'.format(sysconfig.get_platform(), v=sys.version_info))")
-py2libdir = $(shell $(python2) -c "import sys, sysconfig; print('lib.{}-{v[0]}.{v[1]}'.format(sysconfig.get_platform(), v=sys.version_info))")
-py3libdir = $(shell $(python3) -c "import sys, sysconfig; print('lib.{}-{v[0]}.{v[1]}'.format(sysconfig.get_platform(), v=sys.version_info))")
-ifeq ($(python2), python)
-	pyunvlibdir = $(pylibdir)
-else
-	pyunvlibdir = lib
-endif
-
 #End python setup section
 #Begin C section
 
@@ -67,79 +27,49 @@ submodules:
 jsver = $(shell node -p "require('./package.json').version")
 
 ## Install Javascript dependencies, preferring to use yarn, but using npm if it must
-jsdeps: LICENSE
-	@mv npm-shrinkwrap.json .npm-shrinkwrap.json; \
-	yarn || npm install; \
-	mv .npm-shrinkwrap.json npm-shrinkwrap.json
+jsdeps:
+	@cd js2p; $(MAKE) jsdeps
 
 ## Copying documentation from C-like language into the proper Restructred Text files
 jsdocs:
 	@echo "Copying documentation comments..."
-	@node js_src/docs_test.js
+	@node docs/docs_walker.js
 
 ## Run Javascript test code
-jstest: jsdeps
-	@node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha js_src/test/*
+jstest:
+	@cd js2p; $(MAKE) jstest
 
 ## Run Javascript tests AND upload results to codecov (testing services only)
-js_codecov: jstest
-	@node node_modules/codecov/bin/codecov -f coverage/coverage.json --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
+js_codecov:
+	@cd js2p; $(MAKE) js_codecov
 
 ## Package Javascript code into browser bundles
-browser: jsdeps
-	@mkdir -p build/browser
-	@echo "Building browser version..."
-	@cd js_src;\
-	node ../node_modules/browserify/bin/cmd.js -r ./base.js -o ../build/browser/js2p-browser-$(jsver)-base.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../build/browser/js2p-browser-$(jsver)-mesh.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../build/browser/js2p-browser-$(jsver)-sync.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./chord.js -o ../build/browser/js2p-browser-$(jsver)-chord.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../build/browser/js2p-browser-$(jsver).js -s js2p
+browser:
+	@cd js2p; $(MAKE) browser
 
 ## Package Javascript code into browser bundles and minify them
-browser-min: browser
-	@mkdir -p build/browser-min
-	@echo "Minifying..."
-	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver).js       -o ./build/browser-min/js2p-browser-$(jsver).min.js       --minified --no-comments --no-babelrc
-	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-base.js  -o ./build/browser-min/js2p-browser-$(jsver)-base.min.js  --minified --no-comments --no-babelrc
-	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-mesh.js  -o ./build/browser-min/js2p-browser-$(jsver)-mesh.min.js  --minified --no-comments --no-babelrc
-	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-sync.js  -o ./build/browser-min/js2p-browser-$(jsver)-sync.min.js  --minified --no-comments --no-babelrc
-	@node node_modules/babel-cli/bin/babel.js ./build/browser/js2p-browser-$(jsver)-chord.js -o ./build/browser-min/js2p-browser-$(jsver)-chord.min.js --minified --no-comments --no-babelrc
+browser-min:
+	@cd js2p; $(MAKE) browser-min
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4
-js-compat: jsdeps
-	@mkdir -p build/browser-compat build/babel
-	@echo "Transpiling..."
-	@node node_modules/babel-cli/bin/babel.js js_src -d build/babel
+js-compat:
+	@cd js2p; $(MAKE) js-compat
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4 AND test this code
-js_compat_test: js-compat
-	@echo "Testing transpilation..."
-	@node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha build/babel/test/*
+js_compat_test:
+	@cd js2p; $(MAKE) js_compat_test
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4 AND test this code AND upload it to codecov (testing services only)
-js_compat_codecov: js_compat_test
-	@node node_modules/codecov/bin/codecov -f coverage/coverage.json --token=d89f9bd9-27a3-4560-8dbb-39ee3ba020a5
+js_compat_codecov:
+	@cd js2p; $(MAKE) js_compat_codecov
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4 AND package it into browser bundles
-browser-compat: js-compat
-	@echo "Building browser version..."
-	@cd build/babel;\
-	node ../../node_modules/browserify/bin/cmd.js -r ./base.js -o ../browser-compat/js2p-browser-$(jsver)-base.babel.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -r ./mesh.js -o ../browser-compat/js2p-browser-$(jsver)-mesh.babel.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./sync.js -o ../browser-compat/js2p-browser-$(jsver)-sync.babel.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -r ./chord.js -o ../browser-compat/js2p-browser-$(jsver)-chord.babel.js -u snappy -u nodejs-websocket -u node-forge;\
-	node ../../node_modules/browserify/bin/cmd.js -x ./base.js -x ./mesh.js -x ./sync.js -x ./chord.js -e ./js2p.js -o ../browser-compat/js2p-browser-$(jsver).babel.js -s js2p
+browser-compat:
+	@cd js2p; $(MAKE) browser-compat
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4 AND package it into browser bundles, then minify it
-browser-compat-min: browser-compat
-	@mkdir -p build/browser-compat-min
-	@echo "Minifying..."
-	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver).babel.js       -o ./build/browser-compat-min/js2p-browser-$(jsver).babel.min.js       --minified --no-comments --no-babelrc
-	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-base.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-base.babel.min.js  --minified --no-comments --no-babelrc
-	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-mesh.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-mesh.babel.min.js  --minified --no-comments --no-babelrc
-	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-sync.babel.js  -o ./build/browser-compat-min/js2p-browser-$(jsver)-sync.babel.min.js  --minified --no-comments --no-babelrc
-	@node node_modules/babel-cli/bin/babel.js ./build/browser-compat/js2p-browser-$(jsver)-chord.babel.js -o ./build/browser-compat-min/js2p-browser-$(jsver)-chord.babel.min.js --minified --no-comments --no-babelrc
+browser-compat-min:
+	@cd js2p; $(MAKE) browser-compat-min
 
 ## Alias for the above
 browser-min-compat: browser-compat-min
@@ -235,13 +165,15 @@ clean:
 	@find docs/javascript ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@cd docs; $(MAKE) clean
 	@cd py2p; $(MAKE) clean
+	@cd js2p; $(MAKE) clean
 
 ## Run all python-related build recipes
 py_all:
 	@cd py2p; $(MAKE) all
 
 ## Run all Javascript-related build recipes
-js_all: LICENSE ES5 html browser browser-min browser-compat browser-compat-min
-
+js_all:
+	@cd js2p; $(MAKE) all
+	
 ## Run all test-related recipes
 test_all: LICENSE clean jstest js_compat_test mypy pytest cpy2test cpy3test
