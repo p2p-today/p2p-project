@@ -4,3 +4,6 @@
 [submodule "c_src/msgpack-c"]
 	path = c_src/msgpack-c
 	url = https://github.com/msgpack/msgpack-c
+[submodule "c2p"]
+	path = c2p
+	url = https://github.com/p2p-today/c2p

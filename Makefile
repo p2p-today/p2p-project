@@ -57,9 +57,9 @@ endif
 #End python setup section
 #Begin C section
 
-## Initialize the msgpack module (and incidentally other submodules)
-msgpack_module:
-	@git submodule update --init
+## Initialize submodules
+submodules:
+	@git submodule update --init --recursive
 
 #End C section
 #Begin Javascript section
@@ -184,7 +184,7 @@ cpython: python
 
 else
 ## Build binary and python code for whatever your default system python is (python-only if that's pypy)
-cpython: python msgpack_module
+cpython: python submodules
 	@echo "Building with C extensions..."
 ifeq ($(debug), true)
 	@python setup.py build --debug
@@ -194,7 +194,7 @@ endif
 endif
 
 ## Build binary and python code for whatever your system python3 version is
-cpython3: python3 msgpack_module
+cpython3: python3 submodules
 	@echo "Building with C extensions..."
 ifeq ($(debug), true)
 	@$(python3) setup.py build --debug
@@ -203,7 +203,7 @@ else
 endif
 
 ## Build binary and python code for whatever your system python2 version is
-cpython2: python2 msgpack_module
+cpython2: python2 submodules
 	@echo "Building with C extensions..."
 ifeq ($(debug), true)
 	@$(python2) setup.py build --debug
@@ -292,7 +292,7 @@ mypy:
 	@$(python3) -m mypy . --check-untyped-defs --ignore-missing-imports --disallow-untyped-calls --disallow-untyped-defs
 
 ## Build html documentation
-html: jsdocs msgpack_module
+html: jsdocs submodules
 	@python $(docs_deps)
 	@cd docs; $(MAKE) clean html
 
