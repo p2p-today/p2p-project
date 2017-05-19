@@ -238,8 +238,8 @@ clean:
 
 ## Run all python-related build recipes
 py_all:
-	@cd py2p; $(MAKE) py_all
-	
+	@cd py2p; $(MAKE) all
+
 ## Run all Javascript-related build recipes
 js_all: LICENSE ES5 html browser browser-min browser-compat browser-compat-min
 
