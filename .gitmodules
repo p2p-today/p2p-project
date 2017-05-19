@@ -13,3 +13,6 @@
 [submodule "js2p"]
 	path = js2p
 	url = https://github.com/p2p-today/js2p
+[submodule "cp2p"]
+	path = cp2p
+	url = https://github.com/p2p-today/cp2p
