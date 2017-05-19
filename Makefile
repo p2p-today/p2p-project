@@ -21,6 +21,9 @@ help:
 submodules:
 	@git submodule update --init --recursive
 
+build:
+	@mkdir -p build
+
 #End C section
 #Begin Javascript section
 
@@ -44,32 +47,39 @@ js_codecov:
 	@cd js2p; $(MAKE) js_codecov
 
 ## Package Javascript code into browser bundles
-browser:
+browser: build
 	@cd js2p; $(MAKE) browser
+	@cp -fur -t build js2p/build/*
 
 ## Package Javascript code into browser bundles and minify them
-browser-min:
+browser-min: build
 	@cd js2p; $(MAKE) browser-min
+	@cp -fur -t build js2p/build/*
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4
-js-compat:
+js-compat: build
 	@cd js2p; $(MAKE) js-compat
+	@cp -fur -t build js2p/build/*
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4 AND test this code
-js_compat_test:
+js_compat_test: build
 	@cd js2p; $(MAKE) js_compat_test
+	@cp -fur -t build js2p/build/*
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4 AND test this code AND upload it to codecov (testing services only)
-js_compat_codecov:
+js_compat_codecov: build
 	@cd js2p; $(MAKE) js_compat_codecov
+	@cp -fur -t build js2p/build/*
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4 AND package it into browser bundles
-browser-compat:
+browser-compat: build
 	@cd js2p; $(MAKE) browser-compat
+	@cp -fur -t build js2p/build/*
 
 ## Transpile Javascript code into a non ES6 format, for older browsers or Node.js v4 AND package it into browser bundles, then minify it
-browser-compat-min:
+browser-compat-min: build
 	@cd js2p; $(MAKE) browser-compat-min
+	@cp -fur -t build js2p/build/*
 
 ## Alias for the above
 browser-min-compat: browser-compat-min
@@ -78,31 +88,38 @@ browser-min-compat: browser-compat-min
 #Begin Python section
 
 ## Build python-only code for whatever your default system python is
-python:
+python: build
 	@cd py2p; $(MAKE) python
+	@cp -fur -t build py2p/build/*
 
 ## Build python-only code for whatever your system python3 version is
-python3:
+python3: build
 	@cd py2p; $(MAKE) python3
+	@cp -fur -t build py2p/build/*
 
 ## Build python-only code for whatever your system python2 version is
-python2:
+python2: build
 	@cd py2p; $(MAKE) python2
+	@cp -fur -t build py2p/build/*
 
 ## Build python-only code for whatever your system pypy version is
-pypy:
+pypy: build
 	@cd py2p; $(MAKE) pypy
+	@cp -fur -t build py2p/build/*
 
-cpython:
+cpython: build
 	@cd py2p; $(MAKE) cpython
+	@cp -fur -t build py2p/build/*
 
 ## Build binary and python code for whatever your system python3 version is
-cpython3:
+cpython3: build
 	@cd py2p; $(MAKE) cpython3
+	@cp -fur -t build py2p/build/*
 
 ## Build binary and python code for whatever your system python2 version is
-cpython2:
+cpython2: build
 	@cd py2p; $(MAKE) cpython2
+	@cp -fur -t build py2p/build/*
 
 ## Install python test dependencies
 pytestdeps:
@@ -129,16 +146,19 @@ py3test:
 	@cd py2p; $(MAKE) py3test
 
 ## Run cpython tests
-cpytest:
+cpytest: build
 	@cd py2p; $(MAKE) cpytest
+	@cp -fur -t build py2p/build/*
 
 ## Run cpython2 tests
-cpy2test:
+cpy2test: build
 	@cd py2p; $(MAKE) cpy2test
+	@cp -fur -t build py2p/build/*
 
 ## Run cpython3 tests
-cpy3test:
+cpy3test: build
 	@cd py2p; $(MAKE) cpy3test
+	@cp -fur -t build py2p/build/*
 
 ## Format the python code in place with YAPF
 pyformat:
@@ -158,7 +178,7 @@ html: jsdocs submodules
 
 ## Clean up local folders, including Javascript depenedencies
 clean:
-	@rm -rf .cache build docs/py2p node_modules
+	@rm -rf .cache build docs/py2p
 	@find docs/c          ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/cpp        ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
 	@find docs/java       ! -name 'tutorial.rst' ! -wholename '*/tutorial/*' -type f -exec rm -f {} +
@@ -174,6 +194,6 @@ py_all:
 ## Run all Javascript-related build recipes
 js_all:
 	@cd js2p; $(MAKE) all
-	
+
 ## Run all test-related recipes
 test_all: LICENSE clean jstest js_compat_test mypy pytest cpy2test cpy3test
